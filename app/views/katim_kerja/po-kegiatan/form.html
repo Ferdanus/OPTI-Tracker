@@ -5753,6 +5753,45 @@ function parseYmd(val) {
     return dt;
 }
 
+// Tampilan tanggal selalu hari/bulan/tahun (dd/mm/yyyy), tidak ikut bahasa browser (ada browser yang menampilkan bulan/hari/tahun).
+// Nilai input tetap yyyy-mm-dd, jadi semua perhitungan dan pengiriman form tidak berubah; yang diganti hanya tulisan yang terlihat.
+(function () {
+    var st = document.createElement('style');
+    st.textContent =
+        '.tgl-id-wrap{position:relative;flex:1 1 auto;min-width:0;display:flex}' +
+        '.tgl-id-wrap>input{width:100%;color:transparent!important;border-top-left-radius:0;border-bottom-left-radius:0}' +
+        '.tgl-id-wrap>input::-webkit-datetime-edit{color:transparent}' +
+        '.tgl-id-wrap>.tgl-id-teks{position:absolute;left:.85rem;top:0;bottom:0;display:flex;align-items:center;pointer-events:none;color:#1e293b;font-size:.875rem;font-variant-numeric:tabular-nums}' +
+        '.tgl-id-wrap>.tgl-id-teks.kosong{color:#94a3b8}';
+    document.head.appendChild(st);
+
+    function format(v) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v || '');
+        return m ? (m[3] + '/' + m[2] + '/' + m[1]) : 'hh/bb/tttt';
+    }
+    ['jadwalMulai', 'jadwalSelesai'].forEach(function (id) {
+        var inp = document.getElementById(id);
+        if (!inp || inp.parentNode.classList.contains('tgl-id-wrap')) return;
+        var wrap = document.createElement('div');
+        wrap.className = 'tgl-id-wrap';
+        inp.parentNode.insertBefore(wrap, inp);
+        wrap.appendChild(inp);
+        var teks = document.createElement('span');
+        teks.className = 'tgl-id-teks';
+        wrap.appendChild(teks);
+        var terakhir = null;
+        function sinkron() {
+            if (inp.value === terakhir) return;
+            terakhir = inp.value;
+            teks.textContent = format(inp.value);
+            teks.classList.toggle('kosong', !inp.value);
+        }
+        ['input', 'change', 'blur'].forEach(function (ev) { inp.addEventListener(ev, sinkron); });
+        sinkron();
+        setInterval(sinkron, 250);   // nilai yang diisi lewat script (hitungan durasi) tidak memicu event
+    });
+})();
+
 // Tambah N bulan ke satu tanggal; kalau tanggalnya tidak ada di bulan tujuan (mis. 31 Jan + 1 bulan) dipakai hari terakhir bulan itu.
 function tambahBulan(d, n) {
     var y = d.getFullYear(), m = d.getMonth() + n, hari = d.getDate();

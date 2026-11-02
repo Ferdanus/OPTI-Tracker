@@ -55,6 +55,13 @@ class PoReviewController extends Controller {
         $daftar = [];
         try {
             $daftar = $this->daftarItems($mode, (int) $this->getUserId(), 0);
+            // Panel "Lihat PO" untuk PO berstatus draft (?embed=1&buka=ID&lihat=1&draft=1): PO draft yang diminta ikut dimuat (cakupan divisi / pembuat tetap berlaku)
+            $bukaDraft = (int) $f3->get('GET.buka');
+            if ($bukaDraft > 0 && (string) $f3->get('GET.draft') === '1') {
+                $adaD = false;
+                foreach ($daftar as $dD) { if ((int) $dD['id'] === $bukaDraft) { $adaD = true; break; } }
+                if (!$adaD) { $daftar = array_merge($daftar, $this->daftarItems($mode, (int) $this->getUserId(), $bukaDraft)); }
+            }
             // Panel "hanya lihat" untuk PO divisi / layanan lain (?embed=1&buka=ID&lihat=N&ro=1): PO yang diminta ikut dimuat tanpa batas divisi, hanya untuk dibaca
             $bukaRo = (int) $f3->get('GET.buka');
             if ($bukaRo > 0 && (string) $f3->get('GET.ro') === '1') {
@@ -634,7 +641,7 @@ class PoReviewController extends Controller {
      * Isinya sama dengan tab Berkas di halaman Humas (PoHumasController::berkas), tapi hak aksesnya mengikuti halaman review ini.
      */
     public function berkas($f3, $params) {
-        list($po, $sisi) = $this->akses((int) $params['id']);
+        list($po, $sisi) = $this->aksesBaca((int) $params['id']);
         $orderId = (int) $po['order_id'];
 
         /* sql:berkas_order */
@@ -691,7 +698,7 @@ class PoReviewController extends Controller {
 
     /** GET /po-kegiatan/@id/berkas/kesanggupan[?unduh=1] -- file Surat Kesanggupan Bayar order dari PO ini */
     public function berkasKesanggupan($f3, $params) {
-        list($po, $sisi) = $this->akses((int) $params['id']);
+        list($po, $sisi) = $this->aksesBaca((int) $params['id']);
         /* sql:berkas_file_kesanggupan */
         $r = $this->safeExec(
             "SELECT surat_kesanggupan_bayar FROM tb_surat_penawaran
@@ -704,7 +711,7 @@ class PoReviewController extends Controller {
 
     /** GET /po-kegiatan/@id/berkas/bukti/@pid[?unduh=1] -- file bukti pembayaran satu termin (harus milik order PO ini) */
     public function berkasBukti($f3, $params) {
-        list($po, $sisi) = $this->akses((int) $params['id']);
+        list($po, $sisi) = $this->aksesBaca((int) $params['id']);
         /* sql:berkas_file_bukti */
         $r = $this->safeExec(
             "SELECT bukti_bayar, termin_ke FROM opti_pembayaran
@@ -1181,6 +1188,23 @@ class PoReviewController extends Controller {
         return [$po, $sisi];
     }
 
+    /**
+     * Akses BACA berkas (tab Dokumen: berkas, surat kesanggupan, bukti pembayaran).
+     * Superadmin, Ketua Tim, dan Tim Kerja boleh membuka berkas PO divisi / layanan lain (baca saja), sama seperti membaca dokumen PO-nya lewat panel "Lihat".
+     * Peran lain tetap mengikuti aturan akses() biasa.
+     */
+    protected function aksesBaca($poId) {
+        $this->requireAuth();
+        if ($this->modeHalaman() !== null) {
+            try { $po = ($poId > 0) ? $this->ambilPo($poId) : null; }
+            catch (\Exception $e) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal membaca data PO.'], 500); }
+            if (!$po) { $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan.'], 404); }
+            $sisi = $this->sisiPengguna($po);
+            return [$po, $sisi !== null ? $sisi : 'pembuat'];
+        }
+        return $this->akses($poId);
+    }
+
     protected function wajibSisi($sisi, $harus, $pesan) {
         if ($sisi !== $harus) { $this->keluarkanJson(['ok' => false, 'pesan' => $pesan], 403); }
     }
@@ -1220,7 +1244,7 @@ class PoReviewController extends Controller {
             : "(x.tahap = 'review' AND x.ronde = p.ronde_revisi)";
 
         /* sql:daftar */
-        $sql = "SELECT p.id, p.nomor_po, p.status_review, p.ronde_revisi,
+        $sql = "SELECT p.id, p.nomor_po, p.status AS po_status, p.status_review, p.ronde_revisi,
                        COALESCE(p.dikirim_at, p.updated_at, p.created_at) AS dikirim_at,
                        p.reviewed_at AS dibaca_at, p.minta_at, p.minta_dibaca_at, p.revisi_at, p.revisi_dibaca_at, p.disetujui_at, p.created_at AS dibuat_at,
                        " . $this->kolomPosisiSql() . "
@@ -1237,8 +1261,8 @@ class PoReviewController extends Controller {
                 FROM po_kegiatan p
                 JOIN order_layanan o ON o.id = p.order_id
                 JOIN tb_customer c ON c.id_customer = o.id_customer
-                WHERE (p.status = 'terkirim'
-                       OR (p.status IN ('disetujui_mitra', 'disetujui') AND p.status_review = 'disetujui'))";
+                WHERE (p.status = 'terkirim'" . ($poId > 0 ? " OR p.status = 'draft'" : '') . "
+                       OR (p.status IN ('disetujui_mitra', 'disetujui') AND p.status_review = 'disetujui'))";   // draft hanya ikut bila satu PO diminta lewat id (panel Lihat PO)
         $params = [1 => $sisiLawan];
         $idx = 2;
         if ($poId > 0) {
@@ -1272,7 +1296,7 @@ class PoReviewController extends Controller {
                 'divisi'           => $div,
                 'pembuat'          => isset($peta[$idp]) ? $peta[$idp] : 'Ketua Pelaksana',
                 'katim'            => isset($peta[$idk]) ? $peta[$idk] : 'Ketua Tim',
-                'status'           => (string) $r['status_review'],
+                'status'           => ((string) $r['po_status'] === 'draft') ? 'draft' : (string) $r['status_review'],
                 'ronde'            => (int) $r['ronde_revisi'],
                 'dibuat_at'        => $r['dibuat_at'],
                 'dikirim_at'       => $r['dikirim_at'],

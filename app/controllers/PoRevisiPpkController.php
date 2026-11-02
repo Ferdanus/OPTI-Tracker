@@ -662,7 +662,7 @@ class PoRevisiPpkController extends Controller {
         $this->pesan($po, $uid, 'katim', 'PPK BLU', 'memverifikasi PO.');
         $tujuan = self::idKatim($this->db, $po['jenis_layanan_opti']);
         $tujuan[] = (int) $po['ketua_pelaksana_id'];
-        $this->kabariKe($tujuan, 'PO diverifikasi PPK BLU', 'PO ' . $po['nomor_po'] . ' sudah diverifikasi PPK BLU.', '/po-kegiatan/daftar');
+        $this->kabariKe($tujuan, 'PO diverifikasi PPK BLU', 'PO ' . $po['nomor_po'] . ' sudah diverifikasi PPK BLU dan kini Aktif, menunggu TTD. Ketua Tim: cetak PO, tanda tangani, lalu upload PO bertanda tangan di Tahap 8.', !empty($po['order_id']) ? '/order/' . (int) $po['order_id'] : '/po-kegiatan/daftar');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], 'ppk'));
     }
 

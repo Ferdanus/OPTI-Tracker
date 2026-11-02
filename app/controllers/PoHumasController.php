@@ -78,6 +78,7 @@ class PoHumasController extends Controller {
                             p.tervalidasi_mitra_at, p.validasi_keuangan_at, 
                             " . $this->kolomPpk() . ",
                             " . $this->kolomBacaHilir() . "
+                            " . $this->kolomKontrak() . "
                             p.verifikasi_humas_at, p.catatan_humas, " . $this->kolomCatatanMitra() . " AS catatan_tim_mitra,
                             p.humas_dibaca_at, p.disposisi_humas_at,
                             p.created_at AS dibuat_at, p.dikirim_at AS kirim_at, p.reviewed_at AS katim_baca_at, p.disetujui_at,
@@ -123,6 +124,8 @@ class PoHumasController extends Controller {
         $f3->set('bulan_ini', (int) date('n'));
         $f3->set('tahun_ini', (int) date('Y'));
         $f3->set('error_message', $errorMessage);
+        $tabAwal = (string) $f3->get('GET.tab');   // tautan notifikasi "PO menunggu dibuatkan kontrak" -> /po-humas?tab=kontrak
+        $f3->set('tab_awal', in_array($tabAwal, ['kontrak'], true) ? $tabAwal : '');
         $this->render('humas/daftar_po.html', 'Daftar PO Humas', 'po_humas');
     }
 
@@ -594,6 +597,14 @@ class PoHumasController extends Controller {
             'ppk_baca_at'    => trim((string) ($r['tervalidasi_mitra_at'] ?? '')) !== '' ? self::tanggalJam((string) ($r['ppk_dibaca_at'] ?? '')) : '',
             // catatan Tim Mitra baru tampil setelah Tim Mitra benar-benar memvalidasi PO
             'catatan_mitra'  => trim((string) ($r['tervalidasi_mitra_at'] ?? '')) !== '' ? trim((string) ($r['catatan_tim_mitra'] ?? '')) : '',
+            // ---- PO bertanda tangan -> diteruskan ke Humas -> kontrak (tab Menunggu Kontrak) ----
+            'ttd_at'         => self::tanggalJam((string) ($r['po_ttd_at'] ?? '')),
+            'ttd_nama'       => (string) ($r['po_ttd_nama'] ?? ''),
+            'ttd_oleh'       => (string) ($r['po_ttd_oleh_nama'] ?? ''),
+            'kontrak_at'     => self::tanggalJam((string) ($r['kontrak_dibuat_at'] ?? '')),
+            'kontrak_nomor'  => (string) ($r['kontrak_nomor'] ?? ''),
+            'kontrak_oleh'   => (string) ($r['kontrak_dibuat_oleh_nama'] ?? ''),
+            'url_ttd'        => trim((string) ($r['po_ttd_at'] ?? '')) !== '' ? ((string) $this->f3->get('BASE') . '/po-humas/' . (int) $r['id'] . '/po-ttd') : '',
             // ---- Map Kendali (hanya tanggal, jam tidak dipakai) ----
             'map' => [
                 'proposal' => self::tanggal((string) ($r['tgl_proposal'] ?? '')),
@@ -718,6 +729,16 @@ class PoHumasController extends Controller {
             return !empty($ada) ? 'p.ppk_status, p.ronde_ppk' : "'' AS ppk_status, 0 AS ronde_ppk";
         }
 
+    /** Potongan SELECT PO bertanda tangan + kontrak (kolom dibuat PoSchema::pastikan). Kolom yang belum ada diganti NULL. */
+    protected function kolomKontrak() {
+        $s = '';
+        foreach (['po_ttd_at', 'po_ttd_nama', 'po_ttd_oleh_nama', 'kontrak_nomor', 'kontrak_dibuat_at', 'kontrak_dibuat_oleh_nama'] as $k) {
+            $ada = $this->safeExec("SHOW COLUMNS FROM po_kegiatan LIKE '" . $k . "'");
+            $s .= (!empty($ada) ? 'p.' . $k : 'NULL') . ' AS ' . $k . ', ';
+        }
+        return $s;
+    }
+
     /** Penanda "sudah dibuka" Tim Mitra dan PPK BLU (untuk kolom Posisi PO di tab Sedang Berjalan). Kolom yang belum ada diganti NULL. */
     protected function kolomBacaHilir() {
         $s = '';
@@ -742,6 +763,85 @@ class PoHumasController extends Controller {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    /**
+     * POST /po-humas/@id/kontrak -- Humas menandai kontrak untuk PO ini sudah dibuat (nomor kontrak opsional).
+     * Syarat: PO sudah aktif dan PO bertanda tangan sudah di-upload Ketua Tim. Efek: BAST (Tahap 9) di detail order terbuka,
+     * Ketua Tim dan Ketua Pelaksana diberi tahu. Pembuatan kontraknya sendiri (modul Kontrak) disambungkan terpisah.
+     */
+    public function tandaiKontrak($f3, $params) {
+        $this->izinkan(true);
+        $id = (int) $params['id'];
+        $rows = $this->safeExec(
+            "SELECT p.id, p.order_id, p.nomor_po, p.po_ttd_file, p.kontrak_dibuat_at, p.validasi_keuangan_at FROM po_kegiatan p
+             WHERE p.id = ?" . \PoSchema::bukanSertifikasi('p') . " LIMIT 1",
+            [1 => $id]
+        );
+        if (empty($rows)) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan.'], 404);
+        }
+        $po = $rows[0];
+        if (empty($po['validasi_keuangan_at']) || empty($po['po_ttd_file'])) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO bertanda tangan belum di-upload Ketua Tim, jadi kontrak belum bisa ditandai.'], 422);
+        }
+        if (!empty($po['kontrak_dibuat_at'])) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Kontrak untuk PO ini sudah ditandai dibuat sebelumnya.'], 422);
+        }
+        $nomor = trim((string) $f3->get('POST.nomor_kontrak'));
+        if (function_exists('mb_substr')) { $nomor = mb_substr($nomor, 0, 150, 'UTF-8'); } else { $nomor = substr($nomor, 0, 150); }
+        $uid = (int) $this->getUserId();
+        $unama = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : 'Humas';
+        try {
+            $this->db->exec(
+                "UPDATE po_kegiatan SET kontrak_nomor = ?, kontrak_dibuat_at = NOW(), kontrak_dibuat_oleh_id = ?, kontrak_dibuat_oleh_nama = ?
+                 WHERE id = ? AND kontrak_dibuat_at IS NULL",
+                [1 => ($nomor === '' ? null : $nomor), 2 => $uid, 3 => $unama, 4 => $id]
+            );
+        } catch (\Exception $e) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
+        }
+        $o = $this->safeExec("SELECT nomor_order, ketua_pelaksana_id, jenis_layanan_opti FROM order_layanan WHERE id = ? LIMIT 1", [1 => (int) $po['order_id']]);
+        $o = !empty($o) ? $o[0] : [];
+        try {
+            \PoReviewController::catatRiwayatOrder($this->db, $id, $uid, 'Humas membuat kontrak' . ($nomor !== '' ? ' (' . $nomor . ')' : '') . '. Tahap 9 (BAST) terbuka.', 'kontrak_humas');
+            $katim = $this->katimPerDivisi();
+            $div = (string) ($o['jenis_layanan_opti'] ?? '');
+            $penerima = [isset($katim[$div]) ? (int) $katim[$div] : 0, (int) ($o['ketua_pelaksana_id'] ?? 0)];
+            \PoReviewController::kabari(
+                $this->db, $penerima, 'Kontrak Sudah Dibuat',
+                'Humas sudah membuat kontrak untuk PO ' . $po['nomor_po'] . ' (Order #' . (isset($o['nomor_order']) ? $o['nomor_order'] : '-') . '). Tahap 9 (BAST) sudah terbuka.',
+                '/order/' . (int) $po['order_id']
+            );
+        } catch (\Throwable $e) {
+            // riwayat dan notifikasi bersifat pelengkap
+        }
+        $this->keluarkanJson(['ok' => true, 'waktu' => date('Y-m-d H:i:s'), 'nomor' => $nomor, 'oleh' => $unama]);
+    }
+
+    /** GET /po-humas/@id/po-ttd -- Humas membuka PO bertanda tangan (?unduh=1 untuk mengunduh). */
+    public function lihatPoTtd($f3, $params) {
+        $this->izinkan();
+        $id = (int) $params['id'];
+        $r = $this->safeExec("SELECT po_ttd_file, po_ttd_nama FROM po_kegiatan p WHERE p.id = ?" . \PoSchema::bukanSertifikasi('p') . " LIMIT 1", [1 => $id]);
+        $nama = !empty($r) ? (string) $r[0]['po_ttd_file'] : '';
+        $path = dirname(__DIR__, 2) . '/storage/po_ttd/' . $nama;
+        if ($nama === '' || basename($nama) !== $nama || !is_file($path)) {
+            $f3->error(404, 'File PO bertanda tangan tidak ditemukan.');
+            return;
+        }
+        $ext = strtolower(pathinfo($nama, PATHINFO_EXTENSION));
+        $tipe = ($ext === 'pdf') ? 'application/pdf' : (($ext === 'png') ? 'image/png' : 'image/jpeg');
+        $tampil = str_replace('/', '-', trim((string) $r[0]['po_ttd_nama']) !== '' ? (string) $r[0]['po_ttd_nama'] : $nama);
+        $ascii = preg_replace('/[^A-Za-z0-9._ -]+/', '_', $tampil);
+        $unduh = (string) $f3->get('GET.unduh') === '1';
+        while (ob_get_level() > 0) { ob_end_clean(); }
+        header('Content-Type: ' . $tipe);
+        header('Content-Length: ' . filesize($path));
+        header('Content-Disposition: ' . ($unduh ? 'attachment' : 'inline') . '; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($tampil));
+        header('X-Content-Type-Options: nosniff');
+        readfile($path);
         exit;
     }
 

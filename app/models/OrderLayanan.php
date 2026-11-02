@@ -487,7 +487,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $pkKolom = '';
         foreach (array('status', 'status_review', 'ppk_status', 'disetujui_at', 'verifikasi_humas_at', 'tervalidasi_mitra_at', 'validasi_keuangan_at',
                        'reviewed_at', 'minta_dibaca_at', 'revisi_dibaca_at', 'humas_dibaca_at', 'disposisi_humas_at', 'ppk_dibaca_at', 'mitra_dibaca_at',
-                       'ronde_ppk', 'ppk_status_at') as $kcol) {
+                       'ronde_ppk', 'ppk_status_at', 'po_ttd_file', 'kontrak_dibuat_at') as $kcol) {
             if (isset($pkAda[$kcol])) { $pkKolom .= ' pk.' . $kcol . ' AS pk_' . $kcol . ','; }
         }
         // Nomor putaran perbaikan dari Ketua Tim (catatan asal 'katim') pada ronde PPK BLU yang berjalan; kolomnya baru ada setelah fitur dipakai
@@ -811,6 +811,17 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     return $r('Review Hasil Revisi PPK', 'Menunggu review Ketua Tim', 'katim', true, $baca('ppk_dibaca_at', 'Ketua Tim'));
             }
             if (!empty($o['pk_validasi_keuangan_at'])) {
+                // PO Aktif dibedakan: menunggu PO bertanda tangan (Ketua Tim) -> menunggu kontrak (Humas) -> lengkap (BAST terbuka).
+                // Order lama yang kolomnya belum ada (kunci pk_po_ttd_file tidak ada) tetap tampil 'PO Aktif'.
+                if (array_key_exists('pk_po_ttd_file', $o)) {
+                    if (empty($o['pk_po_ttd_file'])) {
+                        return $r("PO Aktif \u{00B7} Menunggu TTD", 'Ketua Tim meng-upload PO bertanda tangan', 'katim_ttd', true);
+                    }
+                    if (array_key_exists('pk_kontrak_dibuat_at', $o) && empty($o['pk_kontrak_dibuat_at'])) {
+                        return $r("PO Aktif \u{00B7} Menunggu Kontrak", 'PO bertanda tangan sudah di-upload, Humas membuat kontrak', 'humas_kontrak', true);
+                    }
+                    return $r('PO Aktif', 'PO bertanda tangan & kontrak lengkap, BAST terbuka', '');
+                }
                 return $r('PO Aktif', 'Pengerjaan lab dimulai', '');
             }
             if (!empty($o['pk_tervalidasi_mitra_at'])) {

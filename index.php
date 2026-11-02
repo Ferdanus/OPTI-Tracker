@@ -224,6 +224,8 @@ $f3->route('POST /po-kegiatan/@id/validasi', 'PoValidasiMitraController->validas
 $f3->route('GET /po-humas', 'PoHumasController->index');
 $f3->route('POST /po-humas/@id/verifikasi', 'PoHumasController->verifikasi');
 $f3->route('GET /po-humas/@id/berkas', 'PoHumasController->berkas');
+$f3->route('POST /po-humas/@id/kontrak', 'PoHumasController->tandaiKontrak');   // Humas menandai kontrak dibuat -> BAST terbuka
+$f3->route('GET /po-humas/@id/po-ttd', 'PoHumasController->lihatPoTtd');          // Humas membuka PO bertanda tangan
 $f3->route('GET /po-humas/@id/berkas/bukti/@pid', 'PoHumasController->berkasBukti');   // bukti pembayaran untuk Humas (bukan /pembayaran/bukti yang khusus Keuangan)
 
 $f3->route('GET /order/@id/berkas', 'BerkasController->index');

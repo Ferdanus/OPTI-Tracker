@@ -612,7 +612,8 @@
         // Mode "lihat saja" (?lihat=1 / ?lihat=2, hanya di panel tunggal): tanpa tombol tindakan dan tanpa menandai PO sudah dibaca.
         // 1 = tanpa catatan revisi (hanya catatan Humas, Tim Mitra, PPK BLU); 2 = dengan catatan revisi.
         var LIHAT = (function () { var m = /[?&]lihat=([12])(&|$)/.exec(window.location.search); return (SOLO && m) ? parseInt(m[1], 10) : 0; })();
-        var RO = LIHAT > 0 && /[?&]ro=1(&|$)/.test(window.location.search);   // PO divisi / layanan lain: baca saja, tanpa tab Dokumen (berkas pembayaran)
+        var RO = LIHAT > 0 && /[?&]ro=1(&|$)/.test(window.location.search);   // PO divisi / layanan lain: baca saja (tab Dokumen / berkas tetap tampil)
+        var EDIT_DRAFT = /[?&]edit=1(&|$)/.test(window.location.search);   // panel draft dari Daftar PO: tombol Edit PO tampil bila pengguna berhak mengedit
         var berubah = false;   // ada tindakan yang mengubah status PO (minta revisi, setujui, kirim revisi, buka kembali)
         function kabariInduk(jenis, buka) { try { window.parent.postMessage({ silopti: 'po-panel', jenis: jenis, berubah: berubah, buka: buka || '' }, window.location.origin); } catch (e) {} }
         // slide digeser keluar dulu (animasi yang sama dengan tombol tutup), baru induk diberi tahu supaya Tahap 8 diperbarui tanpa memuat ulang halaman
@@ -657,7 +658,8 @@
             menunggu_review: { label: 'Menunggu review', cls: 'blue', ic: 'bi-hourglass-split' },
             perlu_revisi: { label: 'Perlu revisi', cls: 'amber', ic: 'bi-pencil-square' },
             direvisi: { label: 'Sudah direvisi', cls: 'indigo', ic: 'bi-arrow-repeat' },
-            disetujui: { label: 'Disetujui', cls: 'emerald', ic: 'bi-check-circle' }
+            disetujui: { label: 'Disetujui', cls: 'emerald', ic: 'bi-check-circle' },
+            draft: { label: 'Draft PO', cls: 'blue', ic: 'bi-pencil-square' }
         };
         if (ROLE === 'katim') { STATUS.perlu_revisi.label = 'Sedang dikerjakan'; }   // bagi Ketua Tim, PO ini sedang dikerjakan Ketua Pelaksana
 
@@ -764,6 +766,7 @@
     
         /* ---------- Status PO saat ini (turunan dari kolom yang ada, tidak disimpan) ---------- */
         function posisi(p) {
+            if (p.status === 'draft') { return { di: 'Ketua Pelaksana', teks: 'Draft PO, belum dikirim ke Ketua Tim', pendek: 'Draft', cls: 'pre', ik: 'bi-pencil-square', langkah: 0 }; }
             if (p.status === 'menunggu_review') { return { di: 'Ketua Tim', teks: 'Menunggu review Ketua Tim', pendek: 'Menunggu Ketua Tim', cls: 'pre', ik: 'bi-hourglass-split', langkah: 1 }; }
             if (p.status === 'perlu_revisi') { return { di: 'Ketua Pelaksana', teks: 'Menunggu revisi Ketua Pelaksana', pendek: 'Menunggu Ketua Pelaksana', cls: 'pre', ik: 'bi-pencil-square', langkah: 1 }; }
             if (p.status === 'direvisi') { return { di: 'Ketua Tim', teks: 'Menunggu review ulang Ketua Tim', pendek: 'Review ulang Ketua Tim', cls: 'pre', ik: 'bi-arrow-repeat', langkah: 1 }; }
@@ -1088,16 +1091,17 @@
         function renderChrome() {
             var p = curPo(); if (!p) { return; }
             var s = STATUS[p.status] || STATUS.menunggu_review, j = jejak(p);
-            $('rvwShNo').textContent = p.nomor;
+            $('rvwShNo').textContent = p.nomor || '(belum bernomor)';
             $('rvwShPill').className = 'rvw-pill ' + s.cls; $('rvwShPill').innerHTML = '<i class="bi ' + s.ic + '"></i>' + s.label;
             $('rvwShSub').textContent = p.mitra + ' - ' + p.judul;
             var baca = '';
             if (j.penerima && j.bacaAt) { baca = ' &middot; ' + (p.status === 'menunggu_review' ? 'Dibaca Ketua Tim ' : (p.status === 'direvisi' ? 'Revisi dibaca Ketua Tim ' : 'Permintaan revisi dibaca Ketua Pelaksana ')) + fmt(j.bacaAt); }
-            $('rvwShMeta').innerHTML = 'Ketua Pelaksana <b>' + esc(p.pembuat) + '</b> &middot; Ketua Tim <b>' + esc(p.katim) + '</b> &middot; Dikirim ' + fmt(p.dikirim_at) + baca;
+            $('rvwShMeta').innerHTML = 'Ketua Pelaksana <b>' + esc(p.pembuat) + '</b> &middot; Ketua Tim <b>' + esc(p.katim) + '</b> &middot; ' + (p.status === 'draft' ? 'Dibuat ' + fmt(p.dibuat_at) : 'Dikirim ' + fmt(p.dikirim_at)) + baca;
             renderStepper(p); renderShTabs(p); renderBanner(p); renderDock(p);
             if (shTab === 'alur') { renderAlur(); }
         }
         function renderStepper(p) {
+            if (p.status === 'draft') { $('rvwStepper').innerHTML = ''; return; }   // draft belum masuk alur review
             var steps = ['Dikirim', 'Review Ketua Tim', 'Revisi Pelaksana', 'Disetujui'];
             var c = p.status === 'disetujui' ? 5 : (p.status === 'perlu_revisi' ? 3 : 2);
             var h = '<div class="rvw-steps">';
@@ -1113,7 +1117,7 @@
             var nn = notes().length;
             $('rvwShTabs').innerHTML =
                 '<button type="button" class="rvw-shtab' + (shTab === 'dok' ? ' on' : '') + '" data-shtab="dok">' + (LIHAT === 1 ? 'Dokumen PO' : 'Dokumen dan catatan') + (nn ? ' <span class="rvw-cnt">' + nn + '</span>' : '') + '</button>' +
-                (RO ? '' : '<button type="button" class="rvw-shtab' + (shTab === 'berkas' ? ' on' : '') + '" data-shtab="berkas">Dokumen</button>') +
+                '<button type="button" class="rvw-shtab' + (shTab === 'berkas' ? ' on' : '') + '" data-shtab="berkas">Dokumen</button>' +
                 ((SOLO || ROLE === 'pembuat') ? '' : '<button type="button" class="rvw-shtab' + (shTab === 'alur' ? ' on' : '') + '" data-shtab="alur">Alur</button>');   // di detail order (SOLO) riwayat alur sudah ada di halaman detail
         }
         function renderBanner(p) {
@@ -1139,6 +1143,11 @@
         }
         function renderDock(p) {
             var op = cnt('terbuka'), dr = cnt('draf'), tot = op + dr, hint = '', btns = '';
+            if (p.status === 'draft') {   // draft: hanya tombol Edit PO (bila berhak); PO belum dikirim jadi belum ada review
+                $('rvwDock').style.display = '';
+                $('rvwDock').innerHTML = '<div class="hintline">PO masih draft dan belum dikirim ke Ketua Tim.</div><div class="acts">' + (EDIT_DRAFT ? '<button type="button" class="rvw-btn pri" data-act="edit"><i class="bi bi-pencil"></i>Edit PO</button>' : '') + '</div>';
+                return;
+            }
             if (LIHAT) { $('rvwDock').innerHTML = ''; $('rvwDock').style.display = 'none'; return; }
             else if (ROLE === 'katim') {
                 if (p.status === 'menunggu_review' || p.status === 'direvisi') {

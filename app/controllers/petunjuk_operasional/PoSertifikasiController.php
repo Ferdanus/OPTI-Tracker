@@ -1292,7 +1292,9 @@ class PoSertifikasiController extends \Controller {
     protected function dataReview($hanyaId = 0) {
         $this->ensureDatabaseSertifikasi();
         $dbName = $this->namaDbSertifikasi();
-        $akhir = " WHERE p.layanan = ? AND p.status IN ('terkirim', 'disetujui_mitra', 'disetujui')" . ((int) $hanyaId > 0 ? ' AND p.id = ' . (int) $hanyaId : '') . " ORDER BY p.updated_at DESC, p.id DESC";
+        // Draft hanya ikut dimuat untuk satu PO (slide dari Daftar PO) dan hanya bagi Superadmin / Tim Kerja Sertifikasi
+        $stDraft = ((int) $hanyaId > 0 && ($this->isSuperadmin() || $this->isTimSertifikasi())) ? ", 'draft'" : '';
+        $akhir = " WHERE p.layanan = ? AND p.status IN ('terkirim', 'disetujui_mitra', 'disetujui'{$stDraft})" . ((int) $hanyaId > 0 ? ' AND p.id = ' . (int) $hanyaId : '') . " ORDER BY p.updated_at DESC, p.id DESC";
         $varian = [
             "SELECT p.*, a.nomor_order, a.no_id_order, a.total_nilai_kontrak, a.total_bayar_kontrak, c.nmcustomer, c.pt_cv FROM po_kegiatan p
                LEFT JOIN `{$dbName}`.`tb_arsip_sertifikasi` a ON a.id_arsip_sertifikasi = p.order_id
@@ -1342,7 +1344,7 @@ class PoSertifikasiController extends \Controller {
         $hasil = [];
         foreach ($rows as $r) {
             $sr = (string) ($r['status_review'] ?? '');
-            $keadaan = ($sr === 'disetujui') ? 'disetujui' : (($sr === 'perlu_revisi') ? 'perlu_revisi' : (($sr === 'direvisi') ? 'direvisi' : 'menunggu'));
+            $keadaan = ((string) ($r['status'] ?? '') === 'draft') ? 'draft' : (($sr === 'disetujui') ? 'disetujui' : (($sr === 'perlu_revisi') ? 'perlu_revisi' : (($sr === 'direvisi') ? 'direvisi' : 'menunggu')));
             $order = trim((string) ($r['nomor_order'] ?? ''));
             if ($order === '') { $order = trim((string) ($r['no_id_order'] ?? '')); }
             $mitra = (($r['nmcustomer'] ?? '') !== '' || ($r['pt_cv'] ?? '') !== '')

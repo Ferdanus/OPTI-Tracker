@@ -13,13 +13,15 @@ class NotificationController extends Controller
         $layanan = $this->getUserLayanan();
 
         $unreadCount = NotificationService::getUnreadCount($this->db, $userId, $role, $layanan);
-        $items = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 15, '', true);
+        $items = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 50, '', true);
+        $recent = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 30, '', false);
 
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true,
             'count'   => $unreadCount,
-            'items'   => $items
+            'items'   => $items,
+            'recent'  => $recent
         ]);
         exit;
     }

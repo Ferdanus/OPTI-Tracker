@@ -5,6 +5,8 @@
  * Dilengkapi Guard Permission (Order: Admin Order & Superadmin; Approve: Pejabat & Superadmin)
  */
 class OrderController extends Controller {
+    const PO_TTD_MAKS_BYTE = 10485760;   // 10 MB per upload (PDF akhir)
+    const PO_TTD_MAKS_FOTO = 10;         // jumlah foto maksimal dalam satu kali upload
 
     /**
      * Halaman Notifikasi & Kotak Disposisi Masuk (Dilebur satu pintu ke Daftar Order)
@@ -123,8 +125,10 @@ class OrderController extends Controller {
                     $giliran = $this->isTimMitra();
                 } elseif ($pemegang === 'ppk') {
                     $giliran = in_array($userRole, array('ppk', 'ppk_blu', 'pejabat'), true);
-                } elseif ($pemegang === 'katim') {
+                } elseif ($pemegang === 'katim' || $pemegang === 'katim_ttd') {
                     $giliran = $isKetuaTim;
+                } elseif ($pemegang === 'humas_kontrak') {
+                    $giliran = ($userRole === 'humas');
                 } elseif ($pemegang === 'pic') {
                     $giliran = ($uidLogin > 0 && $uidLogin === (int) ($barisOrder['ketua_pelaksana_id'] ?? 0));
                 }
@@ -295,6 +299,10 @@ class OrderController extends Controller {
                         $isTask = true;
                         $reason = 'PO Kegiatan menunggu tindakan Anda (review atau revisi)';
                         $badge = 'Review PO';
+                    } elseif ((string) ($r['po_pemegang'] ?? '') === 'katim_ttd') {
+                        $isTask = true;
+                        $reason = 'PO sudah aktif, menunggu Anda meng-upload PO bertanda tangan';
+                        $badge = 'Upload PO TTD';
                     }
                 }
             } elseif (in_array($userRole, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra'])) {
@@ -337,6 +345,10 @@ class OrderController extends Controller {
                     $isTask = true;
                     $reason = 'PO Kegiatan menunggu verifikasi Humas';
                     $badge = 'Verifikasi PO';
+                } elseif ((string) ($r['po_pemegang'] ?? '') === 'humas_kontrak') {
+                    $isTask = true;
+                    $reason = 'PO bertanda tangan sudah di-upload, menunggu kontrak dibuat';
+                    $badge = 'Buat Kontrak';
                 }
             } elseif (in_array($userRole, ['ppk', 'ppk_blu', 'pejabat'], true)) {
                 if ((string) ($r['po_pemegang'] ?? '') === 'ppk') {
@@ -1301,6 +1313,8 @@ class OrderController extends Controller {
         // Tidak dikunci: order yang sudah punya BAST, order berstatus selesai, dan order dengan PO versi lama (tanpa baris po_kegiatan).
         $poTtdAda = (!empty($poKegiatan) && !empty($poKegiatan['po_ttd_file']));
         $poTtdWajib = (!empty($poKegiatan) && empty($bast) && ($order['status'] ?? '') !== 'selesai');
+        // Setelah PO bertanda tangan di-upload, PO diteruskan ke Humas; BAST baru terbuka setelah Humas menandai kontrak dibuat.
+        $poKontrakAda = (!empty($poKegiatan) && !empty($poKegiatan['kontrak_dibuat_at']));
         $isPoDone = $poTerbuka && (!empty($order['po_id']) || $poKegiatanAktif) && (
             $poTtdAda ||
             (!$poTtdWajib && (
@@ -1312,7 +1326,7 @@ class OrderController extends Controller {
 
         // Tahap 9 (BAST) terbuka kalau PO sudah aktif (PO lama via po_id, atau PO Kegiatan yang sudah divalidasi PPK BLU)
         // DAN (PO bertanda tangan sudah diunggah, atau order ini tidak kena kunci PO bertanda tangan).
-        $bastTerbuka = (!empty($order['po_id']) || $poKegiatanAktif) && ($poTtdAda || !$poTtdWajib);
+        $bastTerbuka = (!empty($order['po_id']) || $poKegiatanAktif) && (($poTtdAda && $poKontrakAda) || !$poTtdWajib);
         $f3->set('po_bast_terbuka', $bastTerbuka);
 
         // Step 9: BAST
@@ -1681,9 +1695,13 @@ class OrderController extends Controller {
                 $langkahBerikutnya['deskripsi'] = 'Petunjuk Operasional (' . (!empty($order['nomor_po']) ? $order['nomor_po'] : (isset($poKegiatan['nomor_po']) ? $poKegiatan['nomor_po'] : '-')) . ') aktif. Tim pelaksana sedang menjalankan kegiatan teknis sesuai standar mutu dan target waktu SPM.';
                 $langkahBerikutnya['penanggung_jawab'] = 'Tim Pelaksana Teknis';
                 if (!$poTtdAda && $poTtdWajib) {
-                    $langkahBerikutnya['judul'] = 'PO Aktif, Menunggu PO Bertanda Tangan';
-                    $langkahBerikutnya['deskripsi'] = 'Cetak PO, lalu unggah PO yang sudah ditandatangani di Tahap 8. Tahap 9 (BAST) terbuka setelah PO bertanda tangan diunggah.';
+                    $langkahBerikutnya['judul'] = 'PO Aktif, Menunggu TTD';
+                    $langkahBerikutnya['deskripsi'] = 'Cetak PO, tanda tangani, lalu upload PO yang sudah ditandatangani di Tahap 8. Setelah itu PO diteruskan ke Humas untuk dibuatkan kontrak, lalu Tahap 9 (BAST) terbuka.';
                     $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI';
+                } elseif ($poTtdAda && $poTtdWajib && empty($poKegiatan['kontrak_dibuat_at'])) {
+                    $langkahBerikutnya['judul'] = 'PO Aktif, Menunggu Kontrak';
+                    $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah di-upload dan diteruskan ke Humas. Tahap 9 (BAST) terbuka setelah Humas membuat kontrak.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Humas';
                 }
                 $langkahBerikutnya['role_icon'] = 'bi-gear-wide-connected';
                 $langkahBerikutnya['tipe_badge'] = 'primary';
@@ -3042,14 +3060,21 @@ class OrderController extends Controller {
 
         // PO bertanda tangan (langkah ke-7): hasil cetak PO yang sudah ditandatangani, diunggah Ketua Tim; syarat buka BAST (Tahap 9)
         $ttdAda = ($po && !empty($po['po_ttd_file']));
+        $kontrakAda = ($po && !empty($po['kontrak_dibuat_at']));
         $ttd = array(
             'ada' => $ttdAda,
             'nama' => $ttdAda ? (string) ($po['po_ttd_nama'] ?? '') : '',
-            'asal' => $ttdAda ? (string) ($po['po_ttd_asal'] ?? '') : '',
+            'asal' => $ttdAda ? (preg_match('/^[A-Z]{3,4}$/', (string) ($po['po_ttd_asal'] ?? '')) ? 'Foto ' . $po['po_ttd_asal'] : (string) ($po['po_ttd_asal'] ?? '')) : '',
             'at' => $ttdAda ? $fmt($po['po_ttd_at'] ?? null) : '',
             'oleh' => $ttdAda ? (string) ($po['po_ttd_oleh_nama'] ?? '') : '',
-            'boleh_unggah' => ($state === 'aktif' && $isKatim && $poId > 0 && !$bastAda),
-            'boleh_ganti' => ($ttdAda && $isKatim && !$bastAda),
+            // PO bertanda tangan hanya bisa di-upload sekali (tidak bisa diganti); setelah di-upload PO diteruskan ke Humas untuk dibuatkan kontrak
+            'boleh_unggah' => ($state === 'aktif' && $isKatim && $poId > 0 && !$bastAda && !$ttdAda),
+            'boleh_ganti' => false,
+            'persen' => ($state === 'aktif' ? ($ttdAda ? 100 : 50) : 0),
+            'kontrak_ada' => $kontrakAda,
+            'kontrak_nomor' => $kontrakAda ? (string) ($po['kontrak_nomor'] ?? '') : '',
+            'kontrak_at' => $kontrakAda ? $fmt($po['kontrak_dibuat_at'] ?? null) : '',
+            'kontrak_oleh' => $kontrakAda ? (string) ($po['kontrak_dibuat_oleh_nama'] ?? '') : '',
             'url_unggah' => $base . '/order/' . $orderId . '/po-ttd/unggah',
             'url_lihat' => $base . '/order/' . $orderId . '/po-ttd',
             'url_cetak' => $base . '/po-kegiatan/' . $poId . '/cetak',
@@ -3247,12 +3272,14 @@ class OrderController extends Controller {
                 }
                 break;
             case 'aktif':
-                if ($ttdAda) {
-                    $info = $bidang('success', '<b>PO bertanda tangan sudah diunggah.</b> Tahap 9 (BAST) sudah terbuka.');
+                if ($ttdAda && $kontrakAda) {
+                    $info = $bidang('success', '<b>Kontrak sudah dibuat Humas.</b> Tahap 9 (BAST) sudah terbuka.');
+                } elseif ($ttdAda) {
+                    $info = $bidang('info', '<b>PO sudah aktif penuh.</b> PO bertanda tangan sudah di-upload dan diteruskan ke Humas untuk dibuatkan kontrak. Tahap 9 (BAST) terbuka setelah kontrak dibuat.');
                 } elseif ($isKatim) {
-                    $info = $bidang('warning', '<b>PO sudah aktif.</b> Cetak PO, lalu unggah PO yang sudah ditandatangani.');
+                    $info = $bidang('warning', '<b>PO sudah aktif, menunggu TTD.</b> Cetak PO, tanda tangani, lalu upload PO yang sudah ditandatangani.');
                 } else {
-                    $info = $bidang('info', '<b>PO sudah aktif.</b> Menunggu Ketua Tim mengunggah PO yang sudah ditandatangani.');
+                    $info = $bidang('info', '<b>PO sudah aktif, menunggu TTD.</b> Menunggu Ketua Tim meng-upload PO yang sudah ditandatangani.');
                 }
                 break;
             case 'verif_humas':
@@ -3290,7 +3317,7 @@ class OrderController extends Controller {
             'ppk_katim_review' => array('po-bdg', 'Review Hasil Revisi', 'Review'),
             'aktif' => array('po-bdg', 'PO Aktif', 'PO Aktif'),
         );
-        if (!$ttdAda) { $lab['aktif'] = array('po-bdg', 'PO Aktif, Menunggu PO TTD', 'PO Aktif'); }
+        if (!$ttdAda) { $lab['aktif'] = array('po-bdg po-bdg-red', "PO Aktif \u{00B7} Menunggu TTD", 'PO Aktif'); }
         if ($putKatim > 0) {
             $lab['ppk_ketupel_kerja'] = array('po-bdg po-bdg-red', 'Perbaikan Ketua Tim', 'Perbaikan');
             $lab['ppk_katim_review'] = array('po-bdg', 'Review Hasil Perbaikan', 'Review');
@@ -3337,7 +3364,7 @@ class OrderController extends Controller {
 
     /**
      * Unggah PO yang sudah dicetak dan ditandatangani (Tahap 8). Syarat membuka BAST (Tahap 9).
-     * Boleh PDF, JPG, atau PNG (maks. 5 MB); foto otomatis diubah menjadi PDF dan diberi nama "PO <nomor>_<judul>".
+     * Boleh satu PDF atau satu/beberapa foto JPG/PNG (maks. 10 foto, maks. 10 MB); foto otomatis digabung menjadi satu PDF bernama "PO <nomor>_<judul>".
      * Route: POST /order/@id/po-ttd/unggah
      */
     public function unggahPoTtd($f3, $params) {
@@ -3364,41 +3391,71 @@ class OrderController extends Controller {
         if (!empty($bast)) {
             return $this->poTtdBalas($f3, false, 'BAST sudah dibuat, PO bertanda tangan tidak bisa diganti lagi.', $back);
         }
+        if (!empty($po['po_ttd_file'])) {
+            return $this->poTtdBalas($f3, false, 'PO bertanda tangan sudah di-upload dan sudah diteruskan ke Humas. File tidak bisa diganti.', $back);
+        }
 
-        $file = $f3->get('FILES.file_po_ttd');
-        if (!$file || !isset($file['error']) || is_array($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+        // Satu PDF, atau satu/beberapa foto (JPG/PNG, maks. 10) yang otomatis digabung menjadi satu PDF.
+        $berkas = $this->kumpulkanBerkasPoTtd();
+        if (!$berkas) {
+            $lebih = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+            if ($lebih > 0 && empty($_FILES)) {
+                return $this->poTtdBalas($f3, false, 'Ukuran file terlalu besar untuk dikirim. Kurangi jumlah foto atau pilih file yang lebih kecil.', $back);
+            }
             return $this->poTtdBalas($f3, false, 'Pilih file PO yang sudah ditandatangani terlebih dahulu.', $back);
         }
-        if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > 5 * 1024 * 1024) {
-            return $this->poTtdBalas($f3, false, 'Ukuran file maksimal 5 MB. Pilih file yang lebih kecil.', $back);
+        if (count($berkas) > self::PO_TTD_MAKS_FOTO) {
+            return $this->poTtdBalas($f3, false, 'Maksimal ' . self::PO_TTD_MAKS_FOTO . ' foto dalam satu kali upload.', $back);
         }
-        if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] <= 0 || !is_uploaded_file($file['tmp_name'])) {
-            return $this->poTtdBalas($f3, false, 'Terjadi kesalahan saat mengunggah file. Coba lagi.', $back);
-        }
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, array('pdf', 'jpg', 'jpeg', 'png'), true)) {
-            return $this->poTtdBalas($f3, false, 'Format file harus PDF, JPG, atau PNG.', $back);
-        }
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = (string) finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
         $mimeOk = array('pdf' => array('application/pdf'), 'jpg' => array('image/jpeg'), 'jpeg' => array('image/jpeg'), 'png' => array('image/png'));
-        if (!in_array($mime, $mimeOk[$ext], true)) {
-            return $this->poTtdBalas($f3, false, 'Isi file tidak sesuai dengan format PDF, JPG, atau PNG.', $back);
+        $daftarFoto = array();
+        $adaPdf = false;
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        foreach ($berkas as $file) {
+            if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > self::PO_TTD_MAKS_BYTE) {
+                finfo_close($finfo);
+                return $this->poTtdBalas($f3, false, 'Ukuran file maksimal 10 MB. Pilih file yang lebih kecil.', $back);
+            }
+            if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] <= 0 || !is_uploaded_file($file['tmp_name'])) {
+                finfo_close($finfo);
+                return $this->poTtdBalas($f3, false, 'Terjadi kesalahan saat mengunggah file. Coba lagi.', $back);
+            }
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if (!isset($mimeOk[$ext])) {
+                finfo_close($finfo);
+                return $this->poTtdBalas($f3, false, 'Format file harus PDF, JPG, atau PNG.', $back);
+            }
+            $mime = (string) finfo_file($finfo, $file['tmp_name']);
+            if (!in_array($mime, $mimeOk[$ext], true)) {
+                finfo_close($finfo);
+                return $this->poTtdBalas($f3, false, 'Isi file tidak sesuai dengan format PDF, JPG, atau PNG.', $back);
+            }
+            if ($ext === 'pdf') { $adaPdf = true; } else { $daftarFoto[] = array('tmp' => $file['tmp_name'], 'mime' => $mime, 'ext' => $ext === 'jpeg' ? 'jpg' : $ext); }
+        }
+        finfo_close($finfo);
+        if ($adaPdf && count($berkas) > 1) {
+            return $this->poTtdBalas($f3, false, 'Upload satu file PDF saja, atau satu/beberapa foto. PDF tidak bisa dicampur dengan foto.', $back);
         }
 
         $dir = $this->dirPoTtd();
         $acak = bin2hex(random_bytes(12));
-        $adaFoto = ($ext !== 'pdf');
+        $adaFoto = !$adaPdf;
         $disimpan = '';
         $namaTampil = '';
         $asal = '';
-        $pesan = 'PO bertanda tangan diunggah. Tahap 9 (BAST) sudah terbuka.';
+        $pesan = 'PO berhasil di-upload. PO kini Aktif penuh dan diteruskan ke Humas.';
 
         if ($adaFoto) {
-            // Foto -> satu halaman PDF; nama baku "PO <nomor>_<judul>.pdf"
+            // Foto (satu atau banyak) -> satu PDF; nama baku "PO <nomor>_<judul>.pdf"
             try {
-                $pdf = $this->fotoKePdf($file['tmp_name'], $mime);
+                $pdf = '';
+                foreach (array(array(2000, 85), array(1600, 70), array(1200, 60)) as $mutu) {
+                    $pdf = $this->fotoKePdf($daftarFoto, $mutu[0], $mutu[1]);
+                    if (strlen($pdf) <= self::PO_TTD_MAKS_BYTE) { break; }
+                }
+                if (strlen($pdf) > self::PO_TTD_MAKS_BYTE) {
+                    return $this->poTtdBalas($f3, false, 'Hasil PDF dari foto melebihi 10 MB. Kurangi jumlah foto lalu coba lagi.', $back);
+                }
                 $disimpan = $acak . '.pdf';
                 if (file_put_contents($dir . $disimpan, $pdf) === false) { throw new \RuntimeException('gagal menulis PDF'); }
                 $nomor = trim((string) ($po['nomor_po'] ?? ''));
@@ -3408,20 +3465,16 @@ class OrderController extends Controller {
                 $dasar = preg_replace('/\s+/u', ' ', $dasar);
                 if (function_exists('mb_substr')) { $dasar = mb_substr($dasar, 0, 150, 'UTF-8'); } else { $dasar = substr($dasar, 0, 150); }
                 $namaTampil = rtrim($dasar, ' .') . '.pdf';
-                $asal = strtoupper($ext === 'jpeg' ? 'jpg' : $ext);
-                $pesan .= ' Foto otomatis diubah menjadi PDF.';
+                $jml = count($daftarFoto);
+                $asal = ($jml > 1) ? ($jml . ' foto') : ('Foto ' . strtoupper($daftarFoto[0]['ext']));
+                $pesan .= ($jml > 1) ? (' ' . $jml . ' foto otomatis digabung menjadi satu PDF.') : ' Foto otomatis diubah menjadi PDF.';
             } catch (\Throwable $e) {
                 error_log('[PO-TTD] konversi foto ke PDF gagal: ' . $e->getMessage());
                 @unlink($dir . $acak . '.pdf');
-                // cadangan: simpan foto apa adanya
-                $disimpan = $acak . '.' . ($ext === 'jpeg' ? 'jpg' : $ext);
-                if (!move_uploaded_file($file['tmp_name'], $dir . $disimpan)) {
-                    return $this->poTtdBalas($f3, false, 'Gagal menyimpan file ke server.', $back);
-                }
-                $namaTampil = preg_replace('/[\x00-\x1F\\\\\/:*?"<>|]+/u', '-', basename($file['name']));
-                $pesan = 'PO bertanda tangan diunggah. Tahap 9 (BAST) sudah terbuka. Foto belum bisa diubah ke PDF dan disimpan apa adanya.';
+                return $this->poTtdBalas($f3, false, 'Foto belum bisa diubah menjadi PDF. Coba lagi, atau upload dalam bentuk PDF.', $back);
             }
         } else {
+            $file = $berkas[0];
             $disimpan = $acak . '.pdf';
             if (!move_uploaded_file($file['tmp_name'], $dir . $disimpan)) {
                 return $this->poTtdBalas($f3, false, 'Gagal menyimpan file ke server.', $back);
@@ -3438,8 +3491,34 @@ class OrderController extends Controller {
         );
         if ($lama !== '' && $lama !== $disimpan && basename($lama) === $lama) { @unlink($dir . $lama); }
 
-        $this->logActivity($id, 'po', $lama !== '' ? 'ganti_po_ttd' : 'upload_po_ttd', ($lama !== '' ? 'Ganti' : 'Unggah') . ' PO bertanda tangan');
+        $this->logActivity($id, 'po', 'upload_po_ttd', 'Upload PO bertanda tangan. PO Aktif penuh dan diteruskan ke Humas untuk dibuatkan kontrak');
+        $this->kabariHumasKontrak($order, $po, $unama);
         return $this->poTtdBalas($f3, true, $pesan, $back);
+    }
+
+    /**
+     * PO bertanda tangan sudah di-upload -> beri tahu Humas (lonceng) bahwa ada PO yang menunggu dibuatkan kontrak.
+     * Humas melihat daftarnya di tab "Menunggu Kontrak" pada Daftar PO Humas (/po-humas). Notifikasi bersifat pelengkap.
+     */
+    protected function kabariHumasKontrak($order, $po, $pengunggah) {
+        try {
+            \NotificationService::send($this->db, array(
+                'order_id'        => (int) ($order['id'] ?? 0),
+                'po_id'           => (int) ($po['id'] ?? 0),
+                'target_role'     => 'humas',
+                'target_layanan'  => 'semua',
+                'judul'           => 'PO Menunggu Dibuatkan Kontrak',
+                'pesan'           => 'PO ' . (string) ($po['nomor_po'] ?? '') . ' untuk Order #' . (string) ($order['nomor_order'] ?? '-')
+                                   . ' sudah Aktif penuh (PO bertanda tangan di-upload ' . $pengunggah . '). Silakan buatkan kontraknya.',
+                'tipe'            => 'primary',
+                'icon'            => 'bi-file-earmark-check',
+                'link_url'        => '/po-humas?tab=kontrak',
+                'created_by'      => $this->getUserId(),
+                'created_by_name' => $pengunggah,
+            ));
+        } catch (\Throwable $e) {
+            error_log('[PO-TTD] notifikasi Humas gagal: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -3496,55 +3575,76 @@ class OrderController extends Controller {
         $f3->reroute($kembali);
     }
 
-    /**
-     * Foto (JPG/PNG) -> PDF satu halaman A4 (otomatis landscape bila fotonya melebar), skala dijaga, ukuran diperkecil bila terlalu besar.
-     * Mengembalikan isi PDF (string); melempar exception bila gagal (pemanggil menyimpan foto apa adanya).
-     */
-    protected function fotoKePdf($tmp, $mime) {
-        $info = @getimagesize($tmp);
-        if (!$info || $info[0] < 1 || $info[1] < 1) { throw new \RuntimeException('gambar tidak terbaca'); }
-        $w = (int) $info[0]; $h = (int) $info[1];
-        $data = file_get_contents($tmp);
-        $mimeOut = $mime;
-
-        if (function_exists('imagecreatefromstring') && function_exists('imagejpeg')) {
-            $img = @imagecreatefromstring($data);
-            if ($img) {
-                // putar sesuai EXIF (foto dari HP)
-                if ($mime === 'image/jpeg' && function_exists('exif_read_data') && function_exists('imagerotate')) {
-                    $ex = @exif_read_data($tmp);
-                    $o = (is_array($ex) && isset($ex['Orientation'])) ? (int) $ex['Orientation'] : 1;
-                    $deg = ($o === 3) ? 180 : (($o === 6) ? -90 : (($o === 8) ? 90 : 0));
-                    if ($deg !== 0) { $rot = @imagerotate($img, $deg, 0); if ($rot) { imagedestroy($img); $img = $rot; } }
-                }
-                $w = imagesx($img); $h = imagesy($img);
-                $maks = 2000;
-                if (max($w, $h) > $maks && function_exists('imagescale')) {
-                    $skala = $maks / max($w, $h);
-                    $kecil = @imagescale($img, max(1, (int) round($w * $skala)), max(1, (int) round($h * $skala)));
-                    if ($kecil) { imagedestroy($img); $img = $kecil; $w = imagesx($img); $h = imagesy($img); }
-                }
-                // latar putih (PNG transparan) lalu simpan sebagai JPEG kualitas 85
-                $kanvas = imagecreatetruecolor($w, $h);
-                imagefill($kanvas, 0, 0, imagecolorallocate($kanvas, 255, 255, 255));
-                imagecopy($kanvas, $img, 0, 0, 0, 0, $w, $h);
-                ob_start();
-                imagejpeg($kanvas, null, 85);
-                $data = ob_get_clean();
-                $mimeOut = 'image/jpeg';
-                imagedestroy($img); imagedestroy($kanvas);
+    /** Susun $_FILES['file_po_ttd'] (satu file atau banyak file) menjadi daftar seragam; entri kosong dibuang. */
+    protected function kumpulkanBerkasPoTtd() {
+        $out = array();
+        if (empty($_FILES['file_po_ttd'])) { return $out; }
+        $fl = $_FILES['file_po_ttd'];
+        if (is_array($fl['name'])) {
+            foreach ($fl['name'] as $i => $n) {
+                $out[] = array('name' => $n, 'type' => $fl['type'][$i], 'tmp_name' => $fl['tmp_name'][$i], 'error' => $fl['error'][$i], 'size' => $fl['size'][$i]);
             }
+        } else {
+            $out[] = $fl;
         }
-        if ($mimeOut === 'image/png' && !extension_loaded('gd')) { throw new \RuntimeException('GD tidak aktif'); }
+        $hasil = array();
+        foreach ($out as $o) { if ($o['error'] !== UPLOAD_ERR_NO_FILE) { $hasil[] = $o; } }
+        return $hasil;
+    }
 
-        $land = ($w > $h);
-        $kotakW = $land ? 277.0 : 190.0;   // mm, A4 dikurangi margin 10 mm
-        $kotakH = $land ? 190.0 : 277.0;
-        $skala = min($kotakW / $w, $kotakH / $h);
-        $wMm = round($w * $skala, 2); $hMm = round($h * $skala, 2);
-        $html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>@page{margin:10mm}body{margin:0;text-align:center}img{display:block;margin:0 auto}</style></head><body>'
-              . '<img src="data:' . $mimeOut . ';base64,' . base64_encode($data) . '" style="width:' . $wMm . 'mm;height:' . $hMm . 'mm">'
-              . '</body></html>';
+    /**
+     * Satu atau beberapa foto (JPG/PNG) -> satu PDF A4, satu foto satu halaman sesuai urutan, skala dijaga.
+     * Paper landscape hanya bila semua foto melebar; selain itu portrait. $daftar = array(array('tmp'=>..., 'mime'=>...)).
+     * $maks = sisi terpanjang (px), $kualitas = kualitas JPEG. Mengembalikan isi PDF (string); melempar exception bila gagal.
+     */
+    protected function fotoKePdf($daftar, $maks = 2000, $kualitas = 85) {
+        if (!extension_loaded('gd') || !function_exists('imagecreatefromstring') || !function_exists('imagejpeg')) { throw new \RuntimeException('GD tidak aktif'); }
+        $halaman = array();
+        $semuaLandscape = true;
+        foreach ($daftar as $item) {
+            $tmp = $item['tmp']; $mime = $item['mime'];
+            $info = @getimagesize($tmp);
+            if (!$info || $info[0] < 1 || $info[1] < 1) { throw new \RuntimeException('gambar tidak terbaca'); }
+            $img = @imagecreatefromstring(file_get_contents($tmp));
+            if (!$img) { throw new \RuntimeException('gambar tidak bisa dibuka'); }
+            // putar sesuai EXIF (foto dari HP)
+            if ($mime === 'image/jpeg' && function_exists('exif_read_data') && function_exists('imagerotate')) {
+                $ex = @exif_read_data($tmp);
+                $o = (is_array($ex) && isset($ex['Orientation'])) ? (int) $ex['Orientation'] : 1;
+                $deg = ($o === 3) ? 180 : (($o === 6) ? -90 : (($o === 8) ? 90 : 0));
+                if ($deg !== 0) { $rot = @imagerotate($img, $deg, 0); if ($rot) { imagedestroy($img); $img = $rot; } }
+            }
+            $w = imagesx($img); $h = imagesy($img);
+            if (max($w, $h) > $maks && function_exists('imagescale')) {
+                $skala = $maks / max($w, $h);
+                $kecil = @imagescale($img, max(1, (int) round($w * $skala)), max(1, (int) round($h * $skala)));
+                if ($kecil) { imagedestroy($img); $img = $kecil; $w = imagesx($img); $h = imagesy($img); }
+            }
+            // latar putih (PNG transparan) lalu simpan sebagai JPEG
+            $kanvas = imagecreatetruecolor($w, $h);
+            imagefill($kanvas, 0, 0, imagecolorallocate($kanvas, 255, 255, 255));
+            imagecopy($kanvas, $img, 0, 0, 0, 0, $w, $h);
+            ob_start();
+            imagejpeg($kanvas, null, (int) $kualitas);
+            $data = ob_get_clean();
+            imagedestroy($img); imagedestroy($kanvas);
+            if ($w <= $h) { $semuaLandscape = false; }
+            $halaman[] = array('w' => $w, 'h' => $h, 'data' => $data);
+        }
+        if (!$halaman) { throw new \RuntimeException('tidak ada foto'); }
+
+        $land = $semuaLandscape;
+        $kotakW = $land ? 275.0 : 188.0;   // mm, A4 dikurangi margin 10 mm dan sedikit ruang agar tidak melompat halaman
+        $kotakH = $land ? 188.0 : 275.0;
+        $html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>@page{margin:10mm}body{margin:0;text-align:center}.hal{text-align:center}img{display:block;margin:0 auto}</style></head><body>';
+        $n = count($halaman);
+        foreach ($halaman as $i => $hal) {
+            $skala = min($kotakW / $hal['w'], $kotakH / $hal['h']);
+            $wMm = round($hal['w'] * $skala, 2); $hMm = round($hal['h'] * $skala, 2);
+            $html .= '<div class="hal"' . ($i < $n - 1 ? ' style="page-break-after:always"' : '') . '>'
+                   . '<img src="data:image/jpeg;base64,' . base64_encode($hal['data']) . '" style="width:' . $wMm . 'mm;height:' . $hMm . 'mm"></div>';
+        }
+        $html .= '</body></html>';
         $opt = new \Dompdf\Options();
         $opt->set('isRemoteEnabled', false);
         $dompdf = new \Dompdf\Dompdf($opt);

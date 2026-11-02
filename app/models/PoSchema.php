@@ -68,6 +68,11 @@ class PoSchema
         'po_ttd_at'          => 'DATETIME NULL',
         'po_ttd_oleh_id'     => 'INT NULL',
         'po_ttd_oleh_nama'   => 'VARCHAR(150) NULL',
+        // setelah PO bertanda tangan di-upload, PO otomatis diteruskan ke Humas untuk dibuatkan kontrak; BAST (Tahap 9) baru terbuka setelah Humas menandai kontrak dibuat
+        'kontrak_nomor'            => 'VARCHAR(150) NULL',
+        'kontrak_dibuat_at'        => 'DATETIME NULL',
+        'kontrak_dibuat_oleh_id'   => 'INT NULL',
+        'kontrak_dibuat_oleh_nama' => 'VARCHAR(150) NULL',
     );
     protected static $dbRef = null;
 

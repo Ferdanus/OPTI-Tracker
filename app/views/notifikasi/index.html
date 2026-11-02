@@ -329,7 +329,7 @@
                 <div class="list-group list-group-flush" id="fullNotifList">
                     <repeat group="{{ @daftar_notifikasi_semua }}" value="{{ @item }}">
                         <div class="list-group-item p-3.5 notif-row-item {{ @item.is_read ? 'bg-white is-read' : 'is-unread' }} d-flex align-items-start gap-3 border-bottom" data-is-read="{{ @item.is_read ? '1' : '0' }}" data-search-text="{{ strtolower(@item.judul . ' ' . @item.pesan . ' ' . @item.created_by_name) }}">
-                            <div class="rounded-circle p-2.5 d-flex align-items-center justify-content-center flex-shrink-0 {{ @item.tipe == 'success' ? 'bg-success-subtle text-success' : (@item.tipe == 'warning' ? 'bg-warning-subtle text-warning' : (@item.tipe == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info')) }}" style="width: 44px; height: 44px;">
+                            <div class="rounded-circle p-2.5 d-flex align-items-center justify-content-center flex-shrink-0 bg-secondary-subtle text-dark" style="width: 44px; height: 44px;">
                                 <i class="bi {{ @item.icon ?: 'bi-bell-fill' }} fs-5"></i>
                             </div>
                             <div class="flex-grow-1">

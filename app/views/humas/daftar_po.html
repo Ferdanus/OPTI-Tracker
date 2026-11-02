@@ -550,6 +550,7 @@
             <div class="d-flex align-items-center gap-2 flex-wrap" id="hmTabs">
                 <button type="button" class="po-tab filter-tab-pill" data-tab="semua"><i class="bi bi-list-ul"></i>Semua <span class="count-chip" id="countSemua">0</span></button>
                 <button type="button" class="po-tab filter-tab-pill active" data-tab="baru"><span class="hm-dot sm" id="dotBaru" hidden></span><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <span class="count-chip chip-danger" id="countBaru">0</span></button>
+                <button type="button" class="po-tab filter-tab-pill" data-tab="kontrak"><i class="bi bi-file-earmark-text"></i>Menunggu Kontrak <span class="count-chip chip-danger" id="countKontrak">0</span></button>
                 <button type="button" class="po-tab filter-tab-pill" data-tab="selesai"><i class="bi bi-hourglass-split"></i>Sedang Berjalan <span class="count-chip" id="countSelesai">0</span></button>
                 <button type="button" class="po-tab filter-tab-pill" data-tab="po_selesai"><i class="bi bi-check2-circle"></i>PO Aktif <span class="count-chip" id="countPoSelesai">0</span></button>
             </div>
@@ -611,6 +612,15 @@
             <div class="hm-dlg-btns"><button type="button" class="hm-btn" id="hmDlgNo">Batal</button><button type="button" class="hm-btn pri" id="hmDlgYes">Ya, verifikasi</button></div>
         </div>
     </div>
+    <div class="hm-dlg" id="hmKt" hidden>
+        <div class="hm-dlg-box" role="dialog" aria-modal="true" aria-labelledby="hmKtTitle">
+            <div class="hm-dlg-icon"><i class="bi bi-file-earmark-check"></i></div>
+            <h5 id="hmKtTitle">Kontrak sudah dibuat?</h5>
+            <p>Tandai kontrak untuk PO <b id="hmKtNo"></b> sudah dibuat. Ketua Tim diberi tahu dan Tahap 9 (BAST) di detail order terbuka.</p>
+            <input type="text" class="form-control form-control-sm mb-3" id="hmKtInput" maxlength="150" placeholder="Nomor kontrak (opsional)" autocomplete="off">
+            <div class="hm-dlg-btns"><button type="button" class="hm-btn" id="hmKtNo2">Batal</button><button type="button" class="hm-btn pri" id="hmKtYa">Ya, kontrak sudah dibuat</button></div>
+        </div>
+    </div>
     <div class="hm-toast" id="hmToast" role="status"></div>
 </div>
 
@@ -630,7 +640,8 @@
     var DIVISI_LABEL = { selulosa: 'Selulosa', lingkungan: 'Lingkungan', sertifikasi: 'Sertifikasi', pengujian: 'Pengujian', kalibrasi: 'Kalibrasi', pendampingan_teknis: 'Pendampingan Teknis', konsultansi: 'Konsultansi', inspeksi: 'Inspeksi', uji_profesiensi: 'Uji Profesiensi' };
     var PER_HAL = 5;   // sama dengan Daftar PO lain: 5 baris per halaman
 
-    var tab = 'baru', q = '', divisi = '', baca = '', statusF = '', periodeDiubah = false, hal = 1;
+    var TAB_AWAL = '{{ @tab_awal }}';
+    var tab = (TAB_AWAL === 'kontrak' ? 'kontrak' : 'baru'), q = '', divisi = '', baca = '', statusF = '', periodeDiubah = false, hal = 1;
     // Periode: tab Perlu Tindakan = semua data (yang belum diverifikasi jangan sampai tersembunyi), tab lain = bulan berjalan.
     // semuaEks = pilihan eksplisit saklar "Tampilkan semua data" (null = ikut bawaan tab).
     var bulan = String(BULAN_INI), tahun = String(TAHUN_INI), semuaEks = null;
@@ -675,18 +686,21 @@
         if (t === 'semua') { return gabungSemua(); }
         if (t === 'baru') { return DATA_BARU; }
         if (t === 'selesai') { return DATA_SELESAI.filter(function (p) { return !p.ppk_valid_at; }); }
+        if (t === 'kontrak') { return DATA_BARU.concat(DATA_SELESAI).filter(perluKontrak); }   // PO bertanda tangan sudah di-upload, kontrak belum dibuat
         return DATA_BARU.concat(DATA_SELESAI).filter(function (p) { return !!p.ppk_valid_at; });   // PO Selesai = sudah diverifikasi PPK BLU
     }
     // Tanggal acuan bulan/tahun per tab: masuk Humas (baru), diverifikasi Humas (sudah diverifikasi), diverifikasi PPK BLU (PO selesai)
-    function tglAcuan(p, t) { t = tabAsal(p, t); return (t === 'baru' ? p.dikirim : (t === 'selesai' ? p.tgl_verifikasi : p.ppk_valid_at)) || ''; }
+    function tglAcuan(p, t) { t = tabAsal(p, t); return (t === 'baru' ? p.dikirim : (t === 'selesai' ? p.tgl_verifikasi : (t === 'kontrak' ? p.ttd_at : p.ppk_valid_at))) || ''; }
+    // PO diteruskan ke Humas setelah PO bertanda tangan di-upload Ketua Tim; antreannya hilang saat Humas menandai kontrak dibuat
+    function perluKontrak(p) { return !!p.ttd_at && !p.kontrak_at; }
     function bulanTahun(s) { var m = /^(\d{4})-(\d{2})/.exec(s || ''); return m ? { b: String(+m[2]), t: m[1] } : null; }
-    function semuaAktif(t) { return semuaEks === null ? (t === 'baru' || tab === 'semua') : semuaEks; }   // di tab Semua, semua tab dihitung tanpa filter bulan supaya angkanya cocok
+    function semuaAktif(t) { return semuaEks === null ? (t === 'baru' || t === 'kontrak' || tab === 'semua') : semuaEks; }   // di tab Semua, semua tab dihitung tanpa filter bulan supaya angkanya cocok
     function isiOpsiFilter() {
         var selBulan = $('hmBulan');
         selBulan.innerHTML = BULAN_PANJANG.map(function (nama, i) { return '<option value="' + (i + 1) + '">' + nama + '</option>'; }).join('');
         selBulan.value = bulan;
         var tahunSet = {}; tahunSet[TAHUN_INI] = true;
-        ['baru', 'selesai', 'po_selesai'].forEach(function (t) {
+        ['baru', 'kontrak', 'selesai', 'po_selesai'].forEach(function (t) {
             dataTab(t).forEach(function (p) { var bt = bulanTahun(tglAcuan(p, t)); if (bt) { tahunSet[bt.t] = true; } });
         });
         if (tahun) { tahunSet[tahun] = true; }
@@ -743,7 +757,9 @@
         if (ps === 'katim_review') { return { key: 'revisi', teks: 'Review hasil revisi PPK BLU', oleh: 'Ketua Tim', cls: 'rose' }; }
         if (!p.mitra_valid_at) { return { key: 'mitra', teks: 'Verifikasi Tim Mitra', oleh: 'Tim Mitra', cls: 'blue', baca: p.mitra_baca_at, nama: 'Tim Mitra' }; }
         if (!p.ppk_valid_at) { return { key: 'ppk', teks: 'Verifikasi PPK BLU', oleh: 'PPK BLU', cls: 'blue', baca: p.ppk_baca_at, nama: 'PPK BLU' }; }
-        return { key: 'aktif', teks: 'PO Aktif', oleh: 'Pengerjaan lab dimulai', cls: 'emerald' };
+        if (!p.ttd_at) { return { key: 'aktif', teks: 'PO Aktif \u00b7 Menunggu TTD', oleh: 'Ketua Tim meng-upload PO bertanda tangan', cls: 'rose' }; }
+        if (!p.kontrak_at) { return { key: 'kontrak', teks: 'PO Aktif \u00b7 Menunggu kontrak', oleh: 'Humas', cls: 'rose' }; }
+        return { key: 'aktif', teks: 'PO Aktif', oleh: 'Kontrak dibuat' + (p.kontrak_nomor ? ' (' + p.kontrak_nomor + ')' : ''), cls: 'emerald' };
     }
     function subLine(ikon, teks) { return '<div class="text-muted small d-flex align-items-center gap-1" style="font-size: 0.73rem;"><i class="bi ' + ikon + '"></i><span>' + teks + '</span></div>'; }
     // Kolom Dokumen PO: nomor + keterangan tahap (Perlu Tindakan juga menampilkan centang baca)
@@ -807,7 +823,7 @@
     function render() {
         var n = unreadCount();
         var dasar = {}, hitungKartu = {};
-        ['semua', 'baru', 'selesai', 'po_selesai'].forEach(function (t) { dasar[t] = dasarTab(t); hitungKartu[t] = dataTab(t).filter(cocokDivisi).length; });
+        ['semua', 'baru', 'kontrak', 'selesai', 'po_selesai'].forEach(function (t) { dasar[t] = dasarTab(t); hitungKartu[t] = dataTab(t).filter(cocokDivisi).length; });
         // kartu ringkasan ikut filter layanan (bukan periode)
         $('mTotal').textContent = hitungKartu.baru + hitungKartu.selesai + hitungKartu.po_selesai;
         $('mTindakan').textContent = hitungKartu.baru;
@@ -816,6 +832,8 @@
         // chip di tab ikut semua filter (pencarian, layanan, periode)
         $('countSemua').textContent = dasar.semua.length;
         $('countBaru').textContent = dasar.baru.length;
+        $('countKontrak').textContent = dasar.kontrak.length;
+        $('countKontrak').classList.toggle('chip-danger', dasar.kontrak.length > 0);
         $('countBaru').classList.toggle('chip-danger', dasar.baru.length > 0);
         $('countSelesai').textContent = dasar.selesai.length;
         $('countPoSelesai').textContent = dasar.po_selesai.length;
@@ -850,7 +868,7 @@
     function renderList(rows, t, awal) {
         if (!rows.length) {
             var pesan = filterAktif() ? 'Tidak ada PO yang cocok dengan pencarian/filter.'
-                : (t === 'semua' ? 'Belum ada PO pada periode ini.' : t === 'selesai' ? 'Belum ada PO sedang berjalan pada periode ini.' : (t === 'po_selesai' ? 'Belum ada PO aktif pada periode ini.' : 'Belum ada PO baru yang perlu diverifikasi.'));
+                : (t === 'semua' ? 'Belum ada PO pada periode ini.' : t === 'selesai' ? 'Belum ada PO sedang berjalan pada periode ini.' : (t === 'po_selesai' ? 'Belum ada PO aktif pada periode ini.' : (t === 'kontrak' ? 'Tidak ada PO yang menunggu dibuatkan kontrak.' : 'Belum ada PO baru yang perlu diverifikasi.')));
             $('hmList').innerHTML = '<div class="text-center py-5"><div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-2" style="width: 64px; height: 64px;"><i class="bi bi-inbox fs-2 text-muted"></i></div>' +
                 '<h6 class="fw-bold text-dark mt-2 mb-1">Tidak Ada Data PO</h6><p class="text-muted small mb-0">' + pesan + '</p></div>';
             return;
@@ -864,6 +882,9 @@
                 var tombol = ta === 'baru'
                     ? '<button type="button" class="btn btn-sm btn-primary py-1 px-2" data-open="' + p.id + '" title="Review PO (buka panel)"><i class="bi bi-eye me-1"></i>Review</button>'
                     : '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" data-open="' + p.id + '" title="Lihat PO (hanya lihat)"><i class="bi bi-eye me-1"></i>Lihat</button>';
+                if (perluKontrak(p)) {
+                    tombol += '<button type="button" class="btn btn-sm btn-dark py-1 px-2" data-kontrak="' + p.id + '" title="Tandai kontrak sudah dibuat"><i class="bi bi-file-earmark-check me-1"></i>Kontrak dibuat</button>';
+                }
                 var detail = (p.order_id && p.layanan !== 'sertifikasi') ? '<a href="' + BASE + '/order/' + p.order_id + '" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>' : '';
                 return '<tr class="' + (ta === 'baru' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
                     '<td class="text-center text-muted small fw-semibold">' + (awal + i + 1) + '</td>' +
@@ -1547,6 +1568,8 @@
         if (kartu) { pilihTab(kartu.getAttribute('data-kartu')); return; }
         var pg = t.closest('#hmFoot [data-hal]');
         if (pg) { var np = parseInt(pg.getAttribute('data-hal'), 10); if (np >= 1) { hal = np; render(); } return; }
+        var kt = t.closest('[data-kontrak]');
+        if (kt) { var pk = cariItem(kt.getAttribute('data-kontrak')); if (pk) { bukaKontrak(pk); } return; }
         var op = t.closest('[data-open]');
         if (op) { openSheet(op.getAttribute('data-open')); return; }
         if (t.closest('[data-mk-lihat]')) { bukaMapFv(); return; }
@@ -1582,11 +1605,46 @@
     $('hmFvTutup').addEventListener('click', tutupFv);
     $('hmFvTutup2').addEventListener('click', tutupFv);
     $('hmFv').addEventListener('click', function (e) { if (e.target === this) { tutupFv(); } });
+    /* ---------- Tandai kontrak sudah dibuat (PO bertanda tangan sudah di-upload Ketua Tim) ---------- */
+    var ktPo = null, ktSibuk = false;
+    function bukaKontrak(p) {
+        ktPo = p;
+        $('hmKtNo').textContent = p.nomor;
+        $('hmKtInput').value = '';
+        $('hmKt').hidden = false;
+        requestAnimationFrame(function () { $('hmKt').classList.add('show'); });
+        setTimeout(function () { $('hmKtInput').focus(); }, 40);
+    }
+    function tutupKontrak() {
+        if (ktSibuk) { return; }
+        $('hmKt').classList.remove('show');
+        setTimeout(function () { $('hmKt').hidden = true; }, 160);
+        ktPo = null;
+    }
+    function simpanKontrak() {
+        var p = ktPo;
+        if (!p || ktSibuk) { return; }
+        ktSibuk = true; $('hmKtYa').disabled = true;
+        post(BASE + '/po-humas/' + p.id + '/kontrak', { nomor_kontrak: $('hmKtInput').value.trim() }).then(function (j) {
+            p.kontrak_at = nowStr(); p.kontrak_nomor = j.nomor || ''; p.kontrak_oleh = j.oleh || '';
+            ktSibuk = false; $('hmKtYa').disabled = false; tutupKontrak();
+            toast('Kontrak ditandai sudah dibuat. Ketua Tim diberi tahu dan BAST terbuka.');
+            render();
+        }).catch(function (e) {
+            ktSibuk = false; $('hmKtYa').disabled = false;
+            toast(e.message || 'Gagal menyimpan.', true);
+        });
+    }
+    $('hmKtYa').addEventListener('click', simpanKontrak);
+    $('hmKtNo2').addEventListener('click', tutupKontrak);
+    $('hmKt').addEventListener('click', function (e) { if (e.target === this) { tutupKontrak(); } });
+    $('hmKtInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); simpanKontrak(); } });
     $('hmDlgNo').addEventListener('click', function () { tutupDlg(false); });
     $('hmDlgYes').addEventListener('click', function () { tutupDlg(true); });
     document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') { return; }
         if (!$('hmFv').hidden) { tutupFv(); return; }
+        if (!$('hmKt').hidden) { tutupKontrak(); return; }
         if (dlgResolve) { tutupDlg(false); return; }
         if (current !== null) { closeSheet(); }
     });
@@ -1610,6 +1668,9 @@
 
     isiOpsiFilter();
     render();
+    if (tab !== 'baru') {   // dibuka dari notifikasi (?tab=kontrak)
+        Array.prototype.forEach.call(document.querySelectorAll('#hmTabs .po-tab'), function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === tab); });
+    }
     if (SOLO) {
         if (SOLO_ID && cariItem(SOLO_ID)) { openSheet(SOLO_ID); kabariInduk('siap'); }
         else { kabariInduk('tutup'); }
