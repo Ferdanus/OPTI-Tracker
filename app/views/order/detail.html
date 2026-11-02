@@ -3557,20 +3557,22 @@
                                             </div>
                                             <div class="card-body p-3">
                                                 
-                                                <!-- Penunjukan PIC Pengujian / Laboratorium Lingkungan -->
+                                                <!-- Penunjukan Ketua Tim Pelaksana / PIC Pengujian Laboratorium Lingkungan -->
                                                 <div class="mb-3">
                                                     <label class="form-label small fw-bold text-dark mb-1" for="selectPicLingkungan">
-                                                        <i class="bi bi-person-badge text-primary me-1"></i> Penunjukan PIC Pengujian / Laboratorium
+                                                        <i class="bi bi-person-badge text-primary me-1"></i> Penunjukan Ketua Tim Pelaksana / PIC Laboratorium
                                                     </label>
                                                     <select name="pic_proposal_id" id="selectPicLingkungan" class="form-select form-select-sm" {{ !@can_edit_lingkungan ? 'disabled' : '' }}>
-                                                        <option value="">Pilih PIC Pengujian / Personel Lab</option>
+                                                        <option value="">Pilih Ketua Tim Pelaksana / PIC</option>
                                                         <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
-                                                            <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
+                                                            <option value="{{ @p.id_user }}" {{ ((@order.ketua_pelaksana_id ?: @order.pic_proposal_id) == @p.id_user) ? 'selected' : '' }}>
                                                                 {{ @p.nama_user }} ({{ @p.role_label ?: @p.role_opti }} - Divisi {{ ucfirst(@p.spesialisasi ?: @p.role_opti) }})
                                                             </option>
                                                         </repeat>
                                                     </select>
-
+                                                    <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">
+                                                        <i class="bi bi-info-circle me-1"></i> Personil yang dipilih akan menjadi Ketua Tim Pelaksana teknis pengujian &amp; penanggung jawab PO.
+                                                    </small>
                                                 </div>
 
                                                 <!-- Potongan Diskon -->
@@ -5477,26 +5479,52 @@
                         </check>
 
                         <!-- ======================================================== -->
-                        <!-- KONDISI B: PIC PO SUDAH DITUNJUK -->
+                        <!-- KONDISI B: PIC PO / KETUA PELAKSANA SUDAH DITUNJUK -->
                         <!-- ======================================================== -->
                         <check if="{{ !empty(@order.ketua_pelaksana_id) }}">
-                            <!-- Banner Informasi PIC PO Terpilih -->
-                            <div class="p-3 bg-white border rounded-3 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2 shadow-2xs">
-                                <div class="d-flex align-items-center gap-2.5">
-                                    <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle" style="width: 36px; height: 36px;">
-                                        <i class="bi bi-person-badge fs-5"></i>
-                                    </div>
-                                    <div>
-                                        <div class="small text-muted" style="font-size: 0.74rem;">PIC PO / Ketua Pelaksana:</div>
-                                        <div class="fw-bold text-dark font-display" style="font-size: 0.95rem;">
-                                            {{ @order.ketua_pelaksana_nama ?: 'PIC Terpilih' }}
+                            <!-- Banner Informasi & Konfirmasi PIC PO / Ketua Pelaksana Terpilih -->
+                            <div class="p-3 bg-white border rounded-3 mb-3 shadow-2xs">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2.5">
+                                        <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-person-badge fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <div class="small text-muted" style="font-size: 0.74rem;">
+                                                <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
+                                                    Ketua Tim Pelaksana Lab (Ditunjuk di Tahap 4):
+                                                </check>
+                                                <check if="{{ @order.jenis_layanan_opti != 'lingkungan' }}">
+                                                    PIC PO / Ketua Pelaksana Terpilih:
+                                                </check>
+                                            </div>
+                                            <div class="fw-bold text-dark font-display fs-6">
+                                                {{ @order.ketua_pelaksana_nama ?: 'PIC Terpilih' }}
+                                            </div>
                                         </div>
                                     </div>
+                                    <check if="{{ @is_ketua_tim || @is_superadmin }}">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) }}">
+                                                <button type="button" class="btn btn-primary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Konfirmasi atau sesuaikan kembali Ketua Tim Pelaksana">
+                                                    <i class="bi bi-check2-circle"></i> Konfirmasi / Ganti Pelaksana
+                                                </button>
+                                            </check>
+                                            <check if="{{ @order.jenis_layanan_opti != 'lingkungan' || (!empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel)) }}">
+                                                <button type="button" class="btn btn-outline-secondary btn-xs px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Ganti personil PIC PO">
+                                                    <i class="bi bi-arrow-repeat"></i> Ganti PIC PO
+                                                </button>
+                                            </check>
+                                        </div>
+                                    </check>
                                 </div>
-                                <check if="{{ @is_ketua_tim || @is_superadmin }}">
-                                    <button type="button" class="btn btn-outline-secondary btn-xs px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Ganti personil PIC PO">
-                                        <i class="bi bi-arrow-repeat"></i> Ganti PIC PO
-                                    </button>
+                                <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) }}">
+                                    <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <small class="text-muted" style="font-size: 0.73rem;">
+                                            <i class="bi bi-shield-check text-success me-1"></i>
+                                            Sebelum mengaktifkan titik awal SPM, Ketua Tim dapat memastikan atau mengganti personil Ketua Tim Pelaksana pengujian jika diperlukan.
+                                        </small>
+                                    </div>
                                 </check>
                             </div>
 
@@ -6106,7 +6134,7 @@
 
 
 
-<!-- Modal Tunjuk / Tetapkan PIC PO (Ketua Pelaksana) -->
+<!-- Modal Tunjuk / Konfirmasi PIC PO (Ketua Pelaksana) -->
 <div class="modal fade" id="modalTunjukPicPo" tabindex="-1" aria-labelledby="modalTunjukPicPoLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -6119,27 +6147,54 @@
                         </div>
                         <div>
                             <h6 class="modal-title fw-bold text-dark m-0" id="modalTunjukPicPoLabel">
-                                Penunjukan PIC PO (Ketua Pelaksana)
+                                <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@order.ketua_pelaksana_id) }}">
+                                    Konfirmasi Ketua Tim Pelaksana Pengujian
+                                </check>
+                                <check if="{{ @order.jenis_layanan_opti != 'lingkungan' || empty(@order.ketua_pelaksana_id) }}">
+                                    Penunjukan PIC PO (Ketua Pelaksana)
+                                </check>
                             </h6>
-                            <small class="text-muted">Pilih personil penanggung jawab teknis &amp; pelaksanaan PO kegiatan</small>
+                            <small class="text-muted">
+                                <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
+                                    Konfirmasikan personil penanggung jawab pengujian sebelum aktivasi titik awal SPM
+                                </check>
+                                <check if="{{ @order.jenis_layanan_opti != 'lingkungan' }}">
+                                    Pilih personil penanggung jawab teknis &amp; pelaksanaan PO kegiatan
+                                </check>
+                            </small>
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body py-3 px-4">
-                    <div class="alert alert-info border-0 shadow-2xs rounded-3 small mb-3">
-                        <i class="bi bi-info-circle-fill me-1"></i>
-                        Penunjukan <strong>PIC PO (Ketua Pelaksana)</strong> wajib dilakukan oleh Ketua Tim sebelum titik awal pengerjaan / batas waktu SPM resmi diaktifkan.
-                    </div>
+                    <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@order.ketua_pelaksana_id) }}">
+                        <div class="alert alert-light border border-primary-subtle shadow-2xs rounded-3 small mb-3">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-info-circle-fill text-primary fs-5 mt-0.5"></i>
+                                <div>
+                                    <div class="fw-bold text-dark mb-0.5">Konfirmasi Pelaksana OPTI Lingkungan</div>
+                                    <div class="text-muted" style="line-height: 1.45;">
+                                        Pada Tahap 4 (Tarif &amp; Parameter), Anda telah menugaskan <strong>{{ @order.ketua_pelaksana_nama }}</strong>. Apakah Anda yakin tetap memilih personil tersebut, atau ingin mengubah Ketua Tim Pelaksana sebelum aktivasi SPM?
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </check>
+                    <check if="{{ @order.jenis_layanan_opti != 'lingkungan' || empty(@order.ketua_pelaksana_id) }}">
+                        <div class="alert alert-info border-0 shadow-2xs rounded-3 small mb-3">
+                            <i class="bi bi-info-circle-fill me-1"></i>
+                            Penunjukan <strong>PIC PO (Ketua Pelaksana)</strong> wajib dilakukan oleh Ketua Tim sebelum titik awal pengerjaan / batas waktu SPM resmi diaktifkan.
+                        </div>
+                    </check>
 
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-dark">
-                            Pilih PIC PO / Ketua Pelaksana <span class="text-danger">*</span>:
+                            Ketua Pelaksana / PIC Penanggung Jawab <span class="text-danger">*</span>:
                         </label>
                         <select name="ketua_pelaksana_id" class="form-select form-select-sm" required>
                             <option value="">-- Pilih Personil Pelaksana --</option>
                             <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
-                                <option value="{{ @p.id_user }}" {{ (@order.ketua_pelaksana_id == @p.id_user) ? 'selected' : '' }}>
+                                <option value="{{ @p.id_user }}" {{ ((@order.ketua_pelaksana_id ?: @order.pic_proposal_id) == @p.id_user) ? 'selected' : '' }}>
                                     {{ @p.nama_user }} ({{ @p.role_label ?: 'Tim Pelaksana' }} - Divisi {{ ucfirst(@p.spesialisasi ?: @order.jenis_layanan_opti) }})
                                 </option>
                             </repeat>
@@ -6149,7 +6204,13 @@
                 <div class="modal-footer bg-light border-top py-2.5 px-4">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary btn-sm fw-bold px-3.5 shadow-xs">
-                        <i class="bi bi-check-circle-fill me-1"></i> Simpan Penunjukan
+                        <i class="bi bi-check-circle-fill me-1"></i>
+                        <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@order.ketua_pelaksana_id) }}">
+                            Ya, Konfirmasi Pelaksana
+                        </check>
+                        <check if="{{ @order.jenis_layanan_opti != 'lingkungan' || empty(@order.ketua_pelaksana_id) }}">
+                            Simpan Penunjukan
+                        </check>
                     </button>
                 </div>
             </form>

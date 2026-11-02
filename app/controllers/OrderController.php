@@ -2496,12 +2496,12 @@ class OrderController extends Controller {
                 $statusToSave
             );
 
-            // Simpan / Perbarui Penunjukan PIC Pengujian Lingkungan (Tahap 4)
+            // Simpan / Perbarui Penunjukan PIC Pengujian / Ketua Tim Pelaksana Lingkungan (Tahap 4)
             if (isset($post['pic_proposal_id'])) {
                 $newPicId = !empty($post['pic_proposal_id']) ? (int)$post['pic_proposal_id'] : null;
                 $oldPicId = !empty($orderBefore['pic_proposal_id']) ? (int)$orderBefore['pic_proposal_id'] : null;
                 if ($newPicId !== $oldPicId) {
-                    $this->db->exec("UPDATE order_layanan SET pic_proposal_id = ? WHERE id = ?", [$newPicId, $id]);
+                    $this->db->exec("UPDATE order_layanan SET pic_proposal_id = ?, ketua_pelaksana_id = COALESCE(ketua_pelaksana_id, ?), ketua_pelaksana_at = COALESCE(ketua_pelaksana_at, NOW()) WHERE id = ?", [$newPicId, $newPicId, $id]);
                     if (!empty($newPicId)) {
                         try {
                             $uPic = $this->db->exec("SELECT nama_user FROM tb_arsipuser WHERE id_user = ?", [1 => $newPicId]);
