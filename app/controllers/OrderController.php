@@ -867,6 +867,13 @@ class OrderController extends Controller {
             $proposalLockMessage = '';
         }
 
+        // Kunci input proposal jika PIC Proposal belum dipilih / ditetapkan (OPTI Selulosa)
+        $isOrderSelulosa = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
+        if ($isOrderSelulosa && empty($order['pic_proposal_id']) && !$proposalDisetujui) {
+            $canEditProposal = false;
+            $proposalLockMessage = "PIC Peneliti / Penyusun Proposal belum ditentukan. Silakan tetapkan PIC Proposal terlebih dahulu agar pengisian proposal dapat dilakukan.";
+        }
+
         // Parse durasi kegiatan ke angka Hari Kerja (kosongkan default jika belum diisi)
         $durasiStr = $proposal['durasi_kegiatan'] ?? '';
         $durasiHari = '';
@@ -1276,7 +1283,7 @@ class OrderController extends Controller {
                 $f3->set('po_kunci_badge', 'Terkunci (Menunggu SPM & Pelunasan)');
                 $f3->set('po_kunci_pesan', 'Penerbitan PO dibuka setelah SPM diaktifkan pada <strong>Tahap 7</strong> dan pembayaran <strong>lunas</strong> pada Tahap 6.');
             } elseif (!$bayarTuntas) {
-                $f3->set('po_kunci_badge', 'Terkunci (Menunggu Pelunasan)');
+                $f3->set('po_kunci_badge', 'Terkunci (Belum Lunas)');
                 $f3->set('po_kunci_pesan', 'SPM sudah aktif, tetapi penerbitan PO baru dibuka setelah pembayaran <strong>lunas</strong> (sisa tagihan ' . $sisaTxt . '). Catat termin berikutnya pada Tahap 6.');
             } else {
                 $f3->set('po_kunci_badge', 'Terkunci (Menunggu SPM)');
@@ -1352,6 +1359,45 @@ class OrderController extends Controller {
         if ($isSpmDone && !$bayarTuntas) { $stepper[7] = ['state' => 'done']; }   // SPM sudah aktif walau Tahap 6 masih menunggu pelunasan
         $f3->set('stepper', $stepper);
         $f3->set('current_step', $currentStep);
+
+        // Hitung tahap maksimum yang sudah boleh diakses (diklik) oleh pengguna:
+        // Setiap tahap yang sudah tercapai atau selesai wajib bisa dibuka!
+        $maxAccessibleStep = 2;
+        if ($isFormPelayananDone) {
+            $maxAccessibleStep = max($maxAccessibleStep, 3);
+        }
+        if ($isTinjauanDone) {
+            $maxAccessibleStep = max($maxAccessibleStep, 4);
+        }
+        if ($isStep4Done) {
+            $maxAccessibleStep = max($maxAccessibleStep, 5);
+        }
+        if ($isStep5Done) {
+            $maxAccessibleStep = max($maxAccessibleStep, 6);
+        }
+        // Tahap 7 (SPM) dapat diakses jika pembayaran sudah mulai (termin 1 / DP / kesanggupan) ATAU SPM sudah aktif
+        if ($isPembayaranMulai || $isSpmDone) {
+            $maxAccessibleStep = max($maxAccessibleStep, 7);
+        }
+        // Tahap 8 (PO) dapat diakses jika PO sudah terbuka atau PO sudah selesai
+        if ($poTerbuka || $isPoDone) {
+            $maxAccessibleStep = max($maxAccessibleStep, 8);
+        }
+        // Tahap 9 (BAST) dapat diakses jika BAST terbuka atau sudah selesai
+        if ($bastTerbuka || $isBastDone) {
+            $maxAccessibleStep = max($maxAccessibleStep, 9);
+        }
+        $maxAccessibleStep = max($maxAccessibleStep, $currentStep);
+        $f3->set('max_accessible_step', $maxAccessibleStep);
+
+        // Ambil tahap aktif yang diminta via URL query (tahap / tab / stage), jika valid
+        $requestedStep = (int)($f3->get('GET.tahap') ?: ($f3->get('GET.tab') ?: ($f3->get('GET.stage') ?: 0)));
+        if ($requestedStep >= 1 && $requestedStep <= $maxAccessibleStep) {
+            $activeStep = $requestedStep;
+        } else {
+            $activeStep = $currentStep;
+        }
+        $f3->set('active_step', $activeStep);
         $f3->set('is_form_pelayanan_done', $isFormPelayananDone);
         $f3->set('is_tinjauan_done', $isTinjauanDone);
         $f3->set('is_step4_done', $isStep4Done);
@@ -1551,6 +1597,10 @@ class OrderController extends Controller {
             $langkahBerikutnya['tombol_icon'] = 'bi-credit-card-2-front-fill';
             $langkahBerikutnya['tombol_class'] = 'btn-success';
             $langkahBerikutnya['target_card'] = '#cardPembayaran';
+            $langkahBerikutnya['tombol_sekunder_teks'] = 'Buka Aktivasi SPM';
+            $langkahBerikutnya['tombol_sekunder_url'] = '#cardSampelSpm';
+            $langkahBerikutnya['tombol_sekunder_icon'] = 'bi-stopwatch';
+            $langkahBerikutnya['tombol_sekunder_class'] = 'btn-outline-primary';
         } elseif ($currentStep === 6) {
             $langkahBerikutnya['judul'] = 'Konfirmasi Penerimaan Pembayaran';
             $langkahBerikutnya['deskripsi'] = 'Penawaran harga telah disetujui (DEAL) oleh pelanggan. Tim Keuangan perlu mencatat bukti transfer pembayaran agar pengujian laboratorium dapat dijadwalkan.';
@@ -2281,7 +2331,7 @@ class OrderController extends Controller {
                             'pesan'          => "Anda ditugaskan sebagai PIC untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon susun dan unggah dokumen proposal teknis.",
                             'tipe'           => 'primary',
                             'icon'           => 'bi-file-earmark-arrow-up-fill',
-                            'link_url'       => "/order/{$id}/proposal",
+                            'link_url'       => "/order/{$id}",
                             'created_by'     => $userId,
                             'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
                         ]);
@@ -2597,7 +2647,7 @@ class OrderController extends Controller {
                         'pesan'          => "Rincian biaya pengujian Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) sebesar Rp " . number_format($hasil['total_netto'], 0, ',', '.') . " siap dibuatkan penawaran resmi.",
                         'tipe'           => 'info',
                         'icon'           => 'bi-cash-stack',
-                        'link_url'       => "/order/{$id}/penawaran/buat",
+                        'link_url'       => "/order/{$id}",
                         'created_by'     => $userId,
                         'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
                     ]);
@@ -2887,7 +2937,7 @@ class OrderController extends Controller {
                         'pesan'          => "Anda telah ditugaskan sebagai PIC Proposal untuk Order #{$nomorOrderStr} ({$perusahaanStr}).",
                         'tipe'           => 'primary',
                         'icon'           => 'bi-person-check-fill',
-                        'link_url'       => "/order/{$id}/proposal",
+                        'link_url'       => "/order/{$id}",
                         'created_by'     => (int)$this->getUserId(),
                         'created_by_name'=> $userPengirim
                     ]);
@@ -3658,7 +3708,7 @@ class OrderController extends Controller {
                     'pesan'          => "Anda telah ditunjuk oleh Ketua Tim OPTI ({$userNama}) sebagai PIC Peneliti untuk menyusun proposal teknis Order #{$order['nomor_order']} ({$order['nama_perusahaan']}).",
                     'tipe'           => 'primary',
                     'icon'           => 'bi-person-check-fill',
-                    'link_url'       => "/order/{$id}/proposal",
+                    'link_url'       => "/order/{$id}",
                     'created_by'     => (int)$this->getUserId(),
                     'created_by_name'=> $userNama
                 ]);
@@ -4401,6 +4451,13 @@ class OrderController extends Controller {
             $lockMessage = '';
         }
 
+        // Kunci input proposal jika PIC Proposal belum dipilih / ditetapkan (OPTI Selulosa)
+        $isOrderSelulosaProposal = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
+        if ($isOrderSelulosaProposal && empty($order['pic_proposal_id']) && !$proposalDisetujui) {
+            $canEdit = false;
+            $lockMessage = "PIC Peneliti / Penyusun Proposal belum ditentukan. Silakan tetapkan PIC Proposal terlebih dahulu agar pengisian proposal dapat dilakukan.";
+        }
+
         // Ambil data surat masuk jika ada
         $suratMasuk = null;
         if (!empty($order['id_surat_masuk'])) {
@@ -4548,6 +4605,13 @@ class OrderController extends Controller {
         $canBypassLock = ($isKetuaSelulosa || $isSuperadmin || ($isPic && $isRevisi));
         if ($isSubmitted && !$this->canEditSubmittedData(true) && $actionType !== 'revisi' && !$canBypassLock) {
             $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada proposal yang sudah diajukan/disetujui tidak diperbolehkan.");
+            $f3->reroute($redirectUrl);
+            return;
+        }
+
+        // Validasi: Jika Selulosa dan belum ada PIC Proposal, tidak boleh simpan proposal
+        if ($isSelulosa && empty($order['pic_proposal_id'])) {
+            $this->setFlashError("Gagal: PIC Peneliti belum ditentukan. Silakan pilih dan tetapkan PIC Proposal terlebih dahulu.");
             $f3->reroute($redirectUrl);
             return;
         }
@@ -4805,7 +4869,7 @@ class OrderController extends Controller {
                         'pesan'          => "PIC Proposal ({$userNama}) telah mengajukan dokumen proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon periksa dan berikan persetujuan.",
                         'tipe'           => 'info',
                         'icon'           => 'bi-file-earmark-check-fill',
-                        'link_url'       => "/order/{$id}/proposal",
+                        'link_url'       => "/order/{$id}",
                         'created_by'     => $userId,
                         'created_by_name'=> $userNama
                     ]);
@@ -5083,7 +5147,7 @@ class OrderController extends Controller {
                     'pesan'          => "PIC Proposal ({$userNama}) telah mengajukan dokumen proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon periksa dan berikan persetujuan.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-file-earmark-check-fill',
-                    'link_url'       => "/order/{$id}/proposal",
+                    'link_url'       => "/order/{$id}",
                     'created_by'     => $userId,
                     'created_by_name'=> $userNama
                 ]);
@@ -5148,7 +5212,7 @@ class OrderController extends Controller {
             $isLingkungan = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan');
             $labelDokumen = $isLingkungan ? 'Kalkulasi tarif pengujian' : 'Proposal teknis';
             $labelKapital = $isLingkungan ? 'Kalkulasi Tarif Pengujian' : 'Proposal Teknis';
-            $linkPic = $isLingkungan ? "/order/{$id}/biaya-lingkungan" : "/order/{$id}/proposal";
+            $linkPic = "/order/{$id}";
 
             if ($action === 'approve') {
                 $this->db->exec(

@@ -158,7 +158,7 @@ class SuratMasukController extends Controller {
                         'pesan'          => "Permohonan layanan dari {$order['nama_perusahaan']} ({$order['judul_kegiatan']}) telah masuk. Mohon kaji kelayakan teknis ISO 17025 dan tentukan PIC.",
                         'tipe'           => 'primary',
                         'icon'           => 'bi-inbox-fill',
-                        'link_url'       => "/order/{$orderId}/tinjauan",
+                        'link_url'       => "/order/{$orderId}",
                         'created_by'     => $userId,
                         'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
                     ]);

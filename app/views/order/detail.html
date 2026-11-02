@@ -1841,13 +1841,13 @@
             <div class="stepper-scroll-wrapper">
                 <div class="stepper-progress-container">
                     <!-- Step 1: Surat Masuk / Permohonan -->
-                    <a href="#cardProfil" class="step-checkpoint {{ 1 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 1: Asal permohonan dan profil pelanggan">
+                    <a href="#cardProfil" class="step-checkpoint {{ 1 > @max_accessible_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 1: Asal permohonan dan profil pelanggan">
                         <div class="step-circle done"><i class="bi bi-check-lg"></i></div>
                         <span class="step-text done">{{ @order.media_permohonan && @order.media_permohonan != 'surat' ? 'Permohonan' : 'Surat Masuk' }}</span>
                     </a>
 
                     <!-- Step 2: Form Pelayanan (Tim Mitra) -->
-                    <a href="#cardPelayanan" class="step-checkpoint {{ 2 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 2: Formulir pelayanan &amp; pemilihan laboratorium pelaksana">
+                    <a href="#cardPelayanan" class="step-checkpoint {{ 2 > @max_accessible_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 2: Formulir pelayanan &amp; pemilihan laboratorium pelaksana">
                         <div class="step-circle {{ @stepper[2].state }}">
                             <check if="{{ @stepper[2].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[2].state == 'current' }}"><i class="bi bi-ui-checks"></i></check>
@@ -1857,7 +1857,7 @@
                     </a>
 
                     <!-- Step 3: Kaji Kelayakan (Ketua Tim) -->
-                    <a href="#cardKajiKelayakan" class="step-checkpoint {{ 3 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 3: Kaji ulang kelayakan personil, alat, bahan, dan metode uji">
+                    <a href="#cardKajiKelayakan" class="step-checkpoint {{ 3 > @max_accessible_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 3: Kaji ulang kelayakan personil, alat, bahan, dan metode uji">
                         <div class="step-circle {{ @stepper[3].state }}">
                             <check if="{{ @stepper[3].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[3].state == 'current' }}"><i class="bi bi-clipboard-check"></i></check>
@@ -1867,7 +1867,7 @@
                     </a>
 
                     <!-- Step 4: Parameter & Biaya / Proposal Teknis -->
-                    <a href="#cardParameterBiaya" class="step-checkpoint {{ 4 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 4: {{ @order.jenis_layanan_opti == 'lingkungan' ? 'Penentuan parameter uji &amp; tarif resmi PNBP (PP 54/2021)' : 'Penyusunan dokumen proposal teknis &amp; estimasi biaya' }}">
+                    <a href="#cardParameterBiaya" class="step-checkpoint {{ 4 > @max_accessible_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 4: {{ @order.jenis_layanan_opti == 'lingkungan' ? 'Penentuan parameter uji &amp; tarif resmi PNBP (PP 54/2021)' : 'Penyusunan dokumen proposal teknis &amp; estimasi biaya' }}">
                         <div class="step-circle {{ @stepper[4].state }}">
                             <check if="{{ @stepper[4].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[4].state == 'current' }}"><i class="bi bi-calculator"></i></check>
@@ -1877,7 +1877,7 @@
                     </a>
 
                     <!-- Step 5: Penawaran & Deal (Tim Mitra & Klien) -->
-                    <a href="#cardPenawaran" class="step-checkpoint {{ 5 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 5: Penerbitan surat penawaran harga dan konfirmasi persetujuan pelanggan">
+                    <a href="#cardPenawaran" class="step-checkpoint {{ 5 > @max_accessible_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 5: Penerbitan surat penawaran harga dan konfirmasi persetujuan pelanggan">
                         <div class="step-circle {{ @stepper[5].state }}">
                             <check if="{{ @stepper[5].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[5].state == 'current' }}"><i class="bi bi-file-earmark-text"></i></check>
@@ -1887,7 +1887,7 @@
                     </a>
 
                     <!-- Step 6: Pembayaran (Tim Keuangan) -->
-                    <a href="#cardPembayaran" class="step-checkpoint {{ 6 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 6: Konfirmasi bukti transfer pembayaran">
+                    <a href="#cardPembayaran" class="step-checkpoint {{ 6 > @max_accessible_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 6: Konfirmasi bukti transfer pembayaran">
                         <div class="step-circle {{ @stepper[6].state }}">
                             <check if="{{ @stepper[6].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[6].state == 'current' }}"><i class="bi bi-receipt-cutoff"></i></check>
@@ -1897,7 +1897,7 @@
                     </a>
 
                     <!-- Step 7: Aktivasi SPM -->
-                    <a href="#cardSampelSpm" class="step-checkpoint {{ 7 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 7: Aktivasi titik awal pengerjaan (Sampel/Kick-Off/PKS) &amp; SPM">
+                    <a href="#cardSampelSpm" class="step-checkpoint {{ 7 > @max_accessible_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 7: Aktivasi titik awal pengerjaan (Sampel/Kick-Off/PKS) &amp; SPM">
                         <div class="step-circle {{ @stepper[7].state }}">
                             <check if="{{ @stepper[7].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[7].state == 'current' }}"><i class="bi bi-stopwatch"></i></check>
@@ -1907,7 +1907,7 @@
                     </a>
 
                     <!-- Step 8: Petunjuk Operasional (PO) -->
-                    <a href="#cardPo" class="step-checkpoint {{ 8 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 8: Penerbitan dan pelaksanaan Petunjuk Operasional (PO)">
+                    <a href="#cardPo" class="step-checkpoint {{ 8 > @max_accessible_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 8: Penerbitan dan pelaksanaan Petunjuk Operasional (PO)">
                         <div class="step-circle {{ @stepper[8].state }}">
                             <check if="{{ @stepper[8].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[8].state == 'current' }}"><i class="bi bi-file-earmark-check"></i></check>
@@ -1917,7 +1917,7 @@
                     </a>
 
                     <!-- Step 9: BAST -->
-                    <a href="#cardBast" class="step-checkpoint {{ 9 > @current_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 9: Berita Acara Serah Terima (BAST)">
+                    <a href="#cardBast" class="step-checkpoint {{ 9 > @max_accessible_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 9: Berita Acara Serah Terima (BAST)">
                         <div class="step-circle {{ @stepper[9].state }}">
                             <check if="{{ @stepper[9].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[9].state == 'current' }}"><i class="bi bi-patch-check-fill"></i></check>
@@ -2038,6 +2038,11 @@
                                         <i class="bi {{ @langkah_berikutnya.tombol_icon ?: 'bi-arrow-right' }}"></i>{{ @langkah_berikutnya.tombol_teks ?: (@langkah_berikutnya.tombol_label ?: 'Lanjutkan') }}
                                     </a>
                                 </check>
+                                <check if="{{ !empty(@langkah_berikutnya.tombol_sekunder_url) && !empty(@langkah_berikutnya.tombol_sekunder_teks) }}">
+                                    <a href="{{ @langkah_berikutnya.tombol_sekunder_url }}" class="btn action-guide-btn {{ @langkah_berikutnya.tombol_sekunder_class ?: 'btn-outline-primary' }} ms-1">
+                                        <i class="bi {{ @langkah_berikutnya.tombol_sekunder_icon ?: 'bi-arrow-right' }}"></i>{{ @langkah_berikutnya.tombol_sekunder_teks }}
+                                    </a>
+                                </check>
                             </false>
                         </check>
                     </div>
@@ -2053,7 +2058,7 @@
         <ul class="nav stage-nav-grid" id="stageTabNav" role="tablist">
             <!-- Tahap 1 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @current_step == 1 ? 'active' : '' }} {{ 1 > @current_step ? 'disabled' : '' }}" id="tab-stage-1" {{ 1 <= @current_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-1"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-1" aria-selected="{{ @current_step == 1 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 1 ? 'active' : '' }} {{ 1 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-1" {{ 1 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-1"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-1" aria-selected="{{ @active_step == 1 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">1</span>
                         <span class="stage-nav-text">{{ @order.media_permohonan && @order.media_permohonan != 'surat' ? 'Permohonan' : 'Surat Masuk' }}</span>
@@ -2065,7 +2070,7 @@
             </li>
             <!-- Tahap 2 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @current_step == 2 ? 'active' : '' }} {{ 2 > @current_step ? 'disabled' : '' }}" id="tab-stage-2" {{ 2 <= @current_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-2"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-2" aria-selected="{{ @current_step == 2 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 2 ? 'active' : '' }} {{ 2 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-2" {{ 2 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-2"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-2" aria-selected="{{ @active_step == 2 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">2</span>
                         <span class="stage-nav-text">Pelayanan</span>
@@ -2090,7 +2095,7 @@
             </li>
             <!-- Tahap 3 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @current_step == 3 ? 'active' : '' }} {{ 3 > @current_step ? 'disabled' : '' }}" id="tab-stage-3" {{ 3 <= @current_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-3"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-3" aria-selected="{{ @current_step == 3 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 3 ? 'active' : '' }} {{ 3 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-3" {{ 3 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-3"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-3" aria-selected="{{ @active_step == 3 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">3</span>
                         <span class="stage-nav-text">Kelayakan</span>
@@ -2115,7 +2120,7 @@
             </li>
             <!-- Tahap 4 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @current_step == 4 ? 'active' : '' }} {{ 4 > @current_step ? 'disabled' : '' }}" id="tab-stage-4" {{ 4 <= @current_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-4"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-4" aria-selected="{{ @current_step == 4 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 4 ? 'active' : '' }} {{ 4 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-4" {{ 4 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-4"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-4" aria-selected="{{ @active_step == 4 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">4</span>
                         <span class="stage-nav-text">{{ @order.jenis_layanan_opti == 'lingkungan' ? 'Tarif Parameter' : 'Proposal' }}</span>
@@ -2152,7 +2157,7 @@
             </li>
             <!-- Tahap 5 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @current_step == 5 ? 'active' : '' }} {{ 5 > @current_step ? 'disabled' : '' }}" id="tab-stage-5" {{ 5 <= @current_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-5"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-5" aria-selected="{{ @current_step == 5 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 5 ? 'active' : '' }} {{ 5 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-5" {{ 5 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-5"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-5" aria-selected="{{ @active_step == 5 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">5</span>
                         <span class="stage-nav-text">Penawaran</span>
@@ -2189,7 +2194,7 @@
             </li>
             <!-- Tahap 6 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @current_step == 6 ? 'active' : '' }} {{ 6 > @current_step ? 'disabled' : '' }}" id="tab-stage-6" {{ 6 <= @current_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-6"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-6" aria-selected="{{ @current_step == 6 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 6 ? 'active' : '' }} {{ 6 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-6" {{ 6 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-6"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-6" aria-selected="{{ @active_step == 6 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">6</span>
                         <span class="stage-nav-text">Pembayaran</span>
@@ -2202,7 +2207,7 @@
                                     <true><span class="badge bg-light border text-dark stage-status-badge">{{ @bayar_status == 'lunas' ? 'Selesai' : 'Kesanggupan' }}</span></true>
                                     <false>
                                         <check if="{{ @bayar_status == 'sebagian' }}">
-                                            <true><span class="badge bg-warning text-dark stage-status-badge">Menunggu Pelunasan</span></true>
+                                            <true><span class="badge bg-warning text-dark stage-status-badge">Belum Lunas</span></true>
                                             <false>
                                                 <check if="{{ @stepper[6].state == 'done' }}">
                                                     <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
@@ -2221,7 +2226,7 @@
             </li>
             <!-- Tahap 7 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @current_step == 7 ? 'active' : '' }} {{ 7 > @current_step ? 'disabled' : '' }}" id="tab-stage-7" {{ 7 <= @current_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-7"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-7" aria-selected="{{ @current_step == 7 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 7 ? 'active' : '' }} {{ 7 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-7" {{ 7 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-7"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-7" aria-selected="{{ @active_step == 7 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">7</span>
                         <span class="stage-nav-text">Aktivasi SPM</span>
@@ -2248,7 +2253,7 @@
             </li>
             <!-- Tahap 8 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @current_step == 8 ? 'active' : '' }} {{ 8 > @current_step ? 'disabled' : '' }}" id="tab-stage-8" {{ 8 <= @current_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-8"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-8" aria-selected="{{ @current_step == 8 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 8 ? 'active' : '' }} {{ 8 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-8" {{ 8 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-8"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-8" aria-selected="{{ @active_step == 8 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">8</span>
                         <span class="stage-nav-text">PO Kegiatan</span>
@@ -2280,7 +2285,7 @@
             </li>
             <!-- Tahap 9 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @current_step == 9 ? 'active' : '' }} {{ 9 > @current_step ? 'disabled' : '' }}" id="tab-stage-9" {{ 9 <= @current_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-9"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-9" aria-selected="{{ @current_step == 9 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 9 ? 'active' : '' }} {{ 9 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-9" {{ 9 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-9"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-9" aria-selected="{{ @active_step == 9 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">9</span>
                         <span class="stage-nav-text">BAST</span>
@@ -2316,7 +2321,7 @@
         <!-- ======================================================== -->
         <!-- PANE TAHAP 1: SURAT MASUK & PROFIL PELANGGAN             -->
         <!-- ======================================================== -->
-        <div class="tab-pane fade {{ @current_step == 1 ? 'show active' : '' }}" id="pane-stage-1" role="tabpanel" aria-labelledby="tab-stage-1">
+        <div class="tab-pane fade {{ @active_step == 1 ? 'show active' : '' }}" id="pane-stage-1" role="tabpanel" aria-labelledby="tab-stage-1">
             <!-- Card Asal Surat Permohonan & Klien -->
             <div class="system-section-card" id="cardProfil">
                 <div class="system-section-header d-block">
@@ -2525,7 +2530,7 @@
         <!-- ======================================================== -->
         <!-- PANE TAHAP 2: FORMULIR PELAYANAN (TIM MITRA)             -->
         <!-- ======================================================== -->
-        <div class="tab-pane fade {{ @current_step == 2 ? 'show active' : '' }}" id="pane-stage-2" role="tabpanel" aria-labelledby="tab-stage-2">
+        <div class="tab-pane fade {{ @active_step == 2 ? 'show active' : '' }}" id="pane-stage-2" role="tabpanel" aria-labelledby="tab-stage-2">
             <div class="system-section-card" id="cardPelayanan">
                 <div class="system-section-header bg-white">
                     <div>
@@ -3030,7 +3035,7 @@
         <!-- ======================================================== -->
         <!-- PANE TAHAP 3: KAJI ULANG KELAYAKAN TEKNIS     -->
         <!-- ======================================================== -->
-        <div class="tab-pane fade {{ @current_step == 3 ? 'show active' : '' }}" id="pane-stage-3" role="tabpanel" aria-labelledby="tab-stage-3">
+        <div class="tab-pane fade {{ @active_step == 3 ? 'show active' : '' }}" id="pane-stage-3" role="tabpanel" aria-labelledby="tab-stage-3">
             <div class="system-section-card" id="cardKajiKelayakan">
                 <div class="system-section-header">
                     <div>
@@ -3305,7 +3310,7 @@
         <!-- ======================================================== -->
         <!-- PANE TAHAP 4: RUANG KERJA PROPOSAL TEKNIS & BIAYA / TARIF-->
         <!-- ======================================================== -->
-        <div class="tab-pane fade {{ @current_step == 4 ? 'show active' : '' }}" id="pane-stage-4" role="tabpanel" aria-labelledby="tab-stage-4">
+        <div class="tab-pane fade {{ @active_step == 4 ? 'show active' : '' }}" id="pane-stage-4" role="tabpanel" aria-labelledby="tab-stage-4">
             <div class="system-section-card" id="cardParameterBiaya">
                 <div class="system-section-header">
                     <div>
@@ -3881,8 +3886,15 @@
                                                 <div class="row g-2 mb-2 pb-2 border-bottom">
                                                     <div class="col-4 text-muted">PIC Peneliti</div>
                                                     <div class="col-8">
-                                                        <span class="fw-semibold text-dark">{{ @order.pic_proposal_nama ?: (@proposal.pic_nama ?: 'PIC Peneliti') }}</span>
-                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Spesialisasi {{ @order.pic_proposal_spesialisasi ?: ucfirst(@order.jenis_layanan_opti) }}</span>
+                                                        <check if="{{ @order.pic_proposal_nama || @proposal.pic_nama }}">
+                                                            <true>
+                                                                <span class="fw-semibold text-dark">{{ @order.pic_proposal_nama ?: @proposal.pic_nama }}</span>
+                                                                <span class="text-muted small d-block" style="font-size: 0.72rem;">Spesialisasi {{ @order.pic_proposal_spesialisasi ?: ucfirst(@order.jenis_layanan_opti) }}</span>
+                                                            </true>
+                                                            <false>
+                                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5 fw-semibold" style="font-size: 0.75rem;">Belum Ditentukan</span>
+                                                            </false>
+                                                        </check>
                                                     </div>
                                                 </div>
                                                 <div class="row g-2">
@@ -3923,7 +3935,7 @@
                                     </check>
 
                                     <!-- Card 3: Riwayat Aktivitas & Jejak Audit Proposal -->
-                                    <div class="card border rounded-3 bg-white shadow-xs mb-3">
+                                    <div class="card border rounded-3 bg-white shadow-xs mb-3 d-none">
                                         <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
                                             <h6 class="m-0 fw-bold text-dark font-display" style="font-size: 0.88rem;">Riwayat Aktivitas</h6>
                                             <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.68rem;">
@@ -4040,16 +4052,10 @@
 
                                                 <!-- 2. Ruang Lingkup & Metodologi -->
                                                 <div class="mb-3">
-                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <div class="mb-2">
                                                         <label class="form-label small fw-bold text-dark mb-0">
                                                             Ruang Lingkup &amp; Metodologi
                                                         </label>
-                                                        <check if="{{ !empty(@ruang_lingkup_mitra) }}">
-                                                            <button type="button" class="btn btn-link btn-xs p-0 text-decoration-none fw-semibold text-primary d-inline-flex align-items-center gap-1" onclick="salinRuangLingkupMitra('detail')" title="Salin uraian dari Tim Mitra ke formulir ini" {{ !@can_edit_proposal ? 'disabled' : '' }}>
-                                                                <i class="bi bi-clipboard-plus me-1"></i>
-                                                                <span>Salin dari Tim Mitra</span>
-                                                            </button>
-                                                        </check>
                                                     </div>
 
                                                     <!-- Kotak Referensi Ruang Lingkup dari Tim Mitra -->
@@ -4067,8 +4073,13 @@
                                                         </check>
                                                     </div>
 
+                                                    <div class="d-flex align-items-center justify-content-between mb-1 mt-2">
+                                                        <label class="form-label small fw-semibold text-secondary mb-0" style="font-size: 0.78rem;">
+                                                            <i class="bi bi-person-gear text-primary me-1"></i> METODOLOGI &amp; RUANG LINGKUP DARI PIC PROPOSAL:
+                                                        </label>
+                                                    </div>
                                                     <textarea name="ruang_lingkup" id="inputRuangLingkupDetail" class="form-control form-control-sm p-2" rows="3" 
-                                                              placeholder="Uraian parameter uji, metode standar, alur pengujian..." {{ !@can_edit_proposal ? 'disabled' : '' }}>{{ @proposal.ruang_lingkup }}</textarea>
+                                                              placeholder="Tuliskan metodologi, uraian parameter uji, metode standar, atau alur pengujian teknis dari PIC Proposal..." {{ !@can_edit_proposal ? 'disabled' : '' }}>{{ @proposal.ruang_lingkup }}</textarea>
                                                 </div>
 
                                                 <!-- 3. Durasi & Estimasi Biaya (RAB) -->
@@ -4297,8 +4308,8 @@
                                     <!-- Jika Status Sudah Approved / Siap Penawaran -->
                                     <check if="{{ @order.status_proposal_biaya == 'siap_penawaran' && @is_proposal_approved }}">
                                         <div class="alert alert-primary bg-primary-subtle text-primary border border-primary-subtle py-2.5 px-3 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 small rounded-3 shadow-xs">
-                                            <div class="d-flex align-items-center gap-1.5">
-                                                <i class="bi bi-check-circle-fill text-primary fs-5"></i>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-check-circle-fill text-primary fs-5 flex-shrink-0" style="margin-right: 0.65rem;"></i>
                                                 <span><strong>Proposal Teknis Disetujui Ka. Tim</strong> &bull; Siap diterbitkan Surat Penawaran Resmi</span>
                                             </div>
                                             <check if="{{ !@penawaran }}">
@@ -4319,7 +4330,7 @@
         <!-- ======================================================== -->
         <!-- PANE TAHAP 5: SURAT PENAWARAN RESMI & RESPON KLIEN       -->
         <!-- ======================================================== -->
-        <div class="tab-pane fade {{ @current_step == 5 ? 'show active' : '' }}" id="pane-stage-5" role="tabpanel" aria-labelledby="tab-stage-5">
+        <div class="tab-pane fade {{ @active_step == 5 ? 'show active' : '' }}" id="pane-stage-5" role="tabpanel" aria-labelledby="tab-stage-5">
             <div class="system-section-card" id="cardPenawaran">
                 <div class="system-section-header">
                     <div>
@@ -4429,7 +4440,7 @@
                                             </check>
                                             <check if="{{ !@bayar_tuntas }}">
                                                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 small fw-semibold">
-                                                    <i class="bi bi-hourglass-split me-1"></i> {{ @bayar_status == 'sebagian' ? 'Menunggu Pelunasan' : 'Menunggu Bukti Bayar' }}
+                                                    <i class="bi bi-hourglass-split me-1"></i> {{ @bayar_status == 'sebagian' ? 'Belum Lunas' : 'Menunggu Bukti Bayar' }}
                                                 </span>
                                             </check>
                                         </check>
@@ -5003,7 +5014,7 @@
         <!-- ======================================================== -->
         <!-- PANE TAHAP 6: BUKTI PEMBAYARAN & PROPOSAL LINGKUNGAN     -->
         <!-- ======================================================== -->
-        <div class="tab-pane fade {{ @current_step == 6 ? 'show active' : '' }}" id="pane-stage-6" role="tabpanel" aria-labelledby="tab-stage-6">
+        <div class="tab-pane fade {{ @active_step == 6 ? 'show active' : '' }}" id="pane-stage-6" role="tabpanel" aria-labelledby="tab-stage-6">
             <div class="system-section-card" id="cardPembayaran">
                 <div class="system-section-header">
                     <div>
@@ -5027,7 +5038,7 @@
                         <check if="{{ !@bayar_tuntas }}">
                             <check if="{{ @is_disposisi_keuangan }}">
                                 <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-2.5 py-1">
-                                    <i class="bi bi-hourglass-split me-1"></i> {{ @bayar_status == 'sebagian' ? 'Menunggu Pelunasan' : 'Menunggu Bukti Pembayaran' }}
+                                    <i class="bi bi-hourglass-split me-1"></i> {{ @bayar_status == 'sebagian' ? 'Belum Lunas' : 'Menunggu Bukti Pembayaran' }}
                                 </span>
                             </check>
                             <check if="{{ !@is_disposisi_keuangan }}">
@@ -5063,7 +5074,7 @@
                                     <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="badge {{ @bayar_status == 'sebagian' ? 'bg-warning text-dark' : 'bg-success text-white' }} px-2.5 py-1 fw-bold">
-                                                <i class="bi {{ @bayar_status == 'sebagian' ? 'bi-hourglass-split' : 'bi-check-circle-fill' }} me-1"></i> {{ @bayar_status == 'lunas' ? 'LUNAS' : (@bayar_status == 'sebagian' ? 'MENUNGGU PELUNASAN' : 'KESANGGUPAN BAYAR') }}
+                                                <i class="bi {{ @bayar_status == 'sebagian' ? 'bi-hourglass-split' : 'bi-check-circle-fill' }} me-1"></i> {{ @bayar_status == 'lunas' ? 'LUNAS' : (@bayar_status == 'sebagian' ? 'BELUM LUNAS' : 'KESANGGUPAN BAYAR') }}
                                             </span>
                                             <span class="text-dark fw-bold">
                                                 {{ @bayar_status == 'sebagian' ? ('Pembayaran Termin ' . @bayar_termin . ' Dikonfirmasi Tim Keuangan') : 'Pembayaran Telah Dikonfirmasi Tim Keuangan' }}
@@ -5139,20 +5150,32 @@
                                     </div>
                                 </check>
                                 <!-- ===== INFO ORDER (TERKUNCI) ===== -->
-                                <div class="order-locked-card mb-4" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; background: #f8fafc;">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="order-locked-card mb-4 shadow-sm" style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px 22px; background: #ffffff;">
+                                    <div class="d-flex justify-content-between align-items-start pb-3 mb-3 border-bottom">
                                         <div>
-                                            <div class="fw-bold text-dark font-monospace" style="font-size: 1.05rem;">{{ @order.nomor_order ?: (@order.nomor_permintaan ?: ('REQ-' . @order.id)) }}</div>
-                                            <div class="small text-muted">{{ @order.judul_kegiatan }}</div>
-                                        </div>
-                                        <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}"><span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 fw-semibold">Selulosa</span></check>
-                                        <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}"><span class="badge rounded-pill bg-info-subtle text-primary border border-info-subtle px-2.5 py-1 fw-semibold">Lingkungan</span></check>
+                                            <div class="fw-bold text-dark font-monospace" style="font-size: 1.15rem; letter-spacing: 0.5px;">{{ @order.nomor_order ?: (@order.nomor_permintaan ?: ('REQ-' . @order.id)) }}</div>
                                     </div>
-                                    <div class="d-flex justify-content-between py-1.5 border-bottom border-dashed text-secondary" style="font-size: 13.5px;"><span class="text-muted">Mitra</span><span class="fw-semibold text-dark">{{ @order.nama_perusahaan }}</span></div>
-                                    <div class="d-flex justify-content-between py-1.5 border-bottom border-dashed text-secondary" style="font-size: 13.5px;"><span class="text-muted">Nilai Acuan</span><span class="fw-bold text-dark">Rp {{ number_format(@order.biaya_acuan ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}</span></div>
-                                    <div class="d-flex justify-content-between py-1.5 border-bottom border-dashed text-secondary" style="font-size: 13.5px;"><span class="text-muted">Sudah Terbayar</span><span class="fw-bold text-success">Rp {{ number_format(@order.terbayar ?: 0, 0, ',', '.') }}</span></div>
-                                    <div class="d-flex justify-content-between py-1.5 border-bottom border-dashed text-secondary" style="font-size: 13.5px;"><span class="text-muted">Sisa Tagihan</span><span class="fw-bold text-danger">Rp {{ number_format(@order.sisa_tagihan ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}</span></div>
-                                    <div class="d-flex justify-content-between py-1.5 text-secondary" style="font-size: 13.5px;"><span class="text-muted">Saran Termin</span><span class="fw-semibold text-dark">Termin ke-{{ @order.termin_berikutnya ?: 1 }}</span></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center border-bottom" style="padding: 9px 0 !important; font-size: 14.5px;">
+                                        <span class="text-dark fw-semibold" style="color: #475569 !important;">Mitra</span>
+                                        <span class="fw-bold text-dark font-display" style="font-size: 1rem;">{{ @order.nama_perusahaan }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center border-bottom" style="padding: 9px 0 !important; font-size: 14.5px;">
+                                        <span class="text-dark fw-semibold" style="color: #475569 !important;">Nilai Acuan</span>
+                                        <span class="fw-bold text-dark font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.biaya_acuan ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center border-bottom" style="padding: 9px 0 !important; font-size: 14.5px;">
+                                        <span class="text-dark fw-semibold" style="color: #475569 !important;">Sudah Terbayar</span>
+                                        <span class="fw-bold text-success font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.terbayar ?: 0, 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center border-bottom" style="padding: 9px 0 !important; font-size: 14.5px;">
+                                        <span class="text-dark fw-semibold" style="color: #475569 !important;">Sisa Tagihan</span>
+                                        <span class="fw-bold text-danger font-monospace" style="font-size: 1.15rem;">Rp {{ number_format(@order.sisa_tagihan ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center" style="padding-top: 10px !important; padding-bottom: 4px !important; font-size: 14.5px;">
+                                        <span class="text-dark fw-semibold" style="color: #475569 !important;">Tahap Pembayaran</span>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-bold font-monospace" style="font-size: 0.88rem;">Termin ke-{{ @order.termin_berikutnya ?: 1 }}</span>
+                                    </div>
                                 </div>
 
                                 <!-- FORMULIR BUKTI BAYAR TAHAP 6 -->
@@ -5202,14 +5225,24 @@
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold text-dark">Tahap Termin Ke- <span class="text-danger">*</span></label>
                                                 <select name="termin_ke" id="selectTerminDetail" class="form-select" style="height: 42px;">
-                                                    <option value="1" {{ (@order.termin_berikutnya ?: 1) == 1 ? 'selected' : '' }}>Termin 1</option>
-                                                    <option value="2" {{ (@order.termin_berikutnya ?: 1) == 2 ? 'selected' : '' }}>Termin 2</option>
-                                                    <option value="3" {{ (@order.termin_berikutnya ?: 1) == 3 ? 'selected' : '' }}>Termin 3</option>
-                                                    <option value="4" {{ (@order.termin_berikutnya ?: 1) == 4 ? 'selected' : '' }}>Termin 4</option>
-                                                    <option value="5" {{ (@order.termin_berikutnya ?: 1) == 5 ? 'selected' : '' }}>Termin 5</option>
-                                                    <option value="6" {{ (@order.termin_berikutnya ?: 1) == 6 ? 'selected' : '' }}>Termin 6</option>
+                                                    <check if="{{ (@order.termin_berikutnya ?: 1) <= 1 }}">
+                                                        <option value="1" {{ (@order.termin_berikutnya ?: 1) == 1 ? 'selected' : '' }}>Termin 1</option>
+                                                    </check>
+                                                    <check if="{{ (@order.termin_berikutnya ?: 1) <= 2 }}">
+                                                        <option value="2" {{ (@order.termin_berikutnya ?: 1) == 2 ? 'selected' : '' }}>Termin 2</option>
+                                                    </check>
+                                                    <check if="{{ (@order.termin_berikutnya ?: 1) <= 3 }}">
+                                                        <option value="3" {{ (@order.termin_berikutnya ?: 1) == 3 ? 'selected' : '' }}>Termin 3</option>
+                                                    </check>
+                                                    <check if="{{ (@order.termin_berikutnya ?: 1) <= 4 }}">
+                                                        <option value="4" {{ (@order.termin_berikutnya ?: 1) == 4 ? 'selected' : '' }}>Termin 4</option>
+                                                    </check>
+                                                    <check if="{{ (@order.termin_berikutnya ?: 1) <= 5 }}">
+                                                        <option value="5" {{ (@order.termin_berikutnya ?: 1) == 5 ? 'selected' : '' }}>Termin 5</option>
+                                                    </check>
+                                                    <option value="6" {{ (@order.termin_berikutnya ?: 1) >= 6 ? 'selected' : '' }}>Termin 6</option>
                                                 </select>
-                                                <div class="form-text small text-muted">Otomatis kesaran ({{ @order.termin_berikutnya ?: 1 }}), tetap bisa diganti manual.</div>
+                                                <div class="form-text small text-muted">Otomatis terpilih (Termin {{ @order.termin_berikutnya ?: 1 }}), tetap bisa disesuaikan jika perlu.</div>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold text-dark">Tanggal Bayar <span class="text-danger">*</span></label>
@@ -5274,7 +5307,7 @@
                                             </check>
                                             <button type="button" id="btnSimpanSajaDetail" class="btn btn-outline-primary px-3 py-2 fw-semibold d-none">Simpan Saja</button>
                                             <button type="button" id="btnSimpanDisposisiDetail" class="btn btn-primary px-4 py-2 fw-bold d-none"><i class="bi bi-send-check me-1"></i> Disposisi</button>
-                                            <button type="button" id="btnSimpanPembayaranDetail" class="btn btn-success px-4 py-2 fw-bold"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
+                                            <button type="button" id="btnSimpanPembayaranDetail" class="btn btn-primary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-1.5"><i class="bi bi-save"></i> Simpan Pembayaran</button>
                                         </div>
                                     </div>
                                 </form>
@@ -5519,7 +5552,7 @@
         <!-- ======================================================== -->
         <!-- PANE TAHAP 7: AKTIVASI TITIK AWAL PENGERJAAN & SPM (MILESTONES) -->
         <!-- ======================================================== -->
-        <div class="tab-pane fade {{ @current_step == 7 ? 'show active' : '' }}" id="pane-stage-7" role="tabpanel" aria-labelledby="tab-stage-7">
+        <div class="tab-pane fade {{ @active_step == 7 ? 'show active' : '' }}" id="pane-stage-7" role="tabpanel" aria-labelledby="tab-stage-7">
             <div class="system-section-card" id="cardSampelSpm">
                 <div class="system-section-header">
                     <div>
@@ -5850,7 +5883,7 @@
         <!-- ======================================================== -->
         <!-- PANE TAHAP 8: PETUNJUK OPERASIONAL (PO) KEGIATAN          -->
         <!-- ======================================================== -->
-        <div class="tab-pane fade {{ @current_step == 8 ? 'show active' : '' }}" id="pane-stage-8" role="tabpanel" aria-labelledby="tab-stage-8">
+        <div class="tab-pane fade {{ @active_step == 8 ? 'show active' : '' }}" id="pane-stage-8" role="tabpanel" aria-labelledby="tab-stage-8">
             <div class="system-section-card" id="cardPo">
                 <check if="{{ !@po_kartu_atas }}">
                 <div class="system-section-header">
@@ -6208,7 +6241,7 @@
         <!-- ======================================================== -->
         <!-- PANE TAHAP 9: BERITA ACARA SERAH TERIMA (BAST) & LHU     -->
         <!-- ======================================================== -->
-        <div class="tab-pane fade {{ @current_step == 9 ? 'show active' : '' }}" id="pane-stage-9" role="tabpanel" aria-labelledby="tab-stage-9">
+        <div class="tab-pane fade {{ @active_step == 9 ? 'show active' : '' }}" id="pane-stage-9" role="tabpanel" aria-labelledby="tab-stage-9">
             <div class="system-section-card" id="cardBast">
                 <div class="system-section-header">
                     <div>
@@ -7929,7 +7962,7 @@ function updateTriggerLabel(val) {
     }
 }
 
-var maxAccessibleStep = {{ (int)(@current_step ?: 1) }};
+var maxAccessibleStep = {{ (int)(@max_accessible_step ?: @current_step ?: 1) }};
 
 function switchStage(stageNum, smoothScroll, targetSelector) {
     if (!stageNum) return;
@@ -7967,7 +8000,7 @@ document.addEventListener('DOMContentLoaded', function() {
     selectDivisiOpti('{{ @order.jenis_layanan_opti ?: "selulosa" }}');
 
     // Catat pembacaan tahap aktif saat halaman pertama dimuat
-    var initStep = {{ (int)(@current_step ?: 1) }};
+    var initStep = {{ (int)(@active_step ?: @current_step ?: 1) }};
     if (initStep >= 1 && initStep <= 9) {
         triggerStageRead(initStep);
     }
@@ -7996,8 +8029,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var stepMap = {
         '#cardProfil': 1,
+        '#pane-stage-1': 1,
         '#cardPelayanan': 2,
+        '#pane-stage-2': 2,
         '#cardKajiKelayakan': 3,
+        '#pane-stage-3': 3,
         '#cardParameterBiaya': 4,
         '#pane-stage-4': 4,
         '#cardPenawaran': 5,
@@ -8006,12 +8042,17 @@ document.addEventListener('DOMContentLoaded', function() {
         '#cardDokumenDeal3': 5,
         '#cardKesanggupanBayar': 5,
         '#cardDisposisiKeuangan': 5,
+        '#pane-stage-5': 5,
         '#cardPembayaran': 6,
         '#cardProposalTeknis': 6,
+        '#pane-stage-6': 6,
         '#cardSampelSpm': 7,
+        '#pane-stage-7': 7,
         '#cardPo': 8,
         '#cardPoBast': 8,
-        '#cardBast': 9
+        '#pane-stage-8': 8,
+        '#cardBast': 9,
+        '#pane-stage-9': 9
     };
 
     // Inisialisasi Upload 3 Dokumen Penawaran DEAL
@@ -8546,9 +8587,12 @@ document.addEventListener('DOMContentLoaded', function() {
         var hash = window.location.hash;
         if (hash.startsWith('#tahap-')) {
             var s = parseInt(hash.replace('#tahap-', ''));
-            if (s >= 1 && s <= 8) switchStage(s, false);
+            if (s >= 1 && s <= 9) switchStage(s, false);
+        } else if (hash.startsWith('#pane-stage-')) {
+            var s = parseInt(hash.replace('#pane-stage-', ''));
+            if (s >= 1 && s <= 9) switchStage(s, false);
         } else if (stepMap[hash]) {
-            switchStage(stepMap[hash], false);
+            switchStage(stepMap[hash], false, hash);
         }
     }
 

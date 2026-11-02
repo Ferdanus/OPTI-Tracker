@@ -1050,11 +1050,11 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 ];
             }
             return [
-                'label' => 'Menunggu Pelunasan',
+                'label' => 'Belum Lunas',
                 'class' => 'status-pill status-pill-amber',
                 'icon'  => 'bi-credit-card-2-front-fill',
                 'user'  => 'Tim Keuangan',
-                'keterangan_aksi'   => 'Menunggu Pelunasan',
+                'keterangan_aksi'   => 'Belum Lunas',
                 'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Mitra'),
                 'keterangan_detail' => 'SPM aktif; PO terbuka setelah pembayaran lunas',
                 'keterangan_icon'   => 'bi-credit-card text-warning',
