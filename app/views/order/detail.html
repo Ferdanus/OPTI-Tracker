@@ -4040,16 +4040,10 @@
 
                                                 <!-- 2. Ruang Lingkup & Metodologi -->
                                                 <div class="mb-3">
-                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <div class="mb-2">
                                                         <label class="form-label small fw-bold text-dark mb-0">
                                                             Ruang Lingkup &amp; Metodologi
                                                         </label>
-                                                        <check if="{{ !empty(@ruang_lingkup_mitra) }}">
-                                                            <button type="button" class="btn btn-link btn-xs p-0 text-decoration-none fw-semibold text-primary d-inline-flex align-items-center gap-1" onclick="salinRuangLingkupMitra('detail')" title="Salin uraian dari Tim Mitra ke formulir ini" {{ !@can_edit_proposal ? 'disabled' : '' }}>
-                                                                <i class="bi bi-clipboard-plus me-1"></i>
-                                                                <span>Salin dari Tim Mitra</span>
-                                                            </button>
-                                                        </check>
                                                     </div>
 
                                                     <!-- Kotak Referensi Ruang Lingkup dari Tim Mitra -->
