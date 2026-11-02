@@ -85,9 +85,9 @@ class UniversalPreviewController extends Controller
             }
 
             // 3b. [BARU] Pola Berkas Proposal Teknis Asli (PDF): /order/@id/proposal/file
-            if (preg_match('#order/(\d+)/proposal/file#i', $path, $m)) {
-                $orderId = (int)$m[1];
-                $this->handleProposalFile($orderId);
+            if (preg_match('#(?:order/(\d+)/proposal/file|proposal/(\d+)/file)#i', $path, $m)) {
+                $targetId = (int)(!empty($m[1]) ? $m[1] : $m[2]);
+                $this->handleProposalFile($targetId);
                 return;
             }
 
@@ -286,7 +286,7 @@ class UniversalPreviewController extends Controller
         }
 
         $rawPath = $rows[0]['file_proposal'];
-        $filePath = $this->resolveFilePath($rawPath, ['uploads/proposal', 'uploads/proposal_riset', 'storage/proposal']);
+        $filePath = $this->resolveFilePath($rawPath, ['public/uploads/proposals', 'uploads/proposals', 'uploads/proposal', 'uploads/proposal_riset', 'storage/proposal']);
 
         if (!$filePath || !is_file($filePath)) {
             $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik Proposal Teknis tidak ditemukan di server: ' . basename($rawPath)]);
@@ -479,7 +479,7 @@ class UniversalPreviewController extends Controller
 
         // Jika ada file proposal yang diupload (format PDF/Docx)
         if (!empty($prop['file_proposal'])) {
-            $filePath = $this->resolveFilePath($prop['file_proposal'], ['uploads/proposal', 'uploads/proposal_riset']);
+            $filePath = $this->resolveFilePath($prop['file_proposal'], ['public/uploads/proposals', 'uploads/proposals', 'uploads/proposal', 'uploads/proposal_riset', 'storage/proposal']);
             if ($filePath && is_file($filePath)) {
                 $this->sendFileAsBase64($filePath, 'Proposal_Teknis_Order_' . $orderId);
                 return;
