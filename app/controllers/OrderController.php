@@ -1352,6 +1352,45 @@ class OrderController extends Controller {
         if ($isSpmDone && !$bayarTuntas) { $stepper[7] = ['state' => 'done']; }   // SPM sudah aktif walau Tahap 6 masih menunggu pelunasan
         $f3->set('stepper', $stepper);
         $f3->set('current_step', $currentStep);
+
+        // Hitung tahap maksimum yang sudah boleh diakses (diklik) oleh pengguna:
+        // Setiap tahap yang sudah tercapai atau selesai wajib bisa dibuka!
+        $maxAccessibleStep = 2;
+        if ($isFormPelayananDone) {
+            $maxAccessibleStep = max($maxAccessibleStep, 3);
+        }
+        if ($isTinjauanDone) {
+            $maxAccessibleStep = max($maxAccessibleStep, 4);
+        }
+        if ($isStep4Done) {
+            $maxAccessibleStep = max($maxAccessibleStep, 5);
+        }
+        if ($isStep5Done) {
+            $maxAccessibleStep = max($maxAccessibleStep, 6);
+        }
+        // Tahap 7 (SPM) dapat diakses jika pembayaran sudah mulai (termin 1 / DP / kesanggupan) ATAU SPM sudah aktif
+        if ($isPembayaranMulai || $isSpmDone) {
+            $maxAccessibleStep = max($maxAccessibleStep, 7);
+        }
+        // Tahap 8 (PO) dapat diakses jika PO sudah terbuka atau PO sudah selesai
+        if ($poTerbuka || $isPoDone) {
+            $maxAccessibleStep = max($maxAccessibleStep, 8);
+        }
+        // Tahap 9 (BAST) dapat diakses jika BAST terbuka atau sudah selesai
+        if ($bastTerbuka || $isBastDone) {
+            $maxAccessibleStep = max($maxAccessibleStep, 9);
+        }
+        $maxAccessibleStep = max($maxAccessibleStep, $currentStep);
+        $f3->set('max_accessible_step', $maxAccessibleStep);
+
+        // Ambil tahap aktif yang diminta via URL query (tahap / tab / stage), jika valid
+        $requestedStep = (int)($f3->get('GET.tahap') ?: ($f3->get('GET.tab') ?: ($f3->get('GET.stage') ?: 0)));
+        if ($requestedStep >= 1 && $requestedStep <= $maxAccessibleStep) {
+            $activeStep = $requestedStep;
+        } else {
+            $activeStep = $currentStep;
+        }
+        $f3->set('active_step', $activeStep);
         $f3->set('is_form_pelayanan_done', $isFormPelayananDone);
         $f3->set('is_tinjauan_done', $isTinjauanDone);
         $f3->set('is_step4_done', $isStep4Done);
@@ -1551,6 +1590,10 @@ class OrderController extends Controller {
             $langkahBerikutnya['tombol_icon'] = 'bi-credit-card-2-front-fill';
             $langkahBerikutnya['tombol_class'] = 'btn-success';
             $langkahBerikutnya['target_card'] = '#cardPembayaran';
+            $langkahBerikutnya['tombol_sekunder_teks'] = 'Buka Aktivasi SPM';
+            $langkahBerikutnya['tombol_sekunder_url'] = '#cardSampelSpm';
+            $langkahBerikutnya['tombol_sekunder_icon'] = 'bi-stopwatch';
+            $langkahBerikutnya['tombol_sekunder_class'] = 'btn-outline-primary';
         } elseif ($currentStep === 6) {
             $langkahBerikutnya['judul'] = 'Konfirmasi Penerimaan Pembayaran';
             $langkahBerikutnya['deskripsi'] = 'Penawaran harga telah disetujui (DEAL) oleh pelanggan. Tim Keuangan perlu mencatat bukti transfer pembayaran agar pengujian laboratorium dapat dijadwalkan.';
