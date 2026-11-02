@@ -391,8 +391,13 @@
                                 </check>
                             </div>
 
+                            <div class="d-flex align-items-center justify-content-between mb-1 mt-2">
+                                <label class="form-label small fw-semibold text-secondary mb-0" style="font-size: 0.78rem;">
+                                    <i class="bi bi-person-gear text-primary me-1"></i> METODOLOGI &amp; RUANG LINGKUP DARI PIC PROPOSAL:
+                                </label>
+                            </div>
                             <textarea name="ruang_lingkup" id="inputRuangLingkup" class="form-control form-control-sm p-2" rows="4" 
-                                      placeholder="Uraian parameter uji, metode standar, alur pengujian..." {{ !@can_edit ? 'disabled' : '' }}>{{ @proposal.ruang_lingkup }}</textarea>
+                                      placeholder="Tuliskan metodologi, uraian parameter uji, metode standar, atau alur pengujian teknis dari PIC Proposal..." {{ !@can_edit ? 'disabled' : '' }}>{{ @proposal.ruang_lingkup }}</textarea>
                         </div>
 
                         <!-- 3. Durasi & Estimasi Biaya (RAB) -->
