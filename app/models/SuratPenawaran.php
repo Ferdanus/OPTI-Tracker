@@ -777,9 +777,9 @@ class SuratPenawaran extends \DB\SQL\Mapper
         }
 
         // Cek apakah sudah diklaim order lain
-        $isClaimedOther = (($sk['dipilih_opti'] === 'Y' && $sk['dipilih_sis_opti'] === 'Y') && 
-                          (int)($sk['id_order_klaim'] ?? 0) > 0 && 
-                          (int)($sk['id_order_klaim'] ?? 0) !== (int)$sp['order_id']);
+        $claimedOrder = (int)($sk['id_order_klaim'] ?? 0);
+        $isClaimedOther = ($claimedOrder > 0 && $claimedOrder !== (int)$sp['order_id'] && 
+                          (($sk['dipilih_opti'] ?? 'N') === 'Y' || ($sk['dipilih_sis_opti'] ?? 'N') === 'Y'));
         if ($isClaimedOther) {
             return ['success' => false, 'message' => 'Surat keluar ini sudah diklaim oleh order lain.'];
         }
@@ -860,7 +860,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
             "UPDATE silopti2026.tb_surat_penawaran SET 
                 file_penawaran_ttd = ?,
                 id_surat_keluar = ?,
-                nomor_surat = COALESCE(NULLIF(nomor_surat, ''), ?)
+                nomor_surat = COALESCE(NULLIF(?, ''), nomor_surat)
              WHERE id = ?",
             [
                 1 => $namaFileDisimpan,
@@ -902,6 +902,19 @@ class SuratPenawaran extends \DB\SQL\Mapper
                     id_surat_keluar_dipilih = NULL
                  WHERE id_surat_keluar = ?",
                 [1 => $idSuratKeluar]
+            );
+        }
+        if (!empty($sp['order_id'])) {
+            $this->db->exec(
+                "UPDATE sil2020.tb_surat_keluar SET 
+                    dipilih_opti = 'N', 
+                    dipilih_sis_opti = 'N', 
+                    tgl_klaim = NULL, 
+                    id_user_klaim = NULL, 
+                    id_order_klaim = NULL,
+                    id_surat_keluar_dipilih = NULL
+                 WHERE id_order_klaim = ?",
+                [1 => (int)$sp['order_id']]
             );
         }
 

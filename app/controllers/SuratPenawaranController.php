@@ -3822,18 +3822,41 @@ $daftarPegawai = $arsipUser->find(
     {
         $id = (int)($params['id'] ?? 0);
         $q = trim((string)($f3->get('GET.q') ?? ''));
+        $spIdExplicit = (int)($f3->get('GET.sp_id') ?? $f3->get('POST.sp_id') ?? 0);
 
         $spModel = new \SuratPenawaran($this->db);
-        $sp = $spModel->getById($id) ?: $spModel->getByOrderId($id);
-
+        $isOrderRoute = (strpos($f3->get('PATTERN') ?? '', '/order/') !== false);
+        $sp = null;
         $customerId = null;
-        if ($sp && !empty($sp['customer_id'])) {
-            $customerId = (int)$sp['customer_id'];
-        } elseif ($id > 0) {
+
+        if ($isOrderRoute) {
             $orderModel = new \OrderLayanan($this->db);
             $ord = $orderModel->getDetail($id);
             if ($ord && !empty($ord['id_customer'])) {
                 $customerId = (int)$ord['id_customer'];
+            }
+            if ($spIdExplicit > 0) {
+                $candidateSp = $spModel->getById($spIdExplicit);
+                if ($candidateSp && (int)($candidateSp['order_id'] ?? 0) === $id) {
+                    $sp = $candidateSp;
+                }
+            }
+            if (!$sp && $ord && !empty($ord['surat_penawaran_id'])) {
+                $sp = $spModel->getById((int)$ord['surat_penawaran_id']);
+            }
+            if (!$sp) {
+                $sp = $spModel->getByOrderId($id);
+            }
+            if (!$sp) {
+                $rows = $this->db->exec("SELECT * FROM silopti2026.tb_surat_penawaran WHERE order_id = ? ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1", [1 => $id]);
+                if (!empty($rows)) {
+                    $sp = $rows[0];
+                }
+            }
+        } else {
+            $sp = ($spIdExplicit > 0 ? $spModel->getById($spIdExplicit) : null) ?: $spModel->getById($id) ?: $spModel->getByOrderId($id);
+            if ($sp && !empty($sp['customer_id'])) {
+                $customerId = (int)$sp['customer_id'];
             }
         }
 
@@ -3852,11 +3875,13 @@ $daftarPegawai = $arsipUser->find(
     /**
      * Klaim Surat Keluar dari Arsip Sekretariat
      * Route: POST /surat-penawaran/@id/klaim-surat-keluar
+     * Route: POST /order/@id/klaim-surat-keluar
      */
     public function klaimSuratKeluar($f3, $params)
     {
         $id = (int)($params['id'] ?? 0);
         $idSuratKeluar = (int)($f3->get('POST.id_surat_keluar') ?: $f3->get('REQUEST.id_surat_keluar'));
+        $spIdExplicit = (int)($f3->get('POST.sp_id') ?: $f3->get('REQUEST.sp_id') ?: 0);
         $userId = (int)($this->getUserId() ?? 1);
 
         if ($idSuratKeluar <= 0) {
@@ -3866,10 +3891,43 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $spModel = new \SuratPenawaran($this->db);
-        $sp = $spModel->getById($id) ?: $spModel->getByOrderId($id);
+        $isOrderRoute = (strpos($f3->get('PATTERN') ?? '', '/order/') !== false);
+        $sp = null;
+        $orderId = 0;
+
+        if ($isOrderRoute) {
+            $orderId = $id;
+            $orderModel = new \OrderLayanan($this->db);
+            $ord = $orderModel->getDetail($orderId);
+
+            if ($spIdExplicit > 0) {
+                $candidateSp = $spModel->getById($spIdExplicit);
+                if ($candidateSp && (int)($candidateSp['order_id'] ?? 0) === $orderId) {
+                    $sp = $candidateSp;
+                }
+            }
+            if (!$sp && $ord && !empty($ord['surat_penawaran_id'])) {
+                $sp = $spModel->getById((int)$ord['surat_penawaran_id']);
+            }
+            if (!$sp) {
+                $sp = $spModel->getByOrderId($orderId);
+            }
+            if (!$sp) {
+                $rows = $this->db->exec("SELECT * FROM silopti2026.tb_surat_penawaran WHERE order_id = ? ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1", [1 => $orderId]);
+                if (!empty($rows)) {
+                    $sp = $rows[0];
+                }
+            }
+        } else {
+            $sp = ($spIdExplicit > 0 ? $spModel->getById($spIdExplicit) : null) ?: $spModel->getById($id) ?: $spModel->getByOrderId($id);
+            if ($sp) {
+                $orderId = (int)($sp['order_id'] ?? 0);
+            }
+        }
+
         if (!$sp) {
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => 'Data penawaran tidak ditemukan.']);
+            echo json_encode(['success' => false, 'message' => 'Data penawaran tidak ditemukan untuk order ini.']);
             exit;
         }
 
@@ -3877,8 +3935,8 @@ $daftarPegawai = $arsipUser->find(
         $res = $spModel->klaimSuratKeluar($spId, $idSuratKeluar, $userId);
 
         if (!empty($res['success'])) {
-            $orderId = (int)($sp['order_id'] ?? 0);
             if ($orderId > 0) {
+                $this->db->exec("UPDATE silopti2026.order_layanan SET surat_penawaran_id = ? WHERE id = ?", [1 => $spId, 2 => $orderId]);
                 $this->logActivity($orderId, 'penawaran', 'klaim_surat_keluar', 'Mengklaim Surat Penawaran TTD No. ' . ($res['no_surat'] ?? '') . ' dari Arsip Surat Keluar');
             }
         }
@@ -3891,14 +3949,49 @@ $daftarPegawai = $arsipUser->find(
     /**
      * Batalkan klaim Surat Keluar
      * Route: POST /surat-penawaran/@id/batal-klaim-surat-keluar
+     * Route: POST /order/@id/batal-klaim-surat-keluar
      */
     public function batalKlaimSuratKeluar($f3, $params)
     {
         $id = (int)($params['id'] ?? 0);
         $userId = (int)($this->getUserId() ?? 1);
+        $spIdExplicit = (int)($f3->get('POST.sp_id') ?: $f3->get('REQUEST.sp_id') ?: 0);
 
         $spModel = new \SuratPenawaran($this->db);
-        $sp = $spModel->getById($id) ?: $spModel->getByOrderId($id);
+        $isOrderRoute = (strpos($f3->get('PATTERN') ?? '', '/order/') !== false);
+        $sp = null;
+        $orderId = 0;
+
+        if ($isOrderRoute) {
+            $orderId = $id;
+            $orderModel = new \OrderLayanan($this->db);
+            $ord = $orderModel->getDetail($orderId);
+
+            if ($spIdExplicit > 0) {
+                $candidateSp = $spModel->getById($spIdExplicit);
+                if ($candidateSp && (int)($candidateSp['order_id'] ?? 0) === $orderId) {
+                    $sp = $candidateSp;
+                }
+            }
+            if (!$sp && $ord && !empty($ord['surat_penawaran_id'])) {
+                $sp = $spModel->getById((int)$ord['surat_penawaran_id']);
+            }
+            if (!$sp) {
+                $sp = $spModel->getByOrderId($orderId);
+            }
+            if (!$sp) {
+                $rows = $this->db->exec("SELECT * FROM silopti2026.tb_surat_penawaran WHERE order_id = ? ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1", [1 => $orderId]);
+                if (!empty($rows)) {
+                    $sp = $rows[0];
+                }
+            }
+        } else {
+            $sp = ($spIdExplicit > 0 ? $spModel->getById($spIdExplicit) : null) ?: $spModel->getById($id) ?: $spModel->getByOrderId($id);
+            if ($sp) {
+                $orderId = (int)($sp['order_id'] ?? 0);
+            }
+        }
+
         if (!$sp) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Data penawaran tidak ditemukan.']);
@@ -3909,7 +4002,6 @@ $daftarPegawai = $arsipUser->find(
         $res = $spModel->batalKlaimSuratKeluar($spId, $userId);
 
         if (!empty($res['success'])) {
-            $orderId = (int)($sp['order_id'] ?? 0);
             if ($orderId > 0) {
                 $this->logActivity($orderId, 'penawaran', 'batal_klaim_surat_keluar', 'Membatalkan klaim Surat Penawaran TTD dari Arsip Surat Keluar');
             }
