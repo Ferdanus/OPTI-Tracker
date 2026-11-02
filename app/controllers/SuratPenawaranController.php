@@ -1004,15 +1004,23 @@ $daftarPegawai = $arsipUser->find(
             }
         }
 
-        if ($isLockedDeal) {
-            $post['is_revisi_baru'] = 0;
-            $post['mode'] = 'edit';
+        $actionStatus = $post['action_status'] ?? '';
+        $isDeal = $orderHasDeal || (($post['status_respon_klien'] ?? '') === 'deal');
+
+        if ($isDeal) {
             $post['status_respon_klien'] = 'deal';
-            $post['action_status'] = 'deal';
+            if (!empty($spExisting)) {
+                $post['is_revisi_baru'] = 0;
+                $post['mode'] = 'edit';
+            }
+            if ($isLockedDeal) {
+                $post['action_status'] = 'deal';
+            }
         } else {
-            $actionStatus = $post['action_status'] ?? '';
             if ($actionStatus === 'draft') {
-                $post['status_respon_klien'] = 'draft';
+                if (empty($post['status_respon_klien'])) {
+                    $post['status_respon_klien'] = 'draft';
+                }
             } elseif ($actionStatus === 'nego' || $actionStatus === 'terkirim') {
                 if (empty($post['status_respon_klien']) || $post['status_respon_klien'] === 'draft') {
                     $post['status_respon_klien'] = 'nego';
@@ -1152,12 +1160,28 @@ $daftarPegawai = $arsipUser->find(
                     );
                 }
             } else {
-                $this->logActivity($orderId, 'penawaran', 'simpan_draft_penawaran', "Draf penawaran No. {$hasil['nomor_surat']} (Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")");
-
-                $this->setFlashSuccess(
-                    "Draf Surat Penawaran Nomor <strong>{$hasil['nomor_surat']}</strong> berhasil disimpan (Status: Draft Internal)."
-                );
-                if (($post['redirect'] ?? '') === 'order') {
+                $isDeal = (($post['status_respon_klien'] ?? '') === 'deal');
+                if ($isDeal) {
+                    \StageAudit::recordDisetujui(
+                        $this->db,
+                        $orderId,
+                        5,
+                        $userId,
+                        $_SESSION['nama_lengkap'] ?? ($_SESSION['user']['nama'] ?? 'Tim Mitra'),
+                        'Tim Mitra',
+                        date('Y-m-d H:i:s')
+                    );
+                    $this->logActivity($orderId, 'penawaran', 'deal_penawaran', "Draf penawaran No. {$hasil['nomor_surat']} (Status: DEAL, Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")");
+                    $this->setFlashSuccess(
+                        "Draf Surat Penawaran Nomor <strong>{$hasil['nomor_surat']}</strong> berhasil disimpan (Status DEAL tetap dipertahankan)."
+                    );
+                } else {
+                    $this->logActivity($orderId, 'penawaran', 'simpan_draft_penawaran', "Draf penawaran No. {$hasil['nomor_surat']} (Rp " . number_format($hasil['nominal'], 0, ',', '.') . ")");
+                    $this->setFlashSuccess(
+                        "Draf Surat Penawaran Nomor <strong>{$hasil['nomor_surat']}</strong> berhasil disimpan."
+                    );
+                }
+                if (($post['redirect'] ?? '') === 'order' || !empty($post['is_embedded_in_detail'])) {
                     $f3->reroute("/order/{$orderId}");
                     return;
                 }

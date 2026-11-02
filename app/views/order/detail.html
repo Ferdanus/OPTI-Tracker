@@ -10802,6 +10802,12 @@ window.bukaFormPenawaranInline = function(mode) {
         if (inputNomorSurat && nomorLama) {
             inputNomorSurat.value = nomorLama;
         }
+        if (selectStatus) {
+            var isOrderOrPenawaranDeal = {{ (@order.status_penawaran == 'deal' || (!empty(@penawaran) && @penawaran.status_respon_klien == 'deal')) ? 'true' : 'false' }};
+            if (isOrderOrPenawaranDeal) {
+                selectStatus.value = 'deal';
+            }
+        }
         if (headerTeks) headerTeks.textContent = 'Formulir Surat Penawaran Resmi';
         if (headerIcon) {
             headerIcon.className = 'bi bi-pencil-square text-primary';
