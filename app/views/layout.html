@@ -1411,7 +1411,7 @@
         }
 
         /* Modern Circular Icon Badges (Khusus Modal) */
-        body .swal2-popup:not(.swal2-toast) .swal2-icon {
+        body .swal2-popup:not(.swal2-toast) .swal2-icon:not(.swal2-success):not(.swal2-error) {
             width: 58px !important;
             height: 58px !important;
             margin: 0.25rem auto 1.1rem !important;
@@ -1538,36 +1538,38 @@
             line-height: 1 !important;
         }
 
-        /* Success Icon (Modal only) */
+        /* Success Icon (Modal only) - Presisi animasi ceklis SweetAlert2 */
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
-            border-color: #a7f3d0 !important;
-            background-color: #ecfdf5 !important;
-            color: #1e293b !important;
-            box-shadow: 0 0 0 5px rgba(209, 250, 229, 0.6) !important;
+            font-size: 13px !important;
+            margin: 0.5rem auto 1rem !important;
+            border-color: #10b981 !important;
+            color: #10b981 !important;
+            background: transparent !important;
+            box-shadow: none !important;
         }
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success [class^='swal2-success-line'] {
-            background-color: #1e293b !important;
-            height: 3px !important;
+            background-color: #10b981 !important;
         }
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-ring {
-            border: 2px solid rgba(16, 185, 129, 0.3) !important;
+            border: .25em solid rgba(16, 185, 129, 0.25) !important;
         }
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-fix,
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-circular-line-left,
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-circular-line-right {
-            background-color: transparent !important;
+            background-color: #ffffff !important;
         }
 
         /* Error Icon (Modal only) */
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
-            border-color: #fecaca !important;
-            background-color: #fef2f2 !important;
-            color: #1e293b !important;
-            box-shadow: 0 0 0 5px rgba(254, 226, 226, 0.6) !important;
+            font-size: 13px !important;
+            margin: 0.5rem auto 1rem !important;
+            border-color: #ef4444 !important;
+            color: #ef4444 !important;
+            background: transparent !important;
+            box-shadow: none !important;
         }
         body .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
-            background-color: #1e293b !important;
-            height: 3px !important;
+            background-color: #ef4444 !important;
         }
 
         /* Info Icon (Modal only) */

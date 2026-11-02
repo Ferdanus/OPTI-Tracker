@@ -5439,7 +5439,7 @@ class OrderController extends Controller {
         }
 
         $tanggalMulai = !empty($post['tanggal_spm_mulai']) ? $post['tanggal_spm_mulai'] : (!empty($post['tanggal_terima_sampel']) ? $post['tanggal_terima_sampel'] : date('Y-m-d'));
-        $catatanTrigger = trim($post['catatan_trigger_spm'] ?? '');
+        $catatanTrigger = isset($post['catatan_trigger_spm']) ? rtrim($post['catatan_trigger_spm']) : '';
         $actionBtn = trim($post['action_btn'] ?? '');
         $isDraft = ($actionBtn === 'save_draft') || !empty($post['is_draft']);
 
