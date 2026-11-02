@@ -941,7 +941,7 @@ $daftarPo = $this->safeQuery($sql, $params);
     // Hanya MEMBACA kolom yang sudah ada; tidak mengubah alur review/verifikasi.
     $adaWaktu = function ($v) { $v = trim((string) $v); return $v !== '' && strpos($v, '0000') !== 0; };
     foreach ($daftarPo as &$pPos) {
-        $pos = ['po_revisi' => false, 'posisi_teks' => '', 'posisi_pemegang' => '', 'posisi_kelas' => '', 'panel_jenis' => '', 'panel_label' => '', 'belum_dibaca' => false, 'baca_teks' => '', 'baca_status' => '', 'po_dikirim_at' => '', 'aksi_mode' => 'modal', 'lihat_n' => '1', 'hanya_lihat' => false];
+        $pos = ['po_revisi' => false, 'status_revisi' => false, 'posisi_teks' => '', 'posisi_pemegang' => '', 'posisi_kelas' => '', 'panel_jenis' => '', 'panel_label' => '', 'belum_dibaca' => false, 'baca_teks' => '', 'baca_status' => '', 'po_dikirim_at' => '', 'aksi_mode' => 'modal', 'lihat_n' => '1', 'hanya_lihat' => false];
         $stPo = (string) ($pPos['po_status'] ?? '');
         if (!empty($pPos['po_id']) && in_array($stPo, ['terkirim', 'disetujui_mitra', 'disetujui'], true)) {
             $sr = (string) ($pPos['status_review'] ?? '');
@@ -974,6 +974,14 @@ $daftarPo = $this->safeQuery($sql, $params);
             } else {
                 $pos = $set('Review Ketua Tim', 'Ketua Tim', 'amber', false, 'review', 'Review', 'baca_review');
             }
+        }
+        // Status PO yang ditampilkan: "Revisi" hanya bila revisinya sedang di meja peran yang melihat daftar ini (Ketua Tim: revisi PPK BLU / hasil revisi menunggu review;
+        // Ketua Pelaksana: perbaikan yang harus dia kerjakan). Begitu dioper ke pihak lain (didisposisikan, dikirim ke Ketua Tim / PPK BLU) statusnya Sedang Berjalan.
+        $revisiBerjalan = !empty($pos['po_revisi']) || ((string) ($pPos['status_review'] ?? '') === 'direvisi' && $pos['posisi_teks'] !== '');
+        if ($revisiBerjalan) {
+            if ($isSuperadmin) { $pos['status_revisi'] = true; }
+            elseif ($role === 'ketua_tim') { $pos['status_revisi'] = ($pos['posisi_pemegang'] === 'Ketua Tim'); }
+            else { $pos['status_revisi'] = ($pos['posisi_pemegang'] === 'Ketua Pelaksana'); }
         }
         // Keterangan "dibuka / belum dibuka" penerima di langkah yang sedang berjalan (aturan sama dengan Tahap 8 detail order)
         $pos['baca_teks'] = ''; $pos['baca_status'] = '';
@@ -1032,7 +1040,7 @@ $daftarPo = $this->safeQuery($sql, $params);
         // baris PO layanan dilengkapi kunci yang dipakai tabel OPTI (template menghentikan halaman bila ada kunci yang hilang)
         $kunciKosong = ['po_id' => 0, 'po_status' => '', 'po_created_at' => '', 'order_id' => 0, 'nama_mitra' => '', 'pt_cv' => '', 'nama_pembuat' => '', 'jenis_layanan_opti' => '',
                         'judul_kegiatan' => '', 'status_review' => '', 'nilai_fmt' => '', 'terbayar_fmt' => '', 'kontrak_lunas' => false, 'kesanggupan_url' => '', 'daftar_pembayaran' => [], 'po_dikirim_at' => '', 'aksi_mode' => 'modal', 'lihat_n' => '1', 'hanya_lihat' => false,
-                        'po_revisi' => false, 'posisi_teks' => '', 'posisi_pemegang' => '', 'posisi_kelas' => '', 'panel_jenis' => '', 'panel_label' => '', 'belum_dibaca' => false, 'baca_teks' => '', 'baca_status' => '', 'ringkas' => false];
+                        'po_revisi' => false, 'status_revisi' => false, 'posisi_teks' => '', 'posisi_pemegang' => '', 'posisi_kelas' => '', 'panel_jenis' => '', 'panel_label' => '', 'belum_dibaca' => false, 'baca_teks' => '', 'baca_status' => '', 'ringkas' => false];
         foreach ($lain['rows'] as $iL => $rL) {
             $lain['rows'][$iL] = array_merge($kunciKosong, $rL, ['hanya_lihat' => ((string) $rL['layanan'] === 'sertifikasi' ? !empty($rL['hanya_lihat']) : !($isSuperadmin || ($layananTerkunci !== '' && (string) $rL['layanan'] === $layananTerkunci))), 'sumber' => 'layanan', 'po_status' => (string) $rL['status'], 'judul_kegiatan' => (string) $rL['judul'], 'nama_mitra' => (string) $rL['mitra'],
                 'nilai_fmt' => $rL['nilai_kontrak'] !== null ? 'Rp ' . number_format((float) $rL['nilai_kontrak'], 0, ',', '.') : '-',

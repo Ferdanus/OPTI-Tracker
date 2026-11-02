@@ -431,6 +431,25 @@ try {
 
         $sqlPo .= " GROUP BY o.jenis_layanan_opti";
 
+        if ($role === 'ketua_tim') {
+            // Ketua Tim tidak menyusun PO, jadi badge Daftar PO = jumlah PO di tab "Perlu Tindakan" divisinya (menunggu review / keputusan / review revisi Ketua Tim),
+            // bukan order yang belum dibuatkan PO (itu pekerjaan Ketua Pelaksana).
+            $sqlPo = "SELECT o.jenis_layanan_opti AS divisi, COUNT(DISTINCT p.id) AS c
+                      FROM po_kegiatan p
+                      JOIN order_layanan o ON o.id = p.order_id
+                      WHERE o.ketua_pelaksana_id IS NOT NULL
+                        AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa')
+                        AND ((p.status = 'terkirim' AND p.validasi_keuangan_at IS NULL AND COALESCE(p.status_review, '') NOT IN ('disetujui', 'perlu_revisi'))
+                             OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') IN ('minta', 'katim_kerja', 'katim_review')))"
+                   . \PoSchema::bukanSertifikasi('p');
+            $paramsPo = array();
+            if (in_array($layanan, array('selulosa', 'lingkungan'))) {
+                $sqlPo .= " AND o.jenis_layanan_opti = ?";
+                $paramsPo[1] = $layanan;
+            }
+            $sqlPo .= " GROUP BY o.jenis_layanan_opti";
+        }
+
         foreach ($this->db->exec($sqlPo, $paramsPo) as $r) {
             $notifPo[strtolower($r['divisi'])] = (int)$r['c'];
         }

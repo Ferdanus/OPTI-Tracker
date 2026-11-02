@@ -265,9 +265,9 @@
                                     </td>
                                     <td class="text-center">
                                         <check if="{{ @p.po_status == 'draft' }}"><span class="status-pill status-pill-slate"><i class="bi bi-pencil-square"></i> Draft PO</span></check>
-                                        <check if="{{ @p.po_revisi }}"><span class="status-pill status-pill-rose"><i class="bi bi-arrow-repeat"></i> Revisi</span></check>
-                                        <check if="{{ !@p.po_revisi && @p.po_status == 'terkirim' }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
-                                        <check if="{{ !@p.po_revisi && @p.po_status == 'disetujui_mitra' }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
+                                        <check if="{{ @p.status_revisi }}"><span class="status-pill status-pill-rose"><i class="bi bi-arrow-repeat"></i> Revisi</span></check>
+                                        <check if="{{ !@p.status_revisi && @p.po_status == 'terkirim' }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
+                                        <check if="{{ !@p.status_revisi && @p.po_status == 'disetujui_mitra' }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
                                         <check if="{{ @p.po_status == 'disetujui' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> PO Aktif</span></check>
                                     </td>
                                     <check if="{{ @tampil_posisi }}">
@@ -348,9 +348,9 @@
                                     <td class="text-center">
                                         <check if="{{ !@p.po_id }}"><span class="status-pill status-pill-amber"><i class="bi bi-hourglass-split"></i> Menunggu PO</span></check>
                                         <check if="{{ @p.po_id && @p.po_status == 'draft' }}"><span class="status-pill status-pill-slate"><i class="bi bi-pencil-square"></i> Draft PO</span></check>
-                                        <check if="{{ @p.po_id && @p.po_revisi }}"><span class="status-pill status-pill-rose"><i class="bi bi-arrow-repeat"></i> Revisi</span></check>
-                                        <check if="{{ @p.po_id && !@p.po_revisi && (@p.po_status == 'terkirim' || @p.po_status == 'disetujui_mitra') }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
-                                        <check if="{{ @p.po_id && !@p.po_revisi && @p.po_status == 'disetujui' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> PO Aktif</span></check>
+                                        <check if="{{ @p.po_id && @p.status_revisi }}"><span class="status-pill status-pill-rose"><i class="bi bi-arrow-repeat"></i> Revisi</span></check>
+                                        <check if="{{ @p.po_id && !@p.status_revisi && (@p.po_status == 'terkirim' || @p.po_status == 'disetujui_mitra') }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
+                                        <check if="{{ @p.po_id && !@p.status_revisi && @p.po_status == 'disetujui' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> PO Aktif</span></check>
                                     </td>
                                     <check if="{{ @tampil_posisi }}">
                                     <td>
@@ -1118,6 +1118,14 @@ window.addEventListener('message', function (e) {
         if (window.__poPanelId) { window.location.href = '{{ @BASE }}/po-kegiatan/' + encodeURIComponent(window.__poPanelId) + '/edit?dari=index'; }
         return;
     }
+    // Tindakan selesai di panel (setujui / minta revisi / kirim revisi / disposisi): minta panel bergeser keluar sendiri, lalu daftar dimuat ulang dengan status terbaru
+    if (d.jenis === 'aksi') {
+        try { f.contentWindow.postMessage({ silopti: 'po-panel-keluar' }, window.location.origin); }
+        catch (err) { lepas(); window.location.reload(); }
+        setTimeout(function () { if (document.getElementById('poPanelFr')) { lepas(); window.location.reload(); } }, 1500);   // pengaman bila panel tidak menjawab
+        return;
+    }
+    if (d.jenis === 'keluar-selesai') { lepas(); window.location.reload(); return; }
     if (d.jenis === 'tutup') {
         lepas();
         if (d.berubah) { window.location.reload(); }
