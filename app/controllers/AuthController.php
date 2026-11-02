@@ -28,23 +28,23 @@ class AuthController extends Controller {
         // Ambil daftar pengguna utama untuk selector 1-klik
         $users = $this->db->exec("
             SELECT u.id_user, u.login, u.nama_user, u.no_hp, u.bidang, u.id_struktural, u.si_opti,
-                   COALESCE(u.si_opti, m.role_opti) AS role_opti, 
-                   m.jenis_layanan_opti 
+                   COALESCE(u.si_opti, m.role) AS role_opti, 
+                   m.jenis_layanan AS jenis_layanan_opti 
             FROM tb_arsipuser u 
-            LEFT JOIN opti_user_map m ON u.id_user = m.id_user 
+            LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show' 
             WHERE u.status = 1 OR u.status = '1' OR u.status = 'aktif'
             ORDER BY 
                 CASE 
-                    WHEN u.si_opti = 'superadmin' OR m.role_opti = 'superadmin' OR u.bidang = 'all' THEN 1
-                    WHEN u.si_opti IN ('ketua_tim_mitra', 'katim_mitra', 'ketua_tim_mitra_industri') OR m.role_opti = 'ketua_tim_mitra' THEN 2
-                    WHEN u.si_opti = 'admin_order' OR u.si_opti = 'tim_mitra_industri' OR m.role_opti = 'admin_order' THEN 3
-                    WHEN u.si_opti LIKE 'ketua_tim_%' OR u.si_opti LIKE 'katim_%' OR m.role_opti = 'ketua_tim' THEN 4
-                    WHEN u.si_opti IN ('ketua_tim_keuangan', 'katim_keuangan') OR m.role_opti = 'ketua_tim_keuangan' THEN 5
+                    WHEN u.si_opti = 'superadmin' OR m.role = 'superadmin' OR u.bidang = 'all' THEN 1
+                    WHEN u.si_opti IN ('ketua_tim_mitra', 'katim_mitra', 'ketua_tim_mitra_industri') OR m.role = 'ketua_tim_mitra' THEN 2
+                    WHEN u.si_opti = 'admin_order' OR u.si_opti = 'tim_mitra_industri' OR m.role = 'admin_order' THEN 3
+                    WHEN u.si_opti LIKE 'ketua_tim_%' OR u.si_opti LIKE 'katim_%' OR m.role = 'ketua_tim' THEN 4
+                    WHEN u.si_opti IN ('ketua_tim_keuangan', 'katim_keuangan') OR m.role = 'ketua_tim_keuangan' THEN 5
                     WHEN u.si_opti = 'keuangan' THEN 7
-                    WHEN u.si_opti = 'ppk' OR m.role_opti = 'ppk' THEN 8
-                    WHEN u.si_opti = 'humas' OR m.role_opti = 'humas' THEN 9
-                    WHEN u.si_opti LIKE 'tim_kerja%' OR m.role_opti = 'tim_kerja' THEN 10
-                    WHEN u.si_opti = 'admin_kontrak' OR m.role_opti = 'admin_kontrak' THEN 11
+                    WHEN u.si_opti = 'ppk' OR m.role = 'ppk' THEN 8
+                    WHEN u.si_opti = 'humas' OR m.role = 'humas' THEN 9
+                    WHEN u.si_opti LIKE 'tim_kerja%' OR m.role = 'tim_kerja' THEN 10
+                    WHEN u.si_opti = 'admin_kontrak' OR m.role = 'admin_kontrak' THEN 11
                     ELSE 12
                 END ASC,
                 u.id_user ASC
@@ -67,9 +67,9 @@ class AuthController extends Controller {
         }
 
         $user = $this->db->exec(
-            "SELECT u.*, m.role_opti, m.jenis_layanan_opti, m.is_active AS map_active
+            "SELECT u.*, m.role, m.jenis_layanan AS jenis_layanan_opti, m.is_active AS map_active
              FROM tb_arsipuser u
-             LEFT JOIN opti_user_map m ON u.id_user = m.id_user
+             LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show'
              WHERE u.id_user = ? AND (u.status = 1 OR u.status = '1' OR u.status = 'aktif')",
             array(1 => $id)
         );
@@ -81,52 +81,9 @@ class AuthController extends Controller {
         }
 
         $userData = $user[0];
-        $rawRole = !empty($userData['si_opti']) ? trim($userData['si_opti']) : ($userData['role_opti'] ?? '');
-        $roleOpti = 'user';
-        $jenisLayananOpti = 'semua';
-
-        if (strpos($rawRole, 'tim_kerja_selulosa') !== false || $rawRole === 'pic_selulosa') {
-            $roleOpti = 'tim_kerja';
-            $jenisLayananOpti = 'selulosa';
-        } elseif (strpos($rawRole, 'tim_kerja_lingkungan') !== false || $rawRole === 'pic_lingkungan') {
-            $roleOpti = 'tim_kerja';
-            $jenisLayananOpti = 'lingkungan';
-        } elseif (strpos($rawRole, 'ketua_tim_mitra') !== false || $rawRole === 'katim_mitra') {
-            $roleOpti = 'ketua_tim_mitra';
-            $jenisLayananOpti = 'semua';
-        } elseif (strpos($rawRole, 'ketua_tim_keuangan') !== false || $rawRole === 'katim_keuangan') {
-            $roleOpti = 'ketua_tim_keuangan';
-            $jenisLayananOpti = 'semua';
-        } elseif (preg_match('/^(?:ketua_tim|katim)_([a-zA-Z0-9_]+)$/', $rawRole, $mKatim)) {
-            $roleOpti = 'ketua_tim';
-            $jenisLayananOpti = strtolower($mKatim[1]);
-        } elseif ($rawRole === 'tim_mitra_industri' || $rawRole === 'admin_order' || $rawRole === 'tim_mitra') {
-            $roleOpti = 'tim_mitra_industri';
-            $jenisLayananOpti = 'semua';
-        } elseif ($rawRole === 'keuangan') {
-            $roleOpti = 'keuangan';
-            $jenisLayananOpti = 'semua';
-        } elseif ($rawRole === 'humas') {
-            $roleOpti = 'humas';
-            $jenisLayananOpti = 'semua';
-        } elseif ($rawRole === 'ppk') {
-            $roleOpti = 'ppk';
-            $jenisLayananOpti = 'semua';
-        } elseif ($rawRole === 'user' || $rawRole === 'pegawai') {
-            $roleOpti = 'user';
-            $jenisLayananOpti = 'semua';
-        } elseif (!empty($rawRole)) {
-            $roleOpti = $rawRole;
-            $jenisLayananOpti = $userData['jenis_layanan_opti'] ?? 'semua';
-        }
-
-        if (empty($rawRole)) {
-            if (!empty($userData['bidang']) && in_array(strtolower($userData['bidang']), array('all', 'admin'))) {
-                $roleOpti = 'superadmin';
-            } else {
-                $roleOpti = 'user';
-            }
-        }
+        $resolved = \ArsipUser::resolveUserRoleAndLayanan($userData);
+        $roleOpti = $resolved['role'];
+        $jenisLayananOpti = $resolved['jenis_layanan_opti'] ?? ($userData['jenis_layanan'] ?? 'semua');
 
         // Set sesi pengguna langsung
         $_SESSION['user_id']            = $userData['id_user'];

@@ -86,7 +86,7 @@ class KetuaTimController extends Controller {
     try {
         // [SEMENTARA] cuma tim_kerja_selulosa dulu. Lingkungan gak lewat alur "pilih pelaksana" ini,
 // nanti pakai mekanisme disposisi langsung yang beda -- nyusul kalau udah dibahas.
-$daftarPelaksana = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti = 'tim_kerja_selulosa' ORDER BY nama_user ASC");
+$daftarPelaksana = $this->db->exec("SELECT DISTINCT u.id_user, u.nama_user, m.jenis_layanan AS divisi FROM tb_arsipuser u LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show' AND m.is_active = 1 WHERE u.si_opti IN ('tim_kerja_selulosa', 'pic_po_selulosa') OR (m.role IN ('pic_po', 'tim_kerja') AND m.jenis_layanan = 'selulosa') ORDER BY u.nama_user ASC");
         // $daftarPelaksana = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti LIKE '%tim_kerja%' ORDER BY nama_user ASC");
     } catch (\Exception $e) {
         $daftarPelaksana = [];
@@ -157,7 +157,12 @@ unset($o);
 
         if ($orderId <= 0 || $pelaksanaId <= 0) {
             $this->setFlashError('Order atau Ketua Pelaksana tidak valid.');
-            $f3->reroute('/ketua-tim/siap-po');
+            $redirectUrl = $f3->get('POST.redirect_url');
+        if (!empty($redirectUrl)) {
+            $f3->reroute($redirectUrl);
+            return;
+        }
+        $f3->reroute('/ketua-tim/siap-po');
             return;
         }
 
@@ -214,6 +219,11 @@ unset($o);
             $this->setFlashError('Gagal menyimpan: ' . $e->getMessage());
         }
 
+        $redirectUrl = $f3->get('POST.redirect_url');
+        if (!empty($redirectUrl)) {
+            $f3->reroute($redirectUrl);
+            return;
+        }
         $f3->reroute('/ketua-tim/siap-po');
     }
 

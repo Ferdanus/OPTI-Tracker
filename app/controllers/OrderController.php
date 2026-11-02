@@ -947,7 +947,7 @@ class OrderController extends Controller {
         $f3->set('is_proposal_approved', $proposalDisetujui);
         $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
         $f3->set('proposal_activity_logs', $proposalActivityLogs);
-        $f3->set('can_manage_pembayaran', ($isSuperadmin || $this->isTimMitra() || $userRole === 'keuangan' || $this->hasPermission('pembayaran:create') || $this->hasPermission('pembayaran:edit')));
+        $f3->set('can_manage_pembayaran', ($isSuperadmin || $this->isKeuangan() || $userRole === 'keuangan'));
         $f3->set('opsi_permintaan', [
             'telepon'          => 'Telepon',
             'fax'              => 'Fax',
@@ -995,6 +995,12 @@ class OrderController extends Controller {
         $f3->set('bast', $bast);
         $f3->set('daftar_customer', $daftarCustomer);
         $f3->set('daftar_pic', $daftarPic);
+
+        $curUserId = (int)$this->getUserId();
+        $pelaksanaId = !empty($order['ketua_pelaksana_id']) ? (int)$order['ketua_pelaksana_id'] : 0;
+        $isPicPo = ($curUserId > 0 && $curUserId === $pelaksanaId);
+        $f3->set('is_pic_po', $isPicPo);
+        $f3->set('can_aktif_spm', ($isSuperadmin || $isKetuaTim || $isPicPo));
 
         $kalkulasiSpm = null;
         $tglMulaiSpm = !empty($order['tanggal_spm_mulai']) ? $order['tanggal_spm_mulai'] : (!empty($order['tanggal_terima_sampel']) ? $order['tanggal_terima_sampel'] : null);
@@ -2502,12 +2508,12 @@ class OrderController extends Controller {
                 $statusToSave
             );
 
-            // Simpan / Perbarui Penunjukan PIC Pengujian Lingkungan (Tahap 4)
+            // Simpan / Perbarui Penunjukan PIC Pengujian / Ketua Tim Pelaksana Lingkungan (Tahap 4)
             if (isset($post['pic_proposal_id'])) {
                 $newPicId = !empty($post['pic_proposal_id']) ? (int)$post['pic_proposal_id'] : null;
                 $oldPicId = !empty($orderBefore['pic_proposal_id']) ? (int)$orderBefore['pic_proposal_id'] : null;
                 if ($newPicId !== $oldPicId) {
-                    $this->db->exec("UPDATE order_layanan SET pic_proposal_id = ? WHERE id = ?", [$newPicId, $id]);
+                    $this->db->exec("UPDATE order_layanan SET pic_proposal_id = ?, ketua_pelaksana_id = COALESCE(ketua_pelaksana_id, ?), ketua_pelaksana_at = COALESCE(ketua_pelaksana_at, NOW()) WHERE id = ?", [$newPicId, $newPicId, $id]);
                     if (!empty($newPicId)) {
                         try {
                             $uPic = $this->db->exec("SELECT nama_user FROM tb_arsipuser WHERE id_user = ?", [1 => $newPicId]);
@@ -5362,6 +5368,26 @@ class OrderController extends Controller {
                 throw new \Exception("Order Layanan #{$id} tidak ditemukan.");
             }
 
+            // 1. Syarat Utama: Ketua Tim harus sudah memilih PIC PO / Ketua Pelaksana terlebih dahulu
+            $pelaksanaId = !empty($order['ketua_pelaksana_id']) ? (int)$order['ketua_pelaksana_id'] : 0;
+            if ($pelaksanaId <= 0) {
+                $this->setFlashError('Aktivasi SPM belum dapat dilakukan: Ketua Tim harus menunjuk PIC PO / Ketua Pelaksana terlebih dahulu.');
+                $f3->reroute("/order/{$id}#pane-stage-7");
+                return;
+            }
+
+            // 2. Otoritas: Hanya Ketua Tim, PIC PO yang ditugaskan, atau Superadmin yang boleh mengaktifkan SPM
+            $curUserId = (int)$this->getUserId();
+            $isSuperadmin = $this->isSuperadmin();
+            $isKetuaTim = $this->isKetuaTim();
+            $isPicPo = ($curUserId > 0 && $curUserId === $pelaksanaId);
+
+            if (!$isSuperadmin && !$isKetuaTim && !$isPicPo) {
+                $this->setFlashError('Akses Ditolak: Aktivasi titik awal SPM hanya dapat dilakukan oleh Ketua Tim atau PIC PO yang ditugaskan.');
+                $f3->reroute("/order/{$id}#pane-stage-7");
+                return;
+            }
+
             $labelTrigger = [
                 'sampel_diterima' => 'Penerimaan Fisik Sampel',
                 'kick_off' => 'Rapat Kick-Off',
@@ -5475,7 +5501,7 @@ class OrderController extends Controller {
         $id = (int)($params['id'] ?? 0);
 
         $role = $this->getUserRole();
-        $canBayar = $this->isSuperadmin() || $this->isTimMitra() || $role === 'keuangan' || $this->hasPermission('pembayaran:create') || $this->hasPermission('pembayaran:edit');
+        $canBayar = $this->isSuperadmin() || $this->isKeuangan() || $role === 'keuangan';
         if (!$canBayar) {
             $this->setFlashError('Akses Ditolak: Pengunggahan dan verifikasi bukti pembayaran merupakan wewenang Tim Keuangan.');
             $f3->reroute("/order/{$id}");

@@ -124,12 +124,12 @@ class MasterPicController extends Controller {
             $cek = $this->db->exec("SELECT id FROM opti_user_map WHERE id_user = ?", array(1 => $userId));
             if (!empty($cek)) {
                 $this->db->exec(
-                    "UPDATE opti_user_map SET role_opti = 'tim_kerja', jenis_layanan_opti = ?, is_active = 1 WHERE id_user = ?",
+                    "UPDATE opti_user_map SET role = 'tim_kerja', jenis_layanan = ?, is_active = 1 WHERE id_user = ?",
                     array(1 => $divisi, 2 => $userId)
                 );
             } else {
                 $this->db->exec(
-                    "INSERT INTO opti_user_map (id_user, jenis_layanan_opti, role_opti, is_active, created_at) VALUES (?, ?, 'tim_kerja', 1, NOW())",
+                    "INSERT INTO opti_user_map (id_user, jenis_layanan, role, is_active, created_at) VALUES (?, ?, 'tim_kerja', 1, NOW())",
                     array(1 => $userId, 2 => $divisi)
                 );
             }
@@ -174,7 +174,7 @@ class MasterPicController extends Controller {
 
         try {
             $this->db->exec(
-                "UPDATE opti_user_map SET jenis_layanan_opti = ?, is_active = 1 WHERE id_user = ?",
+                "UPDATE opti_user_map SET jenis_layanan = ?, is_active = 1 WHERE id_user = ?",
                 array(1 => $divisi, 2 => $userId)
             );
         } catch (\Exception $e) {}
@@ -214,7 +214,7 @@ class MasterPicController extends Controller {
 
         try {
             $this->db->exec(
-                "UPDATE opti_user_map SET is_active = 0, role_opti = '' WHERE id_user = ?",
+                "UPDATE opti_user_map SET is_active = 0, role = '' WHERE id_user = ?",
                 array(1 => $userId)
             );
         } catch (\Exception $e) {}

@@ -3320,16 +3320,31 @@ $daftarPegawai = $arsipUser->find(
             return;
         }
 
-        $namaFile = basename($row[0][$col]);
-        $path = dirname(__DIR__, 2) . '/storage/kesanggupan_bayar/' . $namaFile;
-        if (!is_file($path)) {
-            $pathAlt = dirname(__DIR__, 2) . '/uploads/penawaran/' . $namaFile;
-            if (is_file($pathAlt)) {
-                $path = $pathAlt;
+        $rawFile = $row[0][$col];
+        $namaFile = basename($rawFile);
+        $root = dirname(__DIR__, 2);
+        $kandidatPath = [
+            $root . '/storage/kesanggupan_bayar/' . $namaFile,
+            $root . '/uploads/penawaran/' . $namaFile,
+            $root . '/' . ltrim($rawFile, '/\\'),
+            $root . '/public/' . ltrim($rawFile, '/\\'),
+        ];
+
+        $path = null;
+        foreach ($kandidatPath as $kp) {
+            if (!empty($rawFile) && is_file($kp)) {
+                $path = $kp;
+                break;
             }
         }
 
-        if (!is_file($path)) {
+        if (!$path) {
+            // Jika dokumen adalah penawaran_ttd dan berasal dari arsip surat keluar, teruskan ke generator preview
+            $spRow = $this->db->exec("SELECT id_surat_keluar FROM tb_surat_penawaran WHERE id = ? OR order_id = ? ORDER BY id DESC LIMIT 1", [1 => $id, 2 => $id]);
+            $skId = (int)($spRow[0]['id_surat_keluar'] ?? 0);
+            if ($skId > 0 && $jenis === 'penawaran_ttd') {
+                return $this->previewSuratKeluar($f3, ['id' => $skId]);
+            }
             $f3->error(404, 'File tidak ditemukan di server.');
             return;
         }
@@ -3772,6 +3787,231 @@ $daftarPegawai = $arsipUser->find(
         header('X-Content-Type-Options: nosniff');
         header('Content-Length: ' . filesize($fullPath));
         readfile($fullPath);
+        exit;
+    }
+
+    /**
+     * Ambil daftar Surat Keluar (surat_penawaran = 'Y' dan belum diklaim)
+     * Route: GET /surat-penawaran/@id/arsip-keluar/tersedia
+     */
+    public function daftarSuratKeluarTersedia($f3, $params)
+    {
+        $id = (int)($params['id'] ?? 0);
+        $q = trim((string)($f3->get('GET.q') ?? ''));
+
+        $spModel = new \SuratPenawaran($this->db);
+        $sp = $spModel->getById($id) ?: $spModel->getByOrderId($id);
+
+        $customerId = null;
+        if ($sp && !empty($sp['customer_id'])) {
+            $customerId = (int)$sp['customer_id'];
+        } elseif ($id > 0) {
+            $orderModel = new \OrderLayanan($this->db);
+            $ord = $orderModel->getDetail($id);
+            if ($ord && !empty($ord['id_customer'])) {
+                $customerId = (int)$ord['id_customer'];
+            }
+        }
+
+        $daftar = $spModel->getDaftarSuratKeluarTersedia($customerId, $q);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success'     => true,
+            'customer_id' => $customerId,
+            'total'       => count($daftar),
+            'data'        => $daftar
+        ]);
+        exit;
+    }
+
+    /**
+     * Klaim Surat Keluar dari Arsip Sekretariat
+     * Route: POST /surat-penawaran/@id/klaim-surat-keluar
+     */
+    public function klaimSuratKeluar($f3, $params)
+    {
+        $id = (int)($params['id'] ?? 0);
+        $idSuratKeluar = (int)($f3->get('POST.id_surat_keluar') ?: $f3->get('REQUEST.id_surat_keluar'));
+        $userId = (int)($this->getUserId() ?? 1);
+
+        if ($idSuratKeluar <= 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Pilih surat penawaran dari arsip surat keluar.']);
+            exit;
+        }
+
+        $spModel = new \SuratPenawaran($this->db);
+        $sp = $spModel->getById($id) ?: $spModel->getByOrderId($id);
+        if (!$sp) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Data penawaran tidak ditemukan.']);
+            exit;
+        }
+
+        $spId = (int)$sp['id'];
+        $res = $spModel->klaimSuratKeluar($spId, $idSuratKeluar, $userId);
+
+        if (!empty($res['success'])) {
+            $orderId = (int)($sp['order_id'] ?? 0);
+            if ($orderId > 0) {
+                $this->logActivity($orderId, 'penawaran', 'klaim_surat_keluar', 'Mengklaim Surat Penawaran TTD No. ' . ($res['no_surat'] ?? '') . ' dari Arsip Surat Keluar');
+            }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * Batalkan klaim Surat Keluar
+     * Route: POST /surat-penawaran/@id/batal-klaim-surat-keluar
+     */
+    public function batalKlaimSuratKeluar($f3, $params)
+    {
+        $id = (int)($params['id'] ?? 0);
+        $userId = (int)($this->getUserId() ?? 1);
+
+        $spModel = new \SuratPenawaran($this->db);
+        $sp = $spModel->getById($id) ?: $spModel->getByOrderId($id);
+        if (!$sp) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Data penawaran tidak ditemukan.']);
+            exit;
+        }
+
+        $spId = (int)$sp['id'];
+        $res = $spModel->batalKlaimSuratKeluar($spId, $userId);
+
+        if (!empty($res['success'])) {
+            $orderId = (int)($sp['order_id'] ?? 0);
+            if ($orderId > 0) {
+                $this->logActivity($orderId, 'penawaran', 'batal_klaim_surat_keluar', 'Membatalkan klaim Surat Penawaran TTD dari Arsip Surat Keluar');
+            }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * Preview Surat Keluar dari tabel sil2020.tb_surat_keluar
+     * Route: GET /arsip-surat-keluar/@id/preview
+     */
+    public function previewSuratKeluar($f3, $params)
+    {
+        $id = (int)($params['id'] ?? 0);
+        if ($id <= 0) {
+            $f3->error(404, 'ID Surat Keluar tidak valid.');
+            return;
+        }
+
+        $rows = $this->db->exec(
+            "SELECT sk.*, c.nmcustomer, c.pt_cv 
+             FROM sil2020.tb_surat_keluar sk
+             LEFT JOIN sil2020.tb_customer c ON sk.id_customer = c.id_customer
+             WHERE sk.id_surat_keluar = ? LIMIT 1",
+            [1 => $id]
+        );
+        if (empty($rows)) {
+            $f3->error(404, 'Surat Keluar tidak ditemukan di arsip sekretariat.');
+            return;
+        }
+
+        $sk = $rows[0];
+        $berkas = trim($sk['nama_berkas_surat_keluar'] ?? '');
+        $root = dirname(__DIR__, 2);
+
+        $kandidatPath = [
+            $root . '/' . ltrim($berkas, '/\\'),
+            $root . '/public/' . ltrim($berkas, '/\\'),
+            $root . '/storage/kesanggupan_bayar/' . basename($berkas),
+            $root . '/uploads/penawaran/' . basename($berkas),
+        ];
+
+        $filePath = null;
+        if (!empty($berkas)) {
+            foreach ($kandidatPath as $kp) {
+                if (is_file($kp)) {
+                    $filePath = $kp;
+                    break;
+                }
+            }
+        }
+
+        if ($filePath && is_file($filePath)) {
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+            $mimeMap = [
+                'pdf'  => 'application/pdf',
+                'jpg'  => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png'  => 'image/png',
+            ];
+            header('Content-Type: ' . ($mimeMap[$ext] ?? 'application/pdf'));
+            header('Content-Disposition: inline; filename="' . basename($filePath) . '"');
+            header('X-Content-Type-Options: nosniff');
+            header('Content-Length: ' . filesize($filePath));
+            readfile($filePath);
+            exit;
+        }
+
+        // Buat pratinjau surat resmi otomatis via FPDF
+        require_once $root . '/app/helpers/fpdf/fpdf.php';
+        $pdf = new \FPDF('P', 'mm', 'A4');
+        $pdf->SetMargins(20, 15, 20);
+        $pdf->AddPage();
+
+        // Kop Surat Balai
+        $pdf->SetFont('Arial', 'B', 12);
+        $pdf->Cell(0, 6, 'KEMENTERIAN PERINDUSTRIAN REPUBLIK INDONESIA', 0, 1, 'C');
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->Cell(0, 5, 'BALAI BESAR STANDARDISASI DAN PELAYANAN JASA INDUSTRI SELULOSA', 0, 1, 'C');
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(0, 4, 'Jl. Raya Dayeuhkolot No. 132 Bandung 40258 | Telp. (022) 5202871', 0, 1, 'C');
+        $pdf->Ln(2);
+        $pdf->SetLineWidth(0.8);
+        $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
+        $pdf->SetLineWidth(0.2);
+        $pdf->Line(20, $pdf->GetY() + 0.8, 190, $pdf->GetY() + 0.8);
+        $pdf->Ln(6);
+
+        // Metadata Surat
+        $pdf->SetFont('Arial', '', 9.5);
+        $tgl = !empty($sk['tanggal_surat']) ? date('d F Y', strtotime($sk['tanggal_surat'])) : date('d F Y');
+        $pdf->Cell(120, 5, 'Nomor   : ' . ($sk['no_surat'] ?: '-'), 0, 0);
+        $pdf->Cell(50, 5, 'Bandung, ' . $tgl, 0, 1, 'R');
+        $pdf->Cell(120, 5, 'Lampiran: 1 (satu) Berkas', 0, 1);
+        $pdf->Cell(120, 5, 'Perihal : ' . ($sk['perihal_surat'] ?: 'Penawaran Layanan Jasa OPTI'), 0, 1);
+        $pdf->Ln(5);
+
+        $customerNama = trim(($sk['pt_cv'] ? $sk['pt_cv'] . ' ' : '') . ($sk['nmcustomer'] ?: ''));
+        if (empty($customerNama)) {
+            $customerNama = $sk['jabatan_surat'] ?: 'Pimpinan Perusahaan / Instansi';
+        }
+
+        $pdf->Cell(0, 5, 'Kepada Yth.', 0, 1);
+        $pdf->SetFont('Arial', 'B', 9.5);
+        $pdf->Cell(0, 5, $customerNama, 0, 1);
+        $pdf->SetFont('Arial', '', 9.5);
+        $pdf->Cell(0, 5, 'Di Tempat', 0, 1);
+        $pdf->Ln(6);
+
+        $keteranganTambahan = !empty($sk['keterangan']) ? (" (" . $sk['keterangan'] . ")") : "";
+        $pdf->MultiCell(0, 5, "Dengan hormat,\n\nSehubungan dengan permohonan kerjasama layanan jasa Optimasi Proses dan Teknologi Industri (OPTI)" . $keteranganTambahan . ", bersama ini kami sampaikan Surat Penawaran Resmi dan ruang lingkup kegiatan operasional sebagaimana terlampir yang telah ditandatangani dan diverifikasi oleh Sekretariat.\n\nDemikian surat penawaran ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.");
+        $pdf->Ln(15);
+
+        $pdf->Cell(110, 5, '', 0, 0);
+        $pdf->Cell(60, 5, 'Ketua Tim Kerja OPTI,', 0, 1, 'C');
+        $pdf->Ln(18);
+        $pdf->SetFont('Arial', 'B', 9.5);
+        $pdf->Cell(110, 5, '', 0, 0);
+        $pdf->Cell(60, 5, '( Tanda Tangan & Cap Sah )', 0, 1, 'C');
+
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="surat_penawaran_' . $id . '.pdf"');
+        $pdf->Output('I', 'surat_penawaran_' . $id . '.pdf');
         exit;
     }
 }

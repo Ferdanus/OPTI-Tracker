@@ -245,6 +245,10 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) 
 
     if (!$isUpdate) {
         $po->order_id = (int) ($post['order_id'] ?? 0);
+        $po->created_by = (int) $this->getUserId();
+    }
+    if (empty($po->pic_po_id)) {
+        $po->pic_po_id = (int) $this->getUserId();
     }
 
     // [BARU] Penandatangan (Menyetujui / Pelaksana Kegiatan / Mengetahui) dipilih dari master penandatangan, sama
