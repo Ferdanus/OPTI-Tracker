@@ -2625,12 +2625,7 @@
                                                 </span>
                                             </div>
                                             <div class="form-section-body">
-                                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                                    <label class="form-label small fw-semibold text-dark mb-0">Permintaan Masuk Melalui:</label>
-                                                    <span class="text-muted small" style="font-size: 0.73rem;">
-                                                        <i class="bi bi-info-circle me-1"></i>Menyesuaikan input asal (Read Only)
-                                                    </span>
-                                                </div>
+                                                <label class="form-label small fw-semibold text-dark mb-1">Permintaan Masuk Melalui:</label>
                                                 <input type="hidden" name="permintaan_melalui" value="{{ @media_permintaan_val ?: 'surat' }}">
                                                 <div class="channel-tile-grid read-only-channel-grid mb-3">
                                                     <label class="channel-tile {{ (@media_permintaan_val == 'surat' || empty(@media_permintaan_val)) ? 'active' : '' }} read-only-tile">
@@ -2846,12 +2841,7 @@
                                         </span>
                                     </div>
                                     <div class="form-section-body">
-                                        <div class="d-flex align-items-center justify-content-between mb-1">
-                                            <label class="form-label small fw-semibold text-dark mb-0">Permintaan Masuk Melalui:</label>
-                                            <span class="text-muted small" style="font-size: 0.73rem;">
-                                                <i class="bi bi-info-circle me-1"></i>Menyesuaikan input asal (Read Only)
-                                            </span>
-                                        </div>
+                                        <label class="form-label small fw-semibold text-dark mb-1">Permintaan Masuk Melalui:</label>
                                         <input type="hidden" name="permintaan_melalui" value="{{ @media_permintaan_val ?: 'surat' }}">
                                         <div class="channel-tile-grid read-only-channel-grid mb-3">
                                             <label class="channel-tile {{ (@media_permintaan_val == 'surat' || empty(@media_permintaan_val)) ? 'active' : '' }} read-only-tile">
