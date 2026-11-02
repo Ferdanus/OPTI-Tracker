@@ -17,20 +17,20 @@
 
         <check if="{{ @order }}">
         <!-- ===== INFO ORDER (terkunci, dari order_id di URL -- TANPA dropdown) ===== -->
-        <div class="order-locked-card">
-            <div class="d-flex justify-content-between align-items-start mb-2">
+        <div class="order-locked-card shadow-sm" style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px 22px; background: #ffffff;">
+            <div class="d-flex justify-content-between align-items-start pb-3 mb-3 border-bottom">
                 <div>
-                    <div class="fw-bold text-dark font-monospace">{{ @order.nomor_order ?: @order.nomor_permintaan ?: ('REQ-' . @order.id) }}</div>
-                    <div class="small text-muted">{{ @order.judul_kegiatan }}</div>
+                    <div class="fw-bold text-dark font-monospace mb-1" style="font-size: 1.15rem; letter-spacing: 0.5px;">{{ @order.nomor_order ?: @order.nomor_permintaan ?: ('REQ-' . @order.id) }}</div>
+                    <div class="fw-semibold text-secondary" style="font-size: 0.9rem; line-height: 1.45;">{{ @order.judul_kegiatan }}</div>
                 </div>
-                <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}"><span class="badge-pill-primary">Selulosa</span></check>
-                <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}"><span class="badge-pill-info">Lingkungan</span></check>
+                <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}"><span class="badge rounded-pill bg-danger text-white px-3 py-1.5 fw-bold shadow-xs" style="font-size: 0.78rem; letter-spacing: 0.3px;">Selulosa</span></check>
+                <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}"><span class="badge rounded-pill bg-primary text-white px-3 py-1.5 fw-bold shadow-xs" style="font-size: 0.78rem; letter-spacing: 0.3px;">Lingkungan</span></check>
             </div>
-            <div class="order-locked-row"><span class="order-locked-label">Mitra</span><span class="order-locked-value">{{ @order.nama_perusahaan }}</span></div>
-            <div class="order-locked-row"><span class="order-locked-label">Nilai Acuan</span><span class="order-locked-value">Rp {{ number_format(@order.biaya_acuan, 0, ',', '.') }}</span></div>
-            <div class="order-locked-row"><span class="order-locked-label">Sudah Terbayar</span><span class="order-locked-value text-success">Rp {{ number_format(@order.terbayar, 0, ',', '.') }}</span></div>
-            <div class="order-locked-row"><span class="order-locked-label">Sisa Tagihan</span><span class="order-locked-value text-danger">Rp {{ number_format(@order.sisa_tagihan, 0, ',', '.') }}</span></div>
-            <div class="order-locked-row"><span class="order-locked-label">Saran Termin</span><span class="order-locked-value">Termin ke-{{ @order.termin_berikutnya }}</span></div>
+            <div class="order-locked-row"><span class="order-locked-label">Mitra</span><span class="order-locked-value font-display" style="font-size: 1rem;">{{ @order.nama_perusahaan }}</span></div>
+            <div class="order-locked-row"><span class="order-locked-label">Nilai Acuan</span><span class="order-locked-value font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.biaya_acuan, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row"><span class="order-locked-label">Sudah Terbayar</span><span class="order-locked-value text-success font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.terbayar, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row"><span class="order-locked-label">Sisa Tagihan</span><span class="order-locked-value text-danger font-monospace" style="font-size: 1.15rem;">Rp {{ number_format(@order.sisa_tagihan, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row border-0 pt-2"><span class="order-locked-label">Saran Termin</span><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-bold font-monospace" style="font-size: 0.88rem;">Termin ke-{{ @order.termin_berikutnya }}</span></div>
         </div>
 
         <form action="{{ @BASE }}/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">

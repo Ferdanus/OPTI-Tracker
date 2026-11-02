@@ -5143,20 +5143,35 @@
                                     </div>
                                 </check>
                                 <!-- ===== INFO ORDER (TERKUNCI) ===== -->
-                                <div class="order-locked-card mb-4" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; background: #f8fafc;">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="order-locked-card mb-4 shadow-sm" style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px 22px; background: #ffffff;">
+                                    <div class="d-flex justify-content-between align-items-start pb-3 mb-3 border-bottom">
                                         <div>
-                                            <div class="fw-bold text-dark font-monospace" style="font-size: 1.05rem;">{{ @order.nomor_order ?: (@order.nomor_permintaan ?: ('REQ-' . @order.id)) }}</div>
-                                            <div class="small text-muted">{{ @order.judul_kegiatan }}</div>
+                                            <div class="fw-bold text-dark font-monospace mb-1" style="font-size: 1.15rem; letter-spacing: 0.5px;">{{ @order.nomor_order ?: (@order.nomor_permintaan ?: ('REQ-' . @order.id)) }}</div>
+                                            <div class="fw-semibold text-secondary" style="font-size: 0.9rem; line-height: 1.45;">{{ @order.judul_kegiatan }}</div>
                                         </div>
-                                        <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}"><span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 fw-semibold">Selulosa</span></check>
-                                        <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}"><span class="badge rounded-pill bg-info-subtle text-primary border border-info-subtle px-2.5 py-1 fw-semibold">Lingkungan</span></check>
+                                        <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}"><span class="badge rounded-pill bg-danger text-white px-3 py-1.5 fw-bold shadow-xs" style="font-size: 0.78rem; letter-spacing: 0.3px;">Selulosa</span></check>
+                                        <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}"><span class="badge rounded-pill bg-primary text-white px-3 py-1.5 fw-bold shadow-xs" style="font-size: 0.78rem; letter-spacing: 0.3px;">Lingkungan</span></check>
                                     </div>
-                                    <div class="d-flex justify-content-between py-1.5 border-bottom border-dashed text-secondary" style="font-size: 13.5px;"><span class="text-muted">Mitra</span><span class="fw-semibold text-dark">{{ @order.nama_perusahaan }}</span></div>
-                                    <div class="d-flex justify-content-between py-1.5 border-bottom border-dashed text-secondary" style="font-size: 13.5px;"><span class="text-muted">Nilai Acuan</span><span class="fw-bold text-dark">Rp {{ number_format(@order.biaya_acuan ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}</span></div>
-                                    <div class="d-flex justify-content-between py-1.5 border-bottom border-dashed text-secondary" style="font-size: 13.5px;"><span class="text-muted">Sudah Terbayar</span><span class="fw-bold text-success">Rp {{ number_format(@order.terbayar ?: 0, 0, ',', '.') }}</span></div>
-                                    <div class="d-flex justify-content-between py-1.5 border-bottom border-dashed text-secondary" style="font-size: 13.5px;"><span class="text-muted">Sisa Tagihan</span><span class="fw-bold text-danger">Rp {{ number_format(@order.sisa_tagihan ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}</span></div>
-                                    <div class="d-flex justify-content-between py-1.5 text-secondary" style="font-size: 13.5px;"><span class="text-muted">Saran Termin</span><span class="fw-semibold text-dark">Termin ke-{{ @order.termin_berikutnya ?: 1 }}</span></div>
+                                    <div class="d-flex justify-content-between align-items-center py-2.5 border-bottom" style="font-size: 14.5px;">
+                                        <span class="text-dark fw-semibold" style="color: #475569 !important;">Mitra</span>
+                                        <span class="fw-bold text-dark font-display" style="font-size: 1rem;">{{ @order.nama_perusahaan }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center py-2.5 border-bottom" style="font-size: 14.5px;">
+                                        <span class="text-dark fw-semibold" style="color: #475569 !important;">Nilai Acuan</span>
+                                        <span class="fw-bold text-dark font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.biaya_acuan ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center py-2.5 border-bottom" style="font-size: 14.5px;">
+                                        <span class="text-dark fw-semibold" style="color: #475569 !important;">Sudah Terbayar</span>
+                                        <span class="fw-bold text-success font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.terbayar ?: 0, 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center py-2.5 border-bottom" style="font-size: 14.5px;">
+                                        <span class="text-dark fw-semibold" style="color: #475569 !important;">Sisa Tagihan</span>
+                                        <span class="fw-bold text-danger font-monospace" style="font-size: 1.15rem;">Rp {{ number_format(@order.sisa_tagihan ?: (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center pt-2.5" style="font-size: 14.5px;">
+                                        <span class="text-dark fw-semibold" style="color: #475569 !important;">Saran Termin</span>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-bold font-monospace" style="font-size: 0.88rem;">Termin ke-{{ @order.termin_berikutnya ?: 1 }}</span>
+                                    </div>
                                 </div>
 
                                 <!-- FORMULIR BUKTI BAYAR TAHAP 6 -->
