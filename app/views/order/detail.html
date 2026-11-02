@@ -3858,24 +3858,22 @@
                                         </div>
                                     </div>
 
-                                    <!-- Card 2: Hasil Kaji Ulang Kelayakan Teknis  -->
-                                    <check if="{{ @tinjauan }}">
+                                    <!-- Card 2: Hasil Kaji Ulang Kelayakan Teknis (Hanya tampil untuk non-Selulosa) -->
+                                    <check if="{{ @tinjauan && @order.jenis_layanan_opti != 'selulosa' }}">
                                         <div class="card border rounded-3 bg-white shadow-xs mb-3">
                                             <div class="card-header bg-white py-2.5 px-3 border-bottom">
                                                 <h6 class="m-0 fw-bold text-dark font-display" style="font-size: 0.88rem;">Hasil Kaji Ulang Kelayakan</h6>
                                             </div>
                                             <div class="card-body p-3">
-                                                <div class="{{ @order.jenis_layanan_opti != 'selulosa' ? 'mb-2' : 'mb-0' }}">
+                                                <div class="mb-2">
                                                     <span class="badge bg-light border text-success border border-success-subtle px-2 py-0.5 fw-semibold">
                                                         <i class="bi bi-check2-circle me-1"></i> Dapat Dilaksanakan
                                                     </span>
                                                 </div>
-                                                <check if="{{ @order.jenis_layanan_opti != 'selulosa' }}">
-                                                    <div class="small text-secondary">
-                                                        <div class="text-muted mb-1" style="font-size: 0.75rem;">Catatan Ka. Tim:</div>
-                                                        <p class="mb-0 text-dark" style="font-size: 0.82rem;">{{ @tinjauan.sdm_catatan ?: (@tinjauan.catatan_kelayakan ?: 'Kapasitas laboratorium, instrumen, dan analis memenuhi standar.') }}</p>
-                                                    </div>
-                                                </check>
+                                                <div class="small text-secondary">
+                                                    <div class="text-muted mb-1" style="font-size: 0.75rem;">Catatan Ka. Tim:</div>
+                                                    <p class="mb-0 text-dark" style="font-size: 0.82rem;">{{ @tinjauan.sdm_catatan ?: (@tinjauan.catatan_kelayakan ?: 'Kapasitas laboratorium, instrumen, dan analis memenuhi standar.') }}</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </check>
