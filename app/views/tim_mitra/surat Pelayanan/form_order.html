@@ -1911,8 +1911,8 @@
                             <check if="{{ !@is_locked_deal }}">
                                 <select name="status_respon_klien" id="select_status_respon_klien" class="form-select form-select-sm fw-semibold" {{ !@can_edit ? 'disabled' : '' }}>
                                     <option value="draft" class="d-none" style="display:none;">Draft (Internal)</option>
-                                    <option value="nego" {{ (@is_revisi_baru || !@sp_existing || in_array(@sp_existing.status_respon_klien, ['nego', 'terkirim', 'draft', '', 'batal'])) ? 'selected' : '' }}>Negosiasi</option>
-                                    <option value="deal" {{ (!@is_revisi_baru && @sp_existing && @sp_existing.status_respon_klien == 'deal') ? 'selected' : '' }}>Disetujui (DEAL)</option>
+                                    <option value="nego" {{ ((@order.status_penawaran != 'deal') && (!@sp_existing || (@sp_existing.status_respon_klien != 'deal' && @sp_existing.status_respon_klien != 'batal'))) ? 'selected' : '' }}>Negosiasi</option>
+                                    <option value="deal" {{ ((@order.status_penawaran == 'deal') || (!@is_revisi_baru && @sp_existing && @sp_existing.status_respon_klien == 'deal')) ? 'selected' : '' }}>Disetujui (DEAL)</option>
                                     <option value="batal" {{ (!@is_revisi_baru && @sp_existing && @sp_existing.status_respon_klien == 'batal') ? 'selected' : '' }}>Ditolak / Batal</option>
                                 </select>
                             </check>
@@ -1947,15 +1947,18 @@
                 </div>
                 <check if="{{ @can_edit }}">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <check if="{{ @is_locked_deal || (@sp_existing && @sp_existing.status_respon_klien == 'deal') }}">
+                        <check if="{{ @is_locked_deal || (@sp_existing && @sp_existing.status_respon_klien == 'deal') || (@order.status_penawaran == 'deal') }}">
                             <input type="hidden" name="action_status" id="inputActionStatus" value="deal">
+                            <button type="submit" name="action_status" value="draft" class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft';">
+                                <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
+                            </button>
                             <button type="submit" name="action_status" value="deal" class="btn btn-primary fw-semibold px-4 py-2 d-inline-flex align-items-center gap-1.5 shadow-xs">
                                 <i class="bi bi-save2-fill"></i> Simpan Perubahan Dokumen
                             </button>
                         </check>
-                        <check if="{{ !@is_locked_deal && (!@sp_existing || @sp_existing.status_respon_klien != 'deal') }}">
+                        <check if="{{ !@is_locked_deal && (!@sp_existing || @sp_existing.status_respon_klien != 'deal') && (@order.status_penawaran != 'deal') }}">
                             <input type="hidden" name="action_status" id="inputActionStatus" value="nego">
-                            <button type="submit" name="action_status" value="draft" class="btn-draft-theme" onclick="document.getElementById('select_status_respon_klien').value='draft'; document.getElementById('inputActionStatus').value='draft';">
+                            <button type="submit" name="action_status" value="draft" class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft';">
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
                             <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();">
@@ -3669,7 +3672,9 @@ function confirmKirimPenawaran() {
                     selectRespon.value = 'nego';
                 }
                 var actInput = document.getElementById('inputActionStatus');
-                if (actInput) actInput.value = 'nego';
+                if (actInput) {
+                    actInput.value = (selectRespon && selectRespon.value === 'deal') ? 'deal' : 'nego';
+                }
                 form.submit();
             }
         });
@@ -3680,7 +3685,9 @@ function confirmKirimPenawaran() {
                 selectRespon.value = 'nego';
             }
             var actInput = document.getElementById('inputActionStatus');
-            if (actInput) actInput.value = 'nego';
+            if (actInput) {
+                actInput.value = (selectRespon && selectRespon.value === 'deal') ? 'deal' : 'nego';
+            }
             form.submit();
         }
     }

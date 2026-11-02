@@ -87,13 +87,37 @@
     /* SELECTABLE TILES UNTUK SALURAN MASUK */
     .channel-tile-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 0.5rem;
+    }
+    @media (max-width: 992px) {
+        .channel-tile-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
     }
     @media (max-width: 576px) {
         .channel-tile-grid {
             grid-template-columns: repeat(2, 1fr);
         }
+    }
+    .read-only-channel-grid {
+        pointer-events: none;
+    }
+    .channel-tile.read-only-tile {
+        cursor: not-allowed;
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        opacity: 0.65;
+    }
+    .channel-tile.read-only-tile.active {
+        opacity: 1;
+        border-color: #334155;
+        background: #f1f5f9;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+    .channel-tile.read-only-tile input[type="radio"] {
+        cursor: not-allowed;
+        pointer-events: none;
     }
     .channel-tile {
         position: relative;
@@ -882,18 +906,35 @@
                 </div>
                 <div class="form-section-body">
                     <label class="form-label small fw-semibold text-dark mb-1">Permintaan Masuk Melalui:</label>
-                    <div class="channel-tile-grid mb-3">
-                        <label class="channel-tile {{ @sp.permintaan_melalui == 'fax' ? 'active' : '' }}" for="pmFax">
-                            <input type="radio" name="permintaan_melalui" id="pmFax" value="fax" {{ @sp.permintaan_melalui == 'fax' ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
-                            <span class="channel-tile-label">Fax</span>
+                    <input type="hidden" name="permintaan_melalui" value="{{ @media_permintaan_val ?: (@order.media_permohonan ?: (@sp.permintaan_melalui ?: 'surat')) }}">
+                    <div class="channel-tile-grid read-only-channel-grid mb-3">
+                        <label class="channel-tile {{ (@media_permintaan_val == 'surat' || @order.media_permohonan == 'surat' || @sp.permintaan_melalui == 'surat' || (empty(@media_permintaan_val) && empty(@order.media_permohonan) && empty(@sp.permintaan_melalui))) ? 'active' : '' }} read-only-tile">
+                            <input type="radio" value="surat" {{ (@media_permintaan_val == 'surat' || @order.media_permohonan == 'surat' || @sp.permintaan_melalui == 'surat' || (empty(@media_permintaan_val) && empty(@order.media_permohonan) && empty(@sp.permintaan_melalui))) ? 'checked' : '' }} disabled tabindex="-1">
+                            <span class="channel-tile-label"><i class="bi bi-envelope-paper me-1 text-secondary"></i>Surat Resmi</span>
                         </label>
-                        <label class="channel-tile {{ (@sp.permintaan_melalui == 'surat' || (!@sp.permintaan_melalui && @order.id)) ? 'active' : '' }}" for="pmSurat">
-                            <input type="radio" name="permintaan_melalui" id="pmSurat" value="surat" {{ (@sp.permintaan_melalui == 'surat' || (!@sp.permintaan_melalui && @order.id)) ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
-                            <span class="channel-tile-label">Surat Resmi</span>
+                        <label class="channel-tile {{ (@media_permintaan_val == 'email' || @order.media_permohonan == 'email' || @sp.permintaan_melalui == 'email') ? 'active' : '' }} read-only-tile">
+                            <input type="radio" value="email" {{ (@media_permintaan_val == 'email' || @order.media_permohonan == 'email' || @sp.permintaan_melalui == 'email') ? 'checked' : '' }} disabled tabindex="-1">
+                            <span class="channel-tile-label"><i class="bi bi-envelope-at me-1 text-secondary"></i>E-mail</span>
                         </label>
-                        <label class="channel-tile {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && !@order.id)) ? 'active' : '' }}" for="pmEmail">
-                            <input type="radio" name="permintaan_melalui" id="pmEmail" value="email" {{ (@sp.permintaan_melalui == 'email' || (!@sp.permintaan_melalui && !@order.id)) ? 'checked' : '' }} {{ !@can_edit ? 'disabled' : '' }}>
-                            <span class="channel-tile-label">E-mail</span>
+                        <label class="channel-tile {{ (@media_permintaan_val == 'whatsapp' || @order.media_permohonan == 'whatsapp' || @sp.permintaan_melalui == 'whatsapp') ? 'active' : '' }} read-only-tile">
+                            <input type="radio" value="whatsapp" {{ (@media_permintaan_val == 'whatsapp' || @order.media_permohonan == 'whatsapp' || @sp.permintaan_melalui == 'whatsapp') ? 'checked' : '' }} disabled tabindex="-1">
+                            <span class="channel-tile-label"><i class="bi bi-whatsapp me-1 text-secondary"></i>WhatsApp</span>
+                        </label>
+                        <label class="channel-tile {{ (@media_permintaan_val == 'telepon' || @order.media_permohonan == 'telepon' || @sp.permintaan_melalui == 'telepon') ? 'active' : '' }} read-only-tile">
+                            <input type="radio" value="telepon" {{ (@media_permintaan_val == 'telepon' || @order.media_permohonan == 'telepon' || @sp.permintaan_melalui == 'telepon') ? 'checked' : '' }} disabled tabindex="-1">
+                            <span class="channel-tile-label"><i class="bi bi-telephone me-1 text-secondary"></i>Telepon</span>
+                        </label>
+                        <label class="channel-tile {{ (@media_permintaan_val == 'fax' || @order.media_permohonan == 'fax' || @sp.permintaan_melalui == 'fax') ? 'active' : '' }} read-only-tile">
+                            <input type="radio" value="fax" {{ (@media_permintaan_val == 'fax' || @order.media_permohonan == 'fax' || @sp.permintaan_melalui == 'fax') ? 'checked' : '' }} disabled tabindex="-1">
+                            <span class="channel-tile-label"><i class="bi bi-printer me-1 text-secondary"></i>Fax</span>
+                        </label>
+                        <label class="channel-tile {{ (@media_permintaan_val == 'website' || @order.media_permohonan == 'website' || @sp.permintaan_melalui == 'website') ? 'active' : '' }} read-only-tile">
+                            <input type="radio" value="website" {{ (@media_permintaan_val == 'website' || @order.media_permohonan == 'website' || @sp.permintaan_melalui == 'website') ? 'checked' : '' }} disabled tabindex="-1">
+                            <span class="channel-tile-label"><i class="bi bi-globe me-1 text-secondary"></i>Website</span>
+                        </label>
+                        <label class="channel-tile {{ (@media_permintaan_val == 'datang_langsung' || @order.media_permohonan == 'datang_langsung' || @sp.permintaan_melalui == 'datang_langsung') ? 'active' : '' }} read-only-tile">
+                            <input type="radio" value="datang_langsung" {{ (@media_permintaan_val == 'datang_langsung' || @order.media_permohonan == 'datang_langsung' || @sp.permintaan_melalui == 'datang_langsung') ? 'checked' : '' }} disabled tabindex="-1">
+                            <span class="channel-tile-label"><i class="bi bi-person-walking me-1 text-secondary"></i>Datang Langsung</span>
                         </label>
                     </div>
 

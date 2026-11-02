@@ -321,8 +321,8 @@ class SuratPenawaran extends \DB\SQL\Mapper
                 $fileLampiran = $existing['file_lampiran'];
             }
             // PROTEKSI STATE GUARD:
-            // Jika dokumen yang di-update sebelumnya sudah DEAL, cegah penurunan menjadi 'draft'
-            if (($existing['status_respon_klien'] ?? '') === 'deal' && $statusRespon === 'draft') {
+            // Jika dokumen yang di-update sebelumnya sudah DEAL atau order sudah DEAL, cegah penurunan status
+            if ((($existing['status_respon_klien'] ?? '') === 'deal' || ($order['status_penawaran'] ?? '') === 'deal') && in_array($statusRespon, ['draft', 'nego'])) {
                 $statusRespon = 'deal';
             }
 
@@ -427,7 +427,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
         // Sinkronisasi status, ID surat penawaran, nominal biaya, durasi (SPM), dan status proposal ke order_layanan
         // PROTEKSI: Jangan perbarui status_penawaran di order_layanan menjadi 'draft' jika sebelumnya sudah DEAL
         $statusPenawaranOrder = $statusRespon;
-        if ($statusRespon === 'draft' && in_array($order['status_penawaran'] ?? '', ['deal'])) {
+        if (in_array($statusRespon, ['draft', 'nego']) && in_array($order['status_penawaran'] ?? '', ['deal'])) {
             $statusPenawaranOrder = 'deal';
         }
 

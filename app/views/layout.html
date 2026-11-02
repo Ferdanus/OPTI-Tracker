@@ -1781,17 +1781,7 @@
                     </li>
                 </check>
 
-                <!-- Permintaan Masuk (Ketua Tim, Superadmin) -->
-                <check if="{{ @is_superadmin || @is_ketua_tim }}">
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'disposisi_masuk' ? 'active' : '' }}" href="{{ @BASE }}/disposisi-masuk" title="Permintaan Masuk">
-                            <i class="bi bi-bell"></i> <span>Permintaan Masuk</span>
-                            <check if="{{ @jumlah_notif_katim > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_katim }}</span>
-                            </check>
-                        </a>
-                    </li>
-                </check>
+                <!-- Permintaan Masuk (Disembunyikan / Dilebur ke Daftar Order) -->
 
                 <!-- Daftar Order (Semua Role Teknis, Pelayanan, Keuangan & Pegawai Umum) -->
                 <!-- Daftar Order (Satu Pintu: Semua Role Teknis, Pelayanan, Keuangan & Pegawai Umum) -->
