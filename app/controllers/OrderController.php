@@ -2281,7 +2281,7 @@ class OrderController extends Controller {
                             'pesan'          => "Anda ditugaskan sebagai PIC untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon susun dan unggah dokumen proposal teknis.",
                             'tipe'           => 'primary',
                             'icon'           => 'bi-file-earmark-arrow-up-fill',
-                            'link_url'       => "/order/{$id}/proposal",
+                            'link_url'       => "/order/{$id}",
                             'created_by'     => $userId,
                             'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
                         ]);
@@ -2597,7 +2597,7 @@ class OrderController extends Controller {
                         'pesan'          => "Rincian biaya pengujian Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) sebesar Rp " . number_format($hasil['total_netto'], 0, ',', '.') . " siap dibuatkan penawaran resmi.",
                         'tipe'           => 'info',
                         'icon'           => 'bi-cash-stack',
-                        'link_url'       => "/order/{$id}/penawaran/buat",
+                        'link_url'       => "/order/{$id}",
                         'created_by'     => $userId,
                         'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
                     ]);
@@ -2887,7 +2887,7 @@ class OrderController extends Controller {
                         'pesan'          => "Anda telah ditugaskan sebagai PIC Proposal untuk Order #{$nomorOrderStr} ({$perusahaanStr}).",
                         'tipe'           => 'primary',
                         'icon'           => 'bi-person-check-fill',
-                        'link_url'       => "/order/{$id}/proposal",
+                        'link_url'       => "/order/{$id}",
                         'created_by'     => (int)$this->getUserId(),
                         'created_by_name'=> $userPengirim
                     ]);
@@ -3658,7 +3658,7 @@ class OrderController extends Controller {
                     'pesan'          => "Anda telah ditunjuk oleh Ketua Tim OPTI ({$userNama}) sebagai PIC Peneliti untuk menyusun proposal teknis Order #{$order['nomor_order']} ({$order['nama_perusahaan']}).",
                     'tipe'           => 'primary',
                     'icon'           => 'bi-person-check-fill',
-                    'link_url'       => "/order/{$id}/proposal",
+                    'link_url'       => "/order/{$id}",
                     'created_by'     => (int)$this->getUserId(),
                     'created_by_name'=> $userNama
                 ]);
@@ -4805,7 +4805,7 @@ class OrderController extends Controller {
                         'pesan'          => "PIC Proposal ({$userNama}) telah mengajukan dokumen proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon periksa dan berikan persetujuan.",
                         'tipe'           => 'info',
                         'icon'           => 'bi-file-earmark-check-fill',
-                        'link_url'       => "/order/{$id}/proposal",
+                        'link_url'       => "/order/{$id}",
                         'created_by'     => $userId,
                         'created_by_name'=> $userNama
                     ]);
@@ -5083,7 +5083,7 @@ class OrderController extends Controller {
                     'pesan'          => "PIC Proposal ({$userNama}) telah mengajukan dokumen proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon periksa dan berikan persetujuan.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-file-earmark-check-fill',
-                    'link_url'       => "/order/{$id}/proposal",
+                    'link_url'       => "/order/{$id}",
                     'created_by'     => $userId,
                     'created_by_name'=> $userNama
                 ]);
@@ -5148,7 +5148,7 @@ class OrderController extends Controller {
             $isLingkungan = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan');
             $labelDokumen = $isLingkungan ? 'Kalkulasi tarif pengujian' : 'Proposal teknis';
             $labelKapital = $isLingkungan ? 'Kalkulasi Tarif Pengujian' : 'Proposal Teknis';
-            $linkPic = $isLingkungan ? "/order/{$id}/biaya-lingkungan" : "/order/{$id}/proposal";
+            $linkPic = "/order/{$id}";
 
             if ($action === 'approve') {
                 $this->db->exec(
