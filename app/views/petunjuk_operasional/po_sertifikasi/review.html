@@ -941,7 +941,7 @@ var BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt
                 berubah = true; p.keadaan = 'disetujui'; p.disetujui_at = nowStr();
                 tambahRiwayat(p, 'Ketua Tim menyetujui PO. PO terkunci dan diteruskan ke Humas untuk diverifikasi.');
                 renderChrome(); toast(j.pesan || 'PO disetujui dan diteruskan ke Humas.');
-                setTimeout(closeSheet, 900);
+                setTimeout(closeSheet, 500);
             }).catch(function (e) { toast(e.message, true); kunciTombol(false); });
         });
     }
@@ -954,7 +954,7 @@ var BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt
                 berubah = true; p.keadaan = 'perlu_revisi'; p.minta_at = nowStr(); p.catatan = r.catatan; p.ronde = (p.ronde || 0) + 1;
                 tambahRiwayat(p, 'Ketua Tim meminta revisi.');
                 renderChrome(); toast(j.pesan || 'Permintaan revisi dikirim ke Tim Kerja.');
-                setTimeout(closeSheet, 900);
+                setTimeout(closeSheet, 500);
             }).catch(function (e) { toast(e.message, true); kunciTombol(false); });
         });
     }

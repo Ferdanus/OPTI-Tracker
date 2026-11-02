@@ -222,7 +222,27 @@ class Controller {
                                             AND (sp.id IS NULL OR sp.status_respon_klien = 'draft')
                                         )
                                     )";
-                $resOrderMitra = $this->db->exec($sqlOrderMitra);
+                // Ditambah: PO yang sedang menunggu verifikasi Tim Mitra (sudah diverifikasi Humas, belum oleh Tim Mitra) - sama dengan tugas "Verifikasi PO" di Daftar Order
+                try {
+                    $sqlMitraPo = str_replace(
+                        "WHERE o.status != 'ditolak'",
+                        "LEFT JOIN po_kegiatan pk ON pk.id = (SELECT id FROM po_kegiatan WHERE order_id = o.id" . (class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('') : '') . " ORDER BY id ASC LIMIT 1)
+                         WHERE o.status != 'ditolak'",
+                        $sqlOrderMitra
+                    );
+                    $sqlMitraPo = preg_replace(
+                        '/\n\s*\)\s*$/',
+                        " OR (pk.status IN ('terkirim','disetujui_mitra','disetujui') AND pk.status_review = 'disetujui'
+                                            AND (pk.ppk_status IS NULL OR pk.ppk_status NOT IN ('minta','katim_kerja','ketupel_kerja','katim_review'))
+                                            AND pk.validasi_keuangan_at IS NULL AND pk.tervalidasi_mitra_at IS NULL AND pk.verifikasi_humas_at IS NOT NULL)
+                                    )",
+                        $sqlMitraPo, 1
+                    );
+                    if ($sqlMitraPo === $sqlOrderMitra) { throw new \Exception('pola SQL tidak cocok'); }
+                    $resOrderMitra = $this->db->exec($sqlMitraPo);
+                } catch (\Exception $eMitraPo) {
+                    $resOrderMitra = $this->db->exec($sqlOrderMitra);
+                }
                 $notifOrderCount = (int)($resOrderMitra[0]['c'] ?? 0);
             } elseif ($role === 'tim_kerja') {
                 // Tim Kerja: Hitung seluruh order aktif tugas user (baik di tab Masuk maupun Berjalan) di mana user ditugaskan sebagai PIC Proposal atau Ketua Pelaksana
@@ -275,6 +295,23 @@ class Controller {
                                )";
                 $resNotif = $this->db->exec($sqlNotif);
                 $notifOrderCount = (int)($resNotif[0]['c'] ?? 0);
+            } elseif ($role === 'humas') {
+                // Humas: PO yang sudah disetujui Ketua Tim dan menunggu verifikasi Humas (sama dengan "Verifikasi PO" di Daftar Order)
+                $resHumas = $this->db->exec(
+                    "SELECT COUNT(DISTINCT p.order_id) AS c FROM po_kegiatan p
+                      WHERE p.status IN ('terkirim','disetujui_mitra','disetujui') AND p.status_review = 'disetujui'
+                        AND p.verifikasi_humas_at IS NULL"
+                );
+                $notifOrderCount = (int)($resHumas[0]['c'] ?? 0);
+            } elseif (in_array($role, array('ppk', 'ppk_blu', 'pejabat'), true)) {
+                // PPK BLU: PO yang sudah diverifikasi Tim Mitra dan menunggu verifikasi PPK BLU (sama dengan "Verifikasi PO" di Daftar Order)
+                $resPpk = $this->db->exec(
+                    "SELECT COUNT(DISTINCT p.order_id) AS c FROM po_kegiatan p
+                      WHERE p.status IN ('terkirim','disetujui_mitra','disetujui') AND p.status_review = 'disetujui'
+                        AND (p.ppk_status IS NULL OR p.ppk_status NOT IN ('minta','katim_kerja','ketupel_kerja','katim_review'))
+                        AND p.tervalidasi_mitra_at IS NOT NULL AND p.validasi_keuangan_at IS NULL"
+                );
+                $notifOrderCount = (int)($resPpk[0]['c'] ?? 0);
             } elseif ($role === 'superadmin') {
                 // Superadmin mengawasi seluruh order aktif yang sedang berjalan maupun order masuk
                 $sqlOrderSuper = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o

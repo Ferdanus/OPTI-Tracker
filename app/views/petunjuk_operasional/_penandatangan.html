@@ -114,6 +114,26 @@
         return memuat;
     }
 
+    /* ---------- Ketua Tim sesuai layanan (selulosa / lingkungan) ---------- */
+    var layananOpt = '', ketuaMemuat = {};
+    function normNama(n) {
+        return String(n || '').toLowerCase().split(',')[0].replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+    function namaKetuaCocok(d, daftar) {
+        var a = normNama(d.nama);
+        if (!a || !daftar || !daftar.length) { return false; }
+        return daftar.some(function (x) { var b = normNama(x); return b && (a === b || a.indexOf(b) !== -1 || b.indexOf(a) !== -1); });
+    }
+    function muatKetua(layanan) {
+        layanan = String(layanan || '').toLowerCase();
+        if (ketuaMemuat[layanan]) { return ketuaMemuat[layanan]; }
+        ketuaMemuat[layanan] = fetch(URL_DAFTAR + '?ketua_saja=1' + (layanan ? '&layanan=' + encodeURIComponent(layanan) : ''), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (j) { return (j && j.ok && j.ketua) ? j.ketua : []; })
+            .catch(function () { return []; });
+        return ketuaMemuat[layanan];
+    }
+
     /* ---------- ikon ---------- */
     var I_JAB = '<svg width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2z"/></svg>';
     var I_USR = '<svg width="15" height="15" fill="#64748b" viewBox="0 0 16 16"><path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/></svg>';
@@ -131,7 +151,7 @@
     }, true);
 
     /* ---------- komponen pilih satu pejabat ---------- */
-    function pembuat(ctl, slotDef, state, simpan) {
+    function pembuat(ctl, slotDef, state, simpan, ketuaDaftar) {
         var dd = null, sin = null, lst = null, aktif = -1, tampil = [];
         var api = {
             dd: null,
@@ -166,6 +186,10 @@
             }
             var cocok = master.filter(function (d) { return !q || (d.nama + ' ' + d.jabatan + ' ' + d.kategori).toLowerCase().indexOf(q) !== -1; });
             var saran = cocok.filter(slotDef.saran), lain = cocok.filter(function (d) { return !slotDef.saran(d); });
+            var kd = ketuaDaftar ? ketuaDaftar() : [];
+            if (slotDef.key === 'ketua' && kd.length) {   // Ketua Tim layanan ini tampil paling atas
+                saran = saran.filter(function (d) { return namaKetuaCocok(d, kd); }).concat(saran.filter(function (d) { return !namaKetuaCocok(d, kd); }));
+            }
             tampil = saran.concat(lain);
             if (!tampil.length) { lst.innerHTML = '<div class="ptd-info">Pejabat atau jabatan tidak ditemukan</div>'; return; }
             var h = '';
@@ -232,7 +256,7 @@
                 ['id', 'nama', 'nip', 'jabatan', 'baris'].map(function (f) { return '<input type="hidden" name="ttd_' + sd.key + '_' + f + '" data-h="' + sd.key + '_' + f + '">'; }).join('') +
                 '</div>';
         });
-        h += '<div class="ptd-hint">Terisi otomatis: Pejabat Pembuat Komitmen, Ketua Tim Layanan, dan Kepala (klik untuk mengganti). Daftar diambil dari master penandatangan (sama dengan Surat Penawaran). Yang tersimpan di PO adalah nama, NIP, dan jabatan saat dipilih, jadi PO yang sudah terkirim tidak ikut berubah kalau pejabat di master berganti.</div>';
+        h += '';
         host.innerHTML = h;
 
         function tulis(sd) {
@@ -248,6 +272,7 @@
             set('id', s.id || 0); set('nama', s.nama); set('nip', s.nip); set('jabatan', s.jabatan); set('baris', JSON.stringify(s.baris || []));
             ctl.classList.remove('is-bad');
         }
+        var ketuaNama = [];   // nama Ketua Tim untuk layanan PO ini (diisi dari server)
         SLOT.forEach(function (sd) {
             tulis(sd);
             pembuat(host.querySelector('[data-ctl="' + sd.key + '"]'), sd, state, function (s) {
@@ -256,7 +281,7 @@
                 if (i) { i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); }
                 host.dispatchEvent(new CustomEvent('ptd:change', { bubbles: true, detail: { slot: sd.key } }));
                 if (opt.onChange) { opt.onChange(sd.key, state); }
-            });
+            }, function () { return ketuaNama; });
         });
         // Isian bawaan: PO yang BELUM punya satu pun penandatangan langsung diisi PPK, Ketua Tim Layanan, dan Kepala
         // (masih bisa diganti lewat pilihan). Dilewati bila opt.auto === false (mis. PO terkirim yang hanya dilihat).
@@ -265,7 +290,11 @@
             if (SLOT.some(function (sd) { return state[sd.key].nama; })) { return; }
             var ada = false;
             SLOT.forEach(function (sd) {
-                var d = master.filter(sd.bawaan)[0];
+                var d = null;
+                if (sd.key === 'ketua' && ketuaNama.length) {   // Ketua Tim sesuai layanan (selulosa / lingkungan)
+                    d = master.filter(function (x) { return /ketua tim/i.test(x.jabatan) && namaKetuaCocok(x, ketuaNama); })[0] || null;
+                }
+                if (!d) { d = master.filter(sd.bawaan)[0]; }
                 if (!d) { return; }
                 state[sd.key] = slotBaku({ id: d.id, nama: d.nama, nip: d.nip, jabatan: d.jabatan, baris: d.baris });
                 tulis(sd); ada = true;
@@ -276,7 +305,10 @@
             host.dispatchEvent(new CustomEvent('ptd:change', { bubbles: true, detail: { slot: 'auto' } }));
             if (opt.onChange) { opt.onChange('auto', state); }
         }
-        muat().then(isiBawaan, function () {});
+        Promise.all([muat().catch(function () { return null; }), muatKetua(opt.layanan || layananOpt)]).then(function (h) {
+            ketuaNama = h[1] || [];
+            if (h[0]) { isiBawaan(); }
+        });
         var ik = host.querySelector('#ptdKota');
         if (ik) {
             ik.addEventListener('input', function () { state.kota = ik.value; if (opt.onChange) { opt.onChange('kota', state); } });

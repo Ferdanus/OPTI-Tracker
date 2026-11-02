@@ -181,8 +181,10 @@ class MasterTimPelaksanaController extends Controller {
 
     protected function dataPegawai() {
         $out = [];
-        foreach ($this->db->exec("SELECT id_user, nama_user FROM tb_arsipuser ORDER BY nama_user ASC") as $r) {
-            $out[] = ['id' => (int) $r['id_user'], 'n' => (string) $r['nama_user']];
+        // 's' = status pegawai (1 = aktif). Semua pegawai tetap dikirim supaya nama anggota lama tetap terbaca di tabel,
+        // tetapi pilihan pegawai (dropdown & daftar centang) hanya menampilkan yang status = 1.
+        foreach ($this->db->exec("SELECT id_user, nama_user, (CASE WHEN status = 1 OR status = '1' OR status = 'aktif' THEN 1 ELSE 0 END) AS s FROM tb_arsipuser ORDER BY nama_user ASC") as $r) {
+            $out[] = ['id' => (int) $r['id_user'], 'n' => (string) $r['nama_user'], 's' => (int) $r['s']];
         }
         return $out;
     }
@@ -245,6 +247,7 @@ class MasterTimPelaksanaController extends Controller {
                    FROM po_tim_pelaksana t
                    JOIN tb_arsipuser u ON u.id_user = t.id_user
                   WHERE t.layanan = ? AND t.aktif = 1
+                    AND (u.status = 1 OR u.status = '1' OR u.status = 'aktif')
                   ORDER BY u.nama_user ASC", [1 => $d]);
         } catch (\Exception $e) {
             return [];
@@ -342,8 +345,8 @@ class MasterTimPelaksanaController extends Controller {
         $ids = array_keys($sudahPeg);
         $in = implode(',', array_fill(0, count($ids), '?'));
         $par = []; foreach ($ids as $i => $v) { $par[$i + 1] = $v; }
-        $ada = $this->db->exec("SELECT id_user FROM tb_arsipuser WHERE id_user IN ($in)", $par);
-        if (count($ada) !== count($ids)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada pegawai yang tidak ditemukan.'], 422); }
+        $ada = $this->db->exec("SELECT id_user FROM tb_arsipuser WHERE id_user IN ($in) AND (status = 1 OR status = '1' OR status = 'aktif')", $par);
+        if (count($ada) !== count($ids)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada pegawai yang tidak ditemukan atau tidak aktif.'], 422); }
         $dobel = $this->db->exec("SELECT id_user FROM po_tim_pelaksana WHERE layanan = ? AND id_user IN ($in)", array_merge([1 => $lay], array_combine(range(2, count($ids) + 1), $ids)));
         if (count($dobel)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada pegawai yang sudah terdaftar di layanan ini.'], 422); }
 

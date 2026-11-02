@@ -360,7 +360,6 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) 
     $kebutuhanList = [];
     $kebNama = $post['keb_nama'] ?? [];
     foreach ($kebNama as $katIdx => $namaKategori) {
-        if (trim($namaKategori) === '') continue;
         $items = [];
         $itemNamaList = $post['keb_item_nama'][$katIdx] ?? [];
         foreach ($itemNamaList as $i => $namaItem) {
@@ -373,7 +372,10 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) 
             ];
         }
         if (empty($items)) continue;
-        $kebutuhanList[] = ['nama' => trim($namaKategori), 'items' => $items];
+        // Nama kategori boleh dikosongkan: barang tetap masuk dengan nama bawaan "Lain-lain" (dulu diam-diam dibuang sehingga tidak muncul di preview)
+        $namaKategori = trim((string) $namaKategori);
+        if ($namaKategori === '') { $namaKategori = 'Lain-lain'; }
+        $kebutuhanList[] = ['nama' => $namaKategori, 'items' => $items];
     }
     $po->kebutuhan_tambahan = json_encode($kebutuhanList, JSON_UNESCAPED_UNICODE);
 
@@ -679,6 +681,15 @@ public function index($f3) {
         $kondisiTabPerTab['revisi']   = "{$stEf} IN ('draft', 'terkirim', 'disetujui_mitra', 'disetujui') AND {$kondisiRevisiSaya}";
         $kondisiTabPerTab['draft']    = "{$stEf} = 'draft' AND NOT (COALESCE(" . $kondisiRevisiSaya . ", 0))";
         $kondisiTabPerTab['berjalan'] = "(" . $kondisiTabPerTab['berjalan'] . ") AND NOT (COALESCE(" . $kondisiRevisiSaya . ", 0))";
+    }
+
+    // Tim Kerja (Ketua Pelaksana): PO Masuk, Draft, dan Revisi HANYA berisi order yang ditunjuk Ketua Tim kepada dirinya sendiri (o.ketua_pelaksana_id).
+    // Yang tidak ditunjuk tidak punya PO masuk / draft / revisi, tetapi tetap bisa melihat PO yang sedang berjalan dan PO aktif (tab Sedang Berjalan & PO Aktif tidak dibatasi).
+    if ($role === 'tim_kerja') {
+        $idSaya = (int) $this->getUserId();
+        foreach (['masuk', 'draft', 'revisi'] as $kPribadi) {
+            $kondisiTabPerTab[$kPribadi] = "(" . $kondisiTabPerTab[$kPribadi] . ") AND o.ketua_pelaksana_id = " . $idSaya;
+        }
     }
 
     // Tab "Semua": gabungan isi semua tab yang tampil untuk peran ini (aturan per tab di atas dipakai apa adanya, jadi tidak ada PO yang hilang / dobel).
@@ -2270,7 +2281,8 @@ protected function siapkanDataPo($po, $orderData) {
     
         $selisihHari = $mulai->diff($selesai)->days + 1;
         $liburSet = $this->getHariLiburSet();
-        $bulanNama = ['', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        // Singkatan bulan supaya judul kolom jadwal tidak meluber di kolom sempit (mis. "Feb 2027", bukan "Februari 2027")
+        $bulanNama = ['', 'Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     
         $kolom = [];
     

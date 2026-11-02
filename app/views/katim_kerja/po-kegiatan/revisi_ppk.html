@@ -1412,10 +1412,17 @@
             post(URL_API(id, bagian), data || {}).then(function (j) {
                 berubah = true;
                 // detail order dimuat ulang dengan status terbaru: 'edit' (Kerjakan sendiri) langsung menampilkan form revisi di Tahap 8, 'balik' (Disposisi) hanya status yang berubah
-                if (SOLO && (sesudah === 'edit' || sesudah === 'balik')) { openTicket++; current = null; geserKeluarLalu(sesudah === 'edit' ? 'form' : ''); return; }
+                if (SOLO && sesudah === 'edit') { openTicket++; current = null; geserKeluarLalu('form'); return; }
+                if (SOLO && sesudah === 'balik') {   // jeda ~0,5 dtk supaya status baru dan notifikasi sempat terbaca, baru slide bergeser keluar
+                    terapkanDetail(j); toast(sukses);
+                    var shw = $('rvwSheet'); if (shw) { shw.style.pointerEvents = 'none'; }
+                    setTimeout(function () { if (shw) { shw.style.pointerEvents = ''; } openTicket++; current = null; geserKeluarLalu(''); }, 500);
+                    return;
+                }
                 if (sesudah === 'edit') { window.location.href = PO_URL(id) + '/edit?dari=ppk'; return; }
                 if (sesudah === 'balik') { kembaliSebelumnya(); return; }
                 terapkanDetail(j); toast(sukses);
+                if (window.segarkanBadgeOrder) { window.segarkanBadgeOrder(); }   // badge merah Daftar Order di sidebar
             }).catch(gagal);
         }
         function kembaliSebelumnya() {

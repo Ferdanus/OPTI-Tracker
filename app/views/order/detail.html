@@ -6775,6 +6775,7 @@ function poSegarkanTahap8(opsi) {
     return fetch(window.location.pathname + q, { credentials: 'same-origin', cache: 'no-store', headers: { 'X-Requested-With': 'fetch' } })
         .then(function (r) { if (!r.ok) { throw new Error('gagal'); } return r.text(); })
         .then(function (html) {
+            if (window.segarkanBadgeOrder) { window.segarkanBadgeOrder(html); }   // badge merah Daftar Order di sidebar ikut diperbarui
             var doc = new DOMParser().parseFromString(html, 'text/html');
             var cBaru = doc.getElementById('cardPo'), cLama = document.getElementById('cardPo');
             if (!cBaru || !cLama) { throw new Error('tidak ada kartu PO'); }

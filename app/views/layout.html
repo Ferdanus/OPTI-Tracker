@@ -2725,6 +2725,39 @@
             }
         };
 
+        // Perbarui badge merah "Daftar Order" di sidebar tanpa memuat ulang halaman (dipanggil sesudah verifikasi/review PO).
+        // html: teks halaman yang baru diambil (opsional); kosong = ambil ulang halaman ini. Hanya badge menu Daftar Order yang disinkronkan.
+        window.segarkanBadgeOrder = function (html) {
+            function terapkan(teks) {
+                try {
+                    var doc = new DOMParser().parseFromString(teks, 'text/html');
+                    var hrefOrder = function (a) { return /\/order$/.test(((a.getAttribute('href') || '').split('#')[0]).split('?')[0]); };
+                    var baru = null, lama = null;
+                    Array.prototype.forEach.call(doc.querySelectorAll('.sidebar .sidebar-link'), function (a) { if (!baru && hrefOrder(a)) { baru = a; } });
+                    Array.prototype.forEach.call(document.querySelectorAll('.sidebar .sidebar-link'), function (a) { if (!lama && hrefOrder(a)) { lama = a; } });
+                    if (!baru || !lama) { return; }
+                    var bb = baru.querySelector('.sidebar-notif-badge'), bl = lama.querySelector('.sidebar-notif-badge');
+                    if (bb) {
+                        if (!bl) { bl = document.createElement('span'); bl.className = bb.className; bl.setAttribute('style', bb.getAttribute('style') || ''); lama.appendChild(bl); }
+                        bl.style.display = '';
+                        bl.textContent = bb.textContent.trim();
+                        bl.style.transition = 'transform .25s ease';
+                        bl.style.transform = 'scale(1.25)';
+                        setTimeout(function () { bl.style.transform = ''; }, 250);
+                    } else if (bl) {
+                        bl.style.transition = 'opacity .25s ease';
+                        bl.style.opacity = '0';
+                        setTimeout(function () { if (bl.parentNode) { bl.parentNode.removeChild(bl); } }, 260);
+                    }
+                } catch (e) { /* hanya tampilan menu */ }
+            }
+            if (typeof html === 'string') { terapkan(html); return; }
+            fetch(window.location.href, { credentials: 'same-origin', cache: 'no-store', headers: { 'X-Requested-With': 'fetch' } })
+                .then(function (r) { return r.ok ? r.text() : ''; })
+                .then(function (t) { if (t) { terapkan(t); } })
+                .catch(function () {});
+        };
+
         // Live polling unread notification updates every 45 seconds
         setInterval(function() {
             fetch('{{ @BASE }}/notifikasi/unread')

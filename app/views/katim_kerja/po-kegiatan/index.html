@@ -16,6 +16,18 @@
 
     <!-- Kolom Posisi PO (tab Revisi & Sedang Berjalan) -->
     <style>
+    /* Daftar PO: kolom Dokumen PO, No. Order, dan Mitra Industri tidak boleh terpotong di tengah kata/nomor.
+       Dibuat rapat (padding kecil + zoom .9) supaya muat tanpa scroll horizontal di layar laptop. */
+    .po-idx-table { zoom: .9; }
+    .po-idx-table th, .po-idx-table td { padding-left: .5rem; padding-right: .5rem; width: auto !important; }
+    .po-idx-table td:nth-child(2) .fw-bold { word-break: normal !important; overflow-wrap: normal; white-space: nowrap; }
+    .po-idx-table td:nth-child(3) { white-space: nowrap; }
+    .po-idx-table td:nth-child(4), .po-idx-table th:nth-child(4) { min-width: 160px; }
+    .po-idx-table td:nth-child(4) .fw-semibold { word-break: normal; overflow-wrap: normal; }
+    .po-idx-table td:nth-child(4) .small { white-space: nowrap; }
+    .po-idx-table td:nth-child(6), .po-idx-table th:nth-child(6) { min-width: 120px; }
+    .po-idx-table td:nth-child(8) * { white-space: nowrap; }
+    .po-idx-table td:last-child .btn, .po-idx-table td:last-child a { white-space: nowrap; }
     tr.po-unread td { font-weight: 700; background: #f8fafc; }
     .po-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2563eb; margin-right: 6px; vertical-align: middle; }
     .po-baca { font-size: .73rem; font-weight: 600; margin-top: 2px; }
@@ -202,13 +214,13 @@
             </check>
             <check if="{{ @daftar_po && count(@daftar_po) > 0 }}">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 po-idx-table">
                         <thead class="table-light">
                             <tr>
                                 <th class="text-center" style="width: 45px;">No</th>
                                 <th style="width: 190px;">Dokumen PO</th>
                                 <th style="width: 150px;">No. Order</th>
-                                <th>Mitra Industri &amp; Pelaksana</th>
+                                <th style="width: 195px;">Mitra Industri &amp; Pelaksana</th>
                                 <th style="width: 120px;">Divisi</th>
                                 <th>Judul Kegiatan</th>
                                 <th class="text-center" style="width: 170px;">Status PO</th>

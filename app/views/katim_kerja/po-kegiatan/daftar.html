@@ -639,8 +639,18 @@
             });
         }
         function selesaiAksi(j, pesan) {
-            if (SOLO) { openTicket++; current = null; minta_induk('aksi'); return; }
+            if (SOLO) {   // jeda ~0,5 dtk supaya status baru dan notifikasi sempat terbaca, baru slide bergeser keluar
+                terapkanDetail(j); toast(pesan);
+                var shw = $('rvwSheet'); if (shw) { shw.style.pointerEvents = 'none'; }
+                setTimeout(function () { if (shw) { shw.style.pointerEvents = ''; } openTicket++; current = null; minta_induk('aksi'); }, 500);
+                return;
+            }
             terapkanDetail(j); toast(pesan);
+            if (window.segarkanBadgeOrder) { window.segarkanBadgeOrder(); }   // badge merah Daftar Order di sidebar
+            if (pesan !== 'PO dibuka kembali.') {   // di halaman daftar, slide juga menutup sendiri sesudah jeda ~0,5 dtk, sama seperti di detail order
+                var idAksi = current, shl = $('rvwSheet'); if (shl) { shl.style.pointerEvents = 'none'; }
+                setTimeout(function () { if (shl) { shl.style.pointerEvents = ''; } if (current === idAksi) { closeSheet(); } }, 500);
+            }
         }
         var BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
         var STATUS = {
@@ -1356,7 +1366,7 @@
             var a = document.createElement('a');
             a.href = BASE + '/po-kegiatan/' + current + '/unduh'; a.download = '';
             document.body.appendChild(a); a.click();
-            setTimeout(function () { if (a.parentNode) { a.parentNode.removeChild(a); } }, 1000);
+            setTimeout(function () { if (a.parentNode) { a.parentNode.removeChild(a); } }, 500);
         }
 
         /* ---------- Kartu berkas gaya detail order ----------

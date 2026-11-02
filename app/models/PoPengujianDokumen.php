@@ -18,6 +18,8 @@
 class PoPengujianDokumen
 {
     protected static $bulan = array('', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember');
+    /** Singkatan bulan untuk judul kolom jadwal (supaya tidak meluber di kolom sempit). */
+    protected static $bulanPendek = array('', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des');
     protected static $romawi = array('', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII');
 
     /* ================================================================== */
@@ -335,7 +337,7 @@ class PoPengujianDokumen
                 $sampai = ($y === $y2 && $m === $me) ? $mingguAkhir : 4;
                 for ($w = $dari; $w <= $sampai; $w++) {
                     $kolom[] = array('key' => $y . '-' . str_pad((string) $m, 2, '0', STR_PAD_LEFT) . '-w' . $w, 'label' => (string) $w,
-                        'bulan_label' => self::$bulan[$m] . ' ' . $y, 'libur' => false);
+                        'bulan_label' => self::$bulanPendek[$m] . ' ' . $y, 'libur' => false);
                 }
                 $m++;
                 if ($m > 12) { $m = 1; $y++; }
@@ -346,7 +348,7 @@ class PoPengujianDokumen
             while ($c <= $d2) {
                 $tgl = $c->format('Y-m-d');
                 $kolom[] = array('key' => $tgl, 'label' => $c->format('j'),
-                    'bulan_label' => self::$bulan[(int) $c->format('n')] . ' ' . $c->format('Y'),
+                    'bulan_label' => self::$bulanPendek[(int) $c->format('n')] . ' ' . $c->format('Y'),
                     'libur' => ((int) $c->format('N') >= 6) || isset($liburSet[$tgl]));
                 $c->modify('+1 day');
             }

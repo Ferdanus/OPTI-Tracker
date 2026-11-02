@@ -813,7 +813,7 @@
             var a = document.createElement('a');
             a.href = PO_URL(current) + '/unduh'; a.download = '';
             document.body.appendChild(a); a.click();
-            setTimeout(function () { if (a.parentNode) { a.parentNode.removeChild(a); } }, 1000);
+            setTimeout(function () { if (a.parentNode) { a.parentNode.removeChild(a); } }, 500);
         }
 
         /* ---------- Status PO (turunan dari state) ---------- */
@@ -1622,7 +1622,21 @@
         function gagal(e) { toast(e.message, true); muatUlangDetail(); }
         function kirim(bagian, data, sukses) {
             var id = current;
-            post(URL_API(id, bagian), data || {}).then(function (j) { berubah = true; terapkanDetail(j); toast(sukses); if (SOLO) { mintaIndukPerbarui(bagian === 'kerjakan' ? 'form' : ''); } }).catch(gagal);
+            post(URL_API(id, bagian), data || {}).then(function (j) { berubah = true; terapkanDetail(j); toast(sukses);
+                if (!SOLO) {
+                    if (window.segarkanBadgeOrder) { window.segarkanBadgeOrder(); }   // badge merah Daftar Order di sidebar
+                    if (bagian !== 'kerjakan') {   // di halaman daftar, slide juga menutup sendiri sesudah jeda ~0,5 dtk, sama seperti di detail order
+                        var shl = document.getElementById('rvwSheet'); if (shl) { shl.style.pointerEvents = 'none'; }
+                        setTimeout(function () { if (shl) { shl.style.pointerEvents = ''; } if (current === id) { closeSheet(); } }, 500);
+                    }
+                }
+                if (SOLO) {
+                    if (bagian === 'kerjakan') { mintaIndukPerbarui('form'); return; }   // pindah ke form: langsung
+                    // jeda ~0,5 dtk supaya status baru dan notifikasi sempat terbaca, baru slide bergeser keluar
+                    var shw = document.getElementById('rvwSheet'); if (shw) { shw.style.pointerEvents = 'none'; }
+                    setTimeout(function () { if (shw) { shw.style.pointerEvents = ''; } mintaIndukPerbarui(''); }, 500);
+                }
+            }).catch(gagal);
         }
         function doAct(act) {
             var p = curPo(); if (!p || !detail) { return; }

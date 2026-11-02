@@ -163,7 +163,7 @@ class OrderController extends Controller {
         
         $totalUserTasks = $userTasksMasuk + $userTasksBerlangsung;
         $f3->set('total_user_tasks', $totalUserTasks);
-        if ($userRole === 'tim_kerja' || $userRole === 'ketua_tim' || in_array($userRole, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra'])) {
+        if ($userRole === 'tim_kerja' || $userRole === 'ketua_tim' || in_array($userRole, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra', 'humas', 'keuangan', 'ketua_tim_keuangan', 'ppk', 'ppk_blu', 'pejabat'], true)) {
             $f3->set('jumlah_notif_order', $totalUserTasks);
             $f3->set('jumlah_notif_katim', $totalUserTasks);
         }

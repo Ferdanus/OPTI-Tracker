@@ -312,6 +312,7 @@ function ddTutup(){DD.i=-1;var d=$('dd');if(d)d.hidden=true}
 function ddIsi(){
   var q=$('ddQ').value.trim().toLowerCase(),dipakai=pegSudah(layTujuan()),lain=pegDipakaiDiForm(DD.i),cur=FORM[DD.i]?+FORM[DD.i].peg:0,h='',n=0;
   PEGAWAI.forEach(function(p){
+    if(!p.s)return;
     if(q&&p.n.toLowerCase().indexOf(q)<0)return;
     var off=dipakai.indexOf(p.id)>-1||lain.indexOf(p.id)>-1;
     var ket=dipakai.indexOf(p.id)>-1?'sudah di layanan ini':(lain.indexOf(p.id)>-1?'sudah dipilih di baris lain':'');
@@ -346,6 +347,7 @@ var PM=[];
 function pmRender(){
   var q=$('pmQ').value.trim().toLowerCase(),dipakai=pegSudah(layTujuan()),h='';
   PEGAWAI.forEach(function(p){
+    if(!p.s)return;
     if(q&&p.n.toLowerCase().indexOf(q)<0)return;
     var off=dipakai.indexOf(p.id)>-1;
     h+='<label class="mtp-opt'+(off?' off':'')+'"><span><input type="checkbox" class="mtp-ck" data-pm="'+p.id+'"'+(PM.indexOf(p.id)>-1?' checked':'')+(off?' disabled':'')+'> &nbsp;'+esc(p.n)+'</span>'+(off?'<small>sudah di layanan ini</small>':'')+'</label>';

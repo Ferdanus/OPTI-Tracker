@@ -536,7 +536,20 @@
 .rab-lembur-form .rab-lembur-label { color: #64748b; white-space: nowrap; font-size: 0.8rem; }
 .rab-item-row.rab-item-kebutuhan td { background: #f0f9ff; }
 .rab-keb-form { white-space: normal; }
-.rab-keb-form select.rab-keb-kategori { max-width: 280px; display: inline-block; width: auto; }
+.rab-keb-form select.rab-keb-kategori { display: none; }   /* tetap ada (nilainya dibaca perhitungan RAB); tampilannya diganti kartu di bawah */
+.keb-ref { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.keb-ref-ic { width: 32px; height: 32px; border-radius: 8px; background: #fff; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; justify-content: center; color: #475569; flex: none; }
+.keb-ref-nm { flex: 1; min-width: 0; line-height: 1.25; }
+.keb-ref-nm b { display: block; font-weight: 600; color: #0f172a; font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.keb-ref-nm small { color: #64748b; font-size: .74rem; }
+.keb-ref-nm small.bad { color: #b91c1c; }
+.keb-ref-pick { flex: 1; max-width: 340px; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 34px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #64748b; font-size: .85rem; }
+.keb-ref-pick:hover { border-color: #94a3b8; }
+.keb-ref-ganti { border: 0; background: transparent; color: #475569; font-size: .76rem; text-decoration: underline; padding: 0 4px; white-space: nowrap; }
+.keb-ref-ganti:hover { color: #0f172a; }
+.keb-ref-opt { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.keb-ref-opt small { color: #64748b; font-size: .74rem; white-space: nowrap; }
+.sat-opt.on small, .sat-opt.on .keb-ref-opt small { color: #cbd5e1; }
 .kat-tanpa-rincian-toggle:checked, .rab-grup-disediakan-toggle:checked { accent-color: var(--po-primary); }
 
 /* KPI Stat Cards in RAB */
@@ -1176,7 +1189,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 <span class="po-step-badge">2</span>
                 <div>
                     <h6 class="m-0 fw-bold text-dark">Tujuan Kegiatan</h6>
-                    <span class="text-muted small">Sasaran dan output pekerjaan operasional</span>
+
                 </div>
             </div>
         </div>
@@ -1231,7 +1244,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 <span class="po-step-badge">3</span>
                 <div>
                     <h6 class="m-0 fw-bold text-dark">Ruang Lingkup</h6>
-                    <span class="text-muted small">Cakupan analisis, pengujian, atau parameter teknis</span>
+                   
                 </div>
             </div>
             <check if="{{ @order.jenis_layanan_opti != 'selulosa' && @order.jenis_layanan_opti != 'lingkungan' }}">
@@ -1317,7 +1330,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                     <span class="po-step-badge">{{ @nomor_alat_bahan }}</span>
                     <div>
                         <h6 class="m-0 fw-bold text-dark">Alat & Bahan</h6>
-                        <span class="text-muted small">Daftar instrumen dan reagen laboratorium</span>
+                        
                     </div>
                 </div>
             </div>
@@ -1369,7 +1382,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                     <span class="po-step-badge">{{ @nomor_metoda }}</span>
                     <div>
                         <h6 class="m-0 fw-bold text-dark">Metoda Uji</h6>
-                        <span class="text-muted small">Standar operasional prosedur atau acuan SNI</span>
+                       
                     </div>
                 </div>
             </div>
@@ -1424,7 +1437,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                     <span class="po-step-badge">{{ @nomor_alat_bahan }}</span>
                     <div>
                         <h6 class="m-0 fw-bold text-dark">Alat dan Bahan</h6>
-                        <span class="text-muted small">Peralatan pabrikasi, kimia penolong, dan metode selulosa</span>
+                        
                     </div>
                 </div>
             </div>
@@ -1539,7 +1552,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div>
                             <label class="po-label mb-0">Rincian Kebutuhan Lain <span class="text-muted fw-normal text-none">(opsional)</span></label>
-                            <span class="text-muted small d-block">Barang penunjang seperti ATK, computer supplies, glassware</span>
+                            
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs d-inline-flex align-items-center gap-1.5" id="btnTambahKebutuhan">
                             <i class="bi bi-plus-lg"></i> <span>Tambah Kategori</span>
@@ -1560,7 +1573,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 <span class="po-step-badge"><i class="bi bi-geo-alt"></i></span>
                 <div>
                     <h6 class="m-0 fw-bold text-dark">Lokasi / Alamat Kegiatan <span class="text-muted fw-normal small">(opsional)</span></h6>
-                    <span class="text-muted small">Tempat pengambilan sampel atau lokasi plant mitra</span>
+                    
                 </div>
             </div>
         </div>
@@ -1580,7 +1593,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 <span class="po-step-badge">4</span>
                 <div>
                     <h6 class="m-0 fw-bold text-dark">Tim Pelaksana</h6>
-                    <span class="text-muted small">Personil analis, teknisi, dan penyelia pelaksana</span>
+                  
                 </div>
             </div>
             <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs d-inline-flex align-items-center gap-1.5" id="btnTambahTim">
@@ -1613,7 +1626,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 <span class="po-step-badge">5</span>
                 <div>
                     <h6 class="m-0 fw-bold text-dark">Rencana Anggaran Biaya (RAB)</h6>
-                    <span class="text-muted small">Alokasi penerimaan kontrak dan rincian pos pengeluaran</span>
+                    
                 </div>
             </div>
         </div>
@@ -1690,7 +1703,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 <span class="po-step-badge">6</span>
                 <div>
                     <h6 class="m-0 fw-bold text-dark">Jadwal Pelaksanaan</h6>
-                    <span class="text-muted small">Tahapan dan matriks timeline pekerjaan</span>
+                    
                 </div>
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -1819,7 +1832,7 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 <span class="po-step-badge">7</span>
                 <div>
                     <h6 class="m-0 fw-bold text-dark">Penandatanganan</h6>
-                    <span class="text-muted small">Pilih pejabat dari master penandatangan (sama dengan Surat Penawaran)</span>
+                    
                 </div>
             </div>
         </div>
@@ -3776,7 +3789,7 @@ var SATUAN_BAHAN_IKON = [
     '<svg class="sat-ic" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7zM3 7l9 4 9-4M12 11v10"/></svg>',
     '<svg class="sat-ic" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14M10 4L8 20M16 4l-2 16"/></svg>'
 ];
-function buatPilihanSatuanBahan(nilai) {
+function buatPilihanSatuanBahan(nilai, namaField) {
     var awal = String(nilai == null ? '' : nilai).trim();
     var baku = cocokkanSatuanBahan(awal);   // satuan baku, '' (kosong), atau null (tidak ada di daftar = satuan sendiri)
 
@@ -3784,7 +3797,7 @@ function buatPilihanSatuanBahan(nilai) {
     wrap.className = 'sat-cb';
 
     var hidden = document.createElement('input');
-    hidden.type = 'hidden'; hidden.name = 'bahan_kimia_satuan[]';
+    hidden.type = 'hidden'; hidden.name = namaField || 'bahan_kimia_satuan[]';
 
     var inp = document.createElement('input');
     inp.type = 'text'; inp.className = 'form-control form-control-sm';
@@ -3991,7 +4004,7 @@ var itemBody = document.createElement('div');
 
     var table = document.createElement('table');
     table.className = 'table table-sm align-middle mb-1';
-    table.innerHTML = '<thead><tr><th>Nama Barang</th><th style="width:90px;">Jumlah</th><th style="width:100px;">Satuan</th><th style="width:130px;">Harga</th><th style="width:130px;">Total Harga</th><th style="width:40px;"></th></tr></thead><tbody></tbody>';
+    table.innerHTML = '<thead><tr><th>Nama Barang</th><th style="width:90px;">Jumlah</th><th style="width:150px;">Satuan</th><th style="width:130px;">Harga</th><th style="width:130px;">Total Harga</th><th style="width:40px;"></th></tr></thead><tbody></tbody>';
     var tbody = table.querySelector('tbody');
 
     var btnTambahItem = document.createElement('button');
@@ -4031,7 +4044,7 @@ function tambahItemKebutuhan(katIdx, tbody, data) {
     tdJumlah.appendChild(inJumlah);
 
     var tdSatuan = document.createElement('td');
-    tdSatuan.appendChild(mk('text', 'keb_item_satuan[' + katIdx + '][]', data.satuan));
+    tdSatuan.appendChild(buatPilihanSatuanBahan(data.satuan, 'keb_item_satuan[' + katIdx + '][]'));   // combobox satuan yang sama dengan 4.2 Bahan
 
     var tdHarga = document.createElement('td');
     var inHarga = mk('number', 'keb_item_harga[' + katIdx + '][]', data.harga, { min: 0, step: 'any' });
@@ -4068,6 +4081,7 @@ function hitungKebutuhanLive() {
         });
         box.querySelector('.keb-total').textContent = rupiah(totalKategori);
     });
+    document.querySelectorAll('.rab-keb-kategori').forEach(function (s) { if (s._ui) s._ui(); });
     // [BARU] Item RAB tipe "Rincian Kebutuhan" (selulosa) nyambung ke total kategori di sini --
     // tiap angkanya berubah, RAB-nya ikut ke-refresh biar selalu sinkron.
     hitungRabLive();
@@ -5193,6 +5207,113 @@ function cariSubtotalKebutuhan(namaKategori) {
     return hasil;
 }
 
+/* Info tiap kategori Rincian Kebutuhan Lain (nama, jumlah barang, subtotal) buat kartu & daftar pilihan di RAB */
+function infoKategoriKebutuhan() {
+    var out = [];
+    document.querySelectorAll('#bodyKebutuhanTambahan > div').forEach(function (box) {
+        var inNama = box.querySelector(':scope > .d-flex input');
+        var v = inNama ? inNama.value.trim() : '';
+        if (!v) return;
+        var jml = 0;
+        box.querySelectorAll('tbody tr').forEach(function (tr) {
+            var n = tr.children[0] && tr.children[0].querySelector('input');
+            if (n && n.value.trim()) jml++;
+        });
+        var t = box.querySelector('.keb-total');
+        out.push({ nama: v, jml: jml, sub: t ? parseRupiah(t.textContent) : 0 });
+    });
+    return out;
+}
+
+/* Tampilan kartu untuk pilihan kategori di RAB. <select> aslinya disembunyikan tapi tetap menyimpan nilai. */
+function pasangUiKebutuhan(select, host) {
+    var wrap = document.createElement('div');
+    wrap.className = 'keb-ref';
+    host.appendChild(wrap);
+    var pop = null;
+
+    function tutup() {
+        if (pop) { pop.remove(); pop = null; }
+        document.removeEventListener('mousedown', luar, true);
+        window.removeEventListener('scroll', tutup, true);
+        window.removeEventListener('resize', tutup);
+    }
+    function luar(e) { if (pop && !pop.contains(e.target) && !wrap.contains(e.target)) tutup(); }
+    function pilih(nama) {
+        select.value = nama;
+        tutup();
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    function buka(anchor) {
+        tutup();
+        var dipakai = [];
+        document.querySelectorAll('.rab-keb-kategori').forEach(function (s) { if (s !== select && s.value) dipakai.push(s.value); });
+        var daftar = infoKategoriKebutuhan().filter(function (k) { return dipakai.indexOf(k.nama) < 0 && k.nama !== select.value; });
+        pop = document.createElement('div');
+        pop.className = 'sat-pop';
+        if (!daftar.length) {
+            var kosong = document.createElement('div');
+            kosong.className = 'sat-empty';
+            kosong.textContent = infoKategoriKebutuhan().length ? 'Semua kategori sudah dipakai di RAB.' : 'Belum ada kategori. Tambah dulu di Rincian Kebutuhan Lain.';
+            pop.appendChild(kosong);
+        }
+        daftar.forEach(function (k) {
+            var o = document.createElement('div');
+            o.className = 'sat-opt';
+            o.innerHTML = '<div class="keb-ref-opt"><span></span><small></small></div>';
+            o.querySelector('span').textContent = k.nama;
+            o.querySelector('small').textContent = k.jml + ' barang \u00b7 ' + rupiah(k.sub);
+            o.addEventListener('mousedown', function (e) { e.preventDefault(); pilih(k.nama); });
+            pop.appendChild(o);
+        });
+        document.body.appendChild(pop);
+        var r = anchor.getBoundingClientRect();
+        var lebar = Math.max(r.width, 280);
+        pop.style.width = lebar + 'px';
+        pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - lebar - 8)) + 'px';
+        var bawah = window.innerHeight - r.bottom;
+        if (bawah < 220 && r.top > bawah) {
+            pop.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+            pop.style.maxHeight = Math.max(120, Math.min(300, r.top - 16)) + 'px';
+        } else {
+            pop.style.top = (r.bottom + 6) + 'px';
+            pop.style.maxHeight = Math.max(120, Math.min(300, bawah - 16)) + 'px';
+        }
+        document.addEventListener('mousedown', luar, true);
+        window.addEventListener('scroll', tutup, true);
+        window.addEventListener('resize', tutup);
+    }
+    function gambar() {
+        var v = select.value;
+        wrap.innerHTML = '';
+        if (!v) {
+            var pick = document.createElement('button');
+            pick.type = 'button'; pick.className = 'keb-ref-pick';
+            pick.innerHTML = '<span>Pilih kategori kebutuhan</span><i class="bi bi-chevron-down"></i>';
+            pick.addEventListener('click', function () { if (pop) tutup(); else buka(pick); });
+            wrap.appendChild(pick);
+            return;
+        }
+        var cur = infoKategoriKebutuhan().filter(function (k) { return k.nama === v; })[0];
+        var ic = document.createElement('span');
+        ic.className = 'keb-ref-ic'; ic.innerHTML = '<i class="bi bi-link-45deg"></i>';
+        var nm = document.createElement('div');
+        nm.className = 'keb-ref-nm';
+        var b = document.createElement('b'); b.textContent = v; b.title = v;
+        var sm = document.createElement('small');
+        if (cur) { sm.textContent = cur.jml + ' barang di Rincian Kebutuhan Lain'; }
+        else { sm.textContent = 'Kategori tidak ditemukan di Rincian Kebutuhan Lain'; sm.className = 'bad'; }
+        nm.appendChild(b); nm.appendChild(sm);
+        var g = document.createElement('button');
+        g.type = 'button'; g.className = 'keb-ref-ganti'; g.textContent = 'Ganti';
+        g.addEventListener('click', function () { if (pop) tutup(); else buka(g); });
+        wrap.appendChild(ic); wrap.appendChild(nm); wrap.appendChild(g);
+    }
+    select.addEventListener('change', gambar);
+    select._ui = gambar;
+    gambar();
+}
+
 function buatSelectKebutuhanKategori(selectedValue) {
     var select = document.createElement('select');
     select.className = 'form-select form-select-sm rab-keb-kategori';
@@ -5226,6 +5347,7 @@ function refreshKebutuhanKategoriOptions() {
         var baru = buatSelectKebutuhanKategori(current);
         select.innerHTML = baru.innerHTML;
         select.value = current;
+        if (select._ui) select._ui();
     });
     hitungRabLive();
 }
@@ -5241,11 +5363,9 @@ function tambahItemKebutuhanRef(container, data) {
     var tdForm = document.createElement('td');
     tdForm.colSpan = 8;
     tdForm.className = 'rab-keb-form';
-    tdForm.appendChild(buatSelectKebutuhanKategori(data.keb_kategori || ''));
-    var hint = document.createElement('span');
-    hint.className = 'small text-muted ms-2';
-    hint.textContent = '(nama & biaya ngikut kategori itu di "Rincian Kebutuhan Lain")';
-    tdForm.appendChild(hint);
+    var selKeb = buatSelectKebutuhanKategori(data.keb_kategori || '');
+    tdForm.appendChild(selKeb);
+    pasangUiKebutuhan(selKeb, tdForm);   // tampilan kartu (nama & biaya ngikut kategori di Rincian Kebutuhan Lain)
 
     var totalBox = document.createElement('div');
     totalBox.className = 'fw-semibold text-end rab-item-total';
@@ -6535,7 +6655,8 @@ document.addEventListener('DOMContentLoaded', function () {
             var bln = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
             return m ? (bln[parseInt(m[2], 10)] || '') + ' ' + m[1] : '';
         },
-        ket_ketua: 'Ketua Tim Kerja'
+        ket_ketua: 'Ketua Tim ',
+        layanan: (typeof divisiOrder !== 'undefined' ? divisiOrder : '')
     });
     function validasiTtd() {
         var host = document.getElementById('ttdHost');

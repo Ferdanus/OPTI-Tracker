@@ -604,12 +604,12 @@
         <check if="{{ @po.jadwal_kolom && count(@po.jadwal_kolom) > 0 }}">
             <repeat group="{{ @po.jadwal_groups }}" value="{{ @group }}">
                 <check if="{{ @group.nama_tahap }}">
-                    <div style="font-weight:700; font-size:12px; margin:8px 0 4px;">{{ @group.nama_tahap }}</div>
+                    <div class="po-kt" style="font-weight:700; font-size:12px; margin:8px 0 4px;">{{ @group.nama_tahap }}</div>
                 </check>
                 <check if="{{ @group.kegiatan && count(@group.kegiatan) > 0 }}">
                     <repeat group="{{ @group.chunks_tampil ?: [[ 'label' => '', 'kolom' => @po.jadwal_kolom, 'bulan_header' => @po.jadwal_bulan_header ]] }}" value="{{ @chunk }}" key="{{ @cIdx }}">
                         <check if="{{ @po.jadwal_chunks && count(@po.jadwal_chunks) > 1 }}">
-                            <div style="font-weight:700; font-size:10px; color:#1e293b; margin:8px 0 3px;">
+                            <div class="po-kt" style="font-weight:700; font-size:10px; color:#1e293b; margin:8px 0 3px;">
                                 {{ @chunk.label }}<check if="{{ @chunk.lanjutan }}"> <i style="font-weight:400;">(lanjutan)</i></check>
                             </div>
                         </check>
