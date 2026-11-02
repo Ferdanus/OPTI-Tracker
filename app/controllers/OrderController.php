@@ -867,6 +867,13 @@ class OrderController extends Controller {
             $proposalLockMessage = '';
         }
 
+        // Kunci input proposal jika PIC Proposal belum dipilih / ditetapkan (OPTI Selulosa)
+        $isOrderSelulosa = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
+        if ($isOrderSelulosa && empty($order['pic_proposal_id']) && !$proposalDisetujui) {
+            $canEditProposal = false;
+            $proposalLockMessage = "PIC Peneliti / Penyusun Proposal belum ditentukan. Silakan tetapkan PIC Proposal terlebih dahulu agar pengisian proposal dapat dilakukan.";
+        }
+
         // Parse durasi kegiatan ke angka Hari Kerja (kosongkan default jika belum diisi)
         $durasiStr = $proposal['durasi_kegiatan'] ?? '';
         $durasiHari = '';
@@ -1276,7 +1283,7 @@ class OrderController extends Controller {
                 $f3->set('po_kunci_badge', 'Terkunci (Menunggu SPM & Pelunasan)');
                 $f3->set('po_kunci_pesan', 'Penerbitan PO dibuka setelah SPM diaktifkan pada <strong>Tahap 7</strong> dan pembayaran <strong>lunas</strong> pada Tahap 6.');
             } elseif (!$bayarTuntas) {
-                $f3->set('po_kunci_badge', 'Terkunci (Menunggu Pelunasan)');
+                $f3->set('po_kunci_badge', 'Terkunci (Belum Lunas)');
                 $f3->set('po_kunci_pesan', 'SPM sudah aktif, tetapi penerbitan PO baru dibuka setelah pembayaran <strong>lunas</strong> (sisa tagihan ' . $sisaTxt . '). Catat termin berikutnya pada Tahap 6.');
             } else {
                 $f3->set('po_kunci_badge', 'Terkunci (Menunggu SPM)');
@@ -4444,6 +4451,13 @@ class OrderController extends Controller {
             $lockMessage = '';
         }
 
+        // Kunci input proposal jika PIC Proposal belum dipilih / ditetapkan (OPTI Selulosa)
+        $isOrderSelulosaProposal = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
+        if ($isOrderSelulosaProposal && empty($order['pic_proposal_id']) && !$proposalDisetujui) {
+            $canEdit = false;
+            $lockMessage = "PIC Peneliti / Penyusun Proposal belum ditentukan. Silakan tetapkan PIC Proposal terlebih dahulu agar pengisian proposal dapat dilakukan.";
+        }
+
         // Ambil data surat masuk jika ada
         $suratMasuk = null;
         if (!empty($order['id_surat_masuk'])) {
@@ -4591,6 +4605,13 @@ class OrderController extends Controller {
         $canBypassLock = ($isKetuaSelulosa || $isSuperadmin || ($isPic && $isRevisi));
         if ($isSubmitted && !$this->canEditSubmittedData(true) && $actionType !== 'revisi' && !$canBypassLock) {
             $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada proposal yang sudah diajukan/disetujui tidak diperbolehkan.");
+            $f3->reroute($redirectUrl);
+            return;
+        }
+
+        // Validasi: Jika Selulosa dan belum ada PIC Proposal, tidak boleh simpan proposal
+        if ($isSelulosa && empty($order['pic_proposal_id'])) {
+            $this->setFlashError("Gagal: PIC Peneliti belum ditentukan. Silakan pilih dan tetapkan PIC Proposal terlebih dahulu.");
             $f3->reroute($redirectUrl);
             return;
         }

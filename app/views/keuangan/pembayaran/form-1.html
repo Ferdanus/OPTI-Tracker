@@ -20,17 +20,15 @@
         <div class="order-locked-card shadow-sm" style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px 22px; background: #ffffff;">
             <div class="d-flex justify-content-between align-items-start pb-3 mb-3 border-bottom">
                 <div>
-                    <div class="fw-bold text-dark font-monospace mb-1" style="font-size: 1.15rem; letter-spacing: 0.5px;">{{ @order.nomor_order ?: @order.nomor_permintaan ?: ('REQ-' . @order.id) }}</div>
-                    <div class="fw-semibold text-secondary" style="font-size: 0.9rem; line-height: 1.45;">{{ @order.judul_kegiatan }}</div>
+                    <div class="fw-bold text-dark font-monospace" style="font-size: 1.15rem; letter-spacing: 0.5px;">{{ @order.nomor_order ?: @order.nomor_permintaan ?: ('REQ-' . @order.id) }}</div>
                 </div>
-                <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}"><span class="badge rounded-pill bg-danger text-white px-3 py-1.5 fw-bold shadow-xs" style="font-size: 0.78rem; letter-spacing: 0.3px;">Selulosa</span></check>
-                <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}"><span class="badge rounded-pill bg-primary text-white px-3 py-1.5 fw-bold shadow-xs" style="font-size: 0.78rem; letter-spacing: 0.3px;">Lingkungan</span></check>
+                
             </div>
-            <div class="order-locked-row"><span class="order-locked-label">Mitra</span><span class="order-locked-value font-display" style="font-size: 1rem;">{{ @order.nama_perusahaan }}</span></div>
-            <div class="order-locked-row"><span class="order-locked-label">Nilai Acuan</span><span class="order-locked-value font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.biaya_acuan, 0, ',', '.') }}</span></div>
-            <div class="order-locked-row"><span class="order-locked-label">Sudah Terbayar</span><span class="order-locked-value text-success font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.terbayar, 0, ',', '.') }}</span></div>
-            <div class="order-locked-row"><span class="order-locked-label">Sisa Tagihan</span><span class="order-locked-value text-danger font-monospace" style="font-size: 1.15rem;">Rp {{ number_format(@order.sisa_tagihan, 0, ',', '.') }}</span></div>
-            <div class="order-locked-row border-0 pt-2"><span class="order-locked-label">Saran Termin</span><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-bold font-monospace" style="font-size: 0.88rem;">Termin ke-{{ @order.termin_berikutnya }}</span></div>
+            <div class="order-locked-row" style="padding: 9px 0 !important; font-size: 14.5px;"><span class="order-locked-label">Mitra</span><span class="order-locked-value font-display" style="font-size: 1rem;">{{ @order.nama_perusahaan }}</span></div>
+            <div class="order-locked-row" style="padding: 9px 0 !important; font-size: 14.5px;"><span class="order-locked-label">Nilai Acuan</span><span class="order-locked-value font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.biaya_acuan, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row" style="padding: 9px 0 !important; font-size: 14.5px;"><span class="order-locked-label">Sudah Terbayar</span><span class="order-locked-value text-success font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.terbayar, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row" style="padding: 9px 0 !important; font-size: 14.5px;"><span class="order-locked-label">Sisa Tagihan</span><span class="order-locked-value text-danger font-monospace" style="font-size: 1.15rem;">Rp {{ number_format(@order.sisa_tagihan, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row border-0" style="padding-top: 10px !important; padding-bottom: 4px !important; font-size: 14.5px;"><span class="order-locked-label">Tahap Pembayaran</span><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-bold font-monospace" style="font-size: 0.88rem;">Termin ke-{{ @order.termin_berikutnya }}</span></div>
         </div>
 
         <form action="{{ @BASE }}/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">
@@ -68,14 +66,24 @@
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Tahap Termin Ke- <span class="text-danger">*</span></label>
                         <select name="termin_ke" id="selectTermin" class="form-select">
-                            <option value="1" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 1 ? 'selected' : '' }}>Termin 1</option>
-                            <option value="2" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 2 ? 'selected' : '' }}>Termin 2</option>
-                            <option value="3" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 3 ? 'selected' : '' }}>Termin 3</option>
-                            <option value="4" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 4 ? 'selected' : '' }}>Termin 4</option>
-                            <option value="5" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 5 ? 'selected' : '' }}>Termin 5</option>
-                            <option value="6" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 6 ? 'selected' : '' }}>Termin 6</option>
+                            <check if="{{ (@order.termin_berikutnya ?: 1) <= 1 }}">
+                                <option value="1" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 1 ? 'selected' : '' }}>Termin 1</option>
+                            </check>
+                            <check if="{{ (@order.termin_berikutnya ?: 1) <= 2 }}">
+                                <option value="2" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 2 ? 'selected' : '' }}>Termin 2</option>
+                            </check>
+                            <check if="{{ (@order.termin_berikutnya ?: 1) <= 3 }}">
+                                <option value="3" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 3 ? 'selected' : '' }}>Termin 3</option>
+                            </check>
+                            <check if="{{ (@order.termin_berikutnya ?: 1) <= 4 }}">
+                                <option value="4" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 4 ? 'selected' : '' }}>Termin 4</option>
+                            </check>
+                            <check if="{{ (@order.termin_berikutnya ?: 1) <= 5 }}">
+                                <option value="5" {{ (@old.termin_ke ?: @order.termin_berikutnya) == 5 ? 'selected' : '' }}>Termin 5</option>
+                            </check>
+                            <option value="6" {{ (@old.termin_ke ?: @order.termin_berikutnya) >= 6 ? 'selected' : '' }}>Termin 6</option>
                         </select>
-                        <div class="form-text">Otomatis kesaran ({{ @order.termin_berikutnya }}), tetap bisa diganti manual.</div>
+                        <div class="form-text">Otomatis terpilih (Termin {{ @order.termin_berikutnya }}), tetap bisa disesuaikan jika perlu.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Tanggal Bayar <span class="text-danger">*</span></label>
@@ -142,7 +150,7 @@
         border: 1px solid var(--color-border); border-radius: 12px; padding: 18px;
         background: var(--color-bg); margin-bottom: 24px;
     }
-    .order-locked-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--color-border); font-size: 13.5px; }
+    .order-locked-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0 !important; border-bottom: 1px dashed var(--color-border); font-size: 14.5px; }
     .order-locked-row:last-child { border-bottom: none; }
     .order-locked-label { color: #64748b; }
     .order-locked-value { font-weight: 600; color: #1e293b; }
