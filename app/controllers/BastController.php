@@ -25,6 +25,12 @@ class BastController extends Controller {
         $bastModel = new OptiBast($this->db);
         $bast = $bastModel->getByOrderId($orderId);
 
+        if (empty($bast) && !$this->poTtdSudahDiunggah($orderId)) {
+            $this->setFlashError('BAST belum bisa dibuat: unggah dulu PO yang sudah ditandatangani di Tahap 8.');
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
+
         $poDetail = null;
         if (!empty($order['po_id'])) {
             $poModel = new Po($this->db);
@@ -77,6 +83,10 @@ class BastController extends Controller {
 
             $bastModel = new OptiBast($this->db);
             $existing = $bastModel->getByOrderId($orderId);
+
+            if (empty($existing) && !$this->poTtdSudahDiunggah($orderId)) {
+                throw new \Exception('BAST belum bisa dibuat: unggah dulu PO yang sudah ditandatangani di Tahap 8.');
+            }
 
             $fileDokumen = $existing ? $existing['file_dokumen_bast'] : null;
 
@@ -176,6 +186,10 @@ class BastController extends Controller {
             $orderModel = new OrderLayanan($this->db);
             $order = $orderModel->getDetail($orderId);
 
+            if (!$bast && !$this->poTtdSudahDiunggah($orderId)) {
+                throw new \Exception('Order belum bisa ditutup: unggah dulu PO yang sudah ditandatangani di Tahap 8.');
+            }
+
             if (!$bast) {
                 // Buat BAST otomatis jika belum ada sebelum closing
                 $bastId = $bastModel->simpanBaru(array(
@@ -236,5 +250,23 @@ class BastController extends Controller {
             $this->setFlashError('Gagal menutup order: ' . $e->getMessage());
             $f3->reroute("/order/{$orderId}");
         }
+    }
+
+    /**
+     * Syarat BAST: PO kegiatan order ini sudah punya file PO bertanda tangan (diunggah Ketua Tim di Tahap 8).
+     * Order yang memakai PO versi lama (tanpa baris po_kegiatan) tidak dikunci.
+     */
+    protected function poTtdSudahDiunggah($orderId) {
+        try {
+            \PoSchema::pastikan($this->db);
+            $r = $this->db->exec(
+                'SELECT id, po_ttd_file FROM po_kegiatan WHERE order_id = ?' . \PoSchema::bukanSertifikasi('') . ' ORDER BY id DESC LIMIT 1',
+                array(1 => (int) $orderId)
+            );
+        } catch (\Throwable $e) {
+            return true;
+        }
+        if (empty($r)) { return true; }
+        return !empty($r[0]['po_ttd_file']);
     }
 }

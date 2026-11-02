@@ -754,6 +754,7 @@ class OrderController extends Controller {
         }
 
         $poKegiatan = null;
+        try { \PoSchema::pastikan($this->db); } catch (\Throwable $e) {}
         try {
             $poKegiatanModel = new PoKegiatan($this->db);
             $poKegiatanModel->load(['order_id = ?' . \PoSchema::bukanSertifikasi(''), $id]);
@@ -763,10 +764,9 @@ class OrderController extends Controller {
         } catch (\Exception $e) {}
         $f3->set('po_kegiatan', $poKegiatan);
         // [BARU] Tahap 8 terpadu: Ketua Pelaksana PO + posisi PO di rantai review/verifikasi
-        $f3->set('po_alur', $this->alurPoTahap8($order, $poKegiatan));
-
         $bastModel = new OptiBast($this->db);
         $bast = $bastModel->getByOrderId($id);
+        $f3->set('po_alur', $this->alurPoTahap8($order, $poKegiatan, !empty($bast)));
 
         $customerModel = new Customer($this->db);
         $daftarCustomerOpti = $customerModel->getRegisteredPelangganOpti();
@@ -1278,10 +1278,17 @@ class OrderController extends Controller {
         // Step 8: Petunjuk Operasional (PO)
         // Selesai jika PO sudah terbit dan pengerjaan lab selesai / ada BAST
         $poKegiatanAktif = (!empty($poKegiatan) && !empty($poKegiatan['validasi_keuangan_at']));
+        // PO bertanda tangan: BAST (Tahap 9) baru terbuka setelah Ketua Tim mengunggah PO yang sudah ditandatangani.
+        // Tidak dikunci: order yang sudah punya BAST, order berstatus selesai, dan order dengan PO versi lama (tanpa baris po_kegiatan).
+        $poTtdAda = (!empty($poKegiatan) && !empty($poKegiatan['po_ttd_file']));
+        $poTtdWajib = (!empty($poKegiatan) && empty($bast) && ($order['status'] ?? '') !== 'selesai');
         $isPoDone = $poTerbuka && (!empty($order['po_id']) || $poKegiatanAktif) && (
-            in_array($order['status'] ?? '', ['selesai']) ||
-            ($order['status_pelaksanaan'] ?? '') === 'laporan_selesai' ||
-            !empty($bast)
+            $poTtdAda ||
+            (!$poTtdWajib && (
+                in_array($order['status'] ?? '', ['selesai']) ||
+                ($order['status_pelaksanaan'] ?? '') === 'laporan_selesai' ||
+                !empty($bast)
+            ))
         );
 
         // Step 9: BAST
@@ -1606,6 +1613,11 @@ class OrderController extends Controller {
                 $langkahBerikutnya['judul'] = 'Pekerjaan Sedang Berjalan Sesuai Jadwal SPM';
                 $langkahBerikutnya['deskripsi'] = 'Petunjuk Operasional (' . (!empty($order['nomor_po']) ? $order['nomor_po'] : (isset($poKegiatan['nomor_po']) ? $poKegiatan['nomor_po'] : '-')) . ') aktif. Tim pelaksana sedang menjalankan kegiatan teknis sesuai standar mutu dan target waktu SPM.';
                 $langkahBerikutnya['penanggung_jawab'] = 'Tim Pelaksana Teknis';
+                if (!$poTtdAda && $poTtdWajib) {
+                    $langkahBerikutnya['judul'] = 'PO Aktif, Menunggu PO Bertanda Tangan';
+                    $langkahBerikutnya['deskripsi'] = 'Cetak PO, lalu unggah PO yang sudah ditandatangani di Tahap 8. Tahap 9 (BAST) terbuka setelah PO bertanda tangan diunggah.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI';
+                }
                 $langkahBerikutnya['role_icon'] = 'bi-gear-wide-connected';
                 $langkahBerikutnya['tipe_badge'] = 'primary';
                 $langkahBerikutnya['tombol_teks'] = !empty($order['po_id']) ? 'Buka Monitoring PO' : 'Lihat PO Aktif';
@@ -2878,7 +2890,7 @@ class OrderController extends Controller {
      * Disusun -> Review Ketua Tim -> Verifikasi Humas -> Verifikasi Tim Mitra -> Verifikasi PPK BLU -> PO Aktif.
      * Hanya MEMBACA status po_kegiatan yang sudah ada (tidak mengubah alur review/verifikasi). Hasilnya dipakai view order/detail.html.
      */
-    protected function alurPoTahap8($order, $po) {
+    protected function alurPoTahap8($order, $po, $bastAda = false) {
         $base   = (string) $this->f3->get('BASE');
         $uid    = (int) $this->getUserId();
         $orderId = (int) ($order['id'] ?? 0);
@@ -2961,8 +2973,23 @@ class OrderController extends Controller {
 
         $sisi = ($actor === 'katim') ? $isKatim : (($actor === 'pic') ? ($isKetupel || $isSuper) : false);
 
-        $namaLangkah = array('Disusun', 'Review Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU', 'PO Aktif');
-        $aktorLangkah = array('Ketua Pelaksana', 'Ketua Tim OPTI', 'Humas', 'Tim Mitra', 'PPK BLU', 'Pengerjaan lab dimulai');
+        // PO bertanda tangan (langkah ke-7): hasil cetak PO yang sudah ditandatangani, diunggah Ketua Tim; syarat buka BAST (Tahap 9)
+        $ttdAda = ($po && !empty($po['po_ttd_file']));
+        $ttd = array(
+            'ada' => $ttdAda,
+            'nama' => $ttdAda ? (string) ($po['po_ttd_nama'] ?? '') : '',
+            'asal' => $ttdAda ? (string) ($po['po_ttd_asal'] ?? '') : '',
+            'at' => $ttdAda ? $fmt($po['po_ttd_at'] ?? null) : '',
+            'oleh' => $ttdAda ? (string) ($po['po_ttd_oleh_nama'] ?? '') : '',
+            'boleh_unggah' => ($state === 'aktif' && $isKatim && $poId > 0 && !$bastAda),
+            'boleh_ganti' => ($ttdAda && $isKatim && !$bastAda),
+            'url_unggah' => $base . '/order/' . $orderId . '/po-ttd/unggah',
+            'url_lihat' => $base . '/order/' . $orderId . '/po-ttd',
+            'url_cetak' => $base . '/po-kegiatan/' . $poId . '/cetak',
+        );
+
+        $namaLangkah = array('Disusun', 'Review Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU', 'PO Aktif', 'PO Bertanda Tangan');
+        $aktorLangkah = array('Ketua Pelaksana', 'Ketua Tim OPTI', 'Humas', 'Tim Mitra', 'PPK BLU', 'Pengerjaan lab dimulai', 'Ketua Tim OPTI');
         $waktu = array(
             $po ? $fmt(!empty($po['dikirim_at']) ? $po['dikirim_at'] : ($po['created_at'] ?? null)) : '',
             $po ? $fmt($po['disetujui_at'] ?? null) : '',
@@ -2970,6 +2997,7 @@ class OrderController extends Controller {
             $po ? $fmt($po['tervalidasi_mitra_at'] ?? null) : '',
             $po ? $fmt($po['validasi_keuangan_at'] ?? null) : '',
             $po ? $fmt($po['validasi_keuangan_at'] ?? null) : '',
+            $ttd['at'],
         );
         $tagRev = array(
             'perlu_revisi' => 'Perlu revisi', 'ppk_minta' => 'Menunggu keputusan', 'ppk_katim_kerja' => 'Dikerjakan Ketua Tim',
@@ -3004,9 +3032,10 @@ class OrderController extends Controller {
             if ($state === 'aktif' || $n < $cur) { $cls = 'done'; }
             elseif ($n === $cur) { $cls = $rev ? 'rev' : 'cur'; }
             else { $cls = ''; }
+            if ($n === 6) { $cls = $ttdAda ? 'done' : ($state === 'aktif' ? 'cur' : ''); }
             $tg = '';
             if ($cls === 'done') { $tg = $waktu[$n]; }
-            elseif ($cls === 'cur') { $tg = 'Sedang di sini'; }
+            elseif ($cls === 'cur') { $tg = ($n === 6) ? 'Menunggu unggahan' : 'Sedang di sini'; }
             elseif ($cls === 'rev') { $tg = isset($tagRev[$state]) ? $tagRev[$state] : 'Perlu revisi'; }
             $tg2 = ''; $tg2c = '';
             if ($baca && $n === $cur && ($cls === 'cur' || $cls === 'rev')) {
@@ -3151,7 +3180,13 @@ class OrderController extends Controller {
                 }
                 break;
             case 'aktif':
-                $info = $bidang('success', 'Semua verifikasi selesai. PO aktif dan pengerjaan lab dapat dimulai.');
+                if ($ttdAda) {
+                    $info = $bidang('success', '<b>PO bertanda tangan sudah diunggah.</b> Tahap 9 (BAST) sudah terbuka.');
+                } elseif ($isKatim) {
+                    $info = $bidang('warning', '<b>PO sudah aktif.</b> Cetak PO, lalu unggah PO yang sudah ditandatangani.');
+                } else {
+                    $info = $bidang('info', '<b>PO sudah aktif.</b> Menunggu Ketua Tim mengunggah PO yang sudah ditandatangani.');
+                }
                 break;
             case 'verif_humas':
                 $info = $isHumas ? $bidang('warning', '<b>Giliran Anda.</b> Buka Verifikasi PO untuk memeriksa PO, Map Kendali, dan berkas, lalu verifikasi.')
@@ -3188,6 +3223,7 @@ class OrderController extends Controller {
             'ppk_katim_review' => array('po-bdg', 'Review Hasil Revisi', 'Review'),
             'aktif' => array('po-bdg', 'PO Aktif', 'PO Aktif'),
         );
+        if (!$ttdAda) { $lab['aktif'] = array('po-bdg', 'PO Aktif, Menunggu PO TTD', 'PO Aktif'); }
         if ($putKatim > 0) {
             $lab['ppk_ketupel_kerja'] = array('po-bdg po-bdg-red', 'Perbaikan Ketua Tim', 'Perbaikan');
             $lab['ppk_katim_review'] = array('po-bdg', 'Review Hasil Perbaikan', 'Review');
@@ -3227,8 +3263,230 @@ class OrderController extends Controller {
             'embed_url' => $embedUrl,
             'badge_kelas' => $lab[$state][0], 'badge_teks' => $lab[$state][1], 'tab_teks' => $lab[$state][2],
             'aktif' => ($state === 'aktif'),
+            'ttd' => $ttd,
             'tombol_baru' => $tombolBaru,
         );
+    }
+
+    /**
+     * Unggah PO yang sudah dicetak dan ditandatangani (Tahap 8). Syarat membuka BAST (Tahap 9).
+     * Boleh PDF, JPG, atau PNG (maks. 5 MB); foto otomatis diubah menjadi PDF dan diberi nama "PO <nomor>_<judul>".
+     * Route: POST /order/@id/po-ttd/unggah
+     */
+    public function unggahPoTtd($f3, $params) {
+        $this->requireAuth();
+        $id = (int) (isset($params['id']) ? $params['id'] : 0);
+        $back = "/order/{$id}";
+
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($id);
+        if (!$order) {
+            return $this->poTtdBalas($f3, false, "Order Layanan #{$id} tidak ditemukan.", '/order');
+        }
+        if (!$this->isKetuaTim() && !$this->isSuperadmin()) {
+            return $this->poTtdBalas($f3, false, 'Akses Ditolak: PO bertanda tangan diunggah oleh Ketua Tim OPTI atau Superadmin.', $back);
+        }
+
+        try { \PoSchema::pastikan($this->db); } catch (\Throwable $e) {}
+        $r = $this->db->exec('SELECT * FROM po_kegiatan WHERE order_id = ?' . \PoSchema::bukanSertifikasi('') . ' ORDER BY id DESC LIMIT 1', array(1 => $id));
+        $po = $r ? $r[0] : null;
+        if (!$po || empty($po['validasi_keuangan_at'])) {
+            return $this->poTtdBalas($f3, false, 'PO belum aktif. PO bertanda tangan baru bisa diunggah setelah PPK BLU memverifikasi PO.', $back);
+        }
+        $bast = (new OptiBast($this->db))->getByOrderId($id);
+        if (!empty($bast)) {
+            return $this->poTtdBalas($f3, false, 'BAST sudah dibuat, PO bertanda tangan tidak bisa diganti lagi.', $back);
+        }
+
+        $file = $f3->get('FILES.file_po_ttd');
+        if (!$file || !isset($file['error']) || is_array($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+            return $this->poTtdBalas($f3, false, 'Pilih file PO yang sudah ditandatangani terlebih dahulu.', $back);
+        }
+        if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > 5 * 1024 * 1024) {
+            return $this->poTtdBalas($f3, false, 'Ukuran file maksimal 5 MB. Pilih file yang lebih kecil.', $back);
+        }
+        if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] <= 0 || !is_uploaded_file($file['tmp_name'])) {
+            return $this->poTtdBalas($f3, false, 'Terjadi kesalahan saat mengunggah file. Coba lagi.', $back);
+        }
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, array('pdf', 'jpg', 'jpeg', 'png'), true)) {
+            return $this->poTtdBalas($f3, false, 'Format file harus PDF, JPG, atau PNG.', $back);
+        }
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = (string) finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        $mimeOk = array('pdf' => array('application/pdf'), 'jpg' => array('image/jpeg'), 'jpeg' => array('image/jpeg'), 'png' => array('image/png'));
+        if (!in_array($mime, $mimeOk[$ext], true)) {
+            return $this->poTtdBalas($f3, false, 'Isi file tidak sesuai dengan format PDF, JPG, atau PNG.', $back);
+        }
+
+        $dir = $this->dirPoTtd();
+        $acak = bin2hex(random_bytes(12));
+        $adaFoto = ($ext !== 'pdf');
+        $disimpan = '';
+        $namaTampil = '';
+        $asal = '';
+        $pesan = 'PO bertanda tangan diunggah. Tahap 9 (BAST) sudah terbuka.';
+
+        if ($adaFoto) {
+            // Foto -> satu halaman PDF; nama baku "PO <nomor>_<judul>.pdf"
+            try {
+                $pdf = $this->fotoKePdf($file['tmp_name'], $mime);
+                $disimpan = $acak . '.pdf';
+                if (file_put_contents($dir . $disimpan, $pdf) === false) { throw new \RuntimeException('gagal menulis PDF'); }
+                $nomor = trim((string) ($po['nomor_po'] ?? ''));
+                $judul = trim((string) ($po['judul_kegiatan'] ?? ''));
+                $dasar = 'PO ' . $nomor . ($judul !== '' ? '_' . $judul : '');
+                $dasar = trim(preg_replace('/[\x00-\x1F\\\\:*?"<>|]+/u', ' ', $dasar));
+                $dasar = preg_replace('/\s+/u', ' ', $dasar);
+                if (function_exists('mb_substr')) { $dasar = mb_substr($dasar, 0, 150, 'UTF-8'); } else { $dasar = substr($dasar, 0, 150); }
+                $namaTampil = rtrim($dasar, ' .') . '.pdf';
+                $asal = strtoupper($ext === 'jpeg' ? 'jpg' : $ext);
+                $pesan .= ' Foto otomatis diubah menjadi PDF.';
+            } catch (\Throwable $e) {
+                error_log('[PO-TTD] konversi foto ke PDF gagal: ' . $e->getMessage());
+                @unlink($dir . $acak . '.pdf');
+                // cadangan: simpan foto apa adanya
+                $disimpan = $acak . '.' . ($ext === 'jpeg' ? 'jpg' : $ext);
+                if (!move_uploaded_file($file['tmp_name'], $dir . $disimpan)) {
+                    return $this->poTtdBalas($f3, false, 'Gagal menyimpan file ke server.', $back);
+                }
+                $namaTampil = preg_replace('/[\x00-\x1F\\\\\/:*?"<>|]+/u', '-', basename($file['name']));
+                $pesan = 'PO bertanda tangan diunggah. Tahap 9 (BAST) sudah terbuka. Foto belum bisa diubah ke PDF dan disimpan apa adanya.';
+            }
+        } else {
+            $disimpan = $acak . '.pdf';
+            if (!move_uploaded_file($file['tmp_name'], $dir . $disimpan)) {
+                return $this->poTtdBalas($f3, false, 'Gagal menyimpan file ke server.', $back);
+            }
+            $namaTampil = preg_replace('/[\x00-\x1F\\\\\/:*?"<>|]+/u', '-', basename($file['name']));
+        }
+
+        $lama = (string) ($po['po_ttd_file'] ?? '');
+        $uid = (int) $this->getUserId();
+        $unama = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : (isset($_SESSION['nama_user']) ? $_SESSION['nama_user'] : 'User');
+        $this->db->exec(
+            'UPDATE po_kegiatan SET po_ttd_file = ?, po_ttd_nama = ?, po_ttd_asal = ?, po_ttd_at = NOW(), po_ttd_oleh_id = ?, po_ttd_oleh_nama = ? WHERE id = ?',
+            array(1 => $disimpan, 2 => $namaTampil, 3 => $asal, 4 => $uid, 5 => $unama, 6 => (int) $po['id'])
+        );
+        if ($lama !== '' && $lama !== $disimpan && basename($lama) === $lama) { @unlink($dir . $lama); }
+
+        $this->logActivity($id, 'po', $lama !== '' ? 'ganti_po_ttd' : 'upload_po_ttd', ($lama !== '' ? 'Ganti' : 'Unggah') . ' PO bertanda tangan');
+        return $this->poTtdBalas($f3, true, $pesan, $back);
+    }
+
+    /**
+     * Membuka / mengunduh PO bertanda tangan. Route: GET /order/@id/po-ttd (?unduh=1 untuk mengunduh)
+     */
+    public function lihatPoTtd($f3, $params) {
+        $this->requireAuth();
+        $id = (int) (isset($params['id']) ? $params['id'] : 0);
+        if (!$this->hasPermission('order:view') && !$this->isSuperadmin()) {
+            $this->setFlashError('Akses Ditolak.');
+            $f3->reroute('/order');
+            return;
+        }
+        try { \PoSchema::pastikan($this->db); } catch (\Throwable $e) {}
+        $r = $this->db->exec('SELECT po_ttd_file, po_ttd_nama FROM po_kegiatan WHERE order_id = ?' . \PoSchema::bukanSertifikasi('') . ' ORDER BY id DESC LIMIT 1', array(1 => $id));
+        $nama = $r ? (string) $r[0]['po_ttd_file'] : '';
+        $path = $this->dirPoTtd() . $nama;
+        if ($nama === '' || basename($nama) !== $nama || !is_file($path)) {
+            $this->setFlashError('File PO bertanda tangan tidak ditemukan.');
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+        $ext = strtolower(pathinfo($nama, PATHINFO_EXTENSION));
+        $tipe = ($ext === 'pdf') ? 'application/pdf' : (($ext === 'png') ? 'image/png' : 'image/jpeg');
+        $unduh = (bool) $f3->get('GET.unduh');
+        $tampil = (string) $r[0]['po_ttd_nama'];
+        $tampil = str_replace('/', '-', $tampil !== '' ? $tampil : $nama);
+        $ascii = preg_replace('/[^A-Za-z0-9._ -]+/', '_', $tampil);
+        while (ob_get_level() > 0) { ob_end_clean(); }
+        header('Content-Type: ' . $tipe);
+        header('Content-Length: ' . filesize($path));
+        header('Content-Disposition: ' . ($unduh ? 'attachment' : 'inline') . '; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($tampil));
+        header('X-Content-Type-Options: nosniff');
+        readfile($path);
+        exit;
+    }
+
+    /** Folder penyimpanan PO bertanda tangan (di luar folder publik; dibuka lewat route /order/@id/po-ttd). */
+    protected function dirPoTtd() {
+        $d = dirname(__DIR__, 2) . '/storage/po_ttd/';
+        if (!is_dir($d)) { @mkdir($d, 0755, true); }
+        return $d;
+    }
+
+    /** Balasan unggah PO bertanda tangan: JSON untuk permintaan AJAX, selain itu flash + redirect. */
+    protected function poTtdBalas($f3, $ok, $pesan, $kembali) {
+        if ($ok) { $this->setFlashSuccess($pesan); } else { $this->setFlashError($pesan); }
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(array('success' => (bool) $ok, 'message' => $pesan));
+            return;
+        }
+        $f3->reroute($kembali);
+    }
+
+    /**
+     * Foto (JPG/PNG) -> PDF satu halaman A4 (otomatis landscape bila fotonya melebar), skala dijaga, ukuran diperkecil bila terlalu besar.
+     * Mengembalikan isi PDF (string); melempar exception bila gagal (pemanggil menyimpan foto apa adanya).
+     */
+    protected function fotoKePdf($tmp, $mime) {
+        $info = @getimagesize($tmp);
+        if (!$info || $info[0] < 1 || $info[1] < 1) { throw new \RuntimeException('gambar tidak terbaca'); }
+        $w = (int) $info[0]; $h = (int) $info[1];
+        $data = file_get_contents($tmp);
+        $mimeOut = $mime;
+
+        if (function_exists('imagecreatefromstring') && function_exists('imagejpeg')) {
+            $img = @imagecreatefromstring($data);
+            if ($img) {
+                // putar sesuai EXIF (foto dari HP)
+                if ($mime === 'image/jpeg' && function_exists('exif_read_data') && function_exists('imagerotate')) {
+                    $ex = @exif_read_data($tmp);
+                    $o = (is_array($ex) && isset($ex['Orientation'])) ? (int) $ex['Orientation'] : 1;
+                    $deg = ($o === 3) ? 180 : (($o === 6) ? -90 : (($o === 8) ? 90 : 0));
+                    if ($deg !== 0) { $rot = @imagerotate($img, $deg, 0); if ($rot) { imagedestroy($img); $img = $rot; } }
+                }
+                $w = imagesx($img); $h = imagesy($img);
+                $maks = 2000;
+                if (max($w, $h) > $maks && function_exists('imagescale')) {
+                    $skala = $maks / max($w, $h);
+                    $kecil = @imagescale($img, max(1, (int) round($w * $skala)), max(1, (int) round($h * $skala)));
+                    if ($kecil) { imagedestroy($img); $img = $kecil; $w = imagesx($img); $h = imagesy($img); }
+                }
+                // latar putih (PNG transparan) lalu simpan sebagai JPEG kualitas 85
+                $kanvas = imagecreatetruecolor($w, $h);
+                imagefill($kanvas, 0, 0, imagecolorallocate($kanvas, 255, 255, 255));
+                imagecopy($kanvas, $img, 0, 0, 0, 0, $w, $h);
+                ob_start();
+                imagejpeg($kanvas, null, 85);
+                $data = ob_get_clean();
+                $mimeOut = 'image/jpeg';
+                imagedestroy($img); imagedestroy($kanvas);
+            }
+        }
+        if ($mimeOut === 'image/png' && !extension_loaded('gd')) { throw new \RuntimeException('GD tidak aktif'); }
+
+        $land = ($w > $h);
+        $kotakW = $land ? 277.0 : 190.0;   // mm, A4 dikurangi margin 10 mm
+        $kotakH = $land ? 190.0 : 277.0;
+        $skala = min($kotakW / $w, $kotakH / $h);
+        $wMm = round($w * $skala, 2); $hMm = round($h * $skala, 2);
+        $html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>@page{margin:10mm}body{margin:0;text-align:center}img{display:block;margin:0 auto}</style></head><body>'
+              . '<img src="data:' . $mimeOut . ';base64,' . base64_encode($data) . '" style="width:' . $wMm . 'mm;height:' . $hMm . 'mm">'
+              . '</body></html>';
+        $opt = new \Dompdf\Options();
+        $opt->set('isRemoteEnabled', false);
+        $dompdf = new \Dompdf\Dompdf($opt);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', $land ? 'landscape' : 'portrait');
+        $dompdf->render();
+        $out = $dompdf->output();
+        if (strncmp($out, '%PDF', 4) !== 0) { throw new \RuntimeException('PDF tidak valid'); }
+        return $out;
     }
 
     /**

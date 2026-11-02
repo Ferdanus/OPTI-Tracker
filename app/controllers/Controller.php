@@ -409,22 +409,10 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         if ($isKeuangan || $role === 'ketua_tim' || $role === 'superadmin') {
             try {
                 $whereDivPay = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
+                // Sama dengan tab "Baru Masuk" + "Sedang Berjalan" di halaman Pembayaran: hanya order yang SUDAH didisposisikan ke Keuangan
+                // (status_keuangan 'menunggu_pembayaran' / 'terbayar_sebagian'). Order yang baru DEAL tapi belum didisposisi tidak dihitung.
                 $sqlKeuangan = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
-                                LEFT JOIN tb_surat_penawaran sp ON sp.id = (
-                                    SELECT id FROM tb_surat_penawaran 
-                                    WHERE order_id = o.id 
-                                    ORDER BY (status_respon_klien = 'deal') DESC, (surat_kesanggupan_bayar IS NOT NULL AND surat_kesanggupan_bayar != '') DESC, id DESC 
-                                    LIMIT 1
-                                )
-
-                                WHERE {$whereDivPay} (
-                                       o.status_keuangan IN ('menunggu_pembayaran', 'terbayar_sebagian') 
-                                       OR o.status_penawaran = 'deal' 
-                                       OR o.status_rancop = 'deal'
-                                       OR (sp.id IS NOT NULL AND (sp.status_respon_klien = 'deal' OR (sp.surat_kesanggupan_bayar IS NOT NULL AND sp.surat_kesanggupan_bayar != '')))
-                                       OR o.status IN ('penawaran_deal', 'menunggu_pembayaran')
-                                    )
-                                  AND (o.status_keuangan IS NULL OR o.status_keuangan != 'lunas')
+                                WHERE {$whereDivPay} o.status_keuangan IN ('menunggu_pembayaran', 'terbayar_sebagian')
                                   AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))
                                   AND (o.status_rancop IS NULL OR o.status_rancop != 'batal')";
                 $resKeuangan = $this->db->exec($sqlKeuangan);

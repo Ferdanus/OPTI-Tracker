@@ -167,6 +167,14 @@
     80% { transform: translateX(4px); }
 }
 .shake { animation: shakeX 0.4s ease; }
+@keyframes nomGeser { 10%,90% { transform:translateX(-2px); } 20%,80% { transform:translateX(5px); } 30%,50%,70% { transform:translateX(-9px); } 40%,60% { transform:translateX(9px); } }
+@keyframes nomMasuk { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+@keyframes nomGanti { 0% { opacity:.2; transform:translateY(6px); } 100% { opacity:1; transform:none; } }
+#nominalGroup.nom-geser { animation:nomGeser .45s cubic-bezier(.36,.07,.19,.97); }
+#nominalGroup.nom-tolak { border:1px solid #dc2626 !important; border-radius:.5rem; box-shadow:0 0 0 3px rgba(220,38,38,.18); }
+#nominalHint .nom-pesan { display:inline-block; animation:nomMasuk .3s ease both; }
+.nom-ganti { animation:nomGanti .4s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) { #nominalGroup.nom-geser, #nominalHint .nom-pesan, .nom-ganti { animation:none !important; } }
 .form-fields-normal, .form-fields-kb { display: none; }
 .form-fields-normal.active, .form-fields-kb.active { display: block; }
 .kb-toggle-card {
@@ -243,8 +251,29 @@ btnSimpanDisposisi.addEventListener('click', function () {
     
         // ===== Ketik nominal: format ribuan otomatis + hint live =====
         if (display && hidden) {
+            // Nominal tidak boleh melebihi sisa tagihan: angka yang kebesaran tidak masuk, kolom bergetar + pesan merah
+            var nominalTerakhir = 0, tolakTimer = null;
             display.addEventListener('input', function () {
                 var angka = parseInt(display.value.replace(/[^0-9]/g, ''), 10) || 0;
+                if (sisaTagihan > 0 && angka > sisaTagihan) {
+                    angka = nominalTerakhir;
+                    hidden.value = angka;
+                    display.value = angka > 0 ? angka.toLocaleString('id-ID') : '';
+                    document.getElementById('nominalTerbilang').textContent = angka > 0 ? angkaKeTerbilang(angka) : 'Nol Rupiah';
+                    hint.innerHTML = '<span class="nom-pesan text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Melebihi sisa tagihan (' + rupiah(sisaTagihan) + '). Nominal tidak bisa dimasukkan.</span>';
+                    group.classList.add('nom-tolak');
+                    group.classList.remove('nom-geser'); void group.offsetWidth; group.classList.add('nom-geser');
+                    clearTimeout(tolakTimer);
+                    tolakTimer = setTimeout(function () {
+                        group.classList.remove('nom-tolak', 'nom-geser');
+                        display.dispatchEvent(new Event('input'));
+                    }, 3200);
+                    perbaruiTombolSimpan();
+                    return;
+                }
+                nominalTerakhir = angka;
+                clearTimeout(tolakTimer);
+                group.classList.remove('nom-tolak', 'nom-geser');
                 hidden.value = angka;
                 display.value = angka > 0 ? angka.toLocaleString('id-ID') : '';
                 
@@ -432,7 +461,15 @@ if (toggleKb) {
 function perbaruiTombolSimpan() {
     // Satu tombol saja: Simpan Pembayaran (order lunas otomatis diteruskan ke Ketua Tim oleh server)
     var btnNormal = document.getElementById('btnSimpanPembayaran');
-    if (btnNormal) { btnNormal.classList.remove('d-none'); }
+    if (btnNormal) {
+        btnNormal.classList.remove('d-none');
+        // nominal masih kosong -> tombol nonaktif (mode Surat Kesanggupan Bayar tidak butuh nominal)
+        var inpFlag = document.getElementById('inputIsKesanggupan');
+        var modeKb = !!(inpFlag && inpFlag.value === '1');
+        var hid = document.getElementById('inputNominal');
+        var nom = parseInt(hid ? hid.value : 0, 10) || 0;
+        btnNormal.disabled = (!modeKb && nom <= 0);
+    }
 }
 perbaruiTombolSimpan();
 

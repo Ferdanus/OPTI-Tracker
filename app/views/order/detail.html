@@ -5077,6 +5077,17 @@
                                         </check>
                                     </check>
 
+                                    <style>
+@keyframes nomGeser { 10%,90% { transform:translateX(-2px); } 20%,80% { transform:translateX(5px); } 30%,50%,70% { transform:translateX(-9px); } 40%,60% { transform:translateX(9px); } }
+@keyframes nomMasuk { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+@keyframes nomGanti { 0% { opacity:.2; transform:translateY(6px); } 100% { opacity:1; transform:none; } }
+#nominalGroupDetail.nom-geser { animation:nomGeser .45s cubic-bezier(.36,.07,.19,.97); }
+#nominalGroupDetail.nom-tolak { border:1px solid #dc2626 !important; border-radius:.5rem; box-shadow:0 0 0 3px rgba(220,38,38,.18); }
+#nominalHintDetail .nom-pesan { display:inline-block; animation:nomMasuk .3s ease both; }
+.nom-ganti { animation:nomGanti .4s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) { #nominalGroupDetail.nom-geser, #nominalHintDetail .nom-pesan, .nom-ganti { animation:none !important; } }
+                                    </style>
+
                                     <!-- FIELD PEMBAYARAN NORMAL -->
                                     <div class="form-fields-normal-detail active" id="fieldsNormalDetail">
                                         <div class="row g-3 mb-3">
@@ -5827,11 +5838,143 @@
                                 </div>
                                 </check>
                                 <check if="{{ @po_alur.aktif }}">
-                                    <div class="mt-3 d-flex gap-2 flex-wrap">
-                                        <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" onclick="switchStage(9, true)">
-                                            Lanjut ke Tahap 9 (BAST) <i class="bi bi-arrow-right ms-1"></i>
-                                        </button>
+                                    <style>
+                                        @keyframes ptUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+                                        @keyframes ptInd { from { margin-left:0; } to { margin-left:60%; } }
+                                        @keyframes ptShk { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-6px); } 40% { transform:translateX(6px); } 60% { transform:translateX(-4px); } 80% { transform:translateX(4px); } }
+                                        @keyframes ptUnl { 0% { box-shadow:0 0 0 0 rgba(30,41,59,.45); } 100% { box-shadow:0 0 0 12px rgba(30,41,59,0); } }
+                                        #poTtdBox .pt-drop, #poTtdBox .pt-file { animation:ptUp .35s ease both; }
+                                        #poTtdBox .pt-drop { display:flex; align-items:center; gap:12px; flex-wrap:wrap; border:1.5px dashed #94a3b8; border-radius:10px; padding:14px 16px; background:#f8fafc; color:#1e293b; transition:background .15s, border-color .15s; }
+                                        #poTtdBox .pt-drop.pt-drag { background:#e2e8f0; border-color:#1e293b; }
+                                        #poTtdBox .pt-file { display:flex; align-items:center; gap:12px; flex-wrap:wrap; border:1px solid #cbd5e1; border-radius:10px; padding:12px 16px; background:#f8fafc; color:#1e293b; }
+                                        #poTtdBox .pt-ico { font-size:1.5rem; color:#1e293b; }
+                                        #poTtdBox .pt-tag { display:inline-block; background:#e2e8f0; color:#334155; font-size:.72rem; padding:1px 8px; border-radius:99px; margin-top:3px; }
+                                        #poTtdBox .pt-prog { height:6px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin-top:6px; }
+                                        #poTtdBox .pt-prog > div { height:100%; width:0; background:#1e293b; transition:width .12s linear; }
+                                        #poTtdBox .pt-prog > div.pt-ind { width:40% !important; animation:ptInd .9s ease-in-out infinite alternate; }
+                                        #poTtdBox .pt-lock { background:#f1f5f9; color:#94a3b8; border:1px solid #cbd5e1; cursor:not-allowed; }
+                                        #poTtdBox .pt-lock.pt-shake { animation:ptShk .4s; }
+                                        #poTtdBox .pt-unlock { animation:ptUnl 1s ease-out 2; }
+                                        @media (prefers-reduced-motion: reduce) { #poTtdBox * { animation:none !important; transition:none !important; } }
+                                    </style>
+                                    <div class="mt-3" id="poTtdBox">
+                                        <check if="{{ @po_alur.ttd.ada }}">
+                                            <true>
+                                                <div class="pt-file">
+                                                    <i class="bi bi-file-earmark-pdf pt-ico"></i>
+                                                    <div class="flex-grow-1" style="min-width:200px;">
+                                                        <div class="fw-semibold" style="word-break:break-word;">{{ @po_alur.ttd.nama }}</div>
+                                                        <div class="small text-secondary">Diunggah {{ @po_alur.ttd.oleh }} &middot; {{ @po_alur.ttd.at }}</div>
+                                                        <check if="{{ @po_alur.ttd.asal }}"><span class="pt-tag">Foto {{ @po_alur.ttd.asal }} diubah otomatis ke PDF</span></check>
+                                                    </div>
+                                                    <a href="{{ @po_alur.ttd.url_lihat }}" target="_blank" rel="noopener" class="btn btn-outline-dark btn-sm"><i class="bi bi-eye me-1"></i> Lihat</a>
+                                                    <check if="{{ @po_alur.ttd.boleh_ganti }}">
+                                                        <button type="button" class="btn btn-outline-dark btn-sm" onclick="document.getElementById('poTtdFile').click()"><i class="bi bi-arrow-repeat me-1"></i> Ganti file</button>
+                                                    </check>
+                                                </div>
+                                            </true>
+                                            <false>
+                                                <check if="{{ @po_alur.ttd.boleh_unggah }}">
+                                                    <div class="pt-drop" id="poTtdDrop">
+                                                        <i class="bi bi-cloud-arrow-up pt-ico"></i>
+                                                        <div class="flex-grow-1" style="min-width:200px;" id="poTtdInfo">
+                                                            <div class="fw-semibold">Upload PO yang sudah ditandatangani.</div>
+                                                            <div class="small text-secondary">PDF, JPG, atau PNG &middot; maks. 5 MB</div>
+                                                        </div>
+                                                        <button type="button" class="btn btn-dark btn-sm px-3" id="poTtdPilih" onclick="document.getElementById('poTtdFile').click()"><i class="bi bi-upload me-1"></i> Pilih file</button>
+                                                    </div>
+                                                </check>
+                                            </false>
+                                        </check>
+                                        <check if="{{ @po_alur.ttd.boleh_unggah }}">
+                                            <input type="file" id="poTtdFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="display:none;">
+                                        </check>
+                                        <div class="mt-3 d-flex gap-2 flex-wrap align-items-center">
+                                            <check if="{{ @po_alur.ttd.boleh_unggah }}">
+                                                <a href="{{ @po_alur.ttd.url_cetak }}" target="_blank" rel="noopener" class="btn btn-outline-dark btn-sm fw-semibold"><i class="bi bi-printer me-1"></i> Cetak PO</a>
+                                            </check>
+                                            <check if="{{ @po_alur.ttd.ada }}">
+                                                <true>
+                                                    <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" onclick="switchStage(9, true)">
+                                                        Lanjut ke Tahap 9 (BAST) <i class="bi bi-arrow-right ms-1"></i>
+                                                    </button>
+                                                </true>
+                                                <false>
+                                                    <button type="button" class="btn btn-sm fw-semibold pt-lock" id="poTtdKunci" onclick="poTtdKunciKlik(this)">
+                                                        <i class="bi bi-lock-fill me-1"></i> Lanjut ke Tahap 9 (BAST)
+                                                    </button>
+                                                </false>
+                                            </check>
+                                        </div>
+                                        <div id="poTtdPesan" class="small mt-2 text-danger" style="min-height:18px;"></div>
                                     </div>
+                                    <script>
+                                    (function () {
+                                        var pesan = document.getElementById('poTtdPesan');
+                                        window.poTtdKunciKlik = function (el) {
+                                            el.classList.remove('pt-shake'); void el.offsetWidth; el.classList.add('pt-shake');
+                                            if (pesan) { pesan.textContent = 'Upload PO yang sudah ditandatangani dulu untuk lanjut ke BAST.'; }
+                                        };
+                                        var inp = document.getElementById('poTtdFile');
+                                        if (!inp) { return; }
+                                        var drop = document.getElementById('poTtdDrop');
+                                        var info = document.getElementById('poTtdInfo');
+                                        var sedang = false;
+                                        function ralat(t) { if (pesan) { pesan.textContent = t; } }
+                                        function kirim(f) {
+                                            if (sedang) { return; }
+                                            ralat('');
+                                            if (!/\.(pdf|jpe?g|png)$/i.test(f.name)) { ralat('Format file harus PDF, JPG, atau PNG.'); return; }
+                                            if (f.size > 5 * 1024 * 1024) { ralat('Ukuran file maksimal 5 MB.'); return; }
+                                            var foto = !/\.pdf$/i.test(f.name);
+                                            sedang = true;
+                                            var tmpl = '<div class="fw-semibold" style="word-break:break-word;"></div><div class="small text-secondary" id="poTtdSt">Mengunggah&hellip; 0%</div><div class="pt-prog"><div id="poTtdBar"></div></div>';
+                                            var tujuan = info || null;
+                                            if (!tujuan) { ralat('Mengunggah file\u2026'); }
+                                            if (tujuan) { tujuan.innerHTML = tmpl; tujuan.firstChild.textContent = f.name; }
+                                            var btn = document.getElementById('poTtdPilih'); if (btn) { btn.disabled = true; }
+                                            var bar = document.getElementById('poTtdBar'), st = document.getElementById('poTtdSt');
+                                            var fd = new FormData();
+                                            fd.append('csrf_token', '{{ @csrf_token }}');
+                                            fd.append('file_po_ttd', f);
+                                            var x = new XMLHttpRequest();
+                                            x.open('POST', '{{ @po_alur.ttd.url_unggah }}');
+                                            x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                                            x.upload.onprogress = function (e) {
+                                                if (!e.lengthComputable || !bar) { return; }
+                                                var p = Math.round(e.loaded / e.total * 100);
+                                                bar.style.width = p + '%';
+                                                if (p >= 100) {
+                                                    if (foto) { st.textContent = 'Mengubah foto menjadi PDF…'; bar.className = 'pt-ind'; }
+                                                    else { st.textContent = 'Menyimpan…'; }
+                                                } else { st.textContent = 'Mengunggah… ' + p + '%'; }
+                                            };
+                                            x.onload = function () {
+                                                var r = null; try { r = JSON.parse(x.responseText); } catch (e) {}
+                                                if (r && r.success) {
+                                                    if (bar) { bar.className = ''; bar.style.width = '100%'; }
+                                                    if (st) { st.textContent = 'Selesai'; }
+                                                    setTimeout(function () { window.location.reload(); }, 450);
+                                                } else {
+                                                    sedang = false; if (btn) { btn.disabled = false; }
+                                                    ralat((r && r.message) ? r.message : 'Gagal mengunggah file. Coba lagi.');
+                                                    if (tujuan) { tujuan.innerHTML = '<div class="fw-semibold">Upload PO yang sudah ditandatangani.</div><div class="small text-secondary">PDF, JPG, atau PNG &middot; maks. 5 MB</div>'; }
+                                                }
+                                            };
+                                            x.onerror = function () {
+                                                sedang = false; if (btn) { btn.disabled = false; }
+                                                ralat('Koneksi terputus saat mengunggah. Coba lagi.');
+                                            };
+                                            x.send(fd);
+                                        }
+                                        inp.addEventListener('change', function () { if (inp.files && inp.files[0]) { kirim(inp.files[0]); } inp.value = ''; });
+                                        if (drop) {
+                                            drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('pt-drag'); });
+                                            drop.addEventListener('dragleave', function () { drop.classList.remove('pt-drag'); });
+                                            drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('pt-drag'); if (e.dataTransfer.files && e.dataTransfer.files[0]) { kirim(e.dataTransfer.files[0]); } });
+                                        }
+                                    })();
+                                    </script>
                                 </check>
                             </check>
                         </check>
@@ -9287,9 +9430,26 @@ document.addEventListener('DOMContentLoaded', function () {
     var btnSimpanDisp = document.getElementById('btnSimpanDisposisiDetail');
     var inputDisp     = document.getElementById('inputDisposisiLangsungDetail');
 
+    // Nominal tidak boleh melebihi sisa tagihan: angka yang kebesaran tidak masuk (kembali ke nominal valid terakhir), kolom bergetar + pesan merah
+    var nominalTerakhir = 0, tolakTimer = null, modeTombol = '';
+    function tolakNominal() {
+        if (hint) hint.innerHTML = '<span class="nom-pesan text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Melebihi sisa tagihan (' + rupiah(sisaTagihan) + '). Nominal tidak bisa dimasukkan.</span>';
+        if (group) {
+            group.classList.add('nom-tolak');
+            group.classList.remove('nom-geser'); void group.offsetWidth; group.classList.add('nom-geser');
+        }
+        clearTimeout(tolakTimer);
+        tolakTimer = setTimeout(function () {
+            if (group) group.classList.remove('nom-tolak', 'nom-geser');
+            updateLiveNominal();
+        }, 3200);
+    }
+
     function updateLiveNominal() {
         if (!display || !hidden) return;
         var angka = parseInt(display.value.replace(/[^0-9]/g, ''), 10) || 0;
+        var ditolak = (sisaTagihan > 0 && angka > sisaTagihan);
+        if (ditolak) { angka = nominalTerakhir; } else { nominalTerakhir = angka; }
         hidden.value = angka;
         display.value = angka > 0 ? angka.toLocaleString('id-ID') : '';
 
@@ -9298,6 +9458,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (banner) banner.classList.add('d-none');
+
+        if (ditolak) {
+            tolakNominal();
+            perbaruiTombolSimpan();
+            return;
+        }
+        clearTimeout(tolakTimer);
+        if (group) group.classList.remove('nom-tolak', 'nom-geser');
 
         if (angka <= 0) {
             if (hint) hint.innerHTML = '';
@@ -9350,6 +9518,23 @@ document.addEventListener('DOMContentLoaded', function () {
         var modeSkip = document.getElementById('inputIsKesanggupanDetail') && document.getElementById('inputIsKesanggupanDetail').value === '1';
         var angka = parseInt(hidden ? hidden.value : 0, 10) || 0;
         var modeLunasPas = (!modeSkip && angka > 0 && angka >= sisaTagihan);
+
+        // Nominal masih kosong: tombol simpan nonaktif. Nominal kurang dari sisa = "Simpan Pembayaran", pas dengan sisa = "Disposisi".
+        btnSimpan.disabled = (!modeSkip && angka <= 0);
+        btnSimpanSaja.disabled = false;
+        btnSimpanDisp.disabled = false;
+        var modeBaru = modeSkip ? 'skip' : (modeLunasPas ? 'pas' : 'termin');
+        if (modeBaru !== modeTombol) {
+            var adaSebelumnya = (modeTombol !== '');
+            modeTombol = modeBaru;
+            if (adaSebelumnya) {
+                setTimeout(function () {
+                    [btnSimpan, btnSimpanSaja, btnSimpanDisp].forEach(function (b) {
+                        if (!b.classList.contains('d-none')) { b.classList.remove('nom-ganti'); void b.offsetWidth; b.classList.add('nom-ganti'); }
+                    });
+                }, 0);
+            }
+        }
 
         if (sudahDisposisi) {
             btnSimpan.classList.remove('d-none');

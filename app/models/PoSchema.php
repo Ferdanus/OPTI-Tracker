@@ -61,6 +61,13 @@ class PoSchema
         'alamat_tampil'      => 'TINYINT(1) NULL',
         // penandatangan dokumen (ppk / ketua tim / mengetahui) -- dipakai semua jenis PO; lihat PoTtd
         'ttd_json'           => 'LONGTEXT NULL',
+        // PO yang sudah dicetak lalu ditandatangani, diunggah Ketua Tim (Tahap 8 detail order); BAST (Tahap 9) baru terbuka setelah ini ada
+        'po_ttd_file'        => 'VARCHAR(255) NULL',
+        'po_ttd_nama'        => 'VARCHAR(255) NULL',
+        'po_ttd_asal'        => 'VARCHAR(10) NULL',
+        'po_ttd_at'          => 'DATETIME NULL',
+        'po_ttd_oleh_id'     => 'INT NULL',
+        'po_ttd_oleh_nama'   => 'VARCHAR(150) NULL',
     );
     protected static $dbRef = null;
 
