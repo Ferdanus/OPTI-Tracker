@@ -1113,23 +1113,29 @@ class OrderController extends Controller {
 
         $pembuatNama = $_SESSION['user']['nama'] ?? ($_SESSION['nama_lengkap'] ?? ($spExisting['pembuat_nama'] ?? 'Tim Mitra BBSPJIS'));
 
-        // Media permintaan masuk tersinkronisasi dari Formulir Pelayanan Tahap 2
-        $mediaRaw = !empty($spExisting['permintaan_melalui']) 
-            ? $spExisting['permintaan_melalui'] 
-            : (!empty($order['permintaan_melalui']) 
-                ? $order['permintaan_melalui'] 
-                : (!empty($order['id_surat_masuk']) ? 'surat' : 'email'));
+        // Media permintaan masuk tersinkronisasi dari data permohonan asal (surat masuk / input permohonan baru)
+        $mediaRaw = !empty($order['media_permohonan']) 
+            ? $order['media_permohonan'] 
+            : (!empty($spExisting['permintaan_melalui']) 
+                ? $spExisting['permintaan_melalui'] 
+                : (!empty($order['permintaan_melalui']) 
+                    ? $order['permintaan_melalui'] 
+                    : (!empty($order['id_surat_masuk']) ? 'surat' : 'whatsapp')));
 
         $mediaLabels = [
-            'fax'             => 'Fax',
             'surat'           => 'Surat Resmi',
-            'email'           => 'E-mail Resmi',
-            'telepon'         => 'Telepon',
+            'surat_resmi'     => 'Surat Resmi',
+            'email'           => 'E-mail',
             'whatsapp'        => 'WhatsApp',
+            'telepon'         => 'Telepon',
+            'fax'             => 'Fax',
             'website'         => 'Website',
             'datang_langsung' => 'Datang Langsung',
         ];
         $mediaPermintaanVal = strtolower(trim((string)$mediaRaw));
+        if ($mediaPermintaanVal === 'surat_resmi') {
+            $mediaPermintaanVal = 'surat';
+        }
         $mediaPermintaanLabel = $mediaLabels[$mediaPermintaanVal] ?? (ucfirst(str_replace('_', ' ', $mediaPermintaanVal)));
         $f3->set('media_permintaan_val', $mediaPermintaanVal);
         $f3->set('media_permintaan_label', $mediaPermintaanLabel);
@@ -3587,7 +3593,14 @@ class OrderController extends Controller {
         $perusahaan = trim($post['perusahaan'] ?? '');
         $alamat = trim($post['alamat'] ?? '');
         $penjelasan = trim($post['penjelasan'] ?? ($post['deskripsi'] ?? ''));
-        $permintaanMelalui = trim($post['permintaan_melalui'] ?? 'email');
+        $permintaanMelalui = trim($post['permintaan_melalui'] ?? '');
+        if (empty($permintaanMelalui)) {
+            $permintaanMelalui = !empty($order->media_permohonan) ? $order->media_permohonan : (!empty($order->id_surat_masuk) ? 'surat' : 'whatsapp');
+        }
+        $permintaanMelalui = strtolower($permintaanMelalui);
+        if ($permintaanMelalui === 'surat_resmi') {
+            $permintaanMelalui = 'surat';
+        }
         $pegawaiId = !empty($post['pegawai_id']) ? (int)$post['pegawai_id'] : null;
 
         // Parameter Kaji Kelayakan

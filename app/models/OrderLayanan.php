@@ -648,13 +648,15 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 }
             }
 
-            // Saluran permohonan konsisten: utamakan pilihan Tim Mitra di Tahap 2 (sp.permintaan_melalui), fallback ke input awal (media_permohonan)
-            if (!empty($r['permintaan_melalui'])) {
-                $r['media_permohonan'] = strtolower(trim((string)$r['permintaan_melalui']));
-            } elseif (empty($r['media_permohonan'])) {
-                $r['media_permohonan'] = !empty($r['id_surat_masuk']) ? 'surat' : 'surat';
-            } else {
+            // Saluran permohonan konsisten: utamakan pilihan input permohonan awal / surat masuk (media_permohonan)
+            if (!empty($r['media_permohonan'])) {
                 $r['media_permohonan'] = strtolower(trim((string)$r['media_permohonan']));
+            } elseif (!empty($r['permintaan_melalui'])) {
+                $r['media_permohonan'] = strtolower(trim((string)$r['permintaan_melalui']));
+            } elseif (!empty($r['id_surat_masuk'])) {
+                $r['media_permohonan'] = 'surat';
+            } else {
+                $r['media_permohonan'] = 'whatsapp';
             }
 
             $r['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($r['nmcustomer'] ?? ($r['nama_perusahaan'] ?? ''), $r['pt_cv'] ?? '');
@@ -1381,12 +1383,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
         );
 
         if (!empty($result) && !empty($result[0])) {
-            if (!empty($result[0]['permintaan_melalui'])) {
-                $result[0]['media_permohonan'] = strtolower(trim((string)$result[0]['permintaan_melalui']));
-            } elseif (empty($result[0]['media_permohonan'])) {
-                $result[0]['media_permohonan'] = !empty($result[0]['id_surat_masuk']) ? 'surat' : 'surat';
-            } else {
+            if (!empty($result[0]['media_permohonan'])) {
                 $result[0]['media_permohonan'] = strtolower(trim((string)$result[0]['media_permohonan']));
+            } elseif (!empty($result[0]['permintaan_melalui'])) {
+                $result[0]['media_permohonan'] = strtolower(trim((string)$result[0]['permintaan_melalui']));
+            } elseif (!empty($result[0]['id_surat_masuk'])) {
+                $result[0]['media_permohonan'] = 'surat';
+            } else {
+                $result[0]['media_permohonan'] = 'whatsapp';
             }
             return $result[0];
         }
