@@ -335,7 +335,7 @@ class OrderController extends Controller {
                     $badge = 'Verifikasi PO';
                 }
             } elseif (in_array($userRole, ['keuangan', 'ketua_tim_keuangan'])) {
-                if (in_array($r['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian']) || (($r['status_penawaran'] ?? '') === 'deal' && ($r['status_keuangan'] ?? '') !== 'lunas')) {
+                if (empty($r['punya_kesanggupan']) && (in_array($r['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian']) || (($r['status_penawaran'] ?? '') === 'deal' && ($r['status_keuangan'] ?? '') !== 'lunas'))) {
                     $isTask = true;
                     $reason = 'Menunggu pencatatan / verifikasi pelunasan pembayaran';
                     $badge = 'Perlu Pembayaran';

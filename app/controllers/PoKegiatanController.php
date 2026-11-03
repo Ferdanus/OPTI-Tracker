@@ -86,6 +86,22 @@ protected function getInfoPembayaranOtomatis($orderId, $statusKeuangan) {
     return 'dibayarkan pada tanggal ' . $tanggalFormat;
 }
 
+/**
+ * Tanggal Surat Kesanggupan Pembayaran yang sudah dicatat Keuangan untuk order ini (format "3 November 2026"), atau '' bila tidak ada.
+ * Dipakai redaksi poin b "Pembayaran" di Dasar PO saat pembayaran belum lunas: PO tetap menyebut komitmen bayar mitra.
+ */
+protected function getTanggalKesanggupanBayar($orderId) {
+    $bulanIndo = ['', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    $r = $this->safeQuery(
+        "SELECT COALESCE(created_at, tanggal_bayar) AS t FROM opti_pembayaran WHERE order_id = ? AND is_kesanggupan_bayar = 1 ORDER BY id DESC LIMIT 1",
+        [$orderId]
+    );
+    if (empty($r) || empty($r[0]['t'])) { return ''; }
+    $t = strtotime($r[0]['t']);
+    if (!$t) { return ''; }
+    return (int) date('d', $t) . ' ' . $bulanIndo[(int) date('n', $t)] . ' ' . date('Y', $t);
+}
+
 protected function parsePerPointLines($text) {
     // Satu item = satu poin berpenanda (a. / 1. / - / •). Baris tanpa penanda yang menyusul sebuah poin
     // dianggap lanjutan poin itu (digabung dengan baris baru, isinya tidak diubah) supaya tampil rapi
@@ -1363,6 +1379,7 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
 
     $infoPembayaran = $this->getInfoPembayaranOtomatis($orderId, $orderData['status_keuangan'] ?? '');
 $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNICODE));
+$f3->set('info_kesanggupan_json', json_encode($this->getTanggalKesanggupanBayar((int) $orderId), JSON_UNESCAPED_UNICODE));
 
         $suratDasar = $this->suratDasarDariOrder($orderId);
         $jadwalAuto = $this->jadwalOtomatisDariOrder($orderData);
@@ -1464,6 +1481,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
 
     $infoPembayaran = $this->getInfoPembayaranOtomatis((int) $po->order_id, $orderData['status_keuangan'] ?? '');
     $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNICODE));
+    $f3->set('info_kesanggupan_json', json_encode($this->getTanggalKesanggupanBayar((int) $po->order_id), JSON_UNESCAPED_UNICODE));
 
         $suratDasar = $this->suratDasarDariOrder((int) $po->order_id);
         $jadwalAuto = $this->jadwalOtomatisDariOrder($orderData);

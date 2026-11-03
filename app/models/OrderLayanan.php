@@ -34,6 +34,21 @@ class OrderLayanan extends \DB\SQL\Mapper {
         'Pengolahan Lingkungan'       => '6. Lab Pengolahan Air Limbah & Emisi Lingkungan'
     );
 
+    /**
+     * Potongan SQL "order ini punya Surat Kesanggupan Bayar" (opti_pembayaran.is_kesanggupan_bayar = 1) untuk daftar & detail order.
+     * Kalau kolomnya belum ada di database, dikembalikan 0 supaya daftar order tidak error.
+     */
+    protected function sqlPunyaKesanggupan(): string {
+        static $ada = null;
+        if ($ada === null) {
+            try {
+                $r = $this->db->exec("SELECT COUNT(*) AS c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'opti_pembayaran' AND COLUMN_NAME = 'is_kesanggupan_bayar'");
+                $ada = !empty($r) && (int) $r[0]['c'] > 0;
+            } catch (\Throwable $e) { $ada = false; }
+        }
+        return $ada ? "COALESCE((SELECT MAX(is_kesanggupan_bayar) FROM opti_pembayaran WHERE order_id = o.id), 0)" : "0";
+    }
+
     public function __construct(\DB\SQL $db) {
         if (date_default_timezone_get() !== 'Asia/Jakarta') {
             date_default_timezone_set('Asia/Jakarta');
@@ -522,6 +537,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        COALESCE(NULLIF(o.alasan_tolak, ''), NULLIF(tk.alasan_penolakan, ''), '-') AS alasan_tolak,
                        COALESCE(o.tanggal_tolak, tk.tanggal_tinjauan) AS tanggal_tolak,
                        COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
+                       " . $this->sqlPunyaKesanggupan() . " AS punya_kesanggupan,
                        (SELECT MAX(tanggal_bayar) FROM opti_pembayaran WHERE order_id = o.id) AS tanggal_bayar_terakhir,
                        u_pic.nama_user AS pic_proposal_nama,
                        CASE 
@@ -954,7 +970,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         // Cek Pembayaran Lunas & Penawaran DEAL
         $isDeal = (($o['status'] ?? '') === 'penawaran_deal' || ($o['status_respon_klien'] ?? '') === 'deal' || ($o['status_penawaran'] ?? '') === 'deal');
-        $isLunas = (($o['status_keuangan'] ?? '') === 'lunas');   // bayar sebagian (terbayar_sebagian) belum dianggap lunas
+        // Pembayaran dianggap beres bila lunas ATAU dicatat via Surat Kesanggupan Bayar (sama dengan Tahap 6 di detail order). Bayar sebagian belum.
+        $isLunas = (($o['status_keuangan'] ?? '') === 'lunas') || !empty($o['punya_kesanggupan']);
 
         // Jika sudah DEAL & LUNAS, namun PO belum dibuat -> Alur masuk ke Tahap 7 (Sampel / Titik Awal SPM & PO)
         if ($isDeal && $isLunas) {
@@ -1253,6 +1270,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
                     b.id AS bast_id, b.status_bast,
                     COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
+                       " . $this->sqlPunyaKesanggupan() . " AS punya_kesanggupan,
                     (SELECT MAX(tanggal_bayar) FROM opti_pembayaran WHERE order_id = o.id) AS tanggal_bayar_terakhir,
                     u_pic.nama_user AS pic_proposal_nama,
                     CASE 

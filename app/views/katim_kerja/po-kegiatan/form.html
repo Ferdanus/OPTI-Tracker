@@ -1932,6 +1932,13 @@ function safeJsonParse(val, fallback) {
 
 var namaPerusahaanDasar = decodeHtmlEntities({{ json_encode(\Customer::formatNamaPerusahaan(@order.pt_cv ?: '', @order.nama_mitra ?: '')) }});
 var infoPembayaran = {{ @info_pembayaran_json | raw }};
+/* Belum lunas tapi sudah ada Surat Kesanggupan Pembayaran: redaksi poin b menyebut surat itu (bukan "-"). */
+var kesanggupanTgl = {{ @info_kesanggupan_json | raw }};
+var modeKesanggupan = false;
+if ((infoPembayaran === '-' || !infoPembayaran) && kesanggupanTgl) {
+    infoPembayaran = 'berdasarkan Surat Kesanggupan Pembayaran dari ' + (namaPerusahaanDasar || '...') + ' tanggal ' + kesanggupanTgl;
+    modeKesanggupan = true;
+}
 var suratDasar = {{ @surat_dasar_json | raw }};  // null kalau order belum punya surat penawaran
 var jadwalAuto = {{ @jadwal_auto_json | raw }};  // null kalau tanggal sampel atau deadline SPM belum ada
 var BULAN_INDO = ['', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -1976,7 +1983,7 @@ function komposeDasar() {
     '</div>' +
     '<div class="d-flex align-items-start gap-2">' +
         '<span class="po-point-label">b.</span>' +
-        '<div class="po-point-content"><strong>Pembayaran:</strong> ' + (infoPembayaran === '-' ? '<span class="text-muted">-</span>' : '<span class="text-success fw-semibold">' + infoPembayaran + '</span>') + '</div>' +
+        '<div class="po-point-content"><strong>Pembayaran:</strong> ' + (infoPembayaran === '-' ? '<span class="text-muted">-</span>' : '<span class="' + (modeKesanggupan ? 'text-dark' : 'text-success') + ' fw-semibold">' + infoPembayaran + '</span>') + '</div>' +
     '</div>';
 
     var prevEl = document.getElementById('dasarPreview');
@@ -2012,6 +2019,24 @@ function tampilkanInfoPembayaran() {
         if (badgeBox) {
             badgeBox.className = 'badge bg-light text-muted border rounded-pill px-3 py-1.5';
             badgeBox.textContent = 'Belum Tercatat';
+        }
+    } else if (modeKesanggupan) {
+        if (box) {
+            box.style.background = '#f8fafc';
+            box.style.borderColor = '#cbd5e1';
+        }
+        if (iconBox) {
+            iconBox.className = 'd-inline-flex align-items-center justify-content-center rounded-circle bg-dark text-white flex-shrink-0';
+            iconBox.style.marginRight = '12px';
+            iconBox.innerHTML = '<i class="bi bi-file-earmark-text"></i>';
+        }
+        if (info) {
+            info.className = 'fw-semibold text-dark small';
+            info.textContent = 'Kesanggupan bayar tercatat (tanggal ' + kesanggupanTgl + ')';
+        }
+        if (badgeBox) {
+            badgeBox.className = 'badge bg-light text-dark border rounded-pill px-3 py-1.5';
+            badgeBox.textContent = 'Kesanggupan Bayar';
         }
     } else {
         if (box) {
