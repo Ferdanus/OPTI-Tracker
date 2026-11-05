@@ -2,7 +2,7 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div>
             <h2 class="h4 fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-                <i class="bi bi-clipboard2-data text-primary"></i> Petunjuk Operasional (PO)
+                <i class="bi bi-clipboard2-data text-secondary"></i> Petunjuk Operasional (PO)
             </h2>
         </div>
         <div class="d-flex gap-2">
@@ -44,10 +44,10 @@
             <div class="metric-card cursor-pointer" onclick="pilihKartuTab('{{ @tab_kartu_tindakan }}')" role="button" title="Lihat PO yang perlu tindakan">
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Perlu Tindakan</span>
-                    <h3 class="fw-bold mb-0 mt-1" style="color: #d97706;">{{ @total_perlu_tindakan ?: 0 }}</h3>
+                    <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_perlu_tindakan ?: 0 }}</h3>
                     <span class="small text-muted" style="font-size: 0.75rem;">{{ @ket_perlu_tindakan | raw }}</span>
                 </div>
-                <div class="metric-icon-box" style="background-color: #fef3c7; color: #d97706; border: 1px solid #fde68a;">
+                <div class="metric-icon-box" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
                     <i class="bi bi-exclamation-circle-fill"></i>
                 </div>
             </div>
@@ -56,10 +56,10 @@
             <div class="metric-card cursor-pointer" onclick="pilihKartuTab('berjalan')" role="button" title="Lihat tab Sedang Berjalan">
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Sedang Berjalan</span>
-                    <h3 class="fw-bold mb-0 mt-1" style="color: #2563eb;">{{ @total_berjalan ?: 0 }}</h3>
+                    <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_berjalan ?: 0 }}</h3>
                     <span class="small text-muted" style="font-size: 0.75rem;">Review &amp; verifikasi</span>
                 </div>
-                <div class="metric-icon-box" style="background-color: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;">
+                <div class="metric-icon-box" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
                     <i class="bi bi-hourglass-split"></i>
                 </div>
             </div>
@@ -68,10 +68,10 @@
             <div class="metric-card cursor-pointer" onclick="pilihKartuTab('disetujui')" role="button" title="Lihat tab PO Aktif">
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">PO Aktif</span>
-                    <h3 class="fw-bold mb-0 mt-1" style="color: #059669;">{{ @total_disetujui ?: 0 }}</h3>
+                    <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_disetujui ?: 0 }}</h3>
                     <span class="small text-muted" style="font-size: 0.75rem;">Diverifikasi &amp; siap jalan</span>
                 </div>
-                <div class="metric-icon-box" style="background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+                <div class="metric-icon-box" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
                     <i class="bi bi-check-circle-fill"></i>
                 </div>
             </div>
@@ -130,16 +130,7 @@
                     </repeat>
                 </select></div>
                     </div>
-                    <div class="col-6 col-sm-auto {{ @tab_aktif == 'berjalan' ? '' : 'd-none' }}" data-filter-tab="berjalan">
-                        <div class="sel-a"><span class="sel-a-ic"><i class="bi bi-signpost-split"></i></span><select name="posisi" class="sel-a-select" aria-label="Filter Posisi PO" {{ @tab_aktif == 'berjalan' ? '' : 'disabled' }}>
-                            <option value="" {{ !@filter_posisi ? 'selected' : '' }}>Semua Posisi</option>
-                            <check if="{{ @tampil_tab_revisi }}"><option value="review" {{ @filter_posisi == 'review' ? 'selected' : '' }}>Review Ketua Tim</option></check>
-                            <option value="revisi" {{ @filter_posisi == 'revisi' ? 'selected' : '' }}>Sedang Direvisi</option>
-                            <option value="humas" {{ @filter_posisi == 'humas' ? 'selected' : '' }}>Verifikasi Humas</option>
-                            <option value="mitra" {{ @filter_posisi == 'mitra' ? 'selected' : '' }}>Verifikasi Tim Mitra</option>
-                            <option value="ppk" {{ @filter_posisi == 'ppk' ? 'selected' : '' }}>Verifikasi PPK BLU</option>
-                        </select></div>
-                    </div>
+                    
                     <div class="col-6 col-sm-auto {{ @tab_aktif == 'revisi' ? '' : 'd-none' }}" data-filter-tab="revisi">
                         <div class="sel-a"><span class="sel-a-ic"><i class="bi bi-funnel"></i></span><select name="jenis" class="sel-a-select" aria-label="Filter Jenis Revisi" {{ @tab_aktif == 'revisi' ? '' : 'disabled' }}>
                             <option value="" {{ !@filter_jenis ? 'selected' : '' }}>Semua Revisi</option>
@@ -177,11 +168,11 @@
             <div class="d-flex align-items-center gap-2 flex-wrap" id="poTabs">
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'semua' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=semua&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-list-ul"></i>Semua <span class="count-chip">{{ @tab_counts.semua ?: 0 }}</span></a>
                 <check if="{{ @tampil_tab_tindakan && @tindakan_di_awal }}">
-                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'tindakan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <span class="count-chip chip-danger">{{ @tab_counts.tindakan ?: 0 }}</span></a>
+                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'tindakan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <span class="count-chip">{{ @tab_counts.tindakan ?: 0 }}</span></a>
                 </check>
                 <check if="{{ @tampil_tab_pembuat }}">
                 <check if="{{ @tampil_tab_masuk }}">
-                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'masuk' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=masuk&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-inbox"></i>PO Masuk <span class="count-chip chip-danger">{{ @tab_counts.masuk ?: 0 }}</span></a>
+                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'masuk' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=masuk&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-inbox"></i>PO Masuk <span class="count-chip">{{ @tab_counts.masuk ?: 0 }}</span></a>
                 </check>
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'draft' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=draft&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-pencil-square"></i>Draft <span class="count-chip">{{ @tab_counts.draft ?: 0 }}</span></a>
                 </check>
@@ -189,7 +180,7 @@
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'revisi' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=revisi&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-arrow-repeat"></i>Revisi <span class="count-chip">{{ @tab_counts.revisi ?: 0 }}</span></a>
                 </check>
                 <check if="{{ @tampil_tab_tindakan && !@tindakan_di_awal }}">
-                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'tindakan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <span class="count-chip chip-danger">{{ @tab_counts.tindakan ?: 0 }}</span></a>
+                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'tindakan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <span class="count-chip">{{ @tab_counts.tindakan ?: 0 }}</span></a>
                 </check>
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'berjalan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=berjalan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-hourglass-split"></i>Sedang Berjalan <span class="count-chip">{{ @tab_counts.berjalan ?: 0 }}</span></a>
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'disetujui' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=disetujui&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-check2-circle"></i>PO Aktif <span class="count-chip">{{ @tab_counts.disetujui ?: 0 }}</span></a>
@@ -212,7 +203,7 @@
                                 <th style="width: 120px;">Divisi</th>
                                 <th>Judul Kegiatan</th>
                                 <th class="text-center" style="width: 170px;">Status PO</th>
-                                <check if="{{ @tampil_posisi }}"><th style="width: 200px;">Posisi PO</th></check>
+                                
                                 <th class="text-center" style="width: 190px;">Aksi</th>
                             </tr>
                         </thead>
@@ -258,16 +249,7 @@
                                         <check if="{{ !@p.po_revisi && @p.po_status == 'disetujui_mitra' }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
                                         <check if="{{ @p.po_status == 'disetujui' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> PO Aktif</span></check>
                                     </td>
-                                    <check if="{{ @tampil_posisi }}">
-                                    <td>
-                                        <check if="{{ @p.posisi_teks }}">
-                                            <div class="po-posisi po-posisi-{{ @p.posisi_kelas }}">{{ @p.posisi_teks }}</div>
-                                            <div class="text-muted small" style="font-size: 0.73rem;"><i class="bi bi-person-fill me-1"></i>{{ @p.posisi_pemegang }}</div>
-                                            <check if="{{ @p.baca_teks }}"><div class="po-baca po-baca-{{ @p.baca_status }}"><i class="bi {{ @p.baca_status == 'belum' ? 'bi-envelope' : 'bi-envelope-open' }} me-1"></i>{{ @p.baca_teks }}</div></check>
-                                        </check>
-                                        <check if="{{ !@p.posisi_teks }}"><span class="text-muted small">-</span></check>
-                                    </td>
-                                    </check>
+                                    
                                     <td class="text-center">
                                         <div class="d-inline-flex gap-1 align-items-center">
                                             <check if="{{ @p.layanan == 'sertifikasi' && !@p.hanya_lihat && @p.aksi_mode == 'review' }}">
@@ -317,7 +299,7 @@
                                         </check>
                                         <check if="{{ !@p.po_id }}">
                                             <span class="text-muted fst-italic small">Belum dibuat PO</span>
-                                            <div class="text-warning small" style="font-size: 0.72rem;"><i class="bi bi-exclamation-circle me-1"></i>Siap dibuat</div>
+                                            <div class="text-secondary small" style="font-size: 0.72rem;"><i class="bi bi-exclamation-circle me-1"></i>Siap dibuat</div>
                                         </check>
                                     </td>
                                     <td><span class="fw-semibold text-dark">{{ @p.nomor_order }}</span></td>
@@ -340,16 +322,7 @@
                                         <check if="{{ @p.po_id && !@p.po_revisi && (@p.po_status == 'terkirim' || @p.po_status == 'disetujui_mitra') }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
                                         <check if="{{ @p.po_id && !@p.po_revisi && @p.po_status == 'disetujui' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> PO Aktif</span></check>
                                     </td>
-                                    <check if="{{ @tampil_posisi }}">
-                                    <td>
-                                        <check if="{{ @p.posisi_teks }}">
-                                            <div class="po-posisi po-posisi-{{ @p.posisi_kelas }}">{{ @p.posisi_teks }}</div>
-                                            <div class="text-muted small" style="font-size: 0.73rem;"><i class="bi bi-person-fill me-1"></i>{{ @p.posisi_pemegang }}</div>
-                                            <check if="{{ @p.baca_teks }}"><div class="po-baca po-baca-{{ @p.baca_status }}"><i class="bi {{ @p.baca_status == 'belum' ? 'bi-envelope' : 'bi-envelope-open' }} me-1"></i>{{ @p.baca_teks }}</div></check>
-                                        </check>
-                                        <check if="{{ !@p.posisi_teks }}"><span class="text-muted small">-</span></check>
-                                    </td>
-                                    </check>
+                                    
                                     <td class="text-center">
                                         <div class="d-inline-flex gap-1 align-items-center">
                                             <check if="{{ @p.hanya_lihat }}">
@@ -1281,7 +1254,7 @@ window.addEventListener('message', function (e) {
     .filter-tab-pill:hover { color: #0f172a; background-color: #f8fafc; border-color: #cbd5e1; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
     .filter-tab-pill .count-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 9999px; font-size: .72rem; font-weight: 700; background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; transition: all .2s; }
     .filter-tab-pill .count-chip.chip-danger { background-color: #fee2e2; color: #b91c1c; border-color: #fecaca; }
-    .filter-tab-pill.active { color: #fff !important; background-color: var(--color-primary, #334155) !important; border-color: var(--color-primary, #334155) !important; box-shadow: 0 2px 6px rgba(51,65,85,.25) !important; }
+    .filter-tab-pill.active { color: #fff !important; background-color: #1e293b !important; border-color: #1e293b !important; box-shadow: 0 2px 6px rgba(30,41,59,.2) !important; }
     .filter-tab-pill.active .count-chip { background-color: rgba(255,255,255,.25) !important; border-color: transparent !important; color: #fff !important; }
     .filter-tab-pill.active i { color: #fff !important; }
     .dpx-pill-group { display: inline-flex; gap: 2px; padding: 3px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 9999px; }

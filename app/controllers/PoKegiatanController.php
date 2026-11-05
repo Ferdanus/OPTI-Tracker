@@ -1158,7 +1158,7 @@ $daftarPo = $this->safeQuery($sql, $params);
     $f3->set('total_berjalan',       $tabGlobal['berjalan']);
     $f3->set('tampil_tab_tindakan',  $katimUi || $isSuperadmin);   // tab Perlu Tindakan hanya untuk Ketua Tim / Superadmin
     $f3->set('tindakan_di_awal',     $katimUi);                    // Ketua Tim: tab pertama; Superadmin: sesudah Revisi
-    $f3->set('tampil_posisi', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan'], true));
+    $f3->set('tampil_posisi', false);
     $f3->set('aksi_ringkas', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan', 'disetujui'], true));
     $f3->set('filter_posisi', $posisiFilter);
     $f3->set('filter_jenis', $jenisFilter);
@@ -1305,8 +1305,8 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
         $f3->set('order', $orderData);
         $f3->set('po', null);
         $f3->set('po_json', 'null');
-        // PO Selulosa memakai proposal (bukan surat masuk) sebagai acuan judul; "Lihat Surat Masuk" hanya untuk PO Lingkungan
-        $f3->set('surat_masuk_terkait', (($orderData['jenis_layanan_opti'] ?? '') === 'selulosa') ? null : $this->getSuratMasukTerkait($orderData));
+        // Surat masuk terkait dari tabel arsip sekretariat
+        $f3->set('surat_masuk_terkait', $this->getSuratMasukTerkait($orderData));
         $proposalTerkait = $this->getProposalTerkait($orderData);
         $f3->set('proposal_terkait', $proposalTerkait);
         $f3->set('judul_form_awal', $this->judulAwalForm('', $orderData, $proposalTerkait));
@@ -1407,7 +1407,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
         $f3->set('po', $poData);
         $f3->set('po_json', json_encode($poData, JSON_UNESCAPED_UNICODE));
         $f3->set('tahun_po_wajib', $this->tahunPoWajib((string) ($poData['nomor_po'] ?? '')));
-        $f3->set('surat_masuk_terkait', ($orderData && ($orderData['jenis_layanan_opti'] ?? '') !== 'selulosa') ? $this->getSuratMasukTerkait($orderData) : null);
+        $f3->set('surat_masuk_terkait', $orderData ? $this->getSuratMasukTerkait($orderData) : null);
         $proposalTerkait = $orderData ? $this->getProposalTerkait($orderData) : null;
         $f3->set('proposal_terkait', $proposalTerkait);
         $f3->set('judul_form_awal', $this->judulAwalForm((string) ($poData['judul_kegiatan'] ?? ''), $orderData ?: [], $proposalTerkait));

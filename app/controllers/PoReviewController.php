@@ -389,6 +389,20 @@ class PoReviewController extends Controller {
                     'created_by'      => $uid,
                     'created_by_name' => $nama,
                 ]);
+                // Notifikasi ke Tim Mitra
+                \NotificationService::send($this->db, [
+                    'order_id'        => (int) $po['order_id'],
+                    'po_id'           => (int) $po['id'],
+                    'target_role'     => 'tim_mitra',
+                    'target_layanan'  => 'semua',
+                    'judul'           => 'PO Disetujui Ka. Tim & Diteruskan ke Humas',
+                    'pesan'           => 'PO ' . $po['nomor_po'] . ' telah disetujui Ketua Tim dan sedang diverifikasi Humas.',
+                    'tipe'            => 'info',
+                    'icon'            => 'bi-arrow-right-circle',
+                    'link_url'        => '/po',
+                    'created_by'      => $uid,
+                    'created_by_name' => $nama,
+                ]);
             }
         } catch (\Throwable $eNotif) {
             // notifikasi bersifat pelengkap
@@ -800,6 +814,23 @@ class PoReviewController extends Controller {
 
             self::catatPesanSistem($db, $poId, $userId, 'pembuat', 'PO dikirim untuk direview.');
             self::kabari($db, self::idKatim($db, $rows[0]['jenis_layanan_opti']), 'PO baru menunggu review', 'PO ' . $rows[0]['nomor_po'] . ' baru dikirim.');
+            // Notifikasi ke Tim Mitra untuk monitoring alur PO
+            if (class_exists('NotificationService')) {
+                $orderInfo = $db->exec("SELECT nomor_order, id_customer FROM order_layanan WHERE id = (SELECT order_id FROM po_kegiatan WHERE id = ?)", [1 => (int)$poId]);
+                $noOrd = !empty($orderInfo[0]['nomor_order']) ? $orderInfo[0]['nomor_order'] : $poId;
+                \NotificationService::send($db, [
+                    'po_id'          => (int)$poId,
+                    'target_role'    => 'tim_mitra',
+                    'target_layanan' => 'semua',
+                    'judul'          => 'PO Kegiatan Diajukan ke Ka. Tim',
+                    'pesan'          => "PO {$rows[0]['nomor_po']} untuk Order #{$noOrd} telah diajukan ke Ketua Tim OPTI.",
+                    'tipe'           => 'info',
+                    'icon'           => 'bi-file-earmark-text',
+                    'link_url'       => "/po",
+                    'created_by'     => (int)$userId,
+                    'created_by_name'=> 'Ketua Pelaksana'
+                ]);
+            }
         } catch (\Exception $e) {
             // pencatatan jejak tidak boleh menggagalkan penyimpanan PO
         }
@@ -1557,4 +1588,4 @@ class PoReviewController extends Controller {
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
-}
+}

@@ -1192,9 +1192,10 @@
             border-color: transparent !important;
         }
         .stage-nav-btn.active .stage-status-badge.bg-success {
-            background-color: #10b981 !important;
-            color: #ffffff !important;
-            border-color: transparent !important;
+            background-color: #ffffff !important;
+            color: #15803d !important;
+            border-color: #ffffff !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .stage-nav-btn:disabled,
@@ -2064,7 +2065,7 @@
                         <span class="stage-nav-text">{{ @order.media_permohonan && @order.media_permohonan != 'surat' ? 'Permohonan' : 'Surat Masuk' }}</span>
                     </div>
                     <div class="stage-nav-status-row">
-                        <span class="badge bg-light border text-dark stage-status-badge">Selesai</span>
+                        <span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span>
                     </div>
                 </button>
             </li>
@@ -2080,7 +2081,7 @@
                             <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                             <false>
                                 <check if="{{ @stepper[2].state == 'done' }}">
-                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
                                     <false>
                                         <check if="{{ @stepper[2].state == 'current' }}">
                                             <true><span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span></true>
@@ -2105,7 +2106,7 @@
                             <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                             <false>
                                 <check if="{{ @stepper[3].state == 'done' }}">
-                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
                                     <false>
                                         <check if="{{ @stepper[3].state == 'current' }}">
                                             <true><span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span></true>
@@ -2130,7 +2131,7 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ in_array(@proposal.status_proposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) || in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) || @stepper[4].state == 'done' }}">
-                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
                                     <false>
                                         <check if="{{ in_array(@proposal.status_proposal, ['ditolak', 'revisi']) || @order.status_proposal_biaya == 'perlu_revisi' }}">
                                             <true><span class="badge bg-danger-subtle text-danger stage-status-badge">Revisi</span></true>
@@ -2167,7 +2168,7 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'deal' }}">
-                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
                                     <false>
                                         <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'revisi' }}">
                                             <true><span class="badge bg-light text-dark border stage-status-badge">Revisi</span></true>
@@ -2176,7 +2177,7 @@
                                                     <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                                                     <false>
                                                         <check if="{{ @stepper[5].state == 'done' }}">
-                                                            <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
+                                                            <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
                                                             <false>
                                                                 <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                                             </false>
@@ -2204,13 +2205,13 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ @bayar_tuntas }}">
-                                    <true><span class="badge bg-light border text-dark stage-status-badge">{{ @bayar_status == 'lunas' ? 'Selesai' : 'Kesanggupan' }}</span></true>
+                                    <true><span class="badge {{ @bayar_status == 'lunas' ? 'bg-success text-white' : 'bg-light border text-dark' }} stage-status-badge"><check if="{{ @bayar_status == 'lunas' }}"><i class="bi bi-check2 me-0.5"></i></check>{{ @bayar_status == 'lunas' ? 'Selesai' : 'Kesanggupan' }}</span></true>
                                     <false>
                                         <check if="{{ @bayar_status == 'sebagian' }}">
                                             <true><span class="badge bg-warning text-dark stage-status-badge">Belum Lunas</span></true>
                                             <false>
                                                 <check if="{{ @stepper[6].state == 'done' }}">
-                                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
+                                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
                                                     <false>
                                                         <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                                     </false>
@@ -2239,7 +2240,7 @@
                                     <true><span class="badge bg-light border text-success stage-status-badge">SPM Aktif</span></true>
                                     <false>
                                         <check if="{{ @stepper[7].state == 'done' }}">
-                                            <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
+                                            <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
                                             <false>
                                                 <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                             </false>
@@ -2263,7 +2264,7 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ @stepper[8].state == 'done' }}">
-                                    <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
                                     <false>
                                         <check if="{{ !empty(@order.nomor_po) }}">
                                             <true><span class="badge bg-info-subtle text-info-emphasis stage-status-badge">PO Aktif</span></true>
@@ -2295,10 +2296,10 @@
                             <true><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></true>
                             <false>
                                 <check if="{{ !empty(@bast) && in_array(@bast.status_bast, ['disetujui', 'selesai', 'terbit']) }}">
-                                    <true><span class="badge bg-success text-white stage-status-badge">Selesai</span></true>
+                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
                                     <false>
                                         <check if="{{ @stepper[9].state == 'done' }}">
-                                            <true><span class="badge bg-light border text-dark stage-status-badge">Selesai</span></true>
+                                            <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
                                             <false>
                                                 <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
                                             </false>
@@ -2330,10 +2331,20 @@
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">1</span>
                             <span>{{ @order.media_permohonan && @order.media_permohonan != 'surat' ? 'Profil & Asal Permohonan Langsung' : 'Profil & Asal Surat Permohonan' }}</span>
                         </h6>
-                        <button type="button" class="btn btn-sm btn-outline-primary py-0.5 px-2 d-inline-flex align-items-center gap-1 shadow-xs fw-semibold rounded-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalEditProfilPelanggan" onclick="triggerStageRead(1)" title="Koreksi / Edit Data Pelanggan & Asal Surat">
-                            <i class="bi bi-pencil-square"></i>
-                            <span class="small">Edit</span>
-                        </button>
+                        <check if="{{ @can_koreksi }}">
+                            <true>
+                                <button type="button" class="btn btn-sm btn-outline-primary py-0.5 px-2 d-inline-flex align-items-center gap-1 shadow-xs fw-semibold rounded-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalEditProfilPelanggan" onclick="triggerStageRead(1)" title="Koreksi / Edit Data Pelanggan & Asal Surat">
+                                    <i class="bi bi-pencil-square"></i>
+                                    <span class="small">Edit</span>
+                                </button>
+                            </true>
+                            <false>
+                                <button type="button" class="btn btn-sm btn-light border text-muted py-0.5 px-2 d-inline-flex align-items-center gap-1 shadow-xs fw-semibold rounded-2 flex-shrink-0" disabled title="Koreksi dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                    <i class="bi bi-lock-fill text-muted"></i>
+                                    <span class="small">Edit</span>
+                                </button>
+                            </false>
+                        </check>
                     </div>
                     <div class="d-none align-items-center flex-wrap gap-2 text-muted small mt-1.5" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
                         <span id="audit-dibaca-stage-1" class="audit-dibaca-stage-1 me-3 {{ !@audit_stages[1].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[1].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[1].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[1].dibaca_nama ?: @audit_stages[1].dibaca_role }})</span></span>
@@ -2349,7 +2360,7 @@
                             <div class="p-3 bg-light rounded border h-100">
                                 <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
                                     <h6 class="fw-bold text-dark mb-0 font-display">
-                                        {{ @order.nama_perusahaan }}
+                                        {{ @surat_masuk && !empty(@surat_masuk.pengirim) && @surat_masuk.pengirim != 'Instansi / Perusahaan' ? @surat_masuk.pengirim : @order.nama_perusahaan }}
                                     </h6>
                                     <span class="badge bg-white text-secondary border">{{ @order.pt_cv ?: 'Perusahaan' }}</span>
                                 </div>
@@ -2414,7 +2425,7 @@
                                             <span class="text-secondary fw-semibold">{{ @surat_masuk.perihal }}</span>
                                         </div>
                                         <check if="{{ @surat_masuk.file_path }}">
-                                            <button type="button" class="btn btn-sm btn-outline-primary w-100 py-1 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-sm mt-2" data-bs-toggle="modal" data-bs-target="#modalPreviewSuratMasuk">
+                                            <button type="button" class="btn btn-sm btn-outline-primary w-100 py-1 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-sm mt-2 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-masuk/{{ @order.id_surat_masuk ?: @surat_masuk.id }}/pdf" data-title="Berkas Surat Masuk" data-subtitle="{{ @order.nomor_order }}" title="Lihat Berkas Fisik Surat Masuk">
                                                 <i class="bi bi-file-earmark-pdf text-danger me-1"></i> Pratinjau Berkas Surat PDF
                                             </button>
                                         </check>
@@ -2446,6 +2457,14 @@
                                                     <div class="mb-1 small">
                                                         <span class="text-muted d-block" style="font-size:0.75rem;">Perihal:</span>
                                                         <span class="text-secondary">{{ @order.perihal_surat_masuk }}</span>
+                                                    </div>
+                                                </check>
+                                                <check if="{{ @order.file_bukti_permohonan }}">
+                                                    <div class="mt-2.5">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary w-100 py-1.5 fw-semibold d-flex align-items-center justify-content-center gap-1.5 shadow-xs btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @order.file_bukti_permohonan }}" data-title="Berkas Bukti Permohonan" data-subtitle="{{ @order.nomor_permintaan ?: @order.nomor_order }}" title="Pratinjau Berkas Bukti Permohonan">
+                                                            <i class="bi bi-file-earmark-text text-danger fs-6"></i>
+                                                            <span>Pratinjau Bukti Permohonan</span>
+                                                        </button>
                                                     </div>
                                                 </check>
                                             </div>
@@ -2510,10 +2529,10 @@
                                                 </check>
                                                 <check if="{{ @order.file_bukti_permohonan }}">
                                                     <div class="mt-2.5">
-                                                        <a href="{{ @BASE }}/{{ @order.file_bukti_permohonan }}" target="_blank" class="btn btn-sm btn-outline-primary w-100 py-1.5 fw-semibold d-flex align-items-center justify-content-center gap-1.5 shadow-xs" download>
-                                                            <i class="bi bi-paperclip fs-6"></i>
-                                                            <span>Lihat / Unduh Bukti Permohonan</span>
-                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-outline-primary w-100 py-1.5 fw-semibold d-flex align-items-center justify-content-center gap-1.5 shadow-xs btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @order.file_bukti_permohonan }}" data-title="Berkas Bukti Permohonan Langsung" data-subtitle="{{ @order.nomor_permintaan ?: @order.nomor_order }}" title="Pratinjau Berkas Bukti Permohonan">
+                                                            <i class="bi bi-file-earmark-text text-danger fs-6"></i>
+                                                            <span>Pratinjau Bukti Permohonan</span>
+                                                        </button>
                                                     </div>
                                                 </check>
                                             </div>
@@ -2581,10 +2600,20 @@
                                     </div>
                                 </div>
                                 <check if="{{ @is_admin_order || @is_superadmin }}">
-                                    <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditInlinePelayanan" aria-expanded="false" aria-controls="collapseEditInlinePelayanan">
-                                        <i class="bi bi-pencil-square"></i>
-                                        <span>Koreksi Formulir</span>
-                                    </button>
+                                    <check if="{{ @can_koreksi }}">
+                                        <true>
+                                            <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditInlinePelayanan" aria-expanded="false" aria-controls="collapseEditInlinePelayanan">
+                                                <i class="bi bi-pencil-square"></i>
+                                                <span>Koreksi Formulir</span>
+                                            </button>
+                                        </true>
+                                        <false>
+                                            <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Koreksi formulir dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                <i class="bi bi-lock-fill text-muted"></i>
+                                                <span>Koreksi Formulir</span>
+                                            </button>
+                                        </false>
+                                    </check>
                                 </check>
                             </div>
                         </div>
@@ -2598,8 +2627,8 @@
                             </div>
                             <div class="col-sm-6">
                                 <div class="p-3 border rounded-3 bg-light h-100" style="border-color: #e2e8f0 !important;">
-                                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; font-weight: 500;">Bidang Pelayanan Jasa:</span>
-                                    <strong class="text-dark d-block" style="font-size: 0.92rem;">Optimalisasi Pemanfaatan Teknologi Industri (OPTI)</strong>
+                                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; font-weight: 500;">Tim Layanan Pelaksana:</span>
+                                    <strong class="text-dark d-block" style="font-size: 0.92rem;">Tim OPTI {{ ucfirst(@order.jenis_layanan_opti) }} (BBSPJIS)</strong>
                                 </div>
                             </div>
                             <div class="col-12">
@@ -2774,7 +2803,7 @@
 
                                                 <!-- Body Form Tinjauan (Collapse/Expand) -->
                                                 <div id="koreksi_kajiBodyFields" class="transition-all" style="display: {{ @tinjauan ? 'block' : 'none' }};">
-                                                    <set prefix="koreksi_" input_name_keputusan="keputusan_kelayakan" show_pic_proposal="0" />
+                                                    <set prefix="koreksi_" input_name_keputusan="keputusan_kelayakan" show_pic_proposal="0" can_edit_kaji="{{ @can_edit_pelayanan }}" />
                                                     <include href="order/_kaji_kelayakan_fields.html" />
                                                 </div>
                                             </div>
@@ -2990,7 +3019,7 @@
 
                                         <!-- Body Form Tinjauan (Collapse/Expand) -->
                                         <div id="kajiBodyFields" class="transition-all" style="display: {{ @tinjauan ? 'block' : 'none' }};">
-                                            <set prefix="" input_name_keputusan="keputusan_kelayakan" show_pic_proposal="0" />
+                                            <set prefix="" input_name_keputusan="keputusan_kelayakan" show_pic_proposal="0" can_edit_kaji="{{ @can_edit_pelayanan }}" />
                                             <include href="order/_kaji_kelayakan_fields.html" />
                                         </div>
                                     </div>
@@ -3100,10 +3129,20 @@
                                             </span>
                                         </check>
                                         <check if="{{ @is_ketua_tim || @is_superadmin }}">
-                                            <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditInlineTinjauan" aria-expanded="false" aria-controls="collapseEditInlineTinjauan">
-                                                <i class="bi bi-pencil-square"></i>
-                                                <span>Koreksi Kaji Kelayakan</span>
-                                            </button>
+                                            <check if="{{ @can_koreksi }}">
+                                                <true>
+                                                    <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditInlineTinjauan" aria-expanded="false" aria-controls="collapseEditInlineTinjauan">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                        <span>Koreksi Kaji Kelayakan</span>
+                                                    </button>
+                                                </true>
+                                                <false>
+                                                    <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Koreksi kaji kelayakan dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                        <i class="bi bi-lock-fill text-muted"></i>
+                                                        <span>Koreksi Kaji Kelayakan</span>
+                                                    </button>
+                                                </false>
+                                            </check>
                                         </check>
                                     </div>
                                 </div>
@@ -3227,7 +3266,7 @@
                                         <form action="{{ @BASE }}/order/{{ @order.id }}/tinjauan" method="POST" id="formKoreksiTinjauan">
                                             <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
 
-                                            <set prefix="edit_" input_name_keputusan="keputusan" show_pic_proposal="1" />
+                                            <set prefix="edit_" input_name_keputusan="keputusan" show_pic_proposal="1" can_edit_kaji="{{ @can_edit_tinjauan }}" />
                                             <include href="order/_kaji_kelayakan_fields.html" />
 
                                             <!-- Action Buttons -->
@@ -3287,12 +3326,12 @@
                                 <form action="{{ @BASE }}/order/{{ @order.id }}/tinjauan" method="POST" id="formInlineTinjauan">
                                     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
 
-                                    <set prefix="" input_name_keputusan="keputusan" show_pic_proposal="1" />
+                                    <set prefix="" input_name_keputusan="keputusan" show_pic_proposal="1" can_edit_kaji="{{ @can_edit_tinjauan }}" />
                                     <include href="order/_kaji_kelayakan_fields.html" />
 
                                     <!-- Action Buttons -->
                                     <div class="d-flex justify-content-end gap-2 pt-3 border-top flex-wrap">
-                                        <button type="submit" name="action_btn" value="draft" class="btn-draft-theme">
+                                        <button type="submit" name="action_btn" value="draft" formnovalidate class="btn-draft-theme">
                                             <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                                         </button>
                                         <button type="button" class="btn btn-submit-theme btn-sm px-4" id="btnTetapkanKeputusan" onclick="confirmTetapkanKeputusan()">
@@ -3431,12 +3470,22 @@
                                         </check>
                                     </div>
                                 </div>
-                                <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 && @can_edit_lingkungan }}">
+                                <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
                                     <div class="flex-shrink-0">
-                                        <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditBiayaLingkungan" aria-expanded="false" aria-controls="collapseEditBiayaLingkungan">
-                                            <i class="bi bi-pencil-square"></i>
-                                            <span>Koreksi Tarif &amp; Layanan</span>
-                                        </button>
+                                        <check if="{{ @can_edit_lingkungan && @can_koreksi }}">
+                                            <true>
+                                                <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditBiayaLingkungan" aria-expanded="false" aria-controls="collapseEditBiayaLingkungan">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                    <span>Koreksi Tarif &amp; Layanan</span>
+                                                </button>
+                                            </true>
+                                            <false>
+                                                <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Koreksi tarif dan layanan dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                    <i class="bi bi-lock-fill text-muted"></i>
+                                                    <span>Koreksi Tarif &amp; Layanan</span>
+                                                </button>
+                                            </false>
+                                        </check>
                                     </div>
                                 </check>
                             </div>
@@ -3469,6 +3518,10 @@
                                             </check>
                                             <span class="badge bg-light text-dark border font-monospace">{{ count(@kalkulasi_lingkungan) }} Layanan Jasa</span>
                                         </div>
+                                    </div>
+                                    <div class="px-3 py-2 bg-light-subtle border-bottom d-flex align-items-center gap-2">
+                                        <span class="text-secondary small fw-semibold"><i class="bi bi-card-heading text-primary me-1"></i>Judul Kegiatan:</span>
+                                        <span class="fw-bold text-dark small">{{ @order.judul_kegiatan }}</span>
                                     </div>
                                     <div class="table-responsive">
                                         <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.815rem;">
@@ -3537,6 +3590,29 @@
                                     <!-- FORM UTAMA KALKULASI LINGKUNGAN TERINTEGRASI -->
                                     <form action="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan" method="POST" id="formKalkulasiLingkungan">
                                     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
+
+                                    <!-- INPUT JUDUL KEGIATAN LINGKUNGAN -->
+                                    <div class="card border rounded-3 shadow-xs mb-3 bg-white">
+                                        <div class="card-body p-3">
+                                            <div class="row align-items-center">
+                                                <div class="col-12 col-md-3">
+                                                    <label class="form-label fw-bold text-dark mb-1 small" for="judulKegiatanLingkungan">
+                                                        <i class="bi bi-card-heading text-primary me-1"></i> Judul Kegiatan / Layanan <span class="text-danger">*</span>
+                                                    </label>
+                                                </div>
+                                                <div class="col-12 col-md-9 mt-2 mt-md-0">
+                                                    <input type="text" 
+                                                           id="judulKegiatanLingkungan" 
+                                                           name="judul_kegiatan" 
+                                                           class="form-control fw-semibold" 
+                                                           value="{{ @order.judul_kegiatan }}" 
+                                                           placeholder="Contoh: Pengujian Kualitas Air Limbah Industri &amp; Emisi Cerobong Semester I" 
+                                                           required 
+                                                           {{ !@can_edit_lingkungan ? 'disabled' : '' }}>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <!-- CARD: TABEL RINCIAN LAYANAN JASA -->
                                     <div class="card border rounded-3 shadow-xs mb-4 bg-white">
@@ -3802,7 +3878,7 @@
                                                                 </button>
                                                             </true>
                                                             <false>
-                                                                <button type="submit" name="action_btn" value="save_draft" class="btn-draft-theme">
+                                                                <button type="submit" name="action_btn" value="save_draft" formnovalidate class="btn-draft-theme">
                                                                     <i class="bi bi-bookmark-fill"></i>
                                                                     <span>Simpan Draf</span>
                                                                 </button>
@@ -3905,11 +3981,22 @@
 
                                             <!-- Pratinjau Surat Permohonan jika ada -->
                                             <check if="{{ @surat_masuk }}">
-                                                <div class="pt-3 mt-2 border-top">
-                                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 fw-medium d-flex align-items-center justify-content-center gap-1.5" data-bs-toggle="modal" data-bs-target="#modalPreviewSuratMasuk">
-                                                        <i class="bi bi-file-earmark-pdf text-danger"></i> Pratinjau Surat Permohonan
-                                                    </button>
-                                                </div>
+                                                <true>
+                                                    <div class="pt-3 mt-2 border-top">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm w-100 fw-medium d-flex align-items-center justify-content-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-masuk/{{ @order.id_surat_masuk ?: @surat_masuk.id }}/pdf" data-title="Berkas Surat Masuk" data-subtitle="{{ @order.nomor_order }}" title="Lihat Berkas Fisik Surat Masuk">
+                                                            <i class="bi bi-file-earmark-pdf text-danger"></i> Pratinjau Surat Permohonan
+                                                        </button>
+                                                    </div>
+                                                </true>
+                                                <false>
+                                                    <check if="{{ @order.file_bukti_permohonan }}">
+                                                        <div class="pt-3 mt-2 border-top">
+                                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100 fw-medium d-flex align-items-center justify-content-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @order.file_bukti_permohonan }}" data-title="Berkas Bukti Permohonan" data-subtitle="{{ @order.nomor_permintaan ?: @order.nomor_order }}" title="Lihat Berkas Bukti Permohonan">
+                                                                <i class="bi bi-file-earmark-pdf text-danger"></i> Pratinjau Bukti Permohonan
+                                                            </button>
+                                                        </div>
+                                                    </check>
+                                                </false>
                                             </check>
                                         </div>
                                     </div>
@@ -4074,8 +4161,8 @@
                                                     </div>
 
                                                     <div class="d-flex align-items-center justify-content-between mb-1 mt-2">
-                                                        <label class="form-label small fw-semibold text-secondary mb-0" style="font-size: 0.78rem;">
-                                                            <i class="bi bi-person-gear text-primary me-1"></i> METODOLOGI &amp; RUANG LINGKUP DARI PIC PROPOSAL:
+                                                        <label class="form-label small fw-semibold text-dark mb-0" style="font-size: 0.78rem;">
+                                                            METODOLOGI &amp; RUANG LINGKUP DARI PIC PROPOSAL:
                                                         </label>
                                                     </div>
                                                     <textarea name="ruang_lingkup" id="inputRuangLingkupDetail" class="form-control form-control-sm p-2" rows="3" 
@@ -4089,8 +4176,8 @@
                                                             Durasi Pelaksanaan <span class="text-danger">*</span>
                                                         </label>
                                                         <div class="input-group input-group-sm">
-                                                            <input type="number" min="1" max="365" name="durasi_hari" class="form-control fw-semibold font-monospace" 
-                                                                   value="{{ @durasi_hari }}" placeholder="Isi jumlah hari" required {{ !@can_edit_proposal ? 'disabled' : '' }}>
+                                                            <input type="number" min="1" max="365" name="durasi_hari" id="inputDurasiHariDetail" class="form-control fw-semibold font-monospace" 
+                                                                   value="{{ @durasi_hari }}" placeholder="Isi jumlah hari" oninput="checkKirimButtonStateDetail()" required {{ !@can_edit_proposal ? 'disabled' : '' }}>
                                                             <span class="input-group-text bg-light text-secondary">Hari Kerja</span>
                                                         </div>
                                                     </div>
@@ -4200,8 +4287,9 @@
                                                 <!-- 5. Tombol Aksi Proposal -->
                                                 <check if="{{ @can_edit_proposal }}">
                                                     <div class="pt-3 mt-3 border-top">
-                                                        <!-- Petunjuk Kunci Tombol Kirim -->
-                                                        <div class="mb-3 {{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) ? 'd-none' : '' }}" id="hintKirimProposalDetail">
+                                                        <!-- Petunjuk Kunci Tombol Kirim (Khusus PIC) -->
+                                                        <check if="{{ !@is_ketua_selulosa }}">
+                                                        <div class="mb-3 {{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) && !empty(@durasi_hari) && ((int)@durasi_hari > 0) ? 'd-none' : '' }}" id="hintKirimProposalDetail">
                                                             <div class="small text-muted d-flex align-items-center" style="font-size: 0.8rem; gap: 5px;">
                                                                 <i class="bi bi-info-circle text-primary flex-shrink-0"></i>
                                                                 <span id="hintKirimProposalTextDetail">
@@ -4217,6 +4305,7 @@
                                                                 </span>
                                                             </div>
                                                         </div>
+                                                        </check>
 
                                                         <!-- Baris Tombol Aksi Sejajar -->
                                                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
@@ -4226,28 +4315,32 @@
                                                                         <span class="badge bg-light border text-success border border-success-subtle px-2.5 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1">
                                                                             <i class="bi bi-check-circle-fill"></i> Telah Disetujui Ka. Tim
                                                                         </span>
-                                                                        <button type="submit" name="action_type" value="simpan_katim" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 ms-auto">
-                                                                            <i class="bi bi-check2-circle"></i>
-                                                                            <span>Simpan Perubahan</span>
-                                                                        </button>
+                                                                        <check if="{{ @can_koreksi }}">
+                                                                            <true>
+                                                                                <button type="submit" name="action_type" value="simpan_katim" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 ms-auto">
+                                                                                    <i class="bi bi-check2-circle"></i>
+                                                                                    <span>Simpan Perubahan</span>
+                                                                                </button>
+                                                                            </true>
+                                                                            <false>
+                                                                                <button type="button" class="btn btn-light btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 ms-auto border text-muted" disabled title="Perubahan proposal dikunci karena proposal telah disetujui. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                                                    <i class="bi bi-lock-fill text-muted"></i>
+                                                                                    <span>Simpan Perubahan</span>
+                                                                                </button>
+                                                                            </false>
+                                                                        </check>
                                                                     </div>
                                                                 </true>
                                                                 <false>
-                                                                    <button type="submit" name="action_type" value="{{ @is_ketua_selulosa ? 'simpan_katim' : 'draft' }}" class="btn-draft-theme">
+                                                                    <button type="submit" name="action_type" value="draft" formnovalidate class="btn-draft-theme">
                                                                         <i class="bi bi-bookmark-fill"></i>
                                                                         <span>{{ @is_ketua_selulosa ? 'Simpan Draf Perubahan' : 'Simpan Draf' }}</span>
                                                                     </button>
 
                                                                     <check if="{{ !@is_ketua_selulosa }}">
-                                                                        <button type="button" id="btnKirimProposalDetail" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalActionDetail()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
+                                                                        <button type="button" id="btnKirimProposalDetail" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalActionDetail()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) || empty(@durasi_hari) || ((int)@durasi_hari <= 0) ? 'disabled' : '' }}>
                                                                             <i class="bi bi-send-fill"></i>
                                                                             <span>Kirim ke Ka. Tim</span>
-                                                                        </button>
-                                                                    </check>
-                                                                    <check if="{{ @is_ketua_selulosa }}">
-                                                                        <button type="button" id="btnSimpanApproveProposalDetail" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmSimpanDanApproveDetail()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
-                                                                            <i class="bi bi-check2-circle"></i>
-                                                                            <span>Setujui</span>
                                                                         </button>
                                                                     </check>
                                                                 </false>
@@ -4499,16 +4592,36 @@
                                                 <false>
                                                     <!-- Tombol Buat Surat Baru (Khusus jika surat dalam negosiasi dan belum deal) -->
                                                     <check if="{{ !empty(@penawaran) && (@penawaran.status_respon_klien != 'deal') && (@order.status_penawaran != 'deal') && !@is_locked_deal }}">
-                                                        <button type="button" class="btn btn-sm btn-white border fw-semibold text-primary px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaFormPenawaranInline('baru')" title="Buat surat penawaran baru dengan nomor surat otomatis berurutan (revisi negosiasi)">
-                                                            <i class="bi bi-file-earmark-plus"></i>
-                                                            <span>Buat Surat Baru</span>
-                                                        </button>
+                                                        <check if="{{ @can_koreksi }}">
+                                                            <true>
+                                                                <button type="button" class="btn btn-sm btn-white border fw-semibold text-primary px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaFormPenawaranInline('baru')" title="Buat surat penawaran baru dengan nomor surat otomatis berurutan (revisi negosiasi)">
+                                                                    <i class="bi bi-file-earmark-plus"></i>
+                                                                    <span>Buat Surat Baru</span>
+                                                                </button>
+                                                            </true>
+                                                            <false>
+                                                                <button type="button" class="btn btn-sm btn-light border fw-semibold text-muted px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" disabled title="Pembuatan surat penawaran baru dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                                    <i class="bi bi-lock-fill text-muted"></i>
+                                                                    <span>Buat Surat Baru</span>
+                                                                </button>
+                                                            </false>
+                                                        </check>
                                                     </check>
 
-                                                    <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" onclick="bukaFormPenawaranInline('edit')" title="Buka dan sunting formulir penawaran langsung di halaman ini">
-                                                        <i class="bi bi-pencil-square"></i>
-                                                        <span>{{ @penawaran.status_respon_klien == 'draft' ? 'Lanjutkan Edit Draf' : 'Koreksi Formulir' }}</span>
-                                                    </button>
+                                                    <check if="{{ @penawaran.status_respon_klien == 'draft' || @can_koreksi }}">
+                                                        <true>
+                                                            <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" onclick="bukaFormPenawaranInline('edit')" title="Buka dan sunting formulir penawaran langsung di halaman ini">
+                                                                <i class="bi bi-pencil-square"></i>
+                                                                <span>{{ @penawaran.status_respon_klien == 'draft' ? 'Lanjutkan Edit Draf' : 'Koreksi Formulir' }}</span>
+                                                            </button>
+                                                        </true>
+                                                        <false>
+                                                            <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Koreksi formulir penawaran dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                                <i class="bi bi-lock-fill text-muted"></i>
+                                                                <span>Koreksi Formulir</span>
+                                                            </button>
+                                                        </false>
+                                                    </check>
                                                 </false>
                                             </check>
                                         </check>
@@ -4565,9 +4678,7 @@
                                                 <i class="bi bi-box-arrow-in-down fs-4"></i>
                                             </div>
                                             <h6 class="fw-bold text-dark mb-1">Ambil Surat Penawaran Bertanda Tangan</h6>
-                                            <p class="text-muted small mb-3" style="line-height: 1.5;">
-                                                Klaim surat penawaran resmi yang telah ditandatangani dan diarsipkan oleh sekretariat dari <strong>Arsip Surat Keluar</strong> (tanpa perlu upload manual).
-                                            </p>
+
                                             <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
                                                 <button type="button" class="btn btn-primary btn-sm fw-semibold px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2" onclick="bukaModalKlaimSuratKeluar()">
                                                     <i class="bi bi-box-arrow-in-down fs-6"></i> Ambil Surat dari Arsip
@@ -4909,12 +5020,10 @@
                                             <i class="bi bi-clock-history text-secondary"></i>
                                             Jejak Audit &amp; Riwayat Dokumen Penawaran ({{ @total_penawaran }} Dokumen)
                                         </span>
-                                        <span class="badge bg-light text-muted border small fw-normal">
-                                            Audit Trail Penawaran &amp; Respon Klien
-                                        </span>
+
                                     </div>
                                     <div class="table-responsive">
-                                        <table class="table table-sm table-hover align-middle mb-0 border rounded overflow-hidden" style="font-size: 0.82rem;">
+                                        <table class="table table-sm table-hover align-middle mb-0 border rounded overflow-hidden no-pagination" data-no-paginate="true" style="font-size: 0.82rem;">
                                             <thead class="table-light text-muted">
                                                 <tr>
                                                     <th class="ps-2 text-nowrap" style="width: 75px;">Revisi</th>
@@ -5181,8 +5290,29 @@
                                 <!-- FORMULIR BUKTI BAYAR TAHAP 6 -->
                                 <form action="{{ @BASE }}/order/{{ @order.id }}/konfirmasi-pembayaran" method="POST" enctype="multipart/form-data" class="bg-white border rounded-3 p-4 shadow-xs mt-2 mb-0" id="formKonfirmasiPembayaranDetail">
                                     <input type="hidden" name="csrf_token" value="{{ @csrf_token }}">
-                                    <input type="hidden" name="is_kesanggupan_bayar" id="inputIsKesanggupanDetail" value="0">
+                                    <input type="hidden" name="is_kesanggupan_bayar" id="inputIsKesanggupanDetail" value="{{ !empty(@draf_kesanggupan) ? 1 : 0 }}">
                                     <input type="hidden" name="disposisi_langsung" id="inputDisposisiLangsungDetail" value="0">
+
+                                    <check if="{{ !empty(@draf_kesanggupan) }}">
+                                        <div class="alert alert-warning border border-warning-subtle rounded-3 p-3 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                            <div>
+                                                <div class="fw-bold text-dark d-flex align-items-center gap-1.5">
+                                                    <i class="bi bi-clock-history text-warning fs-5"></i> Draf Kesanggupan Bayar Tersimpan (Belum Dikirim)
+                                                </div>
+                                                <div class="small text-muted mt-0.5">
+                                                    Catatan: <em>"{{ @draf_kesanggupan.keterangan }}"</em> &bull; Tersimpan pada {{ date('d M Y, H:i', strtotime(@draf_kesanggupan.created_at)) }}. Pembayaran belum didisposisikan ke Ketua Tim.
+                                                </div>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="button" class="btn btn-primary btn-sm fw-bold px-3 py-1.5" onclick="kirimDrafKesanggupanLangsung()">
+                                                    <i class="bi bi-send-check me-1"></i> Kirim ke Ketua Tim
+                                                </button>
+                                                <a href="{{ @BASE }}/order/{{ @order.id }}/hapus-draf-pembayaran/{{ @draf_kesanggupan.id }}" class="btn btn-outline-danger btn-sm fw-semibold px-2.5 py-1.5" onclick="return confirm('Hapus draf kesanggupan bayar ini?')">
+                                                    <i class="bi bi-trash me-1"></i> Hapus Draf
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </check>
 
                                     <check if="{{ !empty(@order.surat_kesanggupan_bayar) }}">
                                         <div class="mb-3 p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -5198,7 +5328,7 @@
                                         <check if="{{ !@order.sudah_ada_pembayaran }}">
                                             <div class="p-3 border rounded-3 mb-4" id="kbToggleCardDetail" style="border: 1.5px solid #fde68a !important; background: #fffbeb;">
                                                 <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="kbSkipToggleDetail" style="width:2.5em; height:1.4em;">
+                                                    <input class="form-check-input" type="checkbox" id="kbSkipToggleDetail" style="width:2.5em; height:1.4em;" {{ !empty(@draf_kesanggupan) ? 'checked' : '' }}>
                                                     <label class="form-check-label fw-bold text-dark ms-2" for="kbSkipToggleDetail">
                                                         Skip pencatatan pembayaran sekarang &mdash; pelanggan sudah punya Surat Kesanggupan Bayar
                                                     </label>
@@ -5220,7 +5350,7 @@
                                     </style>
 
                                     <!-- FIELD PEMBAYARAN NORMAL -->
-                                    <div class="form-fields-normal-detail active" id="fieldsNormalDetail">
+                                    <div class="form-fields-normal-detail {{ !empty(@draf_kesanggupan) ? 'd-none' : 'active' }}" id="fieldsNormalDetail">
                                         <div class="row g-3 mb-3">
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold text-dark">Tahap Termin Ke- <span class="text-danger">*</span></label>
@@ -5285,10 +5415,10 @@
                                     </div>
 
                                     <!-- FIELD KESANGGUPAN BAYAR -->
-                                    <div class="form-fields-kb-detail d-none" id="fieldsKbDetail">
+                                    <div class="form-fields-kb-detail {{ !empty(@draf_kesanggupan) ? '' : 'd-none' }}" id="fieldsKbDetail">
                                         <div class="mb-4">
                                             <label class="form-label fw-bold text-dark">Keterangan Kesanggupan Bayar</label>
-                                            <textarea id="inputKeteranganKbDetail" class="form-control" rows="2" placeholder="Contoh: Pelanggan janji bayar setelah laporan hasil pengujian terbit."></textarea>
+                                            <textarea id="inputKeteranganKbDetail" class="form-control" rows="2" placeholder="Contoh: Pelanggan janji bayar setelah laporan hasil pengujian terbit.">{{ @draf_kesanggupan ? @draf_kesanggupan.keterangan : '' }}</textarea>
                                         </div>
                                     </div>
 
@@ -5305,9 +5435,9 @@
                                             <check if="{{ !empty(@riwayat_bayar) }}">
                                                 <button type="button" class="btn btn-outline-secondary px-3 py-2 fw-semibold" onclick="toggleTambahBayarDetail(false)">Batal</button>
                                             </check>
-                                            <button type="button" id="btnSimpanSajaDetail" class="btn btn-outline-primary px-3 py-2 fw-semibold d-none">Simpan Saja</button>
-                                            <button type="button" id="btnSimpanDisposisiDetail" class="btn btn-primary px-4 py-2 fw-bold d-none"><i class="bi bi-send-check me-1"></i> Disposisi</button>
-                                            <button type="button" id="btnSimpanPembayaranDetail" class="btn btn-primary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-1.5"><i class="bi bi-save"></i> Simpan Pembayaran</button>
+                                            <button type="button" id="btnSimpanSajaDetail" class="btn btn-outline-secondary px-3 py-2 fw-semibold {{ !empty(@draf_kesanggupan) ? '' : 'd-none' }}"><i class="bi bi-save me-1"></i> Simpan Draf</button>
+                                            <button type="button" id="btnSimpanDisposisiDetail" class="btn btn-primary px-4 py-2 fw-bold {{ !empty(@draf_kesanggupan) ? '' : 'd-none' }}"><i class="bi bi-send-check me-1"></i> Kirim ke Ketua Tim</button>
+                                            <button type="button" id="btnSimpanPembayaranDetail" class="btn btn-primary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 {{ !empty(@draf_kesanggupan) ? 'd-none' : '' }}"><i class="bi bi-save"></i> Simpan Pembayaran</button>
                                         </div>
                                     </div>
                                 </form>
@@ -5453,10 +5583,17 @@
                                                 <i class="bi bi-eye-fill me-1"></i> Pratinjau Dokumen
                                             </button>
                                         </check>
-                                        <check if="{{ !@proposal || !@proposal.disetujui_ketua_at || @is_superadmin }}">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-1.5 fw-semibold shadow-xs" onclick="document.getElementById('uploadProposalLingkunganBox').classList.toggle('d-none')">
-                                                <i class="bi bi-cloud-arrow-up me-1"></i> {{ (@proposal && @proposal.file_proposal) ? 'Ganti Berkas' : 'Unggah Proposal Teknis' }}
-                                            </button>
+                                        <check if="{{ !@proposal || !@proposal.disetujui_ketua_at || @can_koreksi }}">
+                                            <true>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-1.5 fw-semibold shadow-xs" onclick="document.getElementById('uploadProposalLingkunganBox').classList.toggle('d-none')">
+                                                    <i class="bi bi-cloud-arrow-up me-1"></i> {{ (@proposal && @proposal.file_proposal) ? 'Ganti Berkas' : 'Unggah Proposal Teknis' }}
+                                                </button>
+                                            </true>
+                                            <false>
+                                                <button type="button" class="btn btn-sm btn-light border text-muted px-3 py-1.5 fw-semibold shadow-xs" disabled title="Dokumen proposal telah disetujui dan dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                    <i class="bi bi-lock-fill text-muted me-1"></i> Ganti Berkas
+                                                </button>
+                                            </false>
                                         </check>
                                     </div>
                                 </div>
@@ -5751,10 +5888,20 @@
 
                                 <!-- Footer Bar: Tombol Aksi di Kanan -->
                                 <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap pt-2 border-top" style="border-color: #e2e8f0 !important;">
-                                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditSampel" title="Koreksi / Ubah Titik Awal SPM" style="font-size: 0.82rem;">
-                                        <i class="bi bi-pencil"></i>
-                                        <span>Ubah Titik Awal</span>
-                                    </button>
+                                    <check if="{{ @can_koreksi }}">
+                                        <true>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditSampel" title="Koreksi / Ubah Titik Awal SPM" style="font-size: 0.82rem;">
+                                                <i class="bi bi-pencil"></i>
+                                                <span>Ubah Titik Awal</span>
+                                            </button>
+                                        </true>
+                                        <false>
+                                            <button type="button" class="btn btn-light btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 border text-muted" disabled title="Ubah titik awal dikunci karena SPM telah diaktifkan. Hubungi Superadmin untuk membuka izin edit order ini." style="font-size: 0.82rem;">
+                                                <i class="bi bi-lock-fill text-muted"></i>
+                                                <span>Ubah Titik Awal</span>
+                                            </button>
+                                        </false>
+                                    </check>
                                     <button type="button" class="btn btn-primary btn-sm px-3.5 py-1.5 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" onclick="switchStage(8, true)" style="font-size: 0.82rem;">
                                         <check if="{{ !@order.po_id }}">
                                             <span>Lanjut ke Tahap 8: Terbitkan PO</span>
@@ -5841,7 +5988,7 @@
                                             </small>
                                             <div class="d-flex align-items-center gap-2 flex-shrink-0">
                                                 <input type="hidden" name="action_btn" id="action_btn_spm" value="activate">
-                                                <button type="submit" class="btn-draft-theme" id="btnDraftSpmDetail" onclick="setAktivasiSpmDraft(true)">
+                                                <button type="submit" name="action_btn" value="save_draft" formnovalidate class="btn-draft-theme" id="btnDraftSpmDetail" onclick="setAktivasiSpmDraft(true)">
                                                     <i class="bi bi-bookmark-fill"></i>
                                                     <span>Simpan Draf</span>
                                                 </button>
@@ -6090,6 +6237,14 @@
                                 <div class="alert alert-{{ @po_alur.info.tipe }} po-alert-{{ @po_alur.info.tipe }} border-0 shadow-xs small mb-0">{{ @po_alur.info.html | raw }}</div>
                                 </div>
                                 </check>
+                            </check>
+
+                            <check if="{{ @po_alur.terkirim && @po_alur.form_revisi && @po_alur.revisi_ppk }}">
+                                <div class="mt-3 d-flex gap-2 flex-wrap align-items-center">
+                                    <check if="{{ @po_alur.put_katim > 0 }}"><span class="small text-muted">Catatan bertanda <b>Ketua Tim</b> = perbaikan ke-{{ @po_alur.put_katim }} dari Ketua Tim; catatan bertanda <b>PPK BLU</b> = revisi dari PPK BLU.</span></check>
+                                </div>
+                            </check>
+                            
                                 <check if="{{ @po_alur.aktif }}">
                                     <style>
                                         @keyframes ptUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
@@ -8929,7 +9084,7 @@ function cekStatusPilar(prefix) {
         if (subLayak) {
             subLayak.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-lock-fill me-1"></i>Terkunci (Syarat 4 pilar belum terpenuhi)</span>';
         }
-        } else {
+    } else {
         if (radioLayak) {
             radioLayak.disabled = false;
         }
@@ -8941,7 +9096,7 @@ function cekStatusPilar(prefix) {
         if (subLayak) {
             subLayak.innerHTML = 'Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi';
         }
-        }
+    }
     updateTetapkanButtonState(prefix);
 }
 
@@ -8950,19 +9105,30 @@ function updateTetapkanButtonState(prefix) {
     var btn = document.getElementById(prefix + 'btnTetapkanKeputusan') || document.getElementById('btnTetapkanKeputusan');
     if (!btn) return;
 
-    var isSelulosa = '{{ @order.jenis_layanan_opti }}' === 'selulosa';
     var radioTidak = document.getElementById(prefix + 'kep_tidak_layak');
     var isTidakLayak = radioTidak && radioTidak.checked;
     var selectPic = document.getElementById(prefix + 'selectPicProposal');
     var picVal = selectPic ? selectPic.value.trim() : '';
 
-    // Khusus OPTI Selulosa: jika keputusan bukan Tidak Layak, tombol Tetapkan Keputusan disabled jika PIC belum dipilih
-    if (isSelulosa && !isTidakLayak && picVal === '') {
+    var checkSdm = document.getElementById(prefix + 'check_sdm');
+    var checkAlat = document.getElementById(prefix + 'check_alat');
+    var checkBahan = document.getElementById(prefix + 'check_bahan');
+    var checkMetode = document.getElementById(prefix + 'check_metode');
+    var allPillarsChecked = (checkSdm && checkSdm.checked) && (checkAlat && checkAlat.checked) && (checkBahan && checkBahan.checked) && (checkMetode && checkMetode.checked);
+
+    // Jika keputusan Layak (Dapat Dilaksanakan), wajib ke-4 pilar tercentang & tentukan PIC Proposal / Pelaksana
+    if (!isTidakLayak && !allPillarsChecked) {
         btn.disabled = true;
         btn.classList.add('disabled');
         btn.style.opacity = '0.55';
         btn.style.cursor = 'not-allowed';
-        btn.setAttribute('title', 'Pilih PIC Proposal / Peneliti Pelaksana terlebih dahulu untuk OPTI Selulosa');
+        btn.setAttribute('title', 'Seluruh 4 pilar kesiapan laboratorium harus dicentang siap untuk Dapat Dilaksanakan');
+    } else if (!isTidakLayak && selectPic && picVal === '') {
+        btn.disabled = true;
+        btn.classList.add('disabled');
+        btn.style.opacity = '0.55';
+        btn.style.cursor = 'not-allowed';
+        btn.setAttribute('title', 'Pilih PIC Proposal / Peneliti Pelaksana terlebih dahulu');
     } else {
         btn.disabled = false;
         btn.classList.remove('disabled');
@@ -9047,10 +9213,9 @@ function confirmTetapkanKeputusan(prefix) {
             return;
         }
     } else {
-        // Validasi Penunjukan PIC Proposal khusus OPTI Selulosa
-        var isSelulosa = '{{ @order.jenis_layanan_opti }}' === 'selulosa';
+        // Validasi Penunjukan PIC Proposal
         var selectPic = document.getElementById(prefix + 'selectPicProposal') || form.querySelector('select[name="pic_proposal_id"]');
-        if (isSelulosa && selectPic && (!selectPic.value || selectPic.value.trim() === '')) {
+        if (selectPic && (!selectPic.value || selectPic.value.trim() === '')) {
             selectPic.focus();
             selectPic.classList.add('is-invalid');
             var feedbackPic = document.getElementById(prefix + 'feedbackPicProposal');
@@ -9729,7 +9894,11 @@ function checkKirimButtonStateDetail() {
     var biayaVal = hiddenBiaya ? (parseFloat(hiddenBiaya.value) || 0) : 0;
     var hasCost = biayaVal > 0;
 
-    if (hasFile && hasCost) {
+    var durasiInput = document.getElementById('inputDurasiHariDetail') || document.querySelector('input[name="durasi_hari"]');
+    var durasiVal = durasiInput ? (parseInt(durasiInput.value, 10) || 0) : 0;
+    var hasDurasi = durasiVal > 0;
+
+    if (hasFile && hasCost && hasDurasi) {
         if (btnKirim) {
             btnKirim.disabled = false;
             btnKirim.title = 'Kirim proposal ke Ketua Tim OPTI';
@@ -9744,14 +9913,12 @@ function checkKirimButtonStateDetail() {
     } else {
         if (btnKirim) btnKirim.disabled = true;
         if (btnApprove) btnApprove.disabled = true;
-        var hintMsg = '';
-        if (!hasFile && !hasCost) {
-            hintMsg = 'Isi estimasi biaya dan unggah berkas Word untuk mengaktifkan tombol.';
-        } else if (!hasFile) {
-            hintMsg = 'Unggah berkas dokumen proposal Word untuk mengaktifkan tombol.';
-        } else {
-            hintMsg = 'Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol.';
-        }
+        var missing = [];
+        if (!hasDurasi) missing.push('durasi pelaksanaan / estimasi kerja');
+        if (!hasCost) missing.push('estimasi biaya / RAB');
+        if (!hasFile) missing.push('berkas proposal Word (.doc/.docx)');
+
+        var hintMsg = 'Lengkapi ' + missing.join(', ') + ' untuk mengaktifkan tombol.';
         if (btnKirim) btnKirim.title = hintMsg;
         if (btnApprove) btnApprove.title = hintMsg;
         var hintTextEl = document.getElementById('hintKirimProposalTextDetail');
@@ -9860,8 +10027,17 @@ function confirmKirimProposalActionDetail() {
     var biayaVal = hiddenBiaya ? (parseFloat(hiddenBiaya.value) || 0) : 0;
     var hasCost = biayaVal > 0;
 
-    if (!hasFile || !hasCost) {
-        if (!hasFile) {
+    var durasiInput = document.getElementById('inputDurasiHariDetail') || document.querySelector('input[name="durasi_hari"]');
+    var durasiVal = durasiInput ? (parseInt(durasiInput.value, 10) || 0) : 0;
+    var hasDurasi = durasiVal > 0;
+
+    if (!hasFile || !hasCost || !hasDurasi) {
+        if (!hasDurasi && durasiInput) {
+            durasiInput.focus();
+        } else if (!hasCost) {
+            var biayaInput = document.getElementById('inputBiayaDisplayDetail');
+            if (biayaInput) biayaInput.focus();
+        } else if (!hasFile) {
             var dropzone = document.getElementById('dropzoneContainerDetail');
             if (dropzone) {
                 dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -9869,6 +10045,7 @@ function confirmKirimProposalActionDetail() {
                 setTimeout(function() { dropzone.style.borderColor = ''; }, 3000);
             }
         }
+        checkKirimButtonStateDetail();
         return;
     }
 
@@ -10355,16 +10532,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (btnSimpanDisp) {
         btnSimpanDisp.addEventListener('click', function () {
-            var pesan = 'Pembayaran akan disimpan, dan order ini akan langsung didisposisikan ke <strong>Ketua Tim ' + labelDivisi() + '</strong>.';
+            var pesan = 'Konfirmasi pembayaran / kesanggupan bayar akan disimpan dan order ini akan langsung diteruskan ke <strong>Ketua Tim ' + labelDivisi() + '</strong> untuk lanjut ke Tahap 7 (Aktivasi SPM).';
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'question',
-                    title: 'Disposisi ke Ketua Tim ' + labelDivisi() + '?',
+                    title: 'Kirim ke Ketua Tim ' + labelDivisi() + '?',
                     html: '<div class="text-start small text-secondary">' + pesan + '</div>',
                     showCancelButton: true,
-                    confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Disposisi',
+                    confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Kirim &amp; Disposisi',
                     cancelButtonText: 'Batal',
-                    confirmButtonColor: '#198754',
+                    confirmButtonColor: '#0d6efd',
                     reverseButtons: true
                 }).then(function (result) {
                     if (result.isConfirmed) {
@@ -10373,13 +10550,66 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
             } else {
-                if (confirm('Pembayaran akan disimpan dan didisposisikan ke Ketua Tim ' + labelDivisi() + '. Lanjutkan?')) {
+                if (confirm('Kirim ke Ketua Tim ' + labelDivisi() + ' untuk lanjut ke Tahap 7?')) {
                     if (inputDisp) inputDisp.value = '1';
                     submitFormDenganValidasi();
                 }
             }
         });
     }
+
+    // Inisialisasi jika ada draf kesanggupan bayar
+    var adaDrafKb = {{ !empty(@draf_kesanggupan) ? 'true' : 'false' }};
+    if (adaDrafKb && toggleKb) {
+        toggleKb.checked = true;
+        var normalEl = document.getElementById('fieldsNormalDetail');
+        var kbEl = document.getElementById('fieldsKbDetail');
+        var inputFlagEl = document.getElementById('inputIsKesanggupanDetail');
+        if (inputFlagEl) inputFlagEl.value = '1';
+        if (normalEl) normalEl.classList.add('d-none');
+        if (kbEl) kbEl.classList.remove('d-none');
+        var selTermin = document.getElementById('selectTerminDetail');
+        var inBukti = document.getElementById('bukti_bayar_input');
+        if (selTermin) selTermin.removeAttribute('required');
+        if (inBukti) inBukti.removeAttribute('required');
+        perbaruiTombolSimpan();
+    }
+
+    window.kirimDrafKesanggupanLangsung = function () {
+        var form = document.getElementById('formKonfirmasiPembayaranDetail');
+        var inputDisp = document.getElementById('inputDisposisiLangsungDetail');
+        var toggleKb = document.getElementById('kbSkipToggleDetail');
+        var inputFlag = document.getElementById('inputIsKesanggupanDetail');
+        var taKb = document.getElementById('inputKeteranganKbDetail');
+        var taNormal = document.getElementById('inputKeteranganNormalDetail');
+        if (toggleKb) toggleKb.checked = true;
+        if (inputFlag) inputFlag.value = '1';
+        if (inputDisp) inputDisp.value = '1';
+        if (taNormal && taKb) taNormal.value = taKb.value;
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'question',
+                title: 'Kirim ke Ketua Tim ' + labelDivisi() + '?',
+                text: 'Draf Kesanggupan Bayar akan dikonfirmasi dan order dilanjutkan ke Tahap 7 (Aktivasi SPM).',
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Kirim &amp; Disposisi',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#0d6efd',
+                reverseButtons: true
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    if (typeof triggerStageRead === 'function') triggerStageRead(6);
+                    form.submit();
+                }
+            });
+        } else {
+            if (confirm('Kirim ke Ketua Tim ' + labelDivisi() + ' untuk lanjut ke Tahap 7?')) {
+                if (typeof triggerStageRead === 'function') triggerStageRead(6);
+                form.submit();
+            }
+        }
+    };
 });
 
 function handleKonfirmasiPembayaranSubmit(e, form) {

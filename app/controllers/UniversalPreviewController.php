@@ -119,9 +119,9 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
-            // 7. Pola PO Kegiatan Cetak: /po-kegiatan/cetak/@id ATAU /po-kegiatan/@id/cetak
-            if (preg_match('#po-kegiatan/(?:cetak/(\d+)|(\d+)/cetak)#i', $path, $m)) {
-                $poId = (int)(!empty($m[1]) ? $m[1] : $m[2]);
+            // 7. Pola PO Kegiatan Cetak: /po-kegiatan/cetak/@id ATAU /po-kegiatan/@id/cetak ATAU /petunjuk-operasional/pengujian/@id/cetak
+            if (preg_match('#(?:po-kegiatan/(?:cetak/(\d+)|(\d+)/cetak)|petunjuk-operasional/pengujian/(\d+)/cetak)#i', $path, $m)) {
+                $poId = (int)(!empty($m[1]) ? $m[1] : (!empty($m[2]) ? $m[2] : $m[3]));
                 $this->handlePoCetak($poId);
                 return;
             }
@@ -612,19 +612,16 @@ class UniversalPreviewController extends Controller
             return;
         }
 
-        $rawPath = $surat['file_path'] ?? ($surat['nama_berkas'] ?? '');
-        $filePath = null;
-        if (!empty($rawPath)) {
-            $filePath = $this->resolveFilePath($rawPath, ['uploads/surat_masuk', 'public/uploads/surat_masuk', 'storage/surat_masuk', 'uploads/permohonan']);
+        $rawPath = trim((string)($surat['file_path'] ?? ($surat['nama_berkas'] ?? '')));
+        if (empty($rawPath)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik surat permohonan belum diunggah oleh sekretaris di tabel arsip (tb_arsipsurat).']);
+            return;
         }
 
-        // Jika fisik berkas belum ada di server (misal hasil registrasi loket sebelum upload), buat PDF surat resmi via FPDF
-        if (!$filePath || !is_file($filePath)) {
-            $filePath = $this->generateFallbackPdfSuratMasuk($surat);
-        }
+        $filePath = $this->resolveFilePath($rawPath, ['uploads/surat_masuk', 'public/uploads/surat_masuk', 'storage/surat_masuk', 'uploads/permohonan']);
 
         if (!$filePath || !is_file($filePath)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik surat masuk tidak ditemukan di server: ' . basename($rawPath ?: 'surat.pdf')]);
+            $this->jsonResponse(['success' => false, 'message' => 'Berkas fisik surat masuk tidak ditemukan di server: ' . basename($rawPath)]);
             return;
         }
 
@@ -908,18 +905,66 @@ class UniversalPreviewController extends Controller
     protected function handlePoCetak($poId)
     {
         $f3 = \Base::instance();
-        ob_start();
-        $previousErrorHandler = set_error_handler(function($errno, $errstr) { return true; });
+        $pdfContent = null;
+        $filename = 'PO_Kegiatan_' . $poId . '.pdf';
+
         try {
-            $controller = new \petunjuk_operasional\PoCetakController();
-            $controller->cetak($f3, ['id' => $poId]);
-            $pdfContent = ob_get_clean();
+            require_once dirname(__DIR__) . '/controllers/PoKegiatanController.php';
+            require_once dirname(__DIR__) . '/models/PoKegiatan.php';
+            require_once dirname(__DIR__) . '/models/OrderLayanan.php';
+
+            $poModel = new \PoKegiatan($this->db);
+            $poModel->load(['id = ?', (int)$poId]);
+
+            if (!$poModel->dry()) {
+                $orderModel = new \OrderLayanan($this->db);
+                $orderData = $orderModel->getDetail((int)$poModel->order_id);
+
+                $ctl = new \PoKegiatanController();
+                $refClass = new \ReflectionClass($ctl);
+                $siapkanMethod = $refClass->getMethod('siapkanDataPo');
+                $siapkanMethod->setAccessible(true);
+                $poData = $siapkanMethod->invoke($ctl, $poModel, $orderData);
+
+                foreach (['dasar_lines', 'tujuan_lines', 'ruang_lingkup_deskripsi_lines', 'alat_bahan_lines', 'metoda_lines'] as $kunciLines) {
+                    if (empty($poData[$kunciLines]) || !is_array($poData[$kunciLines])) { continue; }
+                    foreach ($poData[$kunciLines] as $i => $baris) {
+                        $t = (string) ($baris['teks'] ?? '');
+                        $kosong = '(?:\s|&nbsp;|\x{00A0}|<br\s*\/?>|<p[^>]*>\s*(?:&nbsp;|<br\s*\/?>|\s)*<\/p>)+';
+                        $t = preg_replace('/^' . $kosong . '/iu', '', $t);
+                        $t = preg_replace('/' . $kosong . '$/iu', '', $t);
+                        $poData[$kunciLines][$i]['teks'] = $t;
+                    }
+                }
+
+                $f3->set('order', $orderData ?: null);
+                $f3->set('po', $poData);
+                $html = \Template::instance()->render('katim_kerja/po-kegiatan/cetak_pdf.html');
+
+                $options = new \Dompdf\Options();
+                $options->set('isRemoteEnabled', false);
+                $options->set('defaultFont', 'Times-Roman');
+                $dompdf = new \Dompdf\Dompdf($options);
+                $dompdf->loadHtml($html);
+                $dompdf->setPaper('A4', 'portrait');
+                $dompdf->render();
+
+                $sudahFinalMethod = $refClass->getMethod('poSudahFinal');
+                $sudahFinalMethod->setAccessible(true);
+                $final = $sudahFinalMethod->invoke($ctl, (int)$poModel->id);
+
+                if (!$final) {
+                    $watermarkMethod = $refClass->getMethod('pasangWatermarkDraft');
+                    $watermarkMethod->setAccessible(true);
+                    $watermarkMethod->invoke($ctl, $dompdf);
+                }
+
+                $pdfContent = $dompdf->output();
+                $filename = 'PO-' . preg_replace('/[^A-Za-z0-9_-]/', '_', $poData['nomor_po'] ?? $poModel->id) . ($final ? '' : '-DRAFT') . '.pdf';
+            }
         } catch (\Throwable $e) {
-            ob_end_clean();
+            error_log('[UniversalPreviewController::handlePoCetak] ' . $e->getMessage());
             $pdfContent = null;
-        } finally {
-            if ($previousErrorHandler !== null) set_error_handler($previousErrorHandler);
-            else restore_error_handler();
         }
 
         if (empty($pdfContent)) {
@@ -931,14 +976,10 @@ class UniversalPreviewController extends Controller
             'success'   => true,
             'is_pdf'    => true,
             'base64'    => base64_encode($pdfContent),
-            'filename'  => 'PO_Kegiatan_' . $poId . '.pdf',
+            'filename'  => $filename,
             'mime'      => 'application/pdf',
         ]);
     }
-
-    /**
-     * Berkas langsung dari path fisik (misal /uploads/...)
-     */
     protected function handleDirectFile($rawPath)
     {
         $filePath = $this->resolveFilePath($rawPath);
@@ -962,7 +1003,7 @@ class UniversalPreviewController extends Controller
         $clean = ltrim(urldecode(str_replace('\\', '/', $rawPath)), '/');
 
         // Bersihkan prefix URL folder seperti /Mini OPTI Tracker/ atau /Mini%20OPTI%20Tracker/
-        $clean = preg_replace('#^(?:Mini[\s_]OPTI[\s_]Tracker/|public/|htdocs/)+#i', '', $clean);
+        $clean = preg_replace('#^(?:silopti/|Mini[\s_]OPTI[\s_]Tracker/|public/|htdocs/)+#i', '', $clean);
         $clean = ltrim($clean, '/');
         $basename = basename($clean);
 
@@ -977,7 +1018,7 @@ class UniversalPreviewController extends Controller
         ];
 
         // Berkas lama: sebagian modul (mis. upload proposal) masih menulis ke folder XAMPP lama. Dicari juga di sana supaya pratinjau tidak gagal.
-        $legacyRoot = 'c:/xampp/htdocs/Mini OPTI Tracker';
+        $legacyRoot = 'c:/xampp/htdocs/silopti';
         $candidates[] = $legacyRoot . '/' . $clean;
         $candidates[] = $legacyRoot . '/public/' . $clean;
         $candidates[] = $legacyRoot . '/' . ltrim($rawPath, '/');

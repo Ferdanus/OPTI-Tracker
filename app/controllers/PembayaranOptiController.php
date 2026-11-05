@@ -297,50 +297,67 @@ if ($orderId <= 0) {
 // ===== JALUR SKIP (Surat Kesanggupan Bayar) =====
 if ($isKesanggupan) {
     $keterangan = trim($post['keterangan'] ?? '');
+    $isDisposisi = !empty($post['disposisi_langsung']) && $post['disposisi_langsung'] == '1';
+    $statusVerif = $isDisposisi ? 'terverifikasi' : 'menunggu';
 
     try {
-        $pembayaran = new OptiPembayaran($this->db);
-        $pembayaran->order_id             = $orderId;
-        $pembayaran->po_id                = null;
-        $pembayaran->termin_ke            = 0;
-        $pembayaran->tanggal_bayar        = date('Y-m-d');
-        $pembayaran->jumlah               = 0;
-        $pembayaran->metode_pembayaran    = null;
-        $pembayaran->nomor_transaksi_ntpn = null;
-        $pembayaran->keterangan           = $keterangan ?: 'Dicatat via Surat Kesanggupan Bayar.';
-        $pembayaran->bukti_bayar          = null;
-        $pembayaran->status_verifikasi    = 'terverifikasi';
-        $pembayaran->is_kesanggupan_bayar = 1;
-        $pembayaran->verifikator_id       = $this->getUserId() ?? null;
-        $pembayaran->created_at           = date('Y-m-d H:i:s');
-        $pembayaran->save();
-
-        $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Unggah surat kesanggupan bayar (Berjalan)");
+        $existingKb = $this->db->exec("SELECT id FROM opti_pembayaran WHERE order_id = ? AND is_kesanggupan_bayar = 1 ORDER BY id DESC LIMIT 1", [$orderId]);
+        if (!empty($existingKb)) {
+            $payId = (int)$existingKb[0]['id'];
+            $this->db->exec(
+                "UPDATE opti_pembayaran SET keterangan = ?, status_verifikasi = ?, verifikator_id = ?, tanggal_bayar = ? WHERE id = ?",
+                [1 => ($keterangan ?: 'Dicatat via Surat Kesanggupan Bayar.'), 2 => $statusVerif, 3 => $this->getUserId() ?? null, 4 => date('Y-m-d'), 5 => $payId]
+            );
+        } else {
+            $pembayaran = new OptiPembayaran($this->db);
+            $pembayaran->order_id             = $orderId;
+            $pembayaran->po_id                = null;
+            $pembayaran->termin_ke            = 0;
+            $pembayaran->tanggal_bayar        = date('Y-m-d');
+            $pembayaran->jumlah               = 0;
+            $pembayaran->metode_pembayaran    = null;
+            $pembayaran->nomor_transaksi_ntpn = null;
+            $pembayaran->keterangan           = $keterangan ?: 'Dicatat via Surat Kesanggupan Bayar.';
+            $pembayaran->bukti_bayar          = null;
+            $pembayaran->status_verifikasi    = $statusVerif;
+            $pembayaran->is_kesanggupan_bayar = 1;
+            $pembayaran->verifikator_id       = $this->getUserId() ?? null;
+            $pembayaran->created_at           = date('Y-m-d H:i:s');
+            $pembayaran->save();
+        }
 
         $orderModel = new OrderLayanan($this->db);
         $orderModel->terbitkanNomorOrder($orderId);
 
-        try {
-            $rowsO = $this->safeQuery("SELECT o.nomor_order, c.nmcustomer AS nama_perusahaan FROM order_layanan o JOIN tb_customer c ON o.id_customer = c.id_customer WHERE o.id = ?", [$orderId]);
-            $oInfo = !empty($rowsO) ? $rowsO[0] : ['nomor_order' => $orderId, 'nama_perusahaan' => 'Klien'];
-            \NotificationService::send($this->db, [
-                'order_id'        => $orderId,
-                'target_role'     => 'tim_mitra',
-                'target_layanan'  => 'semua',
-                'judul'           => 'Surat Kesanggupan Bayar Dicatat',
-                'pesan'           => "Order #{$oInfo['nomor_order']} ({$oInfo['nama_perusahaan']}) telah dicatat via Surat Kesanggupan Bayar oleh Bagian Keuangan. Order masuk ke tahap berjalan.",
-                'tipe'            => 'info',
-                'icon'            => 'bi-file-earmark-check-fill',
-                'link_url'        => "/order/{$orderId}",
-                'created_by'      => $this->getUserId() ?? null,
-                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Bagian Keuangan'
-            ]);
-        } catch (\Exception $eNotif) {}
+        if ($isDisposisi) {
+            $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Pencatatan Surat Kesanggupan Bayar (Diverifikasi & Disposisi ke Ketua Tim)");
+            $this->db->exec("UPDATE order_layanan SET status_keuangan = 'lunas' WHERE id = ?", [$orderId]);
+            $this->disposisiKatimOtomatis($orderId);
 
-// Tanpa popup disposisi lagi: order otomatis diteruskan ke Ketua Tim (sekali saja)
-$this->disposisiKatimOtomatis($orderId);
-$this->setFlashSuccess('Order dicatat sebagai Kesanggupan Bayar & diteruskan ke Ketua Tim. Order masuk ke tab "Sedang Berjalan".');
-$f3->reroute($kembali);
+            try {
+                $rowsO = $this->safeQuery("SELECT o.nomor_order, c.nmcustomer AS nama_perusahaan FROM order_layanan o JOIN tb_customer c ON o.id_customer = c.id_customer WHERE o.id = ?", [$orderId]);
+                $oInfo = !empty($rowsO) ? $rowsO[0] : ['nomor_order' => $orderId, 'nama_perusahaan' => 'Klien'];
+                \NotificationService::send($this->db, [
+                    'order_id'        => $orderId,
+                    'target_role'     => 'tim_mitra',
+                    'target_layanan'  => 'semua',
+                    'judul'           => 'Surat Kesanggupan Bayar Dicatat',
+                    'pesan'           => "Order #{$oInfo['nomor_order']} ({$oInfo['nama_perusahaan']}) telah dikonfirmasi oleh Bagian Keuangan via Surat Kesanggupan Bayar. Order masuk ke tahap berjalan.",
+                    'tipe'            => 'info',
+                    'icon'            => 'bi-file-earmark-check-fill',
+                    'link_url'        => "/order/{$orderId}",
+                    'created_by'      => $this->getUserId() ?? null,
+                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Bagian Keuangan'
+                ]);
+            } catch (\Exception $eNotif) {}
+
+            $this->setFlashSuccess('Order dicatat sebagai Kesanggupan Bayar & diteruskan ke Ketua Tim. Order masuk ke tab "Sedang Berjalan".');
+        } else {
+            $this->logActivity($orderId, 'pembayaran', 'simpan_draf_kesanggupan', "Simpan Draf Surat Kesanggupan Bayar");
+            $this->setFlashSuccess('Draf Surat Kesanggupan Bayar berhasil disimpan. Pembayaran belum didisposisikan ke Ketua Tim (order tetap di Tahap Pembayaran).');
+        }
+
+        $f3->reroute($kembali);
     } catch (\Exception $e) {
         $this->setFlashError('Gagal mencatat: ' . $e->getMessage());
         $f3->reroute('/pembayaran/tambah?order_id=' . $orderId . $qDari);
@@ -420,25 +437,48 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
 
             $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Verifikasi pembayaran Termin #{$terminKe} Rp " . number_format($jumlah, 0, ',', '.') . " (" . strtoupper(str_replace('_', ' ', $metode)) . ") - " . ucfirst($statusBaru));
 
-            // Kirim notifikasi ke Tim Mitra
+            // Kirim notifikasi ke Tim Mitra & Ketua Tim OPTI layanan tersebut
             try {
-                $rowsO = $this->safeQuery("SELECT o.nomor_order, c.nmcustomer AS nama_perusahaan FROM order_layanan o JOIN tb_customer c ON o.id_customer = c.id_customer WHERE o.id = ?", [$orderId]);
-                $oInfo = !empty($rowsO) ? $rowsO[0] : ['nomor_order' => $orderId, 'nama_perusahaan' => 'Klien'];
-                $judulPayNotif = ($statusBaru === 'lunas') ? 'Pembayaran Order LUNAS' : "Pembayaran Termin #{$terminKe} Tercatat";
-                $pesanPayNotif = ($statusBaru === 'lunas')
-                    ? "Pembayaran untuk Order #{$oInfo['nomor_order']} ({$oInfo['nama_perusahaan']}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah diverifikasi lunas oleh Bagian Keuangan."
-                    : "Pembayaran Termin #{$terminKe} untuk Order #{$oInfo['nomor_order']} ({$oInfo['nama_perusahaan']}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dicatat oleh Bagian Keuangan.";
+                $rowsO = $this->safeQuery("SELECT o.nomor_order, o.jenis_layanan_opti, c.nmcustomer AS nama_perusahaan FROM order_layanan o JOIN tb_customer c ON o.id_customer = c.id_customer WHERE o.id = ?", [$orderId]);
+                $oInfo = !empty($rowsO) ? $rowsO[0] : ['nomor_order' => $orderId, 'nama_perusahaan' => 'Klien', 'jenis_layanan_opti' => 'semua'];
+                $namaPetugas = $_SESSION['nama_lengkap'] ?? 'Bagian Keuangan';
+                $layananOpti = $oInfo['jenis_layanan_opti'] ?? 'semua';
+                $nomorOrderStr = !empty($oInfo['nomor_order']) ? "#{$oInfo['nomor_order']}" : "#{$orderId}";
+                $namaPt = $oInfo['nama_perusahaan'] ?? 'Pelanggan';
+
+                $judulPayNotif = ($statusBaru === 'lunas') ? 'Konfirmasi Pembayaran Lunas' : "Konfirmasi Bukti Pembayaran Termin #{$terminKe}";
+                $pesanMitra = ($statusBaru === 'lunas')
+                    ? "Bukti pembayaran untuk Order {$nomorOrderStr} ({$namaPt}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dikonfirmasi oleh Bagian Keuangan."
+                    : "Bukti pembayaran Termin #{$terminKe} untuk Order {$nomorOrderStr} ({$namaPt}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dikonfirmasi oleh Bagian Keuangan.";
+
                 \NotificationService::send($this->db, [
                     'order_id'        => $orderId,
                     'target_role'     => 'tim_mitra',
                     'target_layanan'  => 'semua',
                     'judul'           => $judulPayNotif,
-                    'pesan'           => $pesanPayNotif,
+                    'pesan'           => $pesanMitra,
                     'tipe'            => 'success',
                     'icon'            => 'bi-cash-coin',
                     'link_url'        => "/order/{$orderId}",
                     'created_by'      => $this->getUserId() ?? null,
-                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Bagian Keuangan'
+                    'created_by_name' => 'Bagian Keuangan'
+                ]);
+
+                $pesanKatim = ($statusBaru === 'lunas')
+                    ? "Bukti pembayaran untuk Order {$nomorOrderStr} ({$namaPt}) telah dikonfirmasi oleh Bagian Keuangan. Pelaksanaan pengujian laboratorium dapat dimulai/diproses."
+                    : "Bukti pembayaran Termin #{$terminKe} untuk Order {$nomorOrderStr} ({$namaPt}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dikonfirmasi oleh Bagian Keuangan.";
+
+                \NotificationService::send($this->db, [
+                    'order_id'        => $orderId,
+                    'target_role'     => 'ketua_tim',
+                    'target_layanan'  => $layananOpti,
+                    'judul'           => $judulPayNotif,
+                    'pesan'           => $pesanKatim,
+                    'tipe'            => 'success',
+                    'icon'            => 'bi-cash-coin',
+                    'link_url'        => "/order/{$orderId}",
+                    'created_by'      => $this->getUserId() ?? null,
+                    'created_by_name' => 'Bagian Keuangan'
                 ]);
             } catch (\Exception $eNotif) {}
 

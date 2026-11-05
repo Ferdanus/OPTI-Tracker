@@ -1,1069 +1,1678 @@
 <style>
+.filter-field-box {
+    width: 220px;
+    flex: 0 0 220px;
+}
+@media (max-width: 576px) {
     .filter-field-box {
-        width: 220px;
-        flex: 0 0 220px;
+        width: 100%;
+        flex: 1 1 100%;
     }
-    @media (max-width: 576px) {
-        .filter-field-box {
-            width: 100%;
-            flex: 1 1 100%;
-        }
-    }
-    .filter-field-control {
-        height: 38px !important;
-        min-height: 38px !important;
-        max-height: 38px !important;
-    }
-    .filter-field-control .input-group-text,
-    .filter-field-control .form-control,
-    .filter-select-field {
-        height: 38px !important;
-        min-height: 38px !important;
-        max-height: 38px !important;
-        font-size: 0.875rem !important;
-        line-height: 1.5 !important;
-        border-color: #cbd5e1 !important;
-        box-sizing: border-box !important;
-    }
-    .filter-field-control .input-group-text {
-        background-color: #ffffff !important;
-        border-top-left-radius: 8px !important;
-        border-bottom-left-radius: 8px !important;
-        border-top-right-radius: 0 !important;
-        border-bottom-right-radius: 0 !important;
-        padding: 0.375rem 0.5rem 0.375rem 0.85rem !important;
-        color: #64748b !important;
-        transition: border-color 0.15s ease-in-out;
-    }
-    .filter-field-control .form-control {
-        border-top-right-radius: 8px !important;
-        border-bottom-right-radius: 8px !important;
-        border-top-left-radius: 0 !important;
-        border-bottom-left-radius: 0 !important;
-        padding: 0.375rem 0.75rem 0.375rem 0.35rem !important;
-        color: #1e293b !important;
-        box-shadow: none !important;
-    }
-    .filter-field-control:focus-within .input-group-text,
-    .filter-field-control:focus-within .form-control {
-        border-color: #334155 !important;
-    }
-    .filter-field-control:focus-within {
-        box-shadow: 0 0 0 0.2rem rgba(51, 65, 85, 0.12) !important;
-        border-radius: 8px !important;
-    }
-    .filter-select-field {
-        border-radius: 8px !important;
-        color: #1e293b !important;
-        padding: 0.375rem 2.25rem 0.375rem 0.85rem !important;
-        background-color: #ffffff !important;
+}
+.filter-field-control {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+}
+.filter-field-control .input-group-text,
+.filter-field-control .form-control,
+.filter-select-field {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+    border-color: #cbd5e1 !important;
+    box-sizing: border-box !important;
+}
+.filter-field-control .input-group-text {
+    background-color: #ffffff !important;
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    padding: 0.375rem 0.5rem 0.375rem 0.85rem !important;
+    color: #64748b !important;
+    transition: border-color 0.15s ease-in-out;
+}
+.filter-field-control .form-control {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    padding: 0.375rem 0.75rem 0.375rem 0.35rem !important;
+    color: #1e293b !important;
+    box-shadow: none !important;
+}
+.filter-field-control:focus-within .input-group-text,
+.filter-field-control:focus-within .form-control {
+    border-color: #334155 !important;
+}
+.filter-field-control:focus-within {
+    box-shadow: 0 0 0 0.2rem rgba(51, 65, 85, 0.12) !important;
+    border-radius: 8px !important;
+}
+.filter-select-field {
+    border-radius: 8px !important;
+    color: #1e293b !important;
+    padding: 0.375rem 2.25rem 0.375rem 0.85rem !important;
+    background-color: #ffffff !important;
+    cursor: pointer;
+}
+.filter-select-field:focus {
+    border-color: #334155 !important;
+    box-shadow: 0 0 0 0.2rem rgba(51, 65, 85, 0.12) !important;
+    outline: none !important;
+}
+.filter-reset-btn {
+    height: 38px !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    border-radius: 8px !important;
+    border-color: #cbd5e1 !important;
+    color: #64748b !important;
+    background-color: #ffffff !important;
+    padding: 0 !important;
+    font-size: 0.875rem !important;
+    transition: all 0.15s ease-in-out;
+}
+.filter-reset-btn:hover {
+    background-color: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+
+/* ========================================================================= */
+/* UNIFIED NAVY BLUE ROLE BADGE DESIGN SYSTEM                               */
+/* ========================================================================= */
+.role-badge,
+.role-badge-superadmin,
+.role-badge-katim-selulosa,
+.role-badge-katim-lingkungan,
+.role-badge-katim-pengujian,
+.role-badge-katim-kalibrasi,
+.role-badge-katim-sertifikasi,
+.role-badge-katim-pendampingan,
+.role-badge-katim-inspeksi,
+.role-badge-katim-profisiensi,
+.role-badge-katim-mitra,
+.role-badge-katim-keuangan,
+.role-badge-tk-selulosa,
+.role-badge-tk-lingkungan,
+.role-badge-mitra,
+.role-badge-keuangan,
+.role-badge-humas,
+.role-badge-ppk,
+.role-badge-default {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 0.32rem 0.8rem !important;
+    border-radius: 9999px !important;
+    letter-spacing: 0.015em;
+    line-height: 1.3;
+    background: var(--color-primary, #334155) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--color-primary, #334155) !important;
+    box-shadow: 0 1px 3px rgba(51, 65, 85, 0.2) !important;
+}
+
+    .item-pegawai-card {
         cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        border: 1px solid transparent;
+        padding: 0.5rem 0.75rem !important;
     }
-    .filter-select-field:focus {
-        border-color: #334155 !important;
-        box-shadow: 0 0 0 0.2rem rgba(51, 65, 85, 0.12) !important;
-        outline: none !important;
+    .item-pegawai-card:hover {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
     }
-    .filter-reset-btn {
-        height: 38px !important;
-        width: 38px !important;
-        min-width: 38px !important;
-        border-radius: 8px !important;
-        border-color: #cbd5e1 !important;
-        color: #64748b !important;
-        background-color: #ffffff !important;
-        padding: 0 !important;
-        font-size: 0.875rem !important;
+    .item-pegawai-card.selected {
+        background-color: var(--color-primary, #334155) !important;
+        border-color: var(--color-primary, #334155) !important;
+        box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25) !important;
+    }
+    .item-pegawai-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        background-color: #f8fafc;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
         transition: all 0.15s ease-in-out;
     }
-    .filter-reset-btn:hover {
-        background-color: #f1f5f9 !important;
-        border-color: #94a3b8 !important;
-        color: #0f172a !important;
+    .item-pegawai-card:hover .item-pegawai-avatar {
+        background-color: #ffffff;
+        color: #0f172a;
+        border-color: #cbd5e1;
     }
-    
-    /* ========================================================================= */
-    /* MODERN ROLE BADGE DESIGN SYSTEM (TEXT ONLY)                              */
-    /* ========================================================================= */
-    .role-badge {
+    .item-pegawai-card.selected .item-pegawai-avatar {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+    }
+    .item-pegawai-nama {
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+        color: #1e293b;
+        line-height: 1.25;
+        margin-bottom: 2px;
+    }
+    .item-pegawai-sub {
+        font-size: 0.75rem !important;
+        color: #64748b;
+        line-height: 1.2;
+    }
+    .item-pegawai-card.selected .item-pegawai-nama {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+    }
+    .item-pegawai-card.selected .item-pegawai-sub {
+        color: #94a3b8 !important;
+    }
+    .item-pegawai-card.selected .item-check-icon {
+        opacity: 1 !important;
+        color: #ffffff !important;
+    }
+
+    /* Satu Kotak Layout untuk Pilihan Role Sistem */
+    .role-picker-box {
+        background-color: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 12px 14px;
+    }
+    .role-group-section + .role-group-section {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px dashed #e2e8f0;
+    }
+    .role-group-title {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .role-chips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 6px;
+    }
+    .role-chip-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        text-align: left;
+        background-color: #ffffff;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        padding: 6px 10px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        line-height: 1.25;
+        cursor: pointer;
+        transition: all 0.14s ease-in-out;
+        user-select: none;
+    }
+    .role-chip-btn:hover {
+        background-color: #f1f5f9;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+    .role-chip-btn.selected {
+        background-color: var(--color-primary, #334155) !important;
+        border-color: var(--color-primary, #334155) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        box-shadow: 0 2px 5px rgba(51, 65, 85, 0.25);
+    }
+    .role-chip-btn.role-chip-occupied {
+        background-color: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        color: #94a3b8 !important;
+        cursor: not-allowed !important;
+        opacity: 0.72;
+    }
+    .role-chip-btn.role-chip-occupied:hover {
+        background-color: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+        color: #64748b !important;
+    }
+    .role-chip-btn .role-chip-check {
+        font-size: 0.85rem;
+        opacity: 0;
+        transform: scale(0.8);
+        transition: all 0.14s ease;
+        flex-shrink: 0;
+        margin-left: 6px;
+    }
+    .role-chip-btn.selected .role-chip-check {
+        opacity: 1;
+        transform: scale(1);
+        color: #ffffff;
+    }
+
+    /* Bungkus Hierarki Divisi (Ketua Tim + Sub Tim Expandable) */
+    tr.divisi-parent-row.has-subtim {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    tr.divisi-parent-row.has-subtim:hover > td {
+        background-color: #f8fafc !important;
+    }
+    tr.divisi-parent-row.has-subtim {
+        cursor: pointer;
+        transition: background-color 0.35s ease;
+    }
+    tr.divisi-parent-row.expanded > td {
+        background-color: #f8fafc !important;
+        border-bottom-color: #cbd5e1 !important;
+    }
+    .btn-toggle-subtim {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.775rem;
+        gap: 6px;
+        white-space: nowrap;
+        font-size: 0.74rem;
         font-weight: 600;
-        padding: 0.35rem 0.85rem;
+        color: #0f172a !important;
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
         border-radius: 9999px;
-        letter-spacing: 0.015em;
-        line-height: 1.35;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        padding: 3.5px 11px;
+        cursor: pointer;
+        transition: background-color 0.45s cubic-bezier(0.25, 1, 0.5, 1),
+                    color 0.45s cubic-bezier(0.25, 1, 0.5, 1),
+                    border-color 0.45s cubic-bezier(0.25, 1, 0.5, 1),
+                    box-shadow 0.45s cubic-bezier(0.25, 1, 0.5, 1),
+                    transform 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+        user-select: none;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        transform-origin: center center;
     }
-    
-    /* 1. Super Administrator (Dark Prestige Badge) */
-    .role-badge-superadmin {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        color: #f8fafc !important;
-        border: 1px solid #334155;
-        box-shadow: 0 2px 5px rgba(15, 23, 42, 0.18);
+    tr.divisi-parent-row.has-subtim:not(.expanded):hover .btn-toggle-subtim {
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
+        border-color: #94a3b8 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
     }
-    
-    /* 2. Ketua Tim Selulosa (Rose Ruby Tint) */
-    .role-badge-katim-selulosa {
-        background: #fff1f2;
-        color: #9f1239 !important;
-        border: 1px solid #fecdd3;
+    tr.divisi-parent-row.expanded .btn-toggle-subtim {
+        background-color: var(--color-primary, #334155) !important;
+        color: #ffffff !important;
+        border-color: var(--color-primary, #334155) !important;
+        box-shadow: 0 2px 8px rgba(51, 65, 85, 0.28) !important;
     }
-    
-    /* 3. Ketua Tim Lingkungan (Emerald Forest Tint) */
-    .role-badge-katim-lingkungan {
-        background: #f0fdf4;
-        color: #166534 !important;
-        border: 1px solid #bbf7d0;
+    tr.divisi-parent-row.expanded:hover .btn-toggle-subtim {
+        background-color: var(--color-primary, #334155) !important;
+        color: #ffffff !important;
+        border-color: var(--color-primary, #334155) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(51, 65, 85, 0.35) !important;
     }
-    
-    /* 3b. Ketua Tim Mitra (Warm Amber/Gold Tint) */
-    .role-badge-katim-mitra {
-        background: #fff7ed;
-        color: #c2410c !important;
-        border: 1px solid #fed7aa;
+    .btn-toggle-subtim .chevron-icon {
+        font-size: 0.7rem;
+        transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        display: inline-block;
     }
-    
-    /* 3c. Ketua Tim Keuangan (Violet/Purple Tint) */
-    .role-badge-katim-keuangan {
-        background: #ede9fe;
-        color: #5b21b6 !important;
-        border: 1px solid #ddd6fe;
+    tr.divisi-parent-row.expanded .btn-toggle-subtim .chevron-icon {
+        transform: rotate(180deg);
     }
-    
-    /* 4. Tim Kerja Selulosa (Cyan Sky Tint) */
-    .role-badge-tk-selulosa {
-        background: #ecfeff;
-        color: #0e7490 !important;
-        border: 1px solid #a5f3fc;
+    /* ========================================================================= */
+    /* ACCORDION SUB TIM SMOOTH TWO-WAY ANIMATION (IN & OUT)                     */
+    /* ========================================================================= */
+    tr.divisi-sub-row {
+        transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
-    /* 5. Tim Kerja Lingkungan (Teal Mint Tint) */
-    .role-badge-tk-lingkungan {
-        background: #f0fdfa;
-        color: #0f766e !important;
-        border: 1px solid #99f6e4;
+    tr.divisi-sub-row > td {
+        background-color: #fcfdfe !important;
+        border-bottom: 1px solid #f1f5f9;
+        transition: padding-top 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                    padding-bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                    line-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
-    /* 6. Tim Mitra Industri (Warm Amber Gold Tint) */
-    .role-badge-mitra {
-        background: #fffbeb;
-        color: #b45309 !important;
-        border: 1px solid #fde68a;
+    tr.divisi-sub-row:hover > td {
+        background-color: #f8fafc !important;
     }
-    
-    /* 7. Tim Keuangan (Royal Indigo Blue Tint) */
-    .role-badge-keuangan {
-        background: #eff6ff;
-        color: #1d4ed8 !important;
-        border: 1px solid #bfdbfe;
+    .subtim-cell-inner {
+        display: block;
+        overflow: hidden;
+        max-height: 80px;
+        opacity: 1;
+        transform: translateY(0);
+        transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: max-height, opacity, transform;
     }
-    
-    /* 8. Humas (Sky / Cyan Tint) */
-    .role-badge-humas {
-        background: #e0f2fe;
-        color: #0369a1 !important;
-        border: 1px solid #bae6fd;
+    tr.divisi-sub-row.sub-row-collapsing > td {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        border-bottom-color: transparent !important;
     }
-    
-    /* 9. PPK (Slate / Indigo Tint) */
-    .role-badge-ppk {
-        background: #f1f5f9;
-        color: #334155 !important;
-        border: 1px solid #cbd5e1;
+    tr.divisi-sub-row.sub-row-collapsing .subtim-cell-inner {
+        max-height: 0 !important;
+        opacity: 0 !important;
+        transform: translateY(-8px) !important;
     }
-    
-    /* Default / Fallback */
-    .role-badge-default {
-        background: #f8fafc;
-        color: #475569 !important;
-        border: 1px solid #e2e8f0;
+    .subtim-tree-connector {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        flex-shrink: 0;
     }
-    .role-badge-default i {
+    .divisi-sub-label {
+        font-size: 0.72rem;
         color: #64748b;
+        font-weight: 500;
     }
-    
-        .item-pegawai-card {
-            cursor: pointer;
-            transition: all 0.15s ease-in-out;
-            border: 1px solid transparent;
-            padding: 0.5rem 0.75rem !important;
-        }
-        .item-pegawai-card:hover {
-            background-color: #f8fafc;
-            border-color: #e2e8f0;
-        }
-        .item-pegawai-card.selected {
-            background-color: #eff6ff !important;
-            border-color: #bfdbfe !important;
-        }
-        .item-pegawai-avatar {
-            width: 36px !important;
-            height: 36px !important;
-            font-size: 0.85rem !important;
-            font-weight: 600 !important;
-            background-color: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .item-pegawai-card:hover .item-pegawai-avatar {
-            background-color: #e2e8f0;
-            color: #1e293b;
-        }
-        .item-pegawai-card.selected .item-pegawai-avatar {
-            background-color: #2563eb !important;
-            color: #ffffff !important;
-            border-color: #2563eb !important;
-        }
-        .item-pegawai-nama {
-            font-size: 0.875rem !important;
-            font-weight: 600 !important;
-            color: #1e293b;
-            line-height: 1.25;
-            margin-bottom: 2px;
-        }
-        .item-pegawai-sub {
-            font-size: 0.75rem !important;
-            color: #64748b;
-            line-height: 1.2;
-        }
-        .item-pegawai-card.selected .item-pegawai-nama {
-            color: #1d4ed8 !important;
-        }
-        .item-pegawai-card.selected .item-pegawai-sub {
-            color: #3b82f6 !important;
-        }
-        .item-pegawai-card.selected .item-check-icon {
-            opacity: 1 !important;
-        }
-    </style>
-    
-    <div class="container-fluid px-0">
-        <!-- Header & Breadcrumb -->
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
-            <div>
-                <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
-                    <i class="bi bi-person-gear text-primary"></i> Data Pengguna
-                </h4>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm px-3 py-2 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalTambahPengguna">
-                    <i class="bi bi-person-plus-fill"></i> Tambah Pengguna
-                </button>
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Header & Breadcrumb -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
+                <i class="bi bi-person-gear text-primary"></i> Data Pengguna
+            </h4>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm px-3 py-2 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalTambahPengguna">
+                <i class="bi bi-person-plus-fill"></i> Tambah Pengguna
+            </button>
+        </div>
+    </div>
+
+    <!-- 5 KARTU RINGKASAN METRIK OPERASIONAL -->
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 g-3 mb-4">
+        <!-- 1. Total Akun Aktif -->
+        <div class="col">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Total Akun Aktif</span>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #e0e7ff; color: #3730a3;">
+                        <i class="bi bi-people-fill fs-6"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_total_aktif }}</h3>
+                <small class="text-muted" style="font-size: 0.73rem;">Hak Akses Operasional</small>
             </div>
         </div>
-    
-        <!-- 5 KARTU RINGKASAN METRIK -->
-        <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 g-3 mb-4">
-            <!-- 1. Tim Mitra -->
-            <div class="col">
-                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Tim Mitra</span>
-                        <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #fef3c7; color: #b45309;">
-                            <i class="bi bi-briefcase-fill fs-6"></i>
-                        </div>
+
+        <!-- 2. Ketua Tim & Pimpinan -->
+        <div class="col">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Ketua Tim &amp; Pimpinan</span>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #f3e8ff; color: #7e22ce;">
+                        <i class="bi bi-award-fill fs-6"></i>
                     </div>
-                    <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_mitra }}</h3>
-                    <small class="text-muted" style="font-size: 0.73rem;">Pelayanan &amp; Order</small>
                 </div>
+                <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_katim_pimpinan }}</h3>
+                <small class="text-muted" style="font-size: 0.73rem;">Pengesahan &amp; Evaluasi</small>
             </div>
-    
-            <!-- 2. Tim Keuangan -->
-            <div class="col">
-                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Tim Keuangan</span>
-                        <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #e0f2fe; color: #0369a1;">
-                            <i class="bi bi-cash-stack fs-6"></i>
-                        </div>
+        </div>
+
+        <!-- 3. Tim Kerja dan Pelaksana -->
+        <div class="col">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Tim Kerja dan Pelaksana</span>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #ecfdf5; color: #047857;">
+                        <i class="bi bi-flask-fill fs-6"></i>
                     </div>
-                    <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_keuangan }}</h3>
-                    <small class="text-muted" style="font-size: 0.73rem;">Pembayaran</small>
                 </div>
+                <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_tim_kerja_pelaksana }}</h3>
+                <small class="text-muted" style="font-size: 0.73rem;">Pelaksana Teknis &amp; Analis</small>
             </div>
-    
-            <!-- 3. Ka Tim OPTI -->
-            <div class="col">
-                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Ka Tim OPTI</span>
-                        <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #fce7f3; color: #9d174d;">
-                            <i class="bi bi-star-fill fs-6"></i>
-                        </div>
+        </div>
+
+        <!-- 4. Pelayanan & Keuangan -->
+        <div class="col">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Pelayanan &amp; Keuangan</span>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #fef3c7; color: #b45309;">
+                        <i class="bi bi-briefcase-fill fs-6"></i>
                     </div>
-                    <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_katim }}</h3>
-                    <small class="text-muted" style="font-size: 0.73rem;">Selulosa, Lingkungan &amp; Mitra</small>
                 </div>
+                <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_layanan_keuangan }}</h3>
+                <small class="text-muted" style="font-size: 0.73rem;">Loket Order &amp; Pembayaran</small>
             </div>
-    
-            <!-- 4. PIC Pelaksana -->
-            <div class="col">
-                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">PIC Pelaksana</span>
-                        <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #ecfdf5; color: #047857;">
-                            <i class="bi bi-eyedropper fs-6"></i>
-                        </div>
+        </div>
+
+        <!-- 5. Belum Diberi Role -->
+        <div class="col">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Belum Diberi Role</span>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+                        <i class="bi bi-person-plus-fill fs-6"></i>
                     </div>
-                    <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_pelaksana }}</h3>
-                    <small class="text-muted" style="font-size: 0.73rem;">Peneliti &amp; Analis</small>
                 </div>
+                <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_non_role }}</h3>
+                <small class="text-muted" style="font-size: 0.73rem;">Pegawai Siap Ditugaskan</small>
             </div>
-    
-            <!-- 5. User Non-Role -->
-            <div class="col">
-                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">User Non-Role</span>
-                        <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;">
-                            <i class="bi bi-person-slash fs-6"></i>
-                        </div>
+        </div>
+    </div>
+
+    <!-- TABEL MASTER DATA PENGGUNA DENGAN INTEGRASI TOOLBAR PENCARIAN -->
+    <div class="card border-0 shadow-sm overflow-hidden rounded-3">
+        <div class="card-header bg-white py-3 px-4 border-bottom">
+            <div class="row g-3 align-items-center">
+                <div class="col-12 col-lg-6 d-flex align-items-center gap-2 flex-nowrap">
+                    <h6 class="m-0 fw-bold text-dark font-display text-nowrap">Daftar Pengguna Aktif</h6>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small fw-semibold text-nowrap" id="headerCountBadge">
+                        {{ @count_opti }} Akun
+                    </span>
+                    <div class="d-flex align-items-center gap-2 ms-2" role="group" aria-label="Filter Modul Pengguna">
+                        <button type="button" class="filter-tab-pill d-none btn-tab-modul" data-tab="semua">
+                            <span>Semua</span>
+                            <span class="count-chip">{{ @count_total }}</span>
+                        </button>
+                        <button type="button" class="filter-tab-pill active btn-tab-modul" data-tab="opti">
+                            <span>Pengguna OPTI</span>
+                            <span class="count-chip">{{ @count_opti }}</span>
+                        </button>
+                        <button type="button" class="filter-tab-pill btn-tab-modul" data-tab="po">
+                            <span>Pengguna PO</span>
+                            <span class="count-chip">{{ @count_po }}</span>
+                        </button>
                     </div>
-                    <h3 class="fw-bold text-dark mb-0 font-display">{{ @cnt_non_role }}</h3>
-                    <small class="text-muted" style="font-size: 0.73rem;">Status View-Only</small>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <form method="GET" action="{{ @BASE }}/pengguna" id="formFilterPengguna" class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-md-end gap-2 m-0">
+                        <div class="filter-field-box">
+                            <div class="input-group filter-field-control">
+                                <span class="input-group-text bg-white border-end-0 text-muted ps-3 pe-2">
+                                    <i class="bi bi-search text-secondary" style="font-size: 0.85rem;"></i>
+                                </span>
+                                <input type="text" 
+                                       id="inputSearchPengguna"
+                                       class="form-control border-start-0 ps-1" 
+                                       name="q" 
+                                       placeholder="Cari nama atau ID..." 
+                                       value="{{ @search_q }}"
+                                       autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="filter-field-box">
+                            <select name="role" id="selectFilterRole" class="form-select filter-field-control filter-select-field">
+                                <option value="">Semua Role</option>
+                                <repeat group="{{ @role_options }}" key="{{ @rKey }}" value="{{ @rMeta }}">
+                                    <option value="{{ @rKey }}" {{ @filter_role == @rKey ? 'selected' : '' }}>
+                                        {{ @rMeta.label }}
+                                    </option>
+                                </repeat>
+                            </select>
+                        </div>
+                        <button type="button" 
+                                id="btnResetFilter" 
+                                class="btn btn-outline-secondary filter-reset-btn d-flex align-items-center justify-content-center" 
+                                title="Reset Filter"
+                                style="{{ (empty(@search_q) && empty(@filter_role)) ? 'display: none !important;' : '' }}">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
-    
-        <!-- TABEL MASTER DATA PENGGUNA DENGAN INTEGRASI TOOLBAR PENCARIAN -->
-        <div class="card border-0 shadow-sm overflow-hidden rounded-3">
-            <div class="card-header bg-white py-3 px-4 border-bottom">
-                <div class="row g-3 align-items-center">
-                    <div class="col-12 col-md-5 d-flex align-items-center gap-2">
-                        <h6 class="m-0 fw-bold text-dark font-display">Daftar Pengguna Aktif</h6>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small fw-semibold" id="headerCountBadge">
-                            {{ count(@daftar_pengguna) }} Akun
-                        </span>
-                    </div>
-                    <div class="col-12 col-md-7">
-                        <form method="GET" action="{{ @BASE }}/pengguna" id="formFilterPengguna" class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-md-end gap-2 m-0">
-                            <div class="filter-field-box">
-                                <div class="input-group filter-field-control">
-                                    <span class="input-group-text bg-white border-end-0 text-muted ps-3 pe-2">
-                                        <i class="bi bi-search text-secondary" style="font-size: 0.85rem;"></i>
-                                    </span>
-                                    <input type="text" 
-                                           id="inputSearchPengguna"
-                                           class="form-control border-start-0 ps-1" 
-                                           name="q" 
-                                           placeholder="Cari nama atau ID..." 
-                                           value="{{ @search_q }}"
-                                           autocomplete="off">
-                                </div>
-                            </div>
-                            <div class="filter-field-box">
-                                <select name="role" id="selectFilterRole" class="form-select filter-field-control filter-select-field">
-                                    <option value="">Semua Role</option>
-                                    <repeat group="{{ @role_options }}" key="{{ @rKey }}" value="{{ @rMeta }}">
-                                        <option value="{{ @rKey }}" {{ @filter_role == @rKey ? 'selected' : '' }}>
-                                            {{ @rMeta.label }}
-                                        </option>
-                                    </repeat>
-                                </select>
-                            </div>
-                            <button type="button" 
-                                    id="btnResetFilter" 
-                                    class="btn btn-outline-secondary filter-reset-btn d-flex align-items-center justify-content-center" 
-                                    title="Reset Filter"
-                                    style="{{ (empty(@search_q) && empty(@filter_role)) ? 'display: none !important;' : '' }}">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <check if="{{ count(@daftar_pengguna) > 0 }}">
-                    <true>
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="tabelPengguna" style="font-size: 0.875rem;">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="text-center text-muted fw-bold" style="width: 55px; font-size: 0.72rem; letter-spacing: 0.04em;">NO</th>
-                                        <th class="text-muted fw-bold" style="width: 90px; font-size: 0.72rem; letter-spacing: 0.04em;">ID</th>
-                                        <th class="text-muted fw-bold" style="font-size: 0.72rem; letter-spacing: 0.04em;">NAMA LENGKAP</th>
-                                        <th class="text-muted fw-bold" style="width: 300px; font-size: 0.72rem; letter-spacing: 0.04em;">ROLE DI SISTEM</th>
-                                        <th class="text-end text-muted fw-bold" style="width: 180px; font-size: 0.72rem; letter-spacing: 0.04em;">AKSI</th>
+        <div class="card-body p-0">
+            <check if="{{ count(@daftar_pengguna) > 0 }}">
+                <true>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tabelPengguna" data-no-paginate="true" style="font-size: 0.875rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center text-muted fw-bold" style="width: 55px; font-size: 0.72rem; letter-spacing: 0.04em;">NO</th>
+                                    <th class="text-muted fw-bold" style="font-size: 0.72rem; letter-spacing: 0.04em;">NAMA LENGKAP</th>
+                                    <th class="text-center text-muted fw-bold" style="width: 145px; font-size: 0.72rem; letter-spacing: 0.04em;">SUB TIM</th>
+                                    <th class="text-muted fw-bold" style="width: 220px; font-size: 0.72rem; letter-spacing: 0.04em;">DIVISI LAYANAN</th>
+                                    <th class="text-muted fw-bold" style="width: 320px; font-size: 0.72rem; letter-spacing: 0.04em;">ROLE DI SISTEM</th>
+                                    <th class="text-end text-muted fw-bold" style="width: 190px; font-size: 0.72rem; letter-spacing: 0.04em;">AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyPengguna">
+                                <repeat group="{{ @grouped_divisi }}" value="{{ @grp }}" counter="{{ @gctr }}">
+                                    <!-- BARIS INDUK DIVISI (KETUA TIM / PEJABAT UTAMA) -->
+                                    <tr class="pengguna-row divisi-parent-row {{ @grp.member_count > 0 ? 'has-subtim' : '' }}"
+                                        data-divisi="{{ @grp.divisi_key }}"
+                                        data-has-sub="{{ @grp.member_count > 0 ? '1' : '0' }}"
+                                        data-id="{{ @grp.leader.id }}"
+                                        data-nama="{{ strtolower(@grp.leader.nama_lengkap) }}"
+                                        data-role="{{ @grp.leader.role_sistem }}"
+                                        data-roles="{{ @grp.leader.roles_csv }}"
+                                        data-role-label="{{ strtolower(@grp.leader.role_label) }}"
+                                        data-akses-opti="{{ @grp.leader.akses_opti }}"
+                                        data-akses-po="{{ @grp.leader.akses_po }}"
+                                        data-group-opti="{{ @grp.akses_opti }}"
+                                        data-group-po="{{ @grp.akses_po }}">
+                                        <td class="text-center text-muted small row-number fw-semibold">{{ @gctr }}</td>
+                                        <td>
+                                            <span class="fw-bold text-dark d-block" style="font-size: 0.89rem;">{{ @grp.leader.nama_lengkap }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <check if="{{ @grp.member_count > 0 }}">
+                                                <true>
+                                                    <span class="btn-toggle-subtim" title="Klik untuk melihat/menyembunyikan anggota Sub Tim">
+                                                        <i class="bi bi-people-fill"></i>
+                                                        <span class="subtim-count-label">{{ @grp.member_count }} Sub Tim</span>
+                                                        <i class="bi bi-chevron-down chevron-icon"></i>
+                                                    </span>
+                                                </true>
+                                                <false>
+                                                    <span class="text-muted opacity-25" style="font-size: 0.85rem;">-</span>
+                                                </false>
+                                            </check>
+                                        </td>
+                                        <td>
+                                            <span class="text-secondary fw-medium" style="font-size: 0.84rem;">{{ @grp.divisi_title }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-wrap align-items-center gap-1.5">
+                                                <repeat group="{{ @grp.leader.roles_list }}" value="{{ @rb }}">
+                                                    <span class="role-badge" data-label-default="{{ @rb.label }}" data-label-opti="{{ @rb.label_opti ?: @rb.label }}" data-label-po="{{ @rb.label_po ?: @rb.label }}">{{ @rb.label }}</span>
+                                                </repeat>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-inline-flex align-items-center justify-content-end gap-2">
+                                                <check if="{{ @grp.leader.id == 9006 }}">
+                                                    <true>
+                                                        <span class="badge bg-light text-muted border py-1.5 px-2.5 small d-inline-flex align-items-center gap-1" title="Super Administrator Utama">
+                                                            <i class="bi bi-shield-lock-fill text-secondary"></i> Utama
+                                                        </span>
+                                                    </true>
+                                                    <false>
+                                                        <button type="button" 
+                                                                class="btn btn-outline-secondary btn-sm px-2.5 py-1.5 btn-ubah-role d-inline-flex align-items-center gap-1.5" 
+                                                                title="Ubah Role"
+                                                                onclick="bukaModalUbah(this); event.stopPropagation();"
+                                                                data-id="{{ @grp.leader.id }}"
+                                                                data-nama="{{ @grp.leader.nama_lengkap }}"
+                                                                data-role="{{ @grp.leader.role_sistem }}"
+                                                                data-roles="{{ @grp.leader.roles_csv }}">
+                                                            <i class="bi bi-pencil"></i> Ubah
+                                                        </button>
+                                                        <button type="button" 
+                                                                class="btn btn-outline-danger btn-sm px-2.5 py-1.5 btn-hapus-role d-inline-flex align-items-center gap-1.5" 
+                                                                title="Cabut Hak Akses"
+                                                                onclick="bukaModalHapus(this); event.stopPropagation();"
+                                                                data-id="{{ @grp.leader.id }}"
+                                                                data-nama="{{ @grp.leader.nama_lengkap }}">
+                                                            <i class="bi bi-person-x"></i> Cabut
+                                                        </button>
+                                                    </false>
+                                                </check>
+                                            </div>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody id="tbodyPengguna">
-                                    <repeat group="{{ @daftar_pengguna }}" value="{{ @p }}" counter="{{ @ctr }}">
-                                        <tr class="pengguna-row" 
-                                            data-id="{{ @p.id }}" 
-                                            data-nama="{{ strtolower(@p.nama_lengkap) }}" 
-                                            data-role="{{ @p.role_sistem }}" 
-                                            data-role-label="{{ strtolower(@p.role_label) }}">
-                                            <td class="text-center text-muted small row-number">{{ @ctr }}</td>
-                                            <td>
-                                                <span class="text-secondary font-monospace fw-semibold" style="font-size: 0.85rem;">
-                                                    #{{ @p.id }}
-                                                </span>
+
+                                    <!-- BARIS ANGGOTA SUB TIM (MUNCUL KETIKA BARIS INDUK DI-KLIK) -->
+                                    <repeat group="{{ @grp.members }}" value="{{ @sub }}" counter="{{ @sctr }}">
+                                        <tr class="pengguna-row divisi-sub-row d-none"
+                                            data-parent-divisi="{{ @grp.divisi_key }}"
+                                            data-id="{{ @sub.id }}"
+                                            data-nama="{{ strtolower(@sub.nama_lengkap) }}"
+                                            data-role="{{ @sub.role_sistem }}"
+                                            data-roles="{{ @sub.roles_csv }}"
+                                            data-role-label="{{ strtolower(@sub.role_label) }}"
+                                            data-akses-opti="{{ @sub.akses_opti }}"
+                                            data-akses-po="{{ @sub.akses_po }}">
+                                            <td class="text-center text-muted small">
+                                                <div class="subtim-cell-inner">
+                                                    <span class="subtim-tree-connector"><i class="bi bi-arrow-return-right"></i></span>
+                                                </div>
+                                            </td>
+                                            <td class="ps-3">
+                                                <div class="subtim-cell-inner">
+                                                    <span class="fw-semibold text-dark" style="font-size: 0.86rem;">{{ @sub.nama_lengkap }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="subtim-cell-inner">
+                                                    <span class="badge bg-light text-secondary border" style="font-size: 0.68rem; font-weight: 500;">Sub Tim</span>
+                                                </div>
                                             </td>
                                             <td>
-                                                <span class="fw-bold text-dark d-block" style="font-size: 0.88rem;">{{ @p.nama_lengkap }}</span>
+                                                <div class="subtim-cell-inner">
+                                                    <span class="text-muted" style="font-size: 0.82rem;">{{ @grp.divisi_title }}</span>
+                                                </div>
                                             </td>
                                             <td>
-                                                <span class="{{ @p.role_badge_class }}">
-                                                    {{ @p.role_label }}
-                                                </span>
+                                                <div class="subtim-cell-inner">
+                                                    <div class="d-flex flex-wrap align-items-center gap-1.5">
+                                                        <repeat group="{{ @sub.roles_list }}" value="{{ @rb }}">
+                                                            <span class="role-badge" data-label-default="{{ @rb.label }}" data-label-opti="{{ @rb.label_opti ?: @rb.label }}" data-label-po="{{ @rb.label_po ?: @rb.label }}">{{ @rb.label }}</span>
+                                                        </repeat>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td class="text-end">
-                                                <div class="d-inline-flex align-items-center justify-content-end gap-2">
-                                                    <check if="{{ @p.id == 9006 }}">
-                                                        <true>
-                                                            <span class="badge bg-light text-muted border py-1.5 px-2.5 small d-inline-flex align-items-center gap-1" title="Super Administrator Utama">
-                                                                <i class="bi bi-shield-lock-fill text-secondary"></i> Utama
-                                                            </span>
-                                                        </true>
-                                                        <false>
-                                                            <button type="button" 
-                                                                    class="btn btn-outline-secondary btn-sm px-2.5 py-1.5 btn-ubah-role d-inline-flex align-items-center gap-1.5" 
-                                                                    title="Ubah Role"
-                                                                    data-id="{{ @p.id }}"
-                                                                    data-nama="{{ @p.nama_lengkap }}"
-                                                                    data-role="{{ @p.role_sistem }}">
-                                                                <i class="bi bi-pencil"></i> Ubah
-                                                            </button>
-                                                            <button type="button" 
-                                                                    class="btn btn-outline-danger btn-sm px-2.5 py-1.5 btn-hapus-role d-inline-flex align-items-center gap-1.5" 
-                                                                    title="Cabut Hak Akses"
-                                                                    data-id="{{ @p.id }}"
-                                                                    data-nama="{{ @p.nama_lengkap }}">
-                                                                <i class="bi bi-person-x"></i> Cabut
-                                                            </button>
-                                                        </false>
-                                                    </check>
+                                                <div class="subtim-cell-inner">
+                                                    <div class="d-inline-flex align-items-center justify-content-end gap-2">
+                                                        <button type="button" 
+                                                                class="btn btn-outline-secondary btn-sm px-2.5 py-1.5 btn-ubah-role d-inline-flex align-items-center gap-1.5" 
+                                                                title="Ubah Role"
+                                                                onclick="bukaModalUbah(this); event.stopPropagation();"
+                                                                data-id="{{ @sub.id }}"
+                                                                data-nama="{{ @sub.nama_lengkap }}"
+                                                                data-role="{{ @sub.role_sistem }}"
+                                                                data-roles="{{ @sub.roles_csv }}">
+                                                            <i class="bi bi-pencil"></i> Ubah
+                                                        </button>
+                                                        <button type="button" 
+                                                                class="btn btn-outline-danger btn-sm px-2.5 py-1.5 btn-hapus-role d-inline-flex align-items-center gap-1.5" 
+                                                                title="Cabut Hak Akses"
+                                                                onclick="bukaModalHapus(this); event.stopPropagation();"
+                                                                data-id="{{ @sub.id }}"
+                                                                data-nama="{{ @sub.nama_lengkap }}">
+                                                            <i class="bi bi-person-x"></i> Cabut
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
                                     </repeat>
-                                    <tr id="emptySearchRow" style="display: none;">
-                                        <td colspan="5" class="py-5 text-center text-muted">
-                                            <i class="bi bi-search fs-2 text-secondary opacity-50 d-block mb-2"></i>
-                                            <h6 class="fw-bold text-dark mb-1">Pengguna Tidak Ditemukan</h6>
-                                            <p class="small text-secondary mb-0">Tidak ada pengguna aktif yang cocok dengan kata kunci pencarian Anda.</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </true>
-                    <false>
-                        <div class="p-5 text-center text-muted">
-                            <i class="bi bi-person-x fs-1 text-secondary opacity-50 d-block mb-2"></i>
-                            <h6 class="fw-bold text-dark mb-1">Tidak Ada Data Pengguna</h6>
-                            <p class="small text-secondary mb-3">Tidak ada data pengguna yang sesuai dengan pencarian atau filter.</p>
-                            <a href="{{ @BASE }}/pengguna" class="btn btn-sm btn-outline-primary px-3 fw-semibold">
-                                <i class="bi bi-arrow-clockwise me-1"></i> Reset Pencarian
-                            </a>
-                        </div>
-                    </false>
-                </check>
-            </div>
-            <div class="card-footer bg-white py-2.5 px-4 border-top d-flex justify-content-between align-items-center">
-                <small class="text-muted" style="font-size: 0.78rem;">
-                    Menampilkan <strong><span id="countVisible">{{ count(@daftar_pengguna) }}</span></strong> pengguna aktif dari <strong>{{ @count_db_total }}</strong> akun pegawai
-                </small>
-            </div>
+                                </repeat>
+                                <tr id="emptySearchRow" style="display: none;">
+                                    <td colspan="6" class="py-5 text-center text-muted">
+                                        <i class="bi bi-search fs-2 text-secondary opacity-50 d-block mb-2"></i>
+                                        <h6 class="fw-bold text-dark mb-1">Pengguna Tidak Ditemukan</h6>
+                                        <p class="small text-secondary mb-0">Tidak ada pengguna aktif yang cocok dengan kata kunci pencarian Anda.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </true>
+                <false>
+                    <div class="p-5 text-center text-muted">
+                        <i class="bi bi-person-x fs-1 text-secondary opacity-50 d-block mb-2"></i>
+                        <h6 class="fw-bold text-dark mb-1">Tidak Ada Data Pengguna</h6>
+                        <p class="small text-secondary mb-3">Tidak ada data pengguna yang sesuai dengan pencarian atau filter.</p>
+                        <a href="{{ @BASE }}/pengguna" class="btn btn-sm btn-outline-primary px-3 fw-semibold">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Reset Pencarian
+                        </a>
+                    </div>
+                </false>
+            </check>
+        </div>
+        <div class="card-footer bg-white py-2.5 px-4 border-top d-flex justify-content-between align-items-center">
+            <small class="text-muted" style="font-size: 0.78rem;">
+                Menampilkan <strong><span id="countVisible">{{ @count_opti }}</span></strong> pengguna aktif dari <strong>{{ @count_db_total }}</strong> akun pegawai
+            </small>
         </div>
     </div>
-    
-    <!-- ========================================================================= -->
-    <!-- MODAL 1: TAMBAH PENGGUNA DARI DATABASE KE SILOPTI -->
-    <!-- ========================================================================= -->
-    <div class="modal fade" id="modalTambahPengguna" tabindex="-1" aria-labelledby="modalTambahPenggunaLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-white border-bottom py-3 px-4">
-                    <div class="d-flex align-items-center gap-2.5">
-                        <div class="rounded-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
-                            <i class="bi bi-person-plus-fill fs-5"></i>
-                        </div>
-                        <div>
-                            <h6 class="modal-title fw-bold text-dark font-display mb-0" id="modalTambahPenggunaLabel">Tambah Pengguna SILOPTI</h6>
-                            <small class="text-muted" style="font-size: 0.75rem;">Pilih pegawai dan tentukan peran operasional</small>
-                        </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 1: TAMBAH PENGGUNA DARI DATABASE KE SILOPTI -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalTambahPengguna" tabindex="-1" aria-labelledby="modalTambahPenggunaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-white border-bottom py-3 px-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
+                        <i class="bi bi-person-plus-fill fs-5"></i>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="ps-1">
+                        <h6 class="modal-title fw-bold text-dark font-display mb-1" id="modalTambahPenggunaLabel">Tambah Pengguna SILOPTI</h6>
+                        <small class="text-muted" style="font-size: 0.78rem;">Pilih pegawai dan tentukan peran operasional</small>
+                    </div>
                 </div>
-                <form method="POST" action="{{ @BASE }}/pengguna/simpan" id="formTambahPengguna">
-                    <div class="modal-body p-4">
-                        <!-- Field 1: Pilih Pegawai (Searchable Card Picker) -->
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-1.5">
-                                <label class="form-label small fw-bold text-dark mb-0">
-                                    Pilih Pegawai <span class="text-danger">*</span>
-                                </label>
-                                <span class="text-muted" style="font-size: 0.72rem;" id="pegawaiCounterBadge">
-                                    {{ count(@unassigned_users) }} pegawai tersedia
-                                </span>
-                            </div>
-    
-                            <check if="{{ count(@unassigned_users) > 0 }}">
-                                <true>
-                                    <input type="hidden" name="id_user" id="selected_id_user" required>
-    
-                                    <!-- Panel Pencarian & Daftar Pegawai -->
-                                    <div class="card border rounded-3 overflow-hidden shadow-none bg-white">
-                                        <!-- Search Input Bar -->
-                                        <div class="p-2 border-bottom bg-light bg-opacity-50">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text bg-white border-end-0 text-muted ps-2.5">
-                                                    <i class="bi bi-search" style="font-size: 0.8rem;"></i>
-                                                </span>
-                                                <input type="text" 
-                                                       id="searchPegawaiFilter" 
-                                                       class="form-control border-start-0 ps-1 py-1.5 bg-white" 
-                                                       placeholder="Cari nama pegawai atau ID..." 
-                                                       autocomplete="off">
-                                                <button type="button" 
-                                                        class="btn btn-white bg-white border border-start-0 text-muted py-0 px-2" 
-                                                        id="btnClearSearchPegawai" 
-                                                        title="Hapus pencarian" 
-                                                        style="display: none;">
-                                                    <i class="bi bi-x-circle-fill" style="font-size: 0.8rem;"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-    
-                                        <!-- Selected Pegawai Preview Bar (muncul saat sudah dipilih) -->
-                                        <div id="selectedPegawaiBanner" class="p-2.5 bg-primary bg-opacity-10 border-bottom d-none">
-                                            <div class="d-flex align-items-center justify-content-between">
-                                                <div class="d-flex align-items-center gap-2 overflow-hidden">
-                                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 fw-bold" style="width: 28px; height: 28px; font-size: 0.75rem;">
-                                                        <i class="bi bi-check-lg"></i>
-                                                    </div>
-                                                    <div class="text-truncate">
-                                                        <div class="small fw-bold text-primary text-truncate" id="selectedBannerNama">-</div>
-                                                        <div class="text-muted" style="font-size: 0.7rem;" id="selectedBannerSub">-</div>
-                                                    </div>
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none p-0 flex-shrink-0 ms-2" id="btnCancelSelectedPegawai" title="Ganti pilihan">
-                                                    <i class="bi bi-x-lg" style="font-size: 0.8rem;"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-    
-                                        <!-- Scrollable Pegawai List -->
-                                        <div id="listPegawaiContainer" class="p-1.5" style="max-height: 200px; overflow-y: auto;">
-                                            <repeat group="{{ @unassigned_users }}" value="{{ @u }}">
-                                                <div class="item-pegawai-card d-flex align-items-center justify-content-between p-2 rounded-2 mb-1" 
-                                                     role="button"
-                                                     tabindex="0"
-                                                     data-id="{{ @u.id_user }}" 
-                                                     data-nama="{{ @u.nama_user }}"
-                                                     >
-                                                    <div class="d-flex align-items-center gap-3 overflow-hidden">
-                                                        <div class="item-pegawai-avatar rounded-circle">
-                                                            {{ strtoupper(substr(@u.nama_user, 0, 1)) }}
-                                                        </div>
-                                                        <div class="text-truncate d-flex flex-column justify-content-center">
-                                                            <div class="item-pegawai-nama text-truncate">{{ @u.nama_user }}</div>
-                                                            <div class="item-pegawai-sub text-truncate"><span class="text-secondary opacity-75">ID:</span> #{{ @u.id_user }}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="d-flex align-items-center flex-shrink-0 ms-2">
-                                                        <i class="bi bi-check2-circle text-primary fs-5 opacity-0 item-check-icon"></i>
-                                                    </div>
-                                                </div>
-                                            </repeat>
-                                            <div id="emptyPegawaiMsg" class="py-4 text-center text-muted small d-none">
-                                                <i class="bi bi-search fs-3 text-muted opacity-50 d-block mb-1"></i>
-                                                Tidak ditemukan pegawai yang cocok
-                                            </div>
-                                        </div>
-                                    </div>
-                                </true>
-                                <false>
-                                    <div class="alert alert-warning small mb-0 py-2">
-                                        <i class="bi bi-info-circle me-1"></i> Seluruh pegawai telah memiliki role operasional.
-                                    </div>
-                                </false>
-                            </check>
-                        </div>
-    
-                        <!-- Field 2: Role Sistem -->
-                        <div class="mb-2">
-                            <label class="form-label small fw-bold text-dark mb-1">
-                                Role Sistem <span class="text-danger">*</span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ @BASE }}/pengguna/simpan" id="formTambahPengguna">
+                <div class="modal-body p-4">
+                    <!-- Field 1: Pilih Pegawai (Searchable Card Picker) -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1.5">
+                            <label class="form-label small fw-bold text-dark mb-0">
+                                Pilih Pegawai <span class="text-danger">*</span>
                             </label>
-                            <select name="role_sistem" id="tambah_role_sistem" class="form-select py-2 px-3 bg-white" style="font-size: 0.875rem;" required>
-                                <option value="" disabled selected>Pilih peran / role untuk pegawai</option>
-                                <repeat group="{{ @role_options }}" key="{{ @rKey }}" value="{{ @rMeta }}">
-                                    <option value="{{ @rKey }}">
-                                        {{ @rMeta.label }}
-                                    </option>
-                                </repeat>
-                            </select>
-                            <div id="tambah_ketua_warning" class="alert alert-warning py-2 px-3 small mt-2 mb-0 d-none">
-                                <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="tambah_ketua_warning_text"></span>
-                            </div>
+                            <span class="text-muted" style="font-size: 0.72rem;" id="pegawaiCounterBadge">
+                                {{ count(@unassigned_users) }} pegawai tersedia
+                            </span>
                         </div>
-                    </div>
-                    <div class="modal-footer bg-light py-2.5 px-4 border-top">
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+
                         <check if="{{ count(@unassigned_users) > 0 }}">
-                            <button type="submit" id="btnSubmitTambah" class="btn btn-primary btn-sm fw-semibold px-3" disabled>
-                                <i class="bi bi-check-circle me-1"></i> Simpan Pengguna
-                            </button>
+                            <true>
+                                <input type="hidden" name="id_user" id="selected_id_user" required>
+
+                                <!-- Panel Pencarian & Daftar Pegawai -->
+                                <div class="card border rounded-3 overflow-hidden shadow-none bg-white">
+                                    <!-- Search Input Bar -->
+                                    <div class="p-2 border-bottom bg-light bg-opacity-50">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-white border-end-0 text-muted ps-2.5">
+                                                <i class="bi bi-search" style="font-size: 0.8rem;"></i>
+                                            </span>
+                                            <input type="text" 
+                                                   id="searchPegawaiFilter" 
+                                                   class="form-control border-start-0 ps-1 py-1.5 bg-white" 
+                                                   placeholder="Cari nama pegawai atau ID..." 
+                                                   autocomplete="off">
+                                            <button type="button" 
+                                                    class="btn btn-white bg-white border border-start-0 text-muted py-0 px-2" 
+                                                    id="btnClearSearchPegawai" 
+                                                    title="Hapus pencarian" 
+                                                    style="display: none;">
+                                                <i class="bi bi-x-circle-fill" style="font-size: 0.8rem;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Selected Pegawai Preview Bar (muncul saat sudah dipilih) -->
+                                    <div id="selectedPegawaiBanner" class="px-3 border-bottom d-none" style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0 !important; padding-top: 13px; padding-bottom: 13px;">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center overflow-hidden">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3" style="width: 30px; height: 30px; background-color: #ffffff; border: 1.5px solid #0f172a; color: #0f172a; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);">
+                                                    <i class="bi bi-check2" style="font-size: 0.95rem; font-weight: bold;"></i>
+                                                </div>
+                                                <div class="text-truncate">
+                                                    <div class="fw-semibold text-dark text-truncate" id="selectedBannerNama" style="font-size: 0.85rem; line-height: 1.25; margin-bottom: 3px;">-</div>
+                                                    <div class="text-muted font-monospace" style="font-size: 0.73rem; line-height: 1.2;" id="selectedBannerSub">-</div>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-link text-secondary text-decoration-none p-0 flex-shrink-0 ms-3 lh-1 rounded-circle" id="btnCancelSelectedPegawai" title="Batal pilih pegawai" style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; background-color: #ffffff; border: 1px solid #e2e8f0;">
+                                                <i class="bi bi-x-lg" style="font-size: 0.75rem;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Scrollable Pegawai List -->
+                                    <div id="listPegawaiContainer" class="p-1.5" style="max-height: 200px; overflow-y: auto;">
+                                        <repeat group="{{ @unassigned_users }}" value="{{ @u }}">
+                                            <div class="item-pegawai-card d-flex align-items-center justify-content-between p-2 rounded-2 mb-1" 
+                                                 role="button"
+                                                 tabindex="0"
+                                                 data-id="{{ @u.id_user }}" 
+                                                 data-nama="{{ @u.nama_user }}"
+                                                 >
+                                                <div class="d-flex align-items-center gap-3 overflow-hidden">
+                                                    <div class="item-pegawai-avatar rounded-circle">
+                                                        {{ strtoupper(substr(@u.nama_user, 0, 1)) }}
+                                                    </div>
+                                                    <div class="text-truncate d-flex flex-column justify-content-center">
+                                                        <div class="item-pegawai-nama text-truncate">{{ @u.nama_user }}</div>
+                                                        <div class="item-pegawai-sub text-truncate"><span class="text-secondary opacity-75">ID:</span> #{{ @u.id_user }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center flex-shrink-0 ms-2">
+                                                    <i class="bi bi-check2-circle text-primary fs-5 opacity-0 item-check-icon"></i>
+                                                </div>
+                                            </div>
+                                        </repeat>
+                                        <div id="emptyPegawaiMsg" class="py-4 text-center text-muted small d-none">
+                                            <i class="bi bi-search fs-3 text-muted opacity-50 d-block mb-1"></i>
+                                            Tidak ditemukan pegawai yang cocok
+                                        </div>
+                                    </div>
+                                </div>
+                            </true>
+                            <false>
+                                <div class="alert alert-warning small mb-0 py-2">
+                                    <i class="bi bi-info-circle me-1"></i> Seluruh pegawai telah memiliki role operasional.
+                                </div>
+                            </false>
                         </check>
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- ========================================================================= -->
-    <!-- MODAL 2: UBAH ROLE PENGGUNA -->
-    <!-- ========================================================================= -->
-    <div class="modal fade" id="modalUbahRole" tabindex="-1" aria-labelledby="modalUbahRoleLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-bottom py-3 px-4 bg-light">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-pencil-square text-primary fs-5"></i>
-                        <h6 class="modal-title fw-bold font-display text-dark mb-0" id="modalUbahRoleLabel">Ubah Role Pengguna</h6>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form method="POST" action="{{ @BASE }}/pengguna/ubah">
-                    <input type="hidden" name="id_user" id="edit_id_user" value="">
-                    <div class="modal-body p-4">
-                        <div class="mb-3 p-3 bg-light rounded-3 border">
-                            <span class="text-muted small d-block" style="font-size: 0.75rem;">Nama Pengguna:</span>
-                            <strong class="text-dark fs-6 font-display d-block" id="edit_nama_user">-</strong>
-                            <span class="text-muted font-monospace small">User ID: #<span id="edit_id_display">-</span></span>
-                        </div>
-    
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-dark">
-                                Pilih Role Baru <span class="text-danger">*</span>
+
+                    <!-- Field 2: Role Sistem (Satu Kotak Layout Terintegrasi) -->
+                    <div class="mb-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1.5">
+                            <label class="form-label small fw-bold text-dark mb-0">
+                                Role Sistem <span class="text-danger">*</span>
                             </label>
-                            <select name="role_sistem" id="edit_role_sistem" class="form-select" required>
-                                <repeat group="{{ @role_options }}" key="{{ @rKey }}" value="{{ @rMeta }}">
-                                    <option value="{{ @rKey }}">
-                                        {{ @rMeta.label }}
-                                    </option>
-                                </repeat>
-                            </select>
-                            <div id="edit_ketua_warning" class="alert alert-warning py-2 px-3 small mt-2 mb-0 d-none">
-                                <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="edit_ketua_warning_text"></span>
+                            <span class="text-muted" id="tambahRoleSelectedText" style="font-size: 0.75rem;">Belum ada role dipilih</span>
+                        </div>
+                        <input type="hidden" name="role_sistem" id="tambah_role_sistem" value="" required>
+                        <div class="role-picker-box" id="tambahRolePickerBox">
+                            <!-- Grup 1: Manajemen & Pimpinan -->
+                            <div class="role-group-section">
+                                <span class="role-group-title">Pejabat &amp; Manajemen</span>
+                                <div class="role-chips-grid">
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ppk" data-label="PPK"><span>PPK</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ketua_tim_keuangan" data-label="Ketua Tim Keuangan"><span>Ketua Tim Keuangan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="keuangan" data-label="Tim Keuangan"><span>Tim Keuangan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ketua_tim_mitra" data-label="Ketua Tim Mitra"><span>Ketua Tim Mitra</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="tim_mitra_industri" data-label="Tim Mitra Industri"><span>Tim Mitra Industri</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="humas" data-label="Sub Tim Humas"><span>Sub Tim Humas</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                </div>
+                            </div>
+                            <!-- Grup 2: Ketua Tim Layanan -->
+                            <div class="role-group-section">
+                                <span class="role-group-title">Ketua Tim Layanan</span>
+                                <div class="role-chips-grid">
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ketua_tim_selulosa" data-label="Ketua Tim Selulosa"><span>Ketua Tim Selulosa</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ketua_tim_lingkungan" data-label="Ketua Tim Lingkungan"><span>Ketua Tim Lingkungan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ketua_tim_pengujian" data-label="Ketua Tim Pengujian"><span>Ketua Tim Pengujian</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ketua_tim_kalibrasi" data-label="Ketua Tim Kalibrasi"><span>Ketua Tim Kalibrasi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ketua_tim_sertifikasi" data-label="Ketua Tim Sertifikasi"><span>Ketua Tim Sertifikasi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ketua_tim_pendampingan" data-label="Ketua Tim Pendampingan Teknis"><span>Ketua Tim Pendampingan Teknis</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ketua_tim_inspeksi" data-label="Ketua Tim Inspeksi"><span>Ketua Tim Inspeksi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="ketua_tim_profisiensi" data-label="Ketua Tim Uji Profisiensi"><span>Ketua Tim Uji Profisiensi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                </div>
+                            </div>
+                            <!-- Grup 3: Tim Kerja OPTI -->
+                            <div class="role-group-section">
+                                <span class="role-group-title">Tim Kerja OPTI</span>
+                                <div class="role-chips-grid">
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="tim_kerja_selulosa" data-label="Tim Kerja Selulosa"><span>Tim Kerja Selulosa</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="tim_kerja_lingkungan" data-label="Tim Kerja Lingkungan"><span>Tim Kerja Lingkungan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                </div>
+                            </div>
+                            <!-- Grup 4: Penyusun PO Layanan -->
+                            <div class="role-group-section">
+                                <span class="role-group-title">Petunjuk Operasional (PO) Layanan</span>
+                                <div class="role-chips-grid">
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="pic_po_selulosa" data-label="PO Selulosa"><span>PO Selulosa</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="pic_po_lingkungan" data-label="PO Lingkungan"><span>PO Lingkungan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="pic_po_pengujian" data-label="PO Pengujian"><span>PO Pengujian</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="pic_po_kalibrasi" data-label="PO Kalibrasi"><span>PO Kalibrasi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="pic_po_sertifikasi" data-label="PO Sertifikasi"><span>PO Sertifikasi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="pic_po_pendampingan" data-label="PO Pendampingan Teknis"><span>PO Pendampingan Teknis</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="pic_po_inspeksi" data-label="PO Inspeksi"><span>PO Inspeksi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="pic_po_profisiensi" data-label="PO Uji Profisiensi"><span>PO Uji Profisiensi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="modal-footer bg-light py-2 px-4 border-top">
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" id="btnSubmitUbah" class="btn btn-primary btn-sm fw-semibold px-3">
-                            <i class="bi bi-check-circle me-1"></i> Perbarui Role
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- ========================================================================= -->
-    <!-- MODAL 3: CABUT HAK AKSES ROLE (VIEW ONLY) -->
-    <!-- ========================================================================= -->
-    <div class="modal fade" id="modalHapusRole" tabindex="-1" aria-labelledby="modalHapusRoleLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-bottom py-3 px-4 bg-danger bg-opacity-10 text-danger">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                        <h6 class="modal-title fw-bold font-display mb-0" id="modalHapusRoleLabel">Cabut Hak Akses</h6>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form method="POST" action="{{ @BASE }}/pengguna/hapus">
-                    <input type="hidden" name="id_user" id="hapus_id_user" value="">
-                    <div class="modal-body p-4">
-                        <p class="mb-2 text-dark">
-                            Apakah Anda yakin ingin mencabut hak akses role untuk pengguna berikut?
-                        </p>
-                        <div class="p-3 bg-light rounded-3 border mb-3">
-                            <strong class="text-dark fs-6 d-block font-display" id="hapus_nama_user">-</strong>
-                            <span class="text-muted font-monospace small">User ID: #<span id="hapus_id_display">-</span></span>
+                        <div id="tambah_ketua_warning" class="alert alert-warning py-2 px-3 small mt-2 mb-0 d-none">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="tambah_ketua_warning_text"></span>
                         </div>
-                        <small class="text-muted d-block">
-                            Akun ini akan dikembalikan statusnya menjadi pengguna biasa (view only).
-                        </small>
                     </div>
-                    <div class="modal-footer bg-light py-2 px-4 border-top">
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-danger btn-sm fw-semibold px-3">
-                            <i class="bi bi-person-x me-1"></i> Cabut Hak Akses
+                </div>
+                <div class="modal-footer bg-light py-2.5 px-4 border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <check if="{{ count(@unassigned_users) > 0 }}">
+                        <button type="submit" id="btnSubmitTambah" class="btn btn-primary btn-sm fw-semibold px-3" disabled>
+                            <i class="bi bi-check-circle me-1"></i> Simpan Pengguna
                         </button>
-                    </div>
-                </form>
-            </div>
+                    </check>
+                </div>
+            </form>
         </div>
     </div>
-    
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let occupiedKetua = {};
-        try {
-            occupiedKetua = {{ @occupied_ketua_json ?: '{}' | raw }};
-        } catch (err) {
-            occupiedKetua = {};
-        }
-    
-        function checkKetuaOccupied(role, currentUserId, warningEl, warningTextEl, submitBtn) {
-            if (!role || !occupiedKetua[role]) {
-                if (warningEl) warningEl.classList.add('d-none');
-                if (submitBtn) {
-                    submitBtn.removeAttribute('data-role-blocked');
-                    if (submitBtn.id === 'btnSubmitUbah') submitBtn.disabled = false;
-                }
-                if (typeof checkFormReady === 'function') checkFormReady();
-                return;
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 2: UBAH ROLE PENGGUNA -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalUbahRole" tabindex="-1" aria-labelledby="modalUbahRoleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3 px-4 bg-light">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pencil-square text-primary fs-5"></i>
+                    <h6 class="modal-title fw-bold font-display text-dark mb-0" id="modalUbahRoleLabel">Ubah Role Pengguna</h6>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ @BASE }}/pengguna/ubah">
+                <input type="hidden" name="id_user" id="edit_id_user" value="">
+                <div class="modal-body p-4">
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <span class="text-muted small d-block" style="font-size: 0.75rem;">Nama Pengguna:</span>
+                        <strong class="text-dark fs-6 font-display d-block" id="edit_nama_user">-</strong>
+                        <span class="text-muted font-monospace small">User ID: #<span id="edit_id_display">-</span></span>
+                    </div>
+
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1.5">
+                            <label class="form-label small fw-bold text-dark mb-0">
+                                Pilih Role Baru <span class="text-danger">*</span>
+                            </label>
+                            <span class="text-muted" id="editRoleSelectedText" style="font-size: 0.75rem;">-</span>
+                        </div>
+                        <input type="hidden" name="role_sistem" id="edit_role_sistem" value="" required>
+                        <div class="role-picker-box" id="editRolePickerBox">
+                            <!-- Grup 1: Manajemen & Pimpinan -->
+                            <div class="role-group-section">
+                                <span class="role-group-title">Pejabat &amp; Manajemen</span>
+                                <div class="role-chips-grid">
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ppk" data-label="PPK"><span>PPK</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ketua_tim_keuangan" data-label="Ketua Tim Keuangan"><span>Ketua Tim Keuangan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="keuangan" data-label="Tim Keuangan"><span>Tim Keuangan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ketua_tim_mitra" data-label="Ketua Tim Mitra"><span>Ketua Tim Mitra</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="tim_mitra_industri" data-label="Tim Mitra Industri"><span>Tim Mitra Industri</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="humas" data-label="Sub Tim Humas"><span>Sub Tim Humas</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                </div>
+                            </div>
+                            <!-- Grup 2: Ketua Tim Layanan -->
+                            <div class="role-group-section">
+                                <span class="role-group-title">Ketua Tim Layanan</span>
+                                <div class="role-chips-grid">
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ketua_tim_selulosa" data-label="Ketua Tim Selulosa"><span>Ketua Tim Selulosa</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ketua_tim_lingkungan" data-label="Ketua Tim Lingkungan"><span>Ketua Tim Lingkungan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ketua_tim_pengujian" data-label="Ketua Tim Pengujian"><span>Ketua Tim Pengujian</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ketua_tim_kalibrasi" data-label="Ketua Tim Kalibrasi"><span>Ketua Tim Kalibrasi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ketua_tim_sertifikasi" data-label="Ketua Tim Sertifikasi"><span>Ketua Tim Sertifikasi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ketua_tim_pendampingan" data-label="Ketua Tim Pendampingan Teknis"><span>Ketua Tim Pendampingan Teknis</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ketua_tim_inspeksi" data-label="Ketua Tim Inspeksi"><span>Ketua Tim Inspeksi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="ketua_tim_profisiensi" data-label="Ketua Tim Uji Profisiensi"><span>Ketua Tim Uji Profisiensi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                </div>
+                            </div>
+                            <!-- Grup 3: Tim Kerja OPTI -->
+                            <div class="role-group-section">
+                                <span class="role-group-title">Tim Kerja OPTI</span>
+                                <div class="role-chips-grid">
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="tim_kerja_selulosa" data-label="Tim Kerja Selulosa"><span>Tim Kerja Selulosa</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="tim_kerja_lingkungan" data-label="Tim Kerja Lingkungan"><span>Tim Kerja Lingkungan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                </div>
+                            </div>
+                            <!-- Grup 4: Penyusun PO Layanan -->
+                            <div class="role-group-section">
+                                <span class="role-group-title">Petunjuk Operasional (PO) Layanan</span>
+                                <div class="role-chips-grid">
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="pic_po_selulosa" data-label="PO Selulosa"><span>PO Selulosa</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="pic_po_lingkungan" data-label="PO Lingkungan"><span>PO Lingkungan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="pic_po_pengujian" data-label="PO Pengujian"><span>PO Pengujian</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="pic_po_kalibrasi" data-label="PO Kalibrasi"><span>PO Kalibrasi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="pic_po_sertifikasi" data-label="PO Sertifikasi"><span>PO Sertifikasi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="pic_po_pendampingan" data-label="PO Pendampingan Teknis"><span>PO Pendampingan Teknis</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="pic_po_inspeksi" data-label="PO Inspeksi"><span>PO Inspeksi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="pic_po_profisiensi" data-label="PO Uji Profisiensi"><span>PO Uji Profisiensi</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="edit_ketua_warning" class="alert alert-warning py-2 px-3 small mt-2 mb-0 d-none">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="edit_ketua_warning_text"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4 border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" id="btnSubmitUbah" class="btn btn-primary btn-sm fw-semibold px-3">
+                        <i class="bi bi-check-circle me-1"></i> Perbarui Role
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 3: CABUT HAK AKSES ROLE (VIEW ONLY) -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalHapusRole" tabindex="-1" aria-labelledby="modalHapusRoleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3 px-4 bg-danger bg-opacity-10 text-danger">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                    <h6 class="modal-title fw-bold font-display mb-0" id="modalHapusRoleLabel">Cabut Hak Akses</h6>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ @BASE }}/pengguna/hapus">
+                <input type="hidden" name="id_user" id="hapus_id_user" value="">
+                <div class="modal-body p-4">
+                    <p class="mb-2 text-dark">
+                        Apakah Anda yakin ingin mencabut hak akses role untuk pengguna berikut?
+                    </p>
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <strong class="text-dark fs-6 d-block font-display" id="hapus_nama_user">-</strong>
+                        <span class="text-muted font-monospace small">User ID: #<span id="hapus_id_display">-</span></span>
+                    </div>
+                    <small class="text-muted d-block">
+                        Akun ini akan dikembalikan statusnya menjadi pengguna biasa (view only).
+                    </small>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4 border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger btn-sm fw-semibold px-3">
+                        <i class="bi bi-person-x me-1"></i> Cabut Hak Akses
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let occupiedKetua = {};
+    try {
+        occupiedKetua = {{ @occupied_ketua_json ?: '{}' | raw }};
+    } catch (err) {
+        occupiedKetua = {};
+    }
+
+    function checkKetuaOccupied(role, currentUserId, warningEl, warningTextEl, submitBtn) {
+        if (!role || !occupiedKetua[role]) {
+            if (warningEl) warningEl.classList.add('d-none');
+            if (submitBtn) {
+                submitBtn.removeAttribute('data-role-blocked');
+                if (submitBtn.id === 'btnSubmitUbah') submitBtn.disabled = false;
             }
-            const curr = occupiedKetua[role];
-            if (curr.id_user && parseInt(curr.id_user) !== parseInt(currentUserId)) {
-                const roleLabels = {
-                    'superadmin': 'Super Administrator',
-                    'ketua_tim_selulosa': 'Ketua Tim Selulosa',
-                    'ketua_tim_lingkungan': 'Ketua Tim Lingkungan',
-                    'ketua_tim_mitra': 'Ketua Tim Mitra',
-                    'ketua_tim_keuangan': 'Ketua Tim Keuangan'
-                };
-                const label = roleLabels[role] || 'posisi ini';
-                if (warningTextEl) {
-                    warningTextEl.innerHTML = 'Peran <strong>' + label + '</strong> saat ini sudah dijabat oleh <strong>' + curr.nama_user + '</strong> (#' + curr.id_user + '). Sesuai aturan sistem, posisi ' + label + ' hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>' + curr.nama_user + '</strong> terlebih dahulu.';
+            if (typeof checkFormReady === 'function') checkFormReady();
+            return;
+        }
+        const curr = occupiedKetua[role];
+        if (curr.id_user && parseInt(curr.id_user) !== parseInt(currentUserId)) {
+            const roleLabels = {
+                'superadmin': 'Super Administrator',
+                'ketua_tim_selulosa': 'Ketua Tim Selulosa',
+                'ketua_tim_lingkungan': 'Ketua Tim Lingkungan',
+                'ketua_tim_pengujian': 'Ketua Tim Pengujian',
+                'ketua_tim_kalibrasi': 'Ketua Tim Kalibrasi',
+                'ketua_tim_sertifikasi': 'Ketua Tim Sertifikasi',
+                'ketua_tim_pendampingan': 'Ketua Tim Pendampingan Teknis',
+                'ketua_tim_inspeksi': 'Ketua Tim Inspeksi',
+                'ketua_tim_profisiensi': 'Ketua Tim Uji Profisiensi',
+                'ketua_tim_mitra': 'Ketua Tim Mitra',
+                'ketua_tim_keuangan': 'Ketua Tim Keuangan'
+            };
+            const label = roleLabels[role] || 'posisi ini';
+            if (warningTextEl) {
+                warningTextEl.innerHTML = 'Peran <strong>' + label + '</strong> saat ini sudah dijabat oleh <strong>' + curr.nama_user + '</strong> (#' + curr.id_user + '). Posisi ' + label + ' hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>' + curr.nama_user + '</strong> terlebih dahulu.';
+            }
+            if (warningEl) warningEl.classList.remove('d-none');
+            if (submitBtn) {
+                submitBtn.setAttribute('data-role-blocked', '1');
+                submitBtn.disabled = true;
+            }
+        } else {
+            if (warningEl) warningEl.classList.add('d-none');
+            if (submitBtn) {
+                submitBtn.removeAttribute('data-role-blocked');
+                if (submitBtn.id === 'btnSubmitUbah') submitBtn.disabled = false;
+            }
+            if (typeof checkFormReady === 'function') checkFormReady();
+        }
+    }
+
+    // =========================================================================
+    // Clean & Modern Integrated Pegawai Picker di Modal Tambah Pengguna
+    const inputHiddenUser = document.getElementById('selected_id_user');
+    const inputFilter = document.getElementById('searchPegawaiFilter');
+    const btnClearFilter = document.getElementById('btnClearSearchPegawai');
+    const counterBadge = document.getElementById('pegawaiCounterBadge');
+    const emptyMsg = document.getElementById('emptyPegawaiMsg');
+    const listCards = document.querySelectorAll('.item-pegawai-card');
+    const bannerSelected = document.getElementById('selectedPegawaiBanner');
+    const bannerNama = document.getElementById('selectedBannerNama');
+    const bannerSub = document.getElementById('selectedBannerSub');
+    const btnCancelSelected = document.getElementById('btnCancelSelectedPegawai');
+    const btnSubmitTambah = document.getElementById('btnSubmitTambah');
+    const selectTambahRole = document.getElementById('tambah_role_sistem');
+    const totalPegawaiCount = listCards.length;
+
+    function checkFormReady() {
+        const hasPegawai = inputHiddenUser && inputHiddenUser.value.trim() !== '';
+        const hasRole = selectTambahRole && selectTambahRole.value.trim() !== '';
+        const isRoleBlocked = btnSubmitTambah && btnSubmitTambah.getAttribute('data-role-blocked') === '1';
+
+        if (btnSubmitTambah) {
+            btnSubmitTambah.disabled = !(hasPegawai && hasRole && !isRoleBlocked);
+        }
+    }
+
+    // Handle klik pada kartu pegawai
+    listCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const nama = this.getAttribute('data-nama');
+            const bidang = this.getAttribute('data-bidang');
+
+            // Set hidden value
+            if (inputHiddenUser) inputHiddenUser.value = id;
+
+            // Highlight selected card
+            listCards.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+
+            // Tampilkan banner terpilih di atas
+            if (bannerSelected && bannerNama && bannerSub) {
+                bannerNama.textContent = nama;
+                bannerSub.textContent = 'User ID: #' + id;
+                bannerSelected.classList.remove('d-none');
+            }
+
+            checkFormReady();
+        });
+    });
+
+    // Batalkan pilihan pegawai
+    if (btnCancelSelected) {
+        btnCancelSelected.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (inputHiddenUser) inputHiddenUser.value = '';
+            listCards.forEach(c => c.classList.remove('selected'));
+            if (bannerSelected) bannerSelected.classList.add('d-none');
+            checkFormReady();
+        });
+    }
+
+    // Live search filter input
+    if (inputFilter) {
+        inputFilter.addEventListener('input', function() {
+            const q = this.value.toLowerCase().trim();
+            let matches = 0;
+
+            if (btnClearFilter) {
+                btnClearFilter.style.display = q.length > 0 ? 'inline-block' : 'none';
+            }
+
+            listCards.forEach(card => {
+                const nama = (card.getAttribute('data-nama') || '').toLowerCase();
+                const id = (card.getAttribute('data-id') || '').toLowerCase();
+                
+
+                if (!q || nama.includes(q) || id.includes(q) || ('#' + id).includes(q)) {
+                    card.classList.remove('d-none');
+                    matches++;
+                } else {
+                    card.classList.add('d-none');
                 }
-                if (warningEl) warningEl.classList.remove('d-none');
-                if (submitBtn) {
-                    submitBtn.setAttribute('data-role-blocked', '1');
-                    submitBtn.disabled = true;
+            });
+
+            if (emptyMsg) {
+                emptyMsg.classList.toggle('d-none', matches > 0);
+            }
+
+            if (counterBadge) {
+                counterBadge.textContent = q.length > 0 
+                    ? matches + ' dari ' + totalPegawaiCount + ' cocok' 
+                    : totalPegawaiCount + ' pegawai tersedia';
+            }
+        });
+
+        if (btnClearFilter) {
+            btnClearFilter.addEventListener('click', function() {
+                inputFilter.value = '';
+                inputFilter.dispatchEvent(new Event('input'));
+                inputFilter.focus();
+            });
+        }
+    }
+
+    const tambahRoleChips = document.querySelectorAll('.tambah-role-chip');
+    const tambahRoleSelectedText = document.getElementById('tambahRoleSelectedText');
+    const editRoleChips = document.querySelectorAll('.edit-role-chip');
+    const editRoleSelectedText = document.getElementById('editRoleSelectedText');
+
+    // Helper visual & status chip untuk jabatan yang sudah terisi
+    function updateChipOccupiedStates(chipsNodeList, currentUserId) {
+        chipsNodeList.forEach(c => {
+            const val = c.getAttribute('data-value') || '';
+            const curr = occupiedKetua[val];
+            const isOccupiedByOther = curr && curr.id_user && parseInt(curr.id_user) !== parseInt(currentUserId);
+
+            let occBadge = c.querySelector('.occupied-indicator');
+            if (isOccupiedByOther) {
+                c.classList.add('role-chip-occupied');
+                c.setAttribute('title', 'Posisi ini sudah dijabat oleh: ' + curr.nama_user + ' (#' + curr.id_user + ')');
+                if (!occBadge) {
+                    occBadge = document.createElement('span');
+                    occBadge.className = 'occupied-indicator text-muted ms-1';
+                    occBadge.style.fontSize = '0.70rem';
+                    occBadge.innerHTML = '<i class="bi bi-lock-fill text-secondary"></i>';
+                    c.appendChild(occBadge);
                 }
             } else {
-                if (warningEl) warningEl.classList.add('d-none');
-                if (submitBtn) {
-                    submitBtn.removeAttribute('data-role-blocked');
-                    if (submitBtn.id === 'btnSubmitUbah') submitBtn.disabled = false;
-                }
-                if (typeof checkFormReady === 'function') checkFormReady();
+                c.classList.remove('role-chip-occupied');
+                c.removeAttribute('title');
+                if (occBadge) occBadge.remove();
             }
-        }
-    
-        // =========================================================================
-        // Clean & Modern Integrated Pegawai Picker di Modal Tambah Pengguna
-        const inputHiddenUser = document.getElementById('selected_id_user');
-        const inputFilter = document.getElementById('searchPegawaiFilter');
-        const btnClearFilter = document.getElementById('btnClearSearchPegawai');
-        const counterBadge = document.getElementById('pegawaiCounterBadge');
-        const emptyMsg = document.getElementById('emptyPegawaiMsg');
-        const listCards = document.querySelectorAll('.item-pegawai-card');
-        const bannerSelected = document.getElementById('selectedPegawaiBanner');
-        const bannerNama = document.getElementById('selectedBannerNama');
-        const bannerSub = document.getElementById('selectedBannerSub');
-        const btnCancelSelected = document.getElementById('btnCancelSelectedPegawai');
-        const btnSubmitTambah = document.getElementById('btnSubmitTambah');
-        const selectTambahRole = document.getElementById('tambah_role_sistem');
-        const totalPegawaiCount = listCards.length;
-    
-        function checkFormReady() {
-            const hasPegawai = inputHiddenUser && inputHiddenUser.value.trim() !== '';
-            const hasRole = selectTambahRole && selectTambahRole.value.trim() !== '';
-            const isRoleBlocked = btnSubmitTambah && btnSubmitTambah.getAttribute('data-role-blocked') === '1';
-    
+        });
+    }
+
+    // Reset saat modal dibuka
+    const modalTambahEl = document.getElementById('modalTambahPengguna');
+    if (modalTambahEl) {
+        modalTambahEl.addEventListener('show.bs.modal', function() {
+            if (inputHiddenUser) inputHiddenUser.value = '';
+            if (selectTambahRole) selectTambahRole.value = '';
+            if (tambahRoleSelectedText) {
+                tambahRoleSelectedText.textContent = 'Belum ada role dipilih';
+                tambahRoleSelectedText.className = 'text-muted';
+            }
+            tambahRoleChips.forEach(c => c.classList.remove('selected'));
+            if (warningTambah) warningTambah.classList.add('d-none');
+            if (bannerSelected) bannerSelected.classList.add('d-none');
+            if (inputFilter) {
+                inputFilter.value = '';
+                inputFilter.dispatchEvent(new Event('input'));
+            }
+            listCards.forEach(c => c.classList.remove('selected'));
             if (btnSubmitTambah) {
-                btnSubmitTambah.disabled = !(hasPegawai && hasRole && !isRoleBlocked);
+                btnSubmitTambah.removeAttribute('data-role-blocked');
+                btnSubmitTambah.disabled = true;
             }
-        }
-    
-        // Handle klik pada kartu pegawai
-        listCards.forEach(card => {
-            card.addEventListener('click', function() {
-                const id = this.getAttribute('data-id');
-                const nama = this.getAttribute('data-nama');
-                const bidang = this.getAttribute('data-bidang');
-    
-                // Set hidden value
-                if (inputHiddenUser) inputHiddenUser.value = id;
-    
-                // Highlight selected card
-                listCards.forEach(c => c.classList.remove('selected'));
-                this.classList.add('selected');
-    
-                // Tampilkan banner terpilih di atas
-                if (bannerSelected && bannerNama && bannerSub) {
-                    bannerNama.textContent = nama;
-                    bannerSub.textContent = 'User ID: #' + id;
-                    bannerSelected.classList.remove('d-none');
-                }
-    
-                checkFormReady();
-            });
+            updateChipOccupiedStates(tambahRoleChips, 0);
         });
-    
-        // Batalkan pilihan pegawai
-        if (btnCancelSelected) {
-            btnCancelSelected.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (inputHiddenUser) inputHiddenUser.value = '';
-                listCards.forEach(c => c.classList.remove('selected'));
-                if (bannerSelected) bannerSelected.classList.add('d-none');
-                checkFormReady();
-            });
-        }
-    
-        // Live search filter input
-        if (inputFilter) {
-            inputFilter.addEventListener('input', function() {
-                const q = this.value.toLowerCase().trim();
-                let matches = 0;
-    
-                if (btnClearFilter) {
-                    btnClearFilter.style.display = q.length > 0 ? 'inline-block' : 'none';
-                }
-    
-                listCards.forEach(card => {
-                    const nama = (card.getAttribute('data-nama') || '').toLowerCase();
-                    const id = (card.getAttribute('data-id') || '').toLowerCase();
-                    
-    
-                    if (!q || nama.includes(q) || id.includes(q) || ('#' + id).includes(q)) {
-                        card.classList.remove('d-none');
-                        matches++;
-                    } else {
-                        card.classList.add('d-none');
-                    }
-                });
-    
-                if (emptyMsg) {
-                    emptyMsg.classList.toggle('d-none', matches > 0);
-                }
-    
-                if (counterBadge) {
-                    counterBadge.textContent = q.length > 0 
-                        ? matches + ' dari ' + totalPegawaiCount + ' cocok' 
-                        : totalPegawaiCount + ' pegawai tersedia';
-                }
-            });
-    
-            if (btnClearFilter) {
-                btnClearFilter.addEventListener('click', function() {
-                    inputFilter.value = '';
-                    inputFilter.dispatchEvent(new Event('input'));
-                    inputFilter.focus();
-                });
-            }
-        }
-    
-        // Reset saat modal dibuka
-        const modalTambahEl = document.getElementById('modalTambahPengguna');
-        if (modalTambahEl) {
-            modalTambahEl.addEventListener('show.bs.modal', function() {
-                if (inputHiddenUser) inputHiddenUser.value = '';
-                if (selectTambahRole) selectTambahRole.value = '';
-                if (bannerSelected) bannerSelected.classList.add('d-none');
-                if (inputFilter) {
-                    inputFilter.value = '';
-                    inputFilter.dispatchEvent(new Event('input'));
-                }
-                listCards.forEach(c => c.classList.remove('selected'));
-                if (btnSubmitTambah) btnSubmitTambah.disabled = true;
-            });
-        }
-    
-        // Listener Modal Tambah Pengguna
-        const warningTambah = document.getElementById('tambah_ketua_warning');
-        const warningTambahText = document.getElementById('tambah_ketua_warning_text');
-    
-        if (selectTambahRole) {
-            selectTambahRole.addEventListener('change', function() {
-                checkKetuaOccupied(this.value, 0, warningTambah, warningTambahText, btnSubmitTambah);
-            });
-        }
-    
-        // Modal Instance & Elements
-        const modalUbahEl = document.getElementById('modalUbahRole');
-        const modalHapusEl = document.getElementById('modalHapusRole');
-    
-        const selectEditRole = document.getElementById('edit_role_sistem');
-        const warningEdit = document.getElementById('edit_ketua_warning');
-        const warningEditText = document.getElementById('edit_ketua_warning_text');
-        const btnSubmitUbah = document.getElementById('btnSubmitUbah');
-    
-        if (selectEditRole) {
-            selectEditRole.addEventListener('change', function() {
-                const currId = parseInt(document.getElementById('edit_id_user').value || 0);
-                checkKetuaOccupied(this.value, currId, warningEdit, warningEditText, btnSubmitUbah);
-            });
-        }
-    
-        // Event Delegation: Handler Klik Tombol Ubah & Cabut Role (Tahan terhadap filter/render ulang)
-        document.addEventListener('click', function(e) {
-            const btnUbah = e.target.closest('.btn-ubah-role');
-            if (btnUbah && modalUbahEl) {
-                e.preventDefault();
-                const id = btnUbah.getAttribute('data-id');
-                const nama = btnUbah.getAttribute('data-nama');
-                const role = btnUbah.getAttribute('data-role');
-    
-                const inputId = document.getElementById('edit_id_user');
-                const displayId = document.getElementById('edit_id_display');
-                const displayNama = document.getElementById('edit_nama_user');
-                const selectRole = document.getElementById('edit_role_sistem');
-    
-                if (inputId) inputId.value = id;
-                if (displayId) displayId.innerText = id;
-                if (displayNama) displayNama.innerText = nama;
-                if (selectRole) selectRole.value = role;
-    
-                checkKetuaOccupied(role, parseInt(id), warningEdit, warningEditText, btnSubmitUbah);
-    
-                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    const bsModal = (typeof bootstrap.Modal.getOrCreateInstance === 'function')
-                        ? bootstrap.Modal.getOrCreateInstance(modalUbahEl)
-                        : (bootstrap.Modal.getInstance(modalUbahEl) || new bootstrap.Modal(modalUbahEl));
-                    bsModal.show();
-                }
-                return;
-            }
-    
-            const btnHapus = e.target.closest('.btn-hapus-role');
-            if (btnHapus && modalHapusEl) {
-                e.preventDefault();
-                const id = btnHapus.getAttribute('data-id');
-                const nama = btnHapus.getAttribute('data-nama');
-    
-                const inputIdHapus = document.getElementById('hapus_id_user');
-                const displayIdHapus = document.getElementById('hapus_id_display');
-                const displayNamaHapus = document.getElementById('hapus_nama_user');
-    
-                if (inputIdHapus) inputIdHapus.value = id;
-                if (displayIdHapus) displayIdHapus.innerText = id;
-                if (displayNamaHapus) displayNamaHapus.innerText = nama;
-    
-                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    const bsModal = (typeof bootstrap.Modal.getOrCreateInstance === 'function')
-                        ? bootstrap.Modal.getOrCreateInstance(modalHapusEl)
-                        : (bootstrap.Modal.getInstance(modalHapusEl) || new bootstrap.Modal(modalHapusEl));
-                    bsModal.show();
-                }
-                return;
+    }
+
+    // Helper sinkronisasi pilihan Multi-Role pada chip
+    const warningTambah = document.getElementById('tambah_ketua_warning');
+    const warningTambahText = document.getElementById('tambah_ketua_warning_text');
+    const modalUbahEl = document.getElementById('modalUbahRole');
+    const modalHapusEl = document.getElementById('modalHapusRole');
+    const selectEditRole = document.getElementById('edit_role_sistem');
+    const warningEdit = document.getElementById('edit_ketua_warning');
+    const warningEditText = document.getElementById('edit_ketua_warning_text');
+    const btnSubmitUbah = document.getElementById('btnSubmitUbah');
+
+    function syncMultiRoleChips(chipsNodeList, hiddenInput, statusSpan, currentUserId, warningEl, warningTextEl, submitBtn) {
+        const selectedVals = [];
+        const selectedLabels = [];
+        chipsNodeList.forEach(c => {
+            if (c.classList.contains('selected')) {
+                selectedVals.push(c.getAttribute('data-value') || '');
+                selectedLabels.push(c.getAttribute('data-label') || '');
             }
         });
-    
-        // =========================================================================
-        // FITUR LIVE INSTANT SEARCH (OTOMATIS CARI KETIKA KETIK HURUF PER HURUF)
-        // =========================================================================
-        const searchInput = document.getElementById('inputSearchPengguna');
-        const roleSelect = document.getElementById('selectFilterRole');
-        const resetBtn = document.getElementById('btnResetFilter');
-        const tbody = document.getElementById('tbodyPengguna');
-        const emptyRow = document.getElementById('emptySearchRow');
-        const headerBadge = document.getElementById('headerCountBadge');
-        const countVisible = document.getElementById('countVisible');
-    
-        function performLiveFilter() {
-            const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
-            const selectedRole = (roleSelect ? roleSelect.value : '').trim();
-            const rows = tbody ? Array.from(tbody.querySelectorAll('tr.pengguna-row')) : [];
-            let visibleCount = 0;
-    
-            rows.forEach(function(row) {
-                const id = (row.getAttribute('data-id') || '').toLowerCase();
-                const nama = (row.getAttribute('data-nama') || '').toLowerCase();
-                const role = row.getAttribute('data-role') || '';
-                const roleLabel = (row.getAttribute('data-role-label') || '').toLowerCase();
-    
-                // Cek kecocokan filter role
-                const matchRole = !selectedRole || role === selectedRole;
-    
-                // Cek kecocokan pencarian nama, ID, atau label role
-                const matchQuery = !query || 
-                                   id.includes(query) || 
-                                   ('#' + id).includes(query) || 
-                                   nama.includes(query) || 
-                                   roleLabel.includes(query);
-    
-                if (matchRole && matchQuery) {
-                    row.style.display = '';
-                    visibleCount++;
-                    const counterEl = row.querySelector('.row-number');
-                    if (counterEl) {
-                        counterEl.textContent = visibleCount;
-                    }
+        if (hiddenInput) {
+            hiddenInput.value = selectedVals.join(',');
+        }
+        if (statusSpan) {
+            if (selectedLabels.length > 0) {
+                statusSpan.innerHTML = 'Terpilih (' + selectedLabels.length + ' role): <strong class="text-dark">' + selectedLabels.join(', ') + '</strong>';
+            } else {
+                statusSpan.textContent = 'Belum ada role dipilih (bisa pilih lebih dari 1)';
+            }
+        }
+        if (submitBtn && submitBtn.id === 'btnSubmitUbah') {
+            submitBtn.disabled = selectedVals.length === 0;
+        }
+        // Cek apakah salah satu dari role yang dipilih adalah Ketua Tim yang sudah terisi
+        let blockedRole = '';
+        for (let i = 0; i < selectedVals.length; i++) {
+            const r = selectedVals[i];
+            if (occupiedKetua[r] && parseInt(occupiedKetua[r].id_user) !== parseInt(currentUserId)) {
+                blockedRole = r;
+                break;
+            }
+        }
+        checkKetuaOccupied(blockedRole, currentUserId, warningEl, warningTextEl, submitBtn);
+    }
+
+    tambahRoleChips.forEach(chip => {
+        chip.addEventListener('click', function(e) {
+            const val = this.getAttribute('data-value') || '';
+            const curr = occupiedKetua[val];
+            if (curr && curr.id_user) {
+                // Posisi ini sudah terisi, tampilkan peringatan dan cegah penambahan
+                checkKetuaOccupied(val, 0, warningTambah, warningTambahText, btnSubmitTambah);
+                return;
+            }
+            this.classList.toggle('selected');
+            syncMultiRoleChips(tambahRoleChips, selectTambahRole, tambahRoleSelectedText, 0, warningTambah, warningTambahText, btnSubmitTambah);
+        });
+    });
+
+    editRoleChips.forEach(chip => {
+        chip.addEventListener('click', function(e) {
+            const val = this.getAttribute('data-value') || '';
+            const currId = parseInt(document.getElementById('edit_id_user').value || 0);
+            const curr = occupiedKetua[val];
+            if (curr && curr.id_user && parseInt(curr.id_user) !== currId) {
+                // Posisi ini sudah dijabat orang lain
+                checkKetuaOccupied(val, currId, warningEdit, warningEditText, btnSubmitUbah);
+                return;
+            }
+            this.classList.toggle('selected');
+            syncMultiRoleChips(editRoleChips, selectEditRole, editRoleSelectedText, currId, warningEdit, warningEditText, btnSubmitUbah);
+        });
+    });
+
+    // Global Helper: Buka Modal Ubah Role
+    function bukaModalUbah(btnUbah) {
+        if (!btnUbah) return;
+        const modalEl = document.getElementById('modalUbahRole');
+        if (!modalEl) return;
+        const id = btnUbah.getAttribute('data-id');
+        const nama = btnUbah.getAttribute('data-nama');
+        const rolesCsv = btnUbah.getAttribute('data-roles') || btnUbah.getAttribute('data-role') || '';
+        const activeRolesArr = rolesCsv.split(',').map(s => s.trim()).filter(Boolean);
+        const inputId = document.getElementById('edit_id_user');
+        const displayId = document.getElementById('edit_id_display');
+        const displayNama = document.getElementById('edit_nama_user');
+        if (inputId) inputId.value = id;
+        if (displayId) displayId.innerText = id;
+        if (displayNama) displayNama.innerText = nama;
+        const editChips = document.querySelectorAll('.edit-role-chip');
+        editChips.forEach(c => {
+            const val = c.getAttribute('data-value') || '';
+            if (activeRolesArr.includes(val)) {
+                c.classList.add('selected');
+            } else {
+                c.classList.remove('selected');
+            }
+        });
+        const numId = parseInt(id) || 0;
+        updateChipOccupiedStates(editChips, numId);
+        syncMultiRoleChips(editChips, selectEditRole, editRoleSelectedText, numId, warningEdit, warningEditText, btnSubmitUbah);
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const bsModal = (typeof bootstrap.Modal.getOrCreateInstance === 'function')
+                ? bootstrap.Modal.getOrCreateInstance(modalEl)
+                : (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl));
+            bsModal.show();
+        }
+    }
+    window.bukaModalUbah = bukaModalUbah;
+
+    // Global Helper: Buka Modal Cabut Hak Akses
+    function bukaModalHapus(btnHapus) {
+        if (!btnHapus) return;
+        const modalEl = document.getElementById('modalHapusRole');
+        if (!modalEl) return;
+        const id = btnHapus.getAttribute('data-id');
+        const nama = btnHapus.getAttribute('data-nama');
+        const inputIdHapus = document.getElementById('hapus_id_user');
+        const displayIdHapus = document.getElementById('hapus_id_display');
+        const displayNamaHapus = document.getElementById('hapus_nama_user');
+        if (inputIdHapus) inputIdHapus.value = id;
+        if (displayIdHapus) displayIdHapus.innerText = id;
+        if (displayNamaHapus) displayNamaHapus.innerText = nama;
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const bsModal = (typeof bootstrap.Modal.getOrCreateInstance === 'function')
+                ? bootstrap.Modal.getOrCreateInstance(modalEl)
+                : (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl));
+            bsModal.show();
+        }
+    }
+    window.bukaModalHapus = bukaModalHapus;
+
+    // Event Delegation: Handler Klik Tombol Ubah & Cabut Role (Mendukung Multi-Role)
+    document.addEventListener('click', function(e) {
+        const btnUbah = e.target.closest('.btn-ubah-role');
+        if (btnUbah && modalUbahEl) {
+            e.preventDefault();
+            const id = btnUbah.getAttribute('data-id');
+            const nama = btnUbah.getAttribute('data-nama');
+            const rolesCsv = btnUbah.getAttribute('data-roles') || btnUbah.getAttribute('data-role') || '';
+            const activeRolesArr = rolesCsv.split(',').map(s => s.trim()).filter(Boolean);
+
+            const inputId = document.getElementById('edit_id_user');
+            const displayId = document.getElementById('edit_id_display');
+            const displayNama = document.getElementById('edit_nama_user');
+
+            if (inputId) inputId.value = id;
+            if (displayId) displayId.innerText = id;
+            if (displayNama) displayNama.innerText = nama;
+
+            editRoleChips.forEach(c => {
+                const val = c.getAttribute('data-value') || '';
+                if (activeRolesArr.includes(val)) {
+                    c.classList.add('selected');
                 } else {
-                    row.style.display = 'none';
+                    c.classList.remove('selected');
                 }
             });
-    
-            // Tampilkan baris kosong jika tidak ada yang cocok
-            if (emptyRow) {
-                emptyRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+
+            updateChipOccupiedStates(editRoleChips, parseInt(id));
+            syncMultiRoleChips(editRoleChips, selectEditRole, editRoleSelectedText, parseInt(id), warningEdit, warningEditText, btnSubmitUbah);
+
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const bsModal = (typeof bootstrap.Modal.getOrCreateInstance === 'function')
+                    ? bootstrap.Modal.getOrCreateInstance(modalUbahEl)
+                    : (bootstrap.Modal.getInstance(modalUbahEl) || new bootstrap.Modal(modalUbahEl));
+                bsModal.show();
             }
-    
-            // Perbarui badge counter di header & footer secara real-time
-            if (headerBadge) {
-                headerBadge.textContent = visibleCount + ' Akun';
-            }
-            if (countVisible) {
-                countVisible.textContent = visibleCount;
-            }
-    
-            // Tampilkan atau sembunyikan tombol reset filter
-            if (resetBtn) {
-                if (query.length > 0 || selectedRole.length > 0) {
-                    resetBtn.style.setProperty('display', 'flex', 'important');
-                } else {
-                    resetBtn.style.setProperty('display', 'none', 'important');
-                }
-            }
-    
-            // Sinkronkan parameter URL secara mulus tanpa reload halaman
-            try {
-                const url = new URL(window.location);
-                if (query) {
-                    url.searchParams.set('q', query);
-                } else {
-                    url.searchParams.delete('q');
-                }
-                if (selectedRole) {
-                    url.searchParams.set('role', selectedRole);
-                } else {
-                    url.searchParams.delete('role');
-                }
-                window.history.replaceState({}, '', url);
-            } catch (e) {}
+            return;
         }
-    
-        if (searchInput) {
-            // Event input terpanggil otomatis di setiap ketikan huruf (tanpa menunggu enter)
-            searchInput.addEventListener('input', performLiveFilter);
-            searchInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault(); // Tidak perlu reload saat ditekan enter
-                }
-            });
-        }
-    
-        if (roleSelect) {
-            roleSelect.addEventListener('change', performLiveFilter);
-        }
-    
-        if (resetBtn) {
-            resetBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (searchInput) searchInput.value = '';
-                if (roleSelect) roleSelect.value = '';
-                performLiveFilter();
-                if (searchInput) searchInput.focus();
-            });
+
+        const btnHapus = e.target.closest('.btn-hapus-role');
+        if (btnHapus && modalHapusEl) {
+            e.preventDefault();
+            const id = btnHapus.getAttribute('data-id');
+            const nama = btnHapus.getAttribute('data-nama');
+
+            const inputIdHapus = document.getElementById('hapus_id_user');
+            const displayIdHapus = document.getElementById('hapus_id_display');
+            const displayNamaHapus = document.getElementById('hapus_nama_user');
+
+            if (inputIdHapus) inputIdHapus.value = id;
+            if (displayIdHapus) displayIdHapus.innerText = id;
+            if (displayNamaHapus) displayNamaHapus.innerText = nama;
+
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const bsModal = (typeof bootstrap.Modal.getOrCreateInstance === 'function')
+                    ? bootstrap.Modal.getOrCreateInstance(modalHapusEl)
+                    : (bootstrap.Modal.getInstance(modalHapusEl) || new bootstrap.Modal(modalHapusEl));
+                bsModal.show();
+            }
+            return;
         }
     });
-    </script>
+
+    // =========================================================================
+    // FITUR ACCORDION SUB TIM PER DIVISI + LIVE INSTANT SEARCH
+    // =========================================================================
+    const searchInput = document.getElementById('inputSearchPengguna');
+    const roleSelect = document.getElementById('selectFilterRole');
+    const resetBtn = document.getElementById('btnResetFilter');
+    const tbody = document.getElementById('tbodyPengguna');
+    const emptyRow = document.getElementById('emptySearchRow');
+    const headerBadge = document.getElementById('headerCountBadge');
+    const countVisible = document.getElementById('countVisible');
+    const tabButtons = document.querySelectorAll('.btn-tab-modul');
+    let activeTabModul = 'opti';
+
+    // Klik baris induk divisi (Ketua Tim) untuk membuka / menutup daftar Sub Tim di bawahnya
+    const parentRows = tbody ? Array.from(tbody.querySelectorAll('tr.divisi-parent-row')) : [];
+    parentRows.forEach(function(pRow) {
+        pRow.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-ubah-role') || e.target.closest('.btn-hapus-role') || e.target.closest('.text-end')) return;
+            if (this.getAttribute('data-has-sub') !== '1') return;
+
+            const divKey = this.getAttribute('data-divisi');
+            const isExpanded = this.classList.toggle('expanded');
+            const subRows = tbody.querySelectorAll('tr.divisi-sub-row[data-parent-divisi="' + divKey + '"]');
+
+            subRows.forEach(function(sRow) {
+                if (isExpanded && sRow.getAttribute('data-filter-match') !== '0') {
+                    sRow.classList.remove('d-none');
+                    sRow.classList.add('sub-row-collapsing');
+                    // Force reflow agar transisi tinggi & opacity terbaca browser
+                    void sRow.offsetHeight;
+                    sRow.classList.remove('sub-row-collapsing');
+                } else if (!isExpanded && !sRow.classList.contains('d-none')) {
+                    sRow.classList.add('sub-row-collapsing');
+                    setTimeout(function() {
+                        if (!pRow.classList.contains('expanded')) {
+                            sRow.classList.add('d-none');
+                            sRow.classList.remove('sub-row-collapsing');
+                        }
+                    }, 370);
+                }
+            });
+        });
+    });
+
+    tabButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            tabButtons.forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            activeTabModul = this.getAttribute('data-tab') || 'semua';
+            performLiveFilter();
+        });
+    });
+
+    function checkRowMatches(row, query, selectedRole) {
+        const id = (row.getAttribute('data-id') || '').toLowerCase();
+        const nama = (row.getAttribute('data-nama') || '').toLowerCase();
+        const role = row.getAttribute('data-role') || '';
+        const rolesCsv = (row.getAttribute('data-roles') || role).split(',');
+        const roleLabel = (row.getAttribute('data-role-label') || '').toLowerCase();
+        const aksesOpti = row.getAttribute('data-akses-opti') === '1';
+        const aksesPo = row.getAttribute('data-akses-po') === '1';
+
+        const matchTab = activeTabModul === 'semua' ||
+                         (activeTabModul === 'opti' && aksesOpti) ||
+                         (activeTabModul === 'po' && aksesPo);
+        const matchRole = !selectedRole || rolesCsv.includes(selectedRole);
+        const matchQuery = !query ||
+                           id.includes(query) ||
+                           ('#' + id).includes(query) ||
+                           nama.includes(query) ||
+                           roleLabel.includes(query);
+
+        return matchTab && matchRole && matchQuery;
+    }
+
+    function performLiveFilter() {
+        const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+        const selectedRole = (roleSelect ? roleSelect.value : '').trim();
+        const isSearchingOrFilteringRole = query.length > 0 || selectedRole.length > 0;
+        let visibleUsersCount = 0;
+        let visibleDivisiIndex = 0;
+
+        parentRows.forEach(function(pRow) {
+            const divKey = pRow.getAttribute('data-divisi');
+            const subRows = tbody ? Array.from(tbody.querySelectorAll('tr.divisi-sub-row[data-parent-divisi="' + divKey + '"]')) : [];
+
+            const leaderMatches = checkRowMatches(pRow, query, selectedRole);
+            let matchingSubsCount = 0;
+
+            subRows.forEach(function(sRow) {
+                const subMatches = checkRowMatches(sRow, query, selectedRole);
+                sRow.setAttribute('data-filter-match', subMatches ? '1' : '0');
+                if (subMatches) {
+                    matchingSubsCount++;
+                    visibleUsersCount++;
+                }
+            });
+
+            if (leaderMatches) {
+                visibleUsersCount++;
+            }
+
+            if (leaderMatches || matchingSubsCount > 0) {
+                pRow.style.display = '';
+                visibleDivisiIndex++;
+                const counterEl = pRow.querySelector('.row-number');
+                if (counterEl) {
+                    counterEl.textContent = visibleDivisiIndex;
+                }
+
+                // Perbarui label jumlah Sub Tim sesuai tab/filter aktif
+                const countLabel = pRow.querySelector('.subtim-count-label');
+                const toggleBadge = pRow.querySelector('.btn-toggle-subtim');
+                if (countLabel) {
+                    countLabel.textContent = matchingSubsCount + ' Sub Tim';
+                }
+                if (toggleBadge) {
+                    toggleBadge.style.display = matchingSubsCount > 0 ? 'inline-flex' : 'none';
+                }
+
+                // Jika sedang mengetik pencarian atau memilih filter role dan yang cocok ada di Sub Tim, otomatis buka akordionnya
+                if (isSearchingOrFilteringRole && matchingSubsCount > 0) {
+                    pRow.classList.add('expanded');
+                }
+
+                const isExpanded = pRow.classList.contains('expanded');
+                subRows.forEach(function(sRow) {
+                    if (isExpanded && sRow.getAttribute('data-filter-match') === '1') {
+                        sRow.classList.remove('d-none');
+                    } else {
+                        sRow.classList.add('d-none');
+                    }
+                });
+            } else {
+                pRow.style.display = 'none';
+                subRows.forEach(function(sRow) {
+                    sRow.classList.add('d-none');
+                });
+            }
+        });
+
+        if (emptyRow) {
+            emptyRow.style.display = (visibleDivisiIndex === 0 && parentRows.length > 0) ? '' : 'none';
+        }
+
+        // Update teks badge role secara dinamis berdasarkan tab yang aktif (OPTI vs PO)
+        document.querySelectorAll('.role-badge[data-label-opti]').forEach(function(badge) {
+            if (activeTabModul === 'po') {
+                badge.textContent = badge.getAttribute('data-label-po') || badge.getAttribute('data-label-default');
+            } else if (activeTabModul === 'opti') {
+                badge.textContent = badge.getAttribute('data-label-opti') || badge.getAttribute('data-label-default');
+            } else {
+                badge.textContent = badge.getAttribute('data-label-default');
+            }
+        });
+
+        if (headerBadge) {
+            headerBadge.textContent = visibleUsersCount + ' Akun';
+        }
+        if (countVisible) {
+            countVisible.textContent = visibleUsersCount;
+        }
+
+        // Tampilkan atau sembunyikan tombol reset filter
+        if (resetBtn) {
+            if (query.length > 0 || selectedRole.length > 0) {
+                resetBtn.style.setProperty('display', 'flex', 'important');
+            } else {
+                resetBtn.style.setProperty('display', 'none', 'important');
+            }
+        }
+
+        // Sinkronkan parameter URL secara mulus tanpa reload halaman
+        try {
+            const url = new URL(window.location);
+            if (query) {
+                url.searchParams.set('q', query);
+            } else {
+                url.searchParams.delete('q');
+            }
+            if (selectedRole) {
+                url.searchParams.set('role', selectedRole);
+            } else {
+                url.searchParams.delete('role');
+            }
+            window.history.replaceState({}, '', url);
+        } catch (e) {}
+    }
+
+    if (searchInput) {
+        // Event input terpanggil otomatis di setiap ketikan huruf (tanpa menunggu enter)
+        searchInput.addEventListener('input', performLiveFilter);
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Tidak perlu reload saat ditekan enter
+            }
+        });
+    }
+
+    if (roleSelect) {
+        roleSelect.addEventListener('change', performLiveFilter);
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (searchInput) searchInput.value = '';
+            if (roleSelect) roleSelect.value = '';
+            performLiveFilter();
+            if (searchInput) searchInput.focus();
+        });
+    }
+
+    // Filter awal default ke Pengguna OPTI saat halaman dimuat
+    performLiveFilter();
+});
+</script>

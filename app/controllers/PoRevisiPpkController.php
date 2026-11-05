@@ -663,6 +663,24 @@ class PoRevisiPpkController extends Controller {
         $tujuan = self::idKatim($this->db, $po['jenis_layanan_opti']);
         $tujuan[] = (int) $po['ketua_pelaksana_id'];
         $this->kabariKe($tujuan, 'PO diverifikasi PPK BLU', 'PO ' . $po['nomor_po'] . ' sudah diverifikasi PPK BLU.', '/po-kegiatan/daftar');
+        // Notifikasi ke Tim Mitra
+        if (class_exists('NotificationService')) {
+            try {
+                \NotificationService::send($this->db, [
+                    'order_id'        => (int) $po['order_id'],
+                    'po_id'           => (int) $po['id'],
+                    'target_role'     => 'tim_mitra',
+                    'target_layanan'  => 'semua',
+                    'judul'           => 'PO Selesai Diverifikasi PPK BLU',
+                    'pesan'           => 'PO ' . $po['nomor_po'] . ' telah diverifikasi dan disahkan oleh PPK BLU. Pelaksanaan kegiatan resmi berjalan.',
+                    'tipe'            => 'success',
+                    'icon'            => 'bi-patch-check-fill',
+                    'link_url'        => '/po',
+                    'created_by'      => $uid,
+                    'created_by_name' => 'PPK BLU'
+                ]);
+            } catch (\Throwable $eNotifM) {}
+        }
         $this->keluarkanJson($this->paketDetail((int) $po['id'], 'ppk'));
     }
 
@@ -1621,4 +1639,4 @@ class PoRevisiPpkController extends Controller {
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
-}
+}

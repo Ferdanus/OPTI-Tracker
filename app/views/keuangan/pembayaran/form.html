@@ -6,7 +6,7 @@
 </div>
 
 <div class="card border-0 shadow-sm">
-    <div class="card-header bg-white py-3"><i class="bi bi-receipt text-primary me-2"></i><span class="fw-bold">Formulir Bukti Bayar</span></div>
+    <div class="card-header bg-white py-3"><i class="bi bi-receipt text-secondary me-2"></i><span class="fw-bold text-dark">Formulir Bukti Bayar</span></div>
     <div class="card-body p-3 p-md-4">
         <check if="{{ !@order }}">
             <div class="alert alert-warning border-0">
@@ -26,9 +26,9 @@
             </div>
             <div class="order-locked-row" style="padding: 9px 0 !important; font-size: 14.5px;"><span class="order-locked-label">Mitra</span><span class="order-locked-value font-display" style="font-size: 1rem;">{{ @order.nama_perusahaan }}</span></div>
             <div class="order-locked-row" style="padding: 9px 0 !important; font-size: 14.5px;"><span class="order-locked-label">Nilai Acuan</span><span class="order-locked-value font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.biaya_acuan, 0, ',', '.') }}</span></div>
-            <div class="order-locked-row" style="padding: 9px 0 !important; font-size: 14.5px;"><span class="order-locked-label">Sudah Terbayar</span><span class="order-locked-value text-success font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.terbayar, 0, ',', '.') }}</span></div>
-            <div class="order-locked-row" style="padding: 9px 0 !important; font-size: 14.5px;"><span class="order-locked-label">Sisa Tagihan</span><span class="order-locked-value text-danger font-monospace" style="font-size: 1.15rem;">Rp {{ number_format(@order.sisa_tagihan, 0, ',', '.') }}</span></div>
-            <div class="order-locked-row border-0" style="padding-top: 10px !important; padding-bottom: 4px !important; font-size: 14.5px;"><span class="order-locked-label">Tahap Pembayaran</span><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-bold font-monospace" style="font-size: 0.88rem;">Termin ke-{{ @order.termin_berikutnya }}</span></div>
+            <div class="order-locked-row" style="padding: 9px 0 !important; font-size: 14.5px;"><span class="order-locked-label">Sudah Terbayar</span><span class="order-locked-value text-dark font-monospace" style="font-size: 1.05rem;">Rp {{ number_format(@order.terbayar, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row" style="padding: 9px 0 !important; font-size: 14.5px;"><span class="order-locked-label">Sisa Tagihan</span><span class="order-locked-value text-dark font-monospace" style="font-size: 1.15rem;">Rp {{ number_format(@order.sisa_tagihan, 0, ',', '.') }}</span></div>
+            <div class="order-locked-row border-0" style="padding-top: 10px !important; padding-bottom: 4px !important; font-size: 14.5px;"><span class="order-locked-label">Tahap Pembayaran</span><span class="badge bg-light text-dark border px-2.5 py-1 fw-bold font-monospace" style="font-size: 0.88rem;">Termin ke-{{ @order.termin_berikutnya }}</span></div>
         </div>
 
         <form action="{{ @BASE }}/pembayaran/simpan" method="POST" enctype="multipart/form-data" id="formPembayaran">
@@ -138,9 +138,9 @@
 
 <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
     <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4 order-3 order-sm-1">Batal</a>
-    <button type="button" id="btnSimpanSaja" class="btn btn-outline-primary px-4 order-2 order-sm-2 d-none">Simpan</button>
-    <button type="button" id="btnSimpanDisposisi" class="btn btn-primary px-4 order-1 order-sm-3 d-none"><i class="bi bi-send-check me-1"></i> Disposisi</button>
-    <button type="button" id="btnSimpanPembayaran" class="btn btn-primary px-4 order-1 order-sm-3"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
+    <button type="button" id="btnSimpanSaja" class="btn btn-outline-secondary px-4 order-2 order-sm-2 d-none">Simpan</button>
+    <button type="button" id="btnSimpanDisposisi" class="btn btn-dark px-4 order-1 order-sm-3 d-none" style="background:#1e293b; border-color:#1e293b;"><i class="bi bi-check2-circle me-1"></i> Konfirmasi Pembayaran</button>
+    <button type="button" id="btnSimpanPembayaran" class="btn btn-dark px-4 order-1 order-sm-3" style="background:#1e293b; border-color:#1e293b;"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
 </div>
         </form>
         </check>
@@ -221,21 +221,21 @@ btnSimpanSaja.addEventListener('click', function () {
 });
 
 btnSimpanDisposisi.addEventListener('click', function () {
-    var pesan = 'Pembayaran akan disimpan, dan order ini akan didisposisikan ke <strong>Ketua Tim ' + labelDivisi() + '</strong>.';
+    var pesan = 'Bukti pembayaran akan diverifikasi dan disimpan. Informasi pembayaran akan diteruskan ke <strong>Tim Mitra</strong> dan <strong>Ketua Tim ' + labelDivisi() + '</strong>.';
 
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             icon: 'question',
-            title: 'Disposisi ke Ketua Tim ' + labelDivisi() + '?',
+            title: 'Konfirmasi Bukti Pembayaran?',
             html: '<div class="text-start small text-secondary">' + pesan + '</div>',
             showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-send-check me-1"></i> Ya, Disposisi',
+            confirmButtonText: '<i class="bi bi-check2-circle me-1"></i> Ya, Konfirmasi Pembayaran',
             cancelButtonText: 'Batal',
             confirmButtonColor: '#881337',
             reverseButtons: true,
             customClass: {
                 popup: 'rounded-4 shadow-lg p-2',
-                confirmButton: 'btn btn-primary px-3 py-2 fw-semibold rounded-3 mx-1',
+                confirmButton: 'btn btn-dark px-3 py-2 fw-semibold rounded-3 mx-1',
                 cancelButton: 'btn btn-outline-secondary px-3 py-2 fw-semibold rounded-3 mx-1'
             },
             buttonsStyling: false
@@ -246,7 +246,7 @@ btnSimpanDisposisi.addEventListener('click', function () {
             }
         });
     } else {
-        if (confirm('Pembayaran akan disimpan dan didisposisikan ke Ketua Tim ' + labelDivisi() + '. Lanjutkan?')) {
+        if (confirm('Bukti pembayaran akan diverifikasi dan disimpan. Informasi pembayaran akan diteruskan ke Tim Mitra dan Ketua Tim ' + labelDivisi() + '. Lanjutkan?')) {
             inputDisposisi.value = '1';
             btnSimpan.click();
         }
@@ -415,10 +415,10 @@ btnSimpanDisposisi.addEventListener('click', function () {
                     title: judul,
                     html: '<div class="text-secondary small">' + teks + '</div>',
                     confirmButtonText: 'Oke',
-                    confirmButtonColor: '#881337',
+                    confirmButtonColor: '#1e293b',
                     customClass: {
                         popup: 'rounded-4 shadow-lg p-2',
-                        confirmButton: 'btn btn-primary px-4 py-2 fw-semibold rounded-3 mx-1'
+                        confirmButton: 'btn btn-dark px-4 py-2 fw-semibold rounded-3 mx-1'
                     },
                     buttonsStyling: false
                 }).then(function () { if (sesudah) { sesudah(); } });

@@ -1,10 +1,16 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <h2 class="h4 fw-bold mb-0 text-dark font-display"><i class="bi bi-bell-fill text-primary me-2"></i>Pusat Pemberitahuan &amp; Pesan Masuk</h2>
+        <h2 class="h4 fw-bold mb-1 text-dark font-display d-flex align-items-center gap-2">
+            <span class="rounded-3 d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #f1f5f9; color: #334155; border: 1px solid #e2e8f0;">
+                <i class="bi bi-bell-fill fs-6"></i>
+            </span>
+            Pusat Pemberitahuan &amp; Pesan Masuk
+        </h2>
+        <p class="text-muted small mb-0">Informasi penugasan, disposisi alur kerja, dan pembaruan berkas layanan OPTI.</p>
     </div>
     <div class="d-flex gap-2">
-        <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1.5 rounded-pill px-3 shadow-xs" onclick="window.markAllNotifRead()">
-            <i class="bi bi-check2-all"></i> Tandai Semua Sudah Dibaca
+        <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1.5 rounded-pill px-3 py-1.5 shadow-xs fw-semibold" onclick="window.markAllNotifRead()">
+            <i class="bi bi-check2-all fs-6"></i> Tandai Semua Sudah Dibaca
         </button>
     </div>
 </div>
@@ -28,7 +34,7 @@
 .notif-card-header {
     background: #ffffff;
     border-bottom: 1px solid #e2e8f0;
-    padding: 1.15rem 1.35rem;
+    padding: 1.15rem 1.45rem;
 }
 .notif-search-box {
     position: relative;
@@ -129,26 +135,55 @@
     color: #0f172a !important;
     font-weight: 700;
 }
+
 .notif-row-item {
-    transition: background-color 0.18s ease;
+    padding: 1.25rem 1.45rem !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .notif-row-item:hover {
     background-color: #f8fafc !important;
 }
 .notif-row-item.is-unread {
-    background-color: #f0f7ff !important;
-    border-left: 3.5px solid #0284c7 !important;
+    background-color: #f8fafc !important;
+    border-left: 4px solid var(--color-primary, #334155) !important;
 }
 .notif-row-item.is-read {
-    border-left: 3.5px solid transparent;
+    background-color: #ffffff;
+    border-left: 4px solid transparent;
 }
+.notif-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.notif-title {
+    font-size: 0.93rem;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+}
+.notif-desc {
+    color: #475569;
+    font-size: 0.835rem;
+    line-height: 1.55;
+    margin-top: 0.35rem;
+    margin-bottom: 0.95rem;
+}
+
 /* ============ PAGINATION DENGAN TEMA SISTEM (CHARCOAL SLATE) ============ */
 .notif-pagination-container {
     background-color: #ffffff;
+    padding: 0.75rem 1.45rem !important;
     transition: background-color 0.2s ease;
 }
 .notif-pagination-container.is-top-bar {
     background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
 }
 .notif-pagination-container .pagination {
     display: inline-flex;
@@ -248,13 +283,13 @@
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" id="notifMainCard">
     <div class="notif-card-header d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
         <!-- Title & Count -->
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2.5">
             <h6 class="m-0 fw-bold text-dark font-display" style="font-size: 0.95rem;">Daftar Pemberitahuan</h6>
-            <span class="badge bg-light text-secondary border rounded-pill px-3 py-1.5 font-monospace ms-1" style="font-size: 0.72rem; letter-spacing: 0.02em;" id="totalNotifLabel">{{ @totalSemua }} Total Pesan</span>
+            <span class="badge bg-secondary-subtle text-secondary border-0 rounded-pill px-2.5 py-1 font-monospace" style="font-size: 0.72rem; letter-spacing: 0.02em;" id="totalNotifLabel">{{ @totalSemua }} Total Pesan</span>
         </div>
 
         <!-- Controls: Search & Tabs side-by-side with generous gap -->
-        <div class="d-flex flex-wrap flex-sm-nowrap align-items-center gap-3 gap-md-4">
+        <div class="d-flex flex-wrap flex-sm-nowrap align-items-center gap-3">
             <!-- Search Bar -->
             <div class="notif-search-box flex-grow-1 flex-sm-grow-0">
                 <i class="bi bi-search notif-search-icon"></i>
@@ -293,16 +328,16 @@
 
     <!-- Top Dynamic Pagination Bar -->
     <check if="{{ @totalSemua > 0 }}">
-        <div class="px-3.5 py-2.5 border-bottom d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2.5 notif-pagination-container is-top-bar" id="notifPaginationWrapperTop">
-            <div class="small text-muted d-flex align-items-center gap-1.5" id="notifPaginationInfoTop">
+        <div class="border-bottom d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2.5 notif-pagination-container is-top-bar" id="notifPaginationWrapperTop">
+            <div class="small text-muted d-flex align-items-center gap-2" id="notifPaginationInfoTop">
                 <i class="bi bi-layers-half text-secondary opacity-75"></i>
-                <span>Menampilkan <strong>1 - 10</strong> dari <strong>{{ @totalSemua }}</strong> pemberitahuan</span>
+                <span>Menampilkan&nbsp;<strong class="text-dark fw-bold">1 &ndash; 10</strong>&nbsp;dari&nbsp;<strong class="text-dark fw-bold">{{ @totalSemua }}</strong>&nbsp;pemberitahuan</span>
             </div>
             <nav aria-label="Navigasi halaman atas" class="d-flex align-items-center flex-wrap gap-2">
                 <ul class="pagination pagination-sm mb-0 align-items-center" id="notifPaginationUlTop">
                     <!-- Dinamis via JavaScript -->
                 </ul>
-                <div class="d-flex align-items-center gap-1.5 ms-sm-2 ps-sm-2 border-start notif-jump-container" id="notifJumpContainerTop">
+                <div class="d-flex align-items-center gap-2 ms-sm-2 ps-sm-2 border-start notif-jump-container" id="notifJumpContainerTop">
                     <span class="small text-muted" style="font-size: 0.78rem;">Ke Hal:</span>
                     <div class="input-group input-group-sm" style="width: 105px;">
                         <input type="number" min="1" max="1" value="1" 
@@ -328,28 +363,33 @@
             <true>
                 <div class="list-group list-group-flush" id="fullNotifList">
                     <repeat group="{{ @daftar_notifikasi_semua }}" value="{{ @item }}">
-                        <div class="list-group-item p-3.5 notif-row-item {{ @item.is_read ? 'bg-white is-read' : 'is-unread' }} d-flex align-items-start gap-3 border-bottom" data-is-read="{{ @item.is_read ? '1' : '0' }}" data-search-text="{{ strtolower(@item.judul . ' ' . @item.pesan . ' ' . @item.created_by_name) }}">
-                            <div class="rounded-circle p-2.5 d-flex align-items-center justify-content-center flex-shrink-0 {{ @item.tipe == 'success' ? 'bg-success-subtle text-success' : (@item.tipe == 'warning' ? 'bg-warning-subtle text-warning' : (@item.tipe == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info')) }}" style="width: 44px; height: 44px;">
+                        <div class="list-group-item notif-row-item {{ @item.is_read ? 'bg-white is-read' : 'is-unread' }} d-flex align-items-start gap-3 border-bottom" data-is-read="{{ @item.is_read ? '1' : '0' }}" data-search-text="{{ strtolower(@item.judul . ' ' . @item.pesan . ' ' . @item.created_by_name) }}">
+                            <div class="notif-icon-box flex-shrink-0 {{ @item.tipe == 'success' ? 'bg-success-subtle text-success' : (@item.tipe == 'warning' ? 'bg-warning-subtle text-warning' : (@item.tipe == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info')) }}">
                                 <i class="bi {{ @item.icon ?: 'bi-bell-fill' }} fs-5"></i>
                             </div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-start mb-1 gap-2">
-                                    <h6 class="fw-bold text-dark mb-0 font-display notif-title {{ @item.is_read ? '' : 'text-primary' }}" style="font-size: 0.88rem;">{{ @item.judul }}</h6>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="d-flex justify-content-between align-items-start mb-1.5 gap-3">
+                                    <h6 class="fw-bold text-dark mb-0 font-display notif-title {{ @item.is_read ? '' : 'text-primary' }}">{{ @item.judul }}</h6>
                                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                        <small class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-clock me-1"></i>{{ @item.time_ago }}</small>
+                                        <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill" style="font-size: 0.72rem; font-weight: 500;">
+                                            <i class="bi bi-clock me-1 text-muted"></i>{{ @item.time_ago }}
+                                        </span>
                                         <check if="{{ !@item.is_read }}">
-                                            <span class="badge bg-danger rounded-pill px-2 py-0.5 notif-baru-badge" style="font-size: 0.65rem;">Baru</span>
+                                            <span class="badge bg-danger rounded-pill px-2.5 py-1 text-white fw-bold shadow-xs notif-baru-badge" style="font-size: 0.65rem; letter-spacing: 0.03em;">BARU</span>
                                         </check>
                                     </div>
                                 </div>
-                                <p class="text-secondary small mb-2.5 notif-desc" style="font-size: 0.8rem; line-height: 1.45;">{{ @item.pesan }}</p>
-                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <p class="notif-desc">{{ @item.pesan }}</p>
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-light-subtle">
                                     <div class="d-flex align-items-center gap-2">
-                                        <a href="{{ @BASE }}{{ @item.link_url }}" onclick="window.markNotifRead({{ @item.id }}, '{{ @BASE }}{{ @item.link_url }}')" class="btn btn-sm btn-primary py-1 px-3 rounded-pill text-white text-decoration-none fw-semibold shadow-xs d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                                            Buka Dokumen <i class="bi bi-arrow-right"></i>
+                                        <a href="{{ @BASE }}{{ @item.link_url }}" onclick="window.markNotifRead({{ @item.id }}, '{{ @BASE }}{{ @item.link_url }}')" class="btn btn-sm btn-dark py-1.5 px-3.5 rounded-pill text-white text-decoration-none fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
+                                            <span>Buka Dokumen</span> <i class="bi bi-arrow-right"></i>
                                         </a>
                                     </div>
-                                    <span class="text-muted small notif-sender" style="font-size: 0.72rem;">Oleh: <strong>{{ @item.created_by_name ?: 'Sistem OPTI' }}</strong></span>
+                                    <span class="badge bg-light text-secondary border px-2.5 py-1.5 rounded-pill d-inline-flex align-items-center gap-1" style="font-size: 0.73rem;">
+                                        <i class="bi bi-person-circle text-muted"></i>
+                                        <span>Oleh: <strong class="text-dark ms-0.5">{{ @item.created_by_name ?: 'Sistem OPTI' }}</strong></span>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -378,16 +418,16 @@
 
     <!-- Bottom Dynamic Pagination Footer -->
     <check if="{{ @totalSemua > 0 }}">
-        <div class="card-footer bg-white border-top px-3.5 py-3 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2.5 notif-pagination-container" id="notifPaginationWrapperBottom">
-            <div class="small text-muted d-flex align-items-center gap-1.5" id="notifPaginationInfoBottom">
+        <div class="border-top d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2.5 notif-pagination-container" id="notifPaginationWrapperBottom">
+            <div class="small text-muted d-flex align-items-center gap-2" id="notifPaginationInfoBottom">
                 <i class="bi bi-layers-half text-secondary opacity-75"></i>
-                <span>Menampilkan <strong>1 - 10</strong> dari <strong>{{ @totalSemua }}</strong> pemberitahuan</span>
+                <span>Menampilkan&nbsp;<strong class="text-dark fw-bold">1 &ndash; 10</strong>&nbsp;dari&nbsp;<strong class="text-dark fw-bold">{{ @totalSemua }}</strong>&nbsp;pemberitahuan</span>
             </div>
             <nav aria-label="Navigasi halaman bawah" class="d-flex align-items-center flex-wrap gap-2">
                 <ul class="pagination pagination-sm mb-0 align-items-center" id="notifPaginationUlBottom">
                     <!-- Dinamis dibuat oleh JavaScript -->
                 </ul>
-                <div class="d-flex align-items-center gap-1.5 ms-sm-2 ps-sm-2 border-start notif-jump-container" id="notifJumpContainerBottom">
+                <div class="d-flex align-items-center gap-2 ms-sm-2 ps-sm-2 border-start notif-jump-container" id="notifJumpContainerBottom">
                     <span class="small text-muted" style="font-size: 0.78rem;">Ke Hal:</span>
                     <div class="input-group input-group-sm" style="width: 105px;">
                         <input type="number" min="1" max="1" value="1" 
@@ -536,7 +576,8 @@
             var start = (currentPage - 1) * pageSize + 1;
             var end = Math.min(currentPage * pageSize, totalItems);
             if (t.info) {
-                t.info.innerHTML = '<i class="bi bi-layers-half text-secondary opacity-75 me-1"></i>Menampilkan <strong>' + start + ' - ' + end + '</strong> dari <strong>' + totalItems + '</strong> pemberitahuan';
+                t.info.innerHTML = '<i class="bi bi-layers-half text-secondary opacity-75 me-1.5"></i>' +
+                                   '<span>Menampilkan&nbsp;<strong class="text-dark fw-bold">' + start + ' &ndash; ' + end + '</strong>&nbsp;dari&nbsp;<strong class="text-dark fw-bold">' + totalItems + '</strong>&nbsp;pemberitahuan</span>';
             }
 
             // Sinkronkan widget "Lompat ke Halaman"

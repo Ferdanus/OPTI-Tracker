@@ -44,39 +44,18 @@
     border: 1px solid #e2e8f0;
     transition: all 0.2s;
 }
-.filter-tab-pill .count-chip.chip-danger {
-    background-color: #fee2e2;
-    color: #b91c1c;
-    border-color: #fecaca;
-}
-.filter-tab-pill .count-chip.chip-success {
-    background-color: #ecfdf5;
-    color: #047857;
-    border-color: #a7f3d0;
-}
 .filter-tab-pill.active {
     color: #ffffff !important;
-    background-color: var(--color-primary, #334155) !important;
-    border-color: var(--color-primary, #334155) !important;
-    box-shadow: 0 2px 6px rgba(51, 65, 85, 0.25) !important;
+    background-color: #1e293b !important;
+    border-color: #1e293b !important;
+    box-shadow: 0 2px 6px rgba(30, 41, 59, 0.2) !important;
 }
 .filter-tab-pill.active .count-chip {
-    background-color: rgba(255, 255, 255, 0.25) !important;
+    background-color: rgba(255, 255, 255, 0.2) !important;
     border-color: transparent !important;
     color: #ffffff !important;
 }
 .filter-tab-pill.active i {
-    color: #ffffff !important;
-}
-.filter-tab-pill.tab-selesai.active {
-    background-color: #059669 !important;
-    border-color: #059669 !important;
-    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25) !important;
-    color: #ffffff !important;
-}
-.filter-tab-pill.tab-selesai.active .count-chip {
-    background-color: rgba(255, 255, 255, 0.25) !important;
-    border-color: transparent !important;
     color: #ffffff !important;
 }
 
@@ -136,14 +115,15 @@
 .tab-panel-custom.active { display: block; }
 
 .kb-badge-none {
-    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8;
-    border: 1px dashed #cbd5e1; border-radius: 20px; padding: 2px 8px; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #64748b;
+    background: #ffffff; border: 1px solid #cbd5e1; border-radius: 20px; padding: 2px 8px; white-space: nowrap;
 }
 .kb-badge-ada {
-    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #92400e;
-    background: #fef3c7; border-radius: 20px; padding: 2px 8px; white-space: nowrap; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #1e293b;
+    background: #ffffff; border: 1px solid #cbd5e1; border-radius: 20px; padding: 2px 8px; white-space: nowrap; text-decoration: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
-.kb-badge-ada:hover { background: #fde68a; color: #78350f; }
+.kb-badge-ada:hover { background: #f8fafc; color: #0f172a; border-color: #94a3b8; }
 
 .order-card { 
     background: #ffffff;
@@ -180,7 +160,7 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
         <div>
             <h4 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 font-display">
-                <i class="bi bi-wallet2 text-primary"></i> Rekapitulasi Keuangan &amp; Pembayaran
+                <i class="bi bi-wallet2 text-secondary"></i> Rekapitulasi Keuangan &amp; Pembayaran
             </h4>
         </div>
     </div>
@@ -260,29 +240,29 @@
         <div class="filter-tabs-wrapper d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <button type="button" class="filter-tab-pill active" data-tab="baru">
-                    <i class="bi bi-inbox-fill text-primary"></i>
+                    <i class="bi bi-inbox-fill text-secondary"></i>
                     <span>Baru Masuk</span>
                     <span class="count-chip" id="countBaru">0</span>
                 </button>
                 <button type="button" class="filter-tab-pill" data-tab="berjalan">
-                    <i class="bi bi-gear-wide-connected text-primary"></i>
+                    <i class="bi bi-gear-wide-connected text-secondary"></i>
                     <span>Sedang Berjalan</span>
                     <span class="count-chip" id="countBerjalan">0</span>
                 </button>
-                <button type="button" class="filter-tab-pill tab-selesai" data-tab="lunas">
-                    <i class="bi bi-check2-all text-success"></i>
+                <button type="button" class="filter-tab-pill" data-tab="lunas">
+                    <i class="bi bi-check2-all text-secondary"></i>
                     <span>Lunas</span>
-                    <span class="count-chip chip-success" id="countLunas">0</span>
+                    <span class="count-chip" id="countLunas">0</span>
                 </button>
                 <button type="button" class="filter-tab-pill" data-tab="histori">
-                    <i class="bi bi-clock-history text-primary"></i>
+                    <i class="bi bi-clock-history text-secondary"></i>
                     <span>Histori Transaksi</span>
                     <span class="count-chip" id="countHistori">0</span>
                 </button>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <div class="period-note-badge d-none small px-2 py-1 bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill" id="periodNote">
-                    <i class="bi bi-calendar-check me-1"></i>Periode: <strong id="periodNoteText"></strong>
+                <div class="period-note-badge d-none small px-2.5 py-1 bg-light text-secondary border rounded-pill" id="periodNote">
+                    <i class="bi bi-calendar-check me-1"></i>Periode: <strong id="periodNoteText" class="text-dark"></strong>
                 </div>
                 <span class="text-muted small fw-medium">
                     Total: <strong class="text-dark" id="totalCountText">0</strong> data ditampilkan
@@ -436,8 +416,8 @@ function bukaDetailLunas(orderId) {
     
     document.getElementById('detailLunasInfo').innerHTML =
         '<div class="rpd-stat"><div class="l">Mitra / Perusahaan</div><div class="v text-truncate" title="' + order.nama_perusahaan + '">' + order.nama_perusahaan + '</div></div>' +
-        '<div class="rpd-stat"><div class="l">Nilai Total Acuan</div><div class="v text-primary">' + rupiah(order.biaya_acuan) + '</div></div>' +
-        '<div class="rpd-stat"><div class="l">Tanggal Pelunasan</div><div class="v text-success">' + tglIndo(order.tanggal_lunas) + '</div></div>';
+        '<div class="rpd-stat"><div class="l">Nilai Total Acuan</div><div class="v text-dark font-monospace">' + rupiah(order.biaya_acuan) + '</div></div>' +
+        '<div class="rpd-stat"><div class="l">Tanggal Pelunasan</div><div class="v text-dark">' + tglIndo(order.tanggal_lunas) + '</div></div>';
 
     var terminList = DATA_HISTORI.filter(function (h) { return String(h.order_id) === String(orderId); });
     terminList.sort(function (a, b) { return new Date(a.tanggal_bayar) - new Date(b.tanggal_bayar); });
@@ -447,15 +427,15 @@ function bukaDetailLunas(orderId) {
         ? '<div class="text-muted small text-center py-4 bg-white rounded border border-dashed">Belum ada riwayat termin.</div>'
         : terminList.map(function (h) {
             var btnBukti = h.bukti_bayar
-                ? '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-preview-pdf" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Termin Ke-' + h.termin_ke + '"><i class="bi bi-file-earmark-text me-1"></i>Bukti Bayar</button>'
+                ? '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 btn-preview-pdf" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Termin Ke-' + h.termin_ke + '"><i class="bi bi-file-earmark-text me-1"></i>Bukti Bayar</button>'
                 : '<span class="text-muted small">Tanpa lampiran bukti</span>';
             return '<div class="termin-item shadow-sm">' +
                 '<div class="row-info">' +
                     '<div class="d-flex align-items-center gap-2">' +
-                        '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-bold">Termin ke-' + h.termin_ke + '</span>' +
+                        '<span class="badge bg-light text-dark border px-2 py-1 fw-bold">Termin ke-' + h.termin_ke + '</span>' +
                         '<span class="small text-muted"><i class="bi bi-calendar3 me-1"></i>' + tglIndo(h.tanggal_bayar) + '</span>' +
                     '</div>' +
-                    '<span class="fw-bold text-success fs-6">' + rupiah(h.jumlah) + '</span>' +
+                    '<span class="fw-bold text-dark font-monospace fs-6">' + rupiah(h.jumlah) + '</span>' +
                 '</div>' +
                 '<div class="row-info mt-2 pt-2 border-top">' +
                     '<span class="small text-muted text-break">' + (h.keterangan ? h.keterangan : 'Pembayaran termin order') + '</span>' +
@@ -487,9 +467,9 @@ function tglIndo(str) {
     return d.getDate() + ' ' + BULAN_INDO[d.getMonth() + 1] + ' ' + d.getFullYear();
 }
 function divisiBadge(d) {
-    if (d === 'selulosa') return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">OPTI Selulosa</span>';
-    if (d === 'lingkungan') return '<span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1">OPTI Lingkungan</span>';
-    return '<span class="badge bg-secondary-subtle text-secondary border px-2 py-1">-</span>';
+    if (d === 'selulosa') return '<span class="badge bg-light text-dark border px-2 py-1">OPTI Selulosa</span>';
+    if (d === 'lingkungan') return '<span class="badge bg-light text-dark border px-2 py-1">OPTI Lingkungan</span>';
+    return '<span class="badge bg-light text-muted border px-2 py-1">-</span>';
 }
 function skbBadge(o) {
     if (o.surat_kesanggupan_bayar) {
@@ -528,13 +508,7 @@ function updateDivisiGlider(targetBtn, animate) {
     glider.style.width = width + 'px';
 
     var divisi = activeBtn.getAttribute('data-divisi') || '';
-    if (divisi === 'selulosa') {
-        glider.style.backgroundColor = '#b91c1c';
-    } else if (divisi === 'lingkungan') {
-        glider.style.backgroundColor = '#047857';
-    } else {
-        glider.style.backgroundColor = 'var(--color-primary, #334155)';
-    }
+    glider.style.backgroundColor = '#1e293b';
 }
 
 function selectDivisi(btn, val) {
@@ -700,7 +674,7 @@ function renderBaru(list) {
             return '<tr>' +
                 '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
                 '<td>' +
-                    '<div class="fw-bold text-secondary font-monospace small">' + noId + '</div>' +
+                    '<div class="fw-bold text-dark font-monospace small">' + noId + '</div>' +
                     skbBadge(o) +
                 '</td>' +
                 '<td>' +
@@ -712,7 +686,7 @@ function renderBaru(list) {
                 '</td>' +
                 '<td class="text-center">' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
                 '<td class="text-end">' +
-                    '<div class="fw-bold text-dark small">' + rupiah(o.biaya_acuan) + '</div>' +
+                    '<div class="fw-bold text-dark font-monospace small">' + rupiah(o.biaya_acuan) + '</div>' +
                     (o.nominal_penawaran ? '' : '<div class="text-muted" style="font-size:.68rem;">*estimasi biaya</div>') +
                 '</td>' +
                 '<td>' +
@@ -721,7 +695,7 @@ function renderBaru(list) {
                     '</div>' +
                 '</td>' +
                 '<td class="text-center">' +
-                    '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm">' +
+                    '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm" style="background:#1e293b; border-color:#1e293b;">' +
                         '<i class="bi bi-plus-circle"></i> <span>Catat Bayar</span>' +
                     '</a>' +
                 '</td>' +
@@ -735,7 +709,7 @@ function renderBaru(list) {
             var noId = o.nomor_permintaan ? o.nomor_permintaan : (o.nomor_order ? o.nomor_order : ('REQ-' + o.id));
             return '<div class="order-card">' +
                 '<div class="d-flex justify-content-between align-items-start mb-2">' +
-                    '<div class="nomor font-monospace text-secondary">' + noId + '</div>' +
+                    '<div class="nomor font-monospace text-dark">' + noId + '</div>' +
                     divisiBadge(o.jenis_layanan_opti) +
                 '</div>' +
                 '<div class="fw-semibold text-dark mb-1">' + (o.judul_kegiatan || '-') + '</div>' +
@@ -743,9 +717,9 @@ function renderBaru(list) {
                 skbBadge(o) +
                 '<div class="row-info mt-2 pt-2 border-top">' +
                     '<span class="text-muted"><i class="bi bi-calendar3 me-1"></i>' + tglIndo(o.tanggal_masuk) + '</span>' +
-                    '<span class="fw-bold text-dark">' + rupiah(o.biaya_acuan) + '</span>' +
+                    '<span class="fw-bold text-dark font-monospace">' + rupiah(o.biaya_acuan) + '</span>' +
                 '</div>' +
-                '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-primary w-100 mt-2 d-flex align-items-center justify-content-center gap-1">' +
+                '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-dark w-100 mt-2 d-flex align-items-center justify-content-center gap-1" style="background:#1e293b; border-color:#1e293b;">' +
                     '<i class="bi bi-plus-circle"></i> Catat Pembayaran' +
                 '</a>' +
             '</div>';
@@ -759,13 +733,11 @@ function renderBerjalan(list) {
         ? renderEmptyState('bi-gear-wide-connected', 'Tidak Ada Pembayaran Berjalan', 'Semua order telah lunas atau belum memulai proses pembayaran.')
         : list.map(function (o, idx) {
             var noId = o.nomor_order ? o.nomor_order : (o.nomor_permintaan ? o.nomor_permintaan : ('REQ-' + o.id));
-            var isOrderNo = !emptyOrReq(noId);
-            var colorClass = isOrderNo ? 'text-primary' : 'text-secondary';
 
             return '<tr>' +
                 '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
                 '<td>' +
-                    '<div class="fw-bold ' + colorClass + ' font-monospace small">' + noId + '</div>' +
+                    '<div class="fw-bold text-dark font-monospace small">' + noId + '</div>' +
                     skbBadge(o) +
                 '</td>' +
                 '<td>' +
@@ -776,20 +748,20 @@ function renderBerjalan(list) {
                     '</div>' +
                 '</td>' +
                 '<td class="text-center">' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
-                '<td class="text-end fw-semibold text-dark small">' + rupiah(o.biaya_acuan) + '</td>' +
+                '<td class="text-end fw-semibold text-dark font-monospace small">' + rupiah(o.biaya_acuan) + '</td>' +
                 '<td>' +
                     '<div class="d-flex justify-content-between small mb-1">' +
-                        '<span class="text-success fw-bold">' + rupiah(o.total_terbayar) + '</span>' +
+                        '<span class="text-dark fw-bold font-monospace">' + rupiah(o.total_terbayar) + '</span>' +
                         '<span class="text-muted fw-semibold">' + o.persen_bayar + '%</span>' +
                     '</div>' +
-                    '<div class="progress" style="height:6px; border-radius:4px;">' +
-                        '<div class="progress-bar bg-warning" style="width:' + o.persen_bayar + '%;"></div>' +
+                    '<div class="progress" style="height:6px; border-radius:4px; background:#e2e8f0;">' +
+                        '<div class="progress-bar" style="width:' + o.persen_bayar + '%; background:#1e293b;"></div>' +
                     '</div>' +
                     '<div class="text-muted mt-1" style="font-size:.72rem;">' + o.jumlah_termin + 'x termin terbayar</div>' +
                 '</td>' +
-                '<td class="text-end fw-bold text-danger small">' + rupiah(o.sisa_tagihan) + '</td>' +
+                '<td class="text-end fw-bold text-dark font-monospace small">' + rupiah(o.sisa_tagihan) + '</td>' +
                 '<td class="text-center">' +
-                    '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" title="Tambah Termin Pembayaran">' +
+                    '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm" style="background:#1e293b; border-color:#1e293b;" title="Tambah Termin Pembayaran">' +
                         '<i class="bi bi-plus-circle"></i> <span>Termin</span>' +
                     '</a>' +
                 '</td>' +
@@ -803,20 +775,20 @@ function renderBerjalan(list) {
             var noId = o.nomor_order ? o.nomor_order : (o.nomor_permintaan ? o.nomor_permintaan : ('REQ-' + o.id));
             return '<div class="order-card">' +
                 '<div class="d-flex justify-content-between align-items-start mb-2">' +
-                    '<div class="nomor font-monospace text-primary">' + noId + '</div>' +
+                    '<div class="nomor font-monospace text-dark">' + noId + '</div>' +
                     divisiBadge(o.jenis_layanan_opti) +
                 '</div>' +
                 '<div class="fw-semibold text-dark mb-1">' + (o.judul_kegiatan || '-') + '</div>' +
                 '<div class="mitra d-flex align-items-center gap-1"><i class="bi bi-building"></i> ' + (o.nama_perusahaan || '-') + '</div>' +
                 skbBadge(o) +
-                '<div class="progress mt-2 mb-1" style="height:6px; border-radius:4px;">' +
-                    '<div class="progress-bar bg-warning" style="width:' + o.persen_bayar + '%;"></div>' +
+                '<div class="progress mt-2 mb-1" style="height:6px; border-radius:4px; background:#e2e8f0;">' +
+                    '<div class="progress-bar" style="width:' + o.persen_bayar + '%; background:#1e293b;"></div>' +
                 '</div>' +
                 '<div class="row-info">' +
-                    '<span class="text-success fw-semibold">Terbayar: ' + rupiah(o.total_terbayar) + ' (' + o.persen_bayar + '%)</span>' +
-                    '<span class="text-danger fw-bold">Sisa: ' + rupiah(o.sisa_tagihan) + '</span>' +
+                    '<span class="text-dark fw-semibold font-monospace">Terbayar: ' + rupiah(o.total_terbayar) + ' (' + o.persen_bayar + '%)</span>' +
+                    '<span class="text-dark fw-bold font-monospace">Sisa: ' + rupiah(o.sisa_tagihan) + '</span>' +
                 '</div>' +
-                '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-primary w-100 mt-2 d-flex align-items-center justify-content-center gap-1">' +
+                '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-dark w-100 mt-2 d-flex align-items-center justify-content-center gap-1" style="background:#1e293b; border-color:#1e293b;">' +
                     '<i class="bi bi-plus-circle"></i> Tambah Termin' +
                 '</a>' +
             '</div>';
@@ -838,7 +810,7 @@ function renderLunas(list) {
             return '<tr>' +
                 '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
                 '<td>' +
-                    '<div class="fw-bold text-primary font-monospace small">' + noId + '</div>' +
+                    '<div class="fw-bold text-dark font-monospace small">' + noId + '</div>' +
                     skbBadge(o) +
                 '</td>' +
                 '<td>' +
@@ -849,17 +821,17 @@ function renderLunas(list) {
                     '</div>' +
                 '</td>' +
                 '<td class="text-center">' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
-                '<td class="text-end fw-semibold text-dark small">' + rupiah(o.biaya_acuan) + '</td>' +
+                '<td class="text-end fw-semibold text-dark font-monospace small">' + rupiah(o.biaya_acuan) + '</td>' +
                 '<td>' +
-                    '<div class="text-success small fw-medium">' +
-                        '<i class="bi bi-calendar-check me-1"></i>' + tglIndo(o.tanggal_lunas) +
+                    '<div class="text-dark small fw-medium">' +
+                        '<i class="bi bi-calendar-check me-1 text-muted"></i>' + tglIndo(o.tanggal_lunas) +
                     '</div>' +
                 '</td>' +
                 '<td class="text-center">' +
-                    '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">' + o.jumlah_termin + 'x termin</span>' +
+                    '<span class="badge bg-light text-dark border px-2 py-1">' + o.jumlah_termin + 'x termin</span>' +
                 '</td>' +
                 '<td class="text-center">' +
-                    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" onclick="bukaDetailLunas(' + o.id + ')">' +
+                    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm" onclick="bukaDetailLunas(' + o.id + ')">' +
                         '<i class="bi bi-receipt"></i> <span>Detail</span>' +
                     '</button>' +
                 '</td>' +
@@ -873,15 +845,15 @@ function renderLunas(list) {
             var noId = o.nomor_order ? o.nomor_order : (o.nomor_permintaan ? o.nomor_permintaan : ('ORD-' + o.id));
             return '<div class="order-card">' +
                 '<div class="d-flex justify-content-between align-items-start mb-2">' +
-                    '<div class="nomor font-monospace text-primary">' + noId + '</div>' +
+                    '<div class="nomor font-monospace text-dark">' + noId + '</div>' +
                     divisiBadge(o.jenis_layanan_opti) +
                 '</div>' +
                 '<div class="fw-semibold text-dark mb-1">' + (o.judul_kegiatan || '-') + '</div>' +
                 '<div class="mitra d-flex align-items-center gap-1"><i class="bi bi-building"></i> ' + (o.nama_perusahaan || '-') + '</div>' +
                 skbBadge(o) +
                 '<div class="row-info mt-2 pt-2 border-top">' +
-                    '<span class="text-success small"><i class="bi bi-calendar-check me-1"></i>Lunas ' + tglIndo(o.tanggal_lunas) + '</span>' +
-                    '<span class="badge bg-success-subtle text-success border border-success-subtle">' + o.jumlah_termin + 'x termin</span>' +
+                    '<span class="text-dark small"><i class="bi bi-calendar-check me-1 text-muted"></i>Lunas ' + tglIndo(o.tanggal_lunas) + '</span>' +
+                    '<span class="badge bg-light text-dark border">' + o.jumlah_termin + 'x termin</span>' +
                 '</div>' +
                 '<button type="button" class="btn btn-sm btn-outline-secondary w-100 mt-2 d-flex align-items-center justify-content-center gap-1" onclick="bukaDetailLunas(' + o.id + ')">' +
                     '<i class="bi bi-receipt"></i> Lihat Rincian Termin' +
@@ -897,7 +869,7 @@ function renderHistori(list) {
         ? renderEmptyState('bi-clock-history', 'Tidak Ada Histori Transaksi', 'Belum ada catatan mutasi transaksi pembayaran pada periode ini.')
         : list.map(function (h, idx) {
             var buktiCol = h.bukti_bayar 
-                ? '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-preview-pdf d-inline-flex align-items-center gap-1" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Order: ' + h.nomor_order + ' &bull; Termin Ke-' + h.termin_ke + '" title="Lihat Bukti Pembayaran"><i class="bi bi-file-earmark-text"></i> <span>Bukti</span></button>' 
+                ? '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 btn-preview-pdf d-inline-flex align-items-center gap-1" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Order: ' + h.nomor_order + ' &bull; Termin Ke-' + h.termin_ke + '" title="Lihat Bukti Pembayaran"><i class="bi bi-file-earmark-text"></i> <span>Bukti</span></button>' 
                 : '<span class="text-muted small">-</span>';
             
             return '<tr>' +
@@ -908,7 +880,7 @@ function renderHistori(list) {
                     '</div>' +
                 '</td>' +
                 '<td>' +
-                    '<div class="fw-bold text-primary font-monospace small">' + (h.nomor_order || '-') + '</div>' +
+                    '<div class="fw-bold text-dark font-monospace small">' + (h.nomor_order || '-') + '</div>' +
                     '<div class="text-muted" style="font-size: 0.725rem;">' + divisiBadge(h.jenis_layanan_opti) + '</div>' +
                 '</td>' +
                 '<td>' +
@@ -916,14 +888,14 @@ function renderHistori(list) {
                     '<div class="small text-muted">' + (h.keterangan ? h.keterangan : '<span class="fst-italic text-muted">-</span>') + '</div>' +
                 '</td>' +
                 '<td class="text-center">' +
-                    '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">Ke-' + h.termin_ke + '</span>' +
+                    '<span class="badge bg-light text-dark border px-2 py-1">Ke-' + h.termin_ke + '</span>' +
                 '</td>' +
-                '<td class="text-end fw-bold text-success small">' + rupiah(h.jumlah) + '</td>' +
+                '<td class="text-end fw-bold text-dark font-monospace small">' + rupiah(h.jumlah) + '</td>' +
                 '<td class="text-center">' + buktiCol + '</td>' +
                 '<td class="text-center">' +
                     '<form action="' + BASE + '/pembayaran/' + h.id + '/hapus" method="POST" onsubmit="return confirm(\'Hapus transaksi pembayaran termin ini?\');" class="d-inline">' +
                         '<input type="hidden" name="csrf_token" value="' + CSRF + '">' +
-                        '<button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" title="Hapus Transaksi"><i class="bi bi-trash3"></i></button>' +
+                        '<button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2 text-danger" title="Hapus Transaksi"><i class="bi bi-trash3"></i></button>' +
                     '</form>' +
                 '</td>' +
             '</tr>';
@@ -935,13 +907,13 @@ function renderHistori(list) {
         : list.map(function (h) {
             return '<div class="order-card">' +
                 '<div class="d-flex justify-content-between align-items-start mb-2">' +
-                    '<div class="nomor font-monospace text-primary">' + (h.nomor_order || '-') + '</div>' +
-                    '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">Termin Ke-' + h.termin_ke + '</span>' +
+                    '<div class="nomor font-monospace text-dark">' + (h.nomor_order || '-') + '</div>' +
+                    '<span class="badge bg-light text-dark border">Termin Ke-' + h.termin_ke + '</span>' +
                 '</div>' +
                 '<div class="fw-semibold text-dark mb-1">' + (h.nama_perusahaan || '-') + '</div>' +
                 '<div class="row-info">' +
                     '<span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>' + tglIndo(h.tanggal_bayar) + '</span>' +
-                    '<span class="text-success fw-bold fs-6">' + rupiah(h.jumlah) + '</span>' +
+                    '<span class="text-dark font-monospace fw-bold fs-6">' + rupiah(h.jumlah) + '</span>' +
                 '</div>' +
                 (h.keterangan ? '<div class="small text-muted mt-1 pt-1 border-top">' + h.keterangan + '</div>' : '') +
             '</div>';

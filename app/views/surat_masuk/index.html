@@ -61,7 +61,7 @@
     <!-- FILTER & PENCARIAN -->
     <div class="card mb-4 border rounded-3 shadow-xs bg-white">
         <div class="card-body p-3">
-            <form method="GET" action="{{ @BASE }}/surat-masuk" class="row g-2 align-items-center">
+            <form method="GET" action="{{ @BASE }}/surat-masuk" class="row g-2 align-items-center" id="formFilterSurat">
                 <!-- Filter Bulan -->
                 <div class="col-6 col-md-3 col-lg-2">
                     <div class="input-group input-group-sm">
@@ -86,20 +86,15 @@
                         </select>
                     </div>
                 </div>
-                <!-- Input Pencarian -->
-                <div class="col-12 col-md-4 col-lg-5">
+                <!-- Input Pencarian (Auto Search Live) -->
+                <div class="col-12 col-md-6 col-lg-8">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control border-start-0" name="q" placeholder="Cari nomor surat, nama perusahaan/instansi, perihal, atau PIC..." value="{{ @search_q }}">
+                        <input type="text" id="suratSearchInput" class="form-control border-start-0" name="q" placeholder="Cari nomor surat, nama perusahaan/instansi, perihal, atau PIC..." value="{{ @search_q }}" autocomplete="off">
+                        <button class="btn btn-outline-secondary border-start-0 text-muted d-none" type="button" id="btnClearSearch" title="Hapus pencarian">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
                     </div>
-                </div>
-                <div class="col-12 col-md-2 col-lg-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary btn-sm flex-fill fw-semibold text-nowrap">
-                        <i class="bi bi-search me-1"></i> Cari
-                    </button>
-                    <a href="{{ @BASE }}/surat-masuk" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1 text-nowrap" title="Segarkan Data Surat">
-                        <i class="bi bi-arrow-clockwise"></i> Segarkan
-                    </a>
                 </div>
             </form>
         </div>
@@ -816,6 +811,150 @@
             }
         });
     });
+
+    // ==========================================
+    // AUTO SEARCH (LIVE SEARCH) SURAT MASUK
+    // ==========================================
+    (function initSuratLiveSearch() {
+        var searchInput = document.getElementById('suratSearchInput');
+        var btnClear = document.getElementById('btnClearSearch');
+        var formFilter = document.getElementById('formFilterSurat');
+
+        if (formFilter) {
+            formFilter.addEventListener('submit', function(e) {
+                e.preventDefault();
+                doLiveSearch();
+            });
+        }
+
+        if (!searchInput) return;
+
+        var tableConfigs = [
+            {
+                paneId: 'content-tersedia',
+                tabId: 'tab-tersedia',
+                colSpan: 6,
+                emptyTitle: 'Tidak ada surat masuk yang cocok',
+                emptySub: 'Surat permohonan dengan kata kunci tersebut tidak ditemukan.'
+            },
+            {
+                paneId: 'content-ditolak',
+                tabId: 'tab-ditolak',
+                colSpan: 6,
+                emptyTitle: 'Tidak ada surat ditolak yang cocok',
+                emptySub: 'Surat ditolak dengan kata kunci tersebut tidak ditemukan.'
+            }
+        ];
+
+        function escapeHtml(str) {
+            return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function doLiveSearch() {
+            var query = searchInput.value || '';
+            var trimmed = query.trim();
+
+            if (btnClear) {
+                if (trimmed.length > 0) {
+                    btnClear.classList.remove('d-none');
+                } else {
+                    btnClear.classList.add('d-none');
+                }
+            }
+
+            var words = trimmed.toLowerCase().split(/\s+/).filter(Boolean);
+
+            tableConfigs.forEach(function(cfg) {
+                var pane = document.getElementById(cfg.paneId);
+                if (!pane) return;
+                var tabBtn = document.getElementById(cfg.tabId);
+                var chip = tabBtn ? tabBtn.querySelector('.count-chip') : null;
+                var table = pane.querySelector('table');
+                if (!table) return;
+                var tbody = table.querySelector('tbody');
+                if (!tbody) return;
+
+                var rows = Array.from(tbody.querySelectorAll('tr:not(.no-search-result-row)'));
+                if (!rows.length) return;
+
+                if (chip && !chip.hasAttribute('data-original-count')) {
+                    chip.setAttribute('data-original-count', chip.textContent.trim());
+                }
+
+                var visibleCount = 0;
+
+                rows.forEach(function(row) {
+                    if (!row.hasAttribute('data-original-no')) {
+                        var c0 = row.cells[0];
+                        if (c0) row.setAttribute('data-original-no', c0.textContent.trim());
+                    }
+
+                    var text = row.textContent.toLowerCase();
+                    var match = words.every(function(w) {
+                        return text.indexOf(w) !== -1;
+                    });
+
+                    if (match) {
+                        row.style.display = '';
+                        visibleCount++;
+                        if (row.cells[0] && row.cells[0].classList.contains('text-center')) {
+                            row.cells[0].textContent = visibleCount;
+                        }
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Update count chip pada tab
+                if (chip) {
+                    if (words.length > 0) {
+                        chip.textContent = visibleCount;
+                    } else {
+                        chip.textContent = chip.getAttribute('data-original-count') || visibleCount;
+                    }
+                }
+
+                // Baris feedback jika tidak ada hasil
+                var noResultRow = tbody.querySelector('.no-search-result-row');
+                if (visibleCount === 0 && rows.length > 0) {
+                    if (!noResultRow) {
+                        noResultRow = document.createElement('tr');
+                        noResultRow.className = 'no-search-result-row text-center';
+                        noResultRow.innerHTML = '<td colspan="' + cfg.colSpan + '" class="text-muted py-5">' +
+                            '<i class="bi bi-search display-6 d-block mb-2 text-secondary opacity-50"></i>' +
+                            '<div class="fw-semibold text-dark mb-1">' + cfg.emptyTitle + '</div>' +
+                            '<small class="text-muted">Pencarian untuk kata kunci "<strong>' + escapeHtml(trimmed) + '</strong>" tidak ditemukan.</small>' +
+                            '</td>';
+                        tbody.appendChild(noResultRow);
+                    } else {
+                        noResultRow.style.display = '';
+                        noResultRow.querySelector('td').innerHTML = 
+                            '<i class="bi bi-search display-6 d-block mb-2 text-secondary opacity-50"></i>' +
+                            '<div class="fw-semibold text-dark mb-1">' + cfg.emptyTitle + '</div>' +
+                            '<small class="text-muted">Pencarian untuk kata kunci "<strong>' + escapeHtml(trimmed) + '</strong>" tidak ditemukan.</small>';
+                    }
+                } else if (noResultRow) {
+                    noResultRow.style.display = 'none';
+                }
+            });
+        }
+
+        searchInput.addEventListener('input', doLiveSearch);
+        searchInput.addEventListener('keyup', doLiveSearch);
+
+        if (btnClear) {
+            btnClear.addEventListener('click', function() {
+                searchInput.value = '';
+                searchInput.focus();
+                doLiveSearch();
+            });
+        }
+
+        // Jalankan saat pertama kali halaman dimuat bila input terisi
+        if (searchInput.value.trim().length > 0) {
+            doLiveSearch();
+        }
+    })();
 </script>
 
 <style>

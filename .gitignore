@@ -9,3 +9,6 @@
 /storage/po_ttd/*
 !/storage/po_ttd/.gitkeep
 /storage/pembayaran/*
+
+/dabatase/*
+/scratch/*

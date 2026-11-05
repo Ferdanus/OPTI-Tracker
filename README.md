@@ -13,4 +13,4 @@ Aplikasi berbasis **PHP (Fat-Free Framework / F3)** dan **MySQL** untuk mendemon
    - Buka phpMyAdmin (`http://localhost/phpmyadmin`).
    - Buat database `mini_opti_tracker` atau import file `schema.sql`.
 3. **Akses Aplikasi**:
-   - Buka browser ke: `http://localhost/Mini%20OPTI%20Tracker/`
+   - Buka browser ke: `http://localhost/silopti/` (atau `http://[IP_LAPTOP]/silopti/`)

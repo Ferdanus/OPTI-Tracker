@@ -145,27 +145,7 @@ class SuratMasukController extends Controller {
             // Catat Jejak Audit / Activity Log
             $this->logActivity($orderId, 'surat_masuk', 'klaim_surat', 'Menerima dan mengklaim surat permohonan masuk ke antrean order');
 
-            // Kirim Notifikasi ke Ka. Tim OPTI & Superadmin
-            try {
-                $orderModel = new \OrderLayanan($this->db);
-                $order = $orderModel->getDetail($orderId);
-                if ($order) {
-                    \NotificationService::send($this->db, [
-                        'order_id'       => $orderId,
-                        'target_role'    => 'ketua_tim',
-                        'target_layanan' => !empty($order['jenis_layanan_opti']) ? $order['jenis_layanan_opti'] : 'semua',
-                        'judul'          => 'Permintaan Masuk Baru: Evaluasi Kelayakan Teknis',
-                        'pesan'          => "Permohonan layanan dari {$order['nama_perusahaan']} ({$order['judul_kegiatan']}) telah masuk. Mohon kaji kelayakan teknis ISO 17025 dan tentukan PIC.",
-                        'tipe'           => 'primary',
-                        'icon'           => 'bi-inbox-fill',
-                        'link_url'       => "/order/{$orderId}",
-                        'created_by'     => $userId,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
-                    ]);
-                }
-            } catch (\Exception $eNotif) {
-                // Jangan gagalkan flow jika notifikasi error
-            }
+            // Permohonan diklaim oleh Tim Mitra (Notifikasi resmi ke Ketua Tim dikirim saat Tahap 2 Form Pelayanan disubmit)
 
             $this->setFlashSuccess('Surat berhasil diterima.');
             $this->f3->reroute('/surat-masuk');
@@ -320,159 +300,50 @@ class SuratMasukController extends Controller {
             return;
         }
 
-        $relatifPath = ltrim($surat['file_path'] ?? '', "/\\");
-        $root = dirname(__DIR__, 2);
+        $rawPath = trim((string)($surat['file_path'] ?? ($surat['nama_berkas'] ?? '')));
+        if (empty($rawPath)) {
+            $this->f3->error(404, 'Berkas fisik surat permohonan belum diunggah oleh sekretaris di tabel arsip (tb_arsipsurat).');
+            return;
+        }
+
+        $clean = ltrim(urldecode(str_replace('\\', '/', $rawPath)), '/');
+        $clean = preg_replace('#^(?:silopti/|Mini[\s_]OPTI[\s_]Tracker/|public/|htdocs/)+#i', '', $clean);
+        $clean = ltrim($clean, '/');
+        $basename = basename($clean);
+
+        $root = str_replace('\\', '/', dirname(__DIR__, 2));
+        $legacyRoot = 'c:/xampp/htdocs/silopti';
 
         $kandidatPath = [
-            $root . '/' . $relatifPath,
-            $root . '/public/' . $relatifPath,
-            rtrim($root, '/\\') . '/../' . $relatifPath,
+            $root . '/' . $clean,
+            $root . '/public/' . $clean,
+            $root . '/' . ltrim($rawPath, '/'),
+            $root . '/uploads/surat_masuk/' . $basename,
+            $root . '/public/uploads/surat_masuk/' . $basename,
+            $root . '/storage/surat_masuk/' . $basename,
+            $root . '/uploads/permohonan/' . $basename,
+            $legacyRoot . '/' . $clean,
+            $legacyRoot . '/public/' . $clean,
+            $legacyRoot . '/' . ltrim($rawPath, '/'),
+            $legacyRoot . '/uploads/surat_masuk/' . $basename,
+            $rawPath,
         ];
 
         $filePath = null;
         foreach ($kandidatPath as $kandidat) {
-            if (!empty($relatifPath) && file_exists($kandidat)) {
-                $filePath = $kandidat;
+            $norm = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $kandidat);
+            if (is_file($norm)) {
+                $filePath = $norm;
                 break;
             }
         }
 
-        if (!$filePath) {
-            $filePath = $root . '/' . $relatifPath; // fallback lokasi default buat di-generate FPDF di bawah
+        if (!$filePath || !file_exists($filePath)) {
+            $this->f3->error(404, 'Berkas fisik surat masuk tidak ditemukan di server: ' . basename($rawPath));
+            return;
         }
 
-        if (!file_exists($filePath) || empty($relatifPath)) {
-            // Generate clean structured official letter
-            require_once dirname(__DIR__, 2) . '/app/helpers/fpdf/fpdf.php';
-            $pdf = new \FPDF('P', 'mm', 'A4');
-            $pdf->SetMargins(20, 15, 20);
-            $pdf->AddPage();
-            
-            // 1. KOP SURAT
-            $pdf->SetFont('Arial', 'B', 13);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(0, 6, strtoupper(($surat['pt_cv'] ? $surat['pt_cv'].' ' : '').$surat['pengirim']), 0, 1, 'C');
-            $pdf->SetFont('Arial', 'B', 8.5);
-            $pdf->SetTextColor(50, 50, 50);
-            $pdf->Cell(0, 4.5, 'PRODUSEN & JASA INDUSTRI TEKNOLOGI', 0, 1, 'C');
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->SetTextColor(70, 70, 70);
-            $pdf->Cell(0, 4, ($surat['alamat_pengirim'] ?: 'Kawasan Industri Terpadu, Indonesia') . ' | Telp: ' . ($surat['no_telp_pengirim'] ?: '-'), 0, 1, 'C');
-            $pdf->Ln(2);
-            $pdf->SetDrawColor(0, 0, 0);
-            $pdf->SetLineWidth(0.8);
-            $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
-            $pdf->SetLineWidth(0.2);
-            $pdf->Line(20, $pdf->GetY() + 0.8, 190, $pdf->GetY() + 0.8);
-            $pdf->Ln(5);
-
-            // 2. METADATA
-            $pdf->SetFont('Arial', '', 9.5);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(20, 5, 'Nomor', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(80, 5, $surat['nomor_surat'], 0, 0);
-            $pdf->SetFont('Arial', '', 9.5);
-            $pdf->Cell(0, 5, 'Bandung, ' . date('d F Y', strtotime($surat['tanggal_surat'])), 0, 1, 'R');
-
-            $pdf->Cell(20, 5, 'Lampiran', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->Cell(0, 5, '1 (satu) berkas spesifikasi teknis', 0, 1);
-
-            $pdf->Cell(20, 5, 'Hal', 0, 0);
-            $pdf->Cell(4, 5, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->MultiCell(0, 5, $surat['perihal'], 0, 'L');
-            $pdf->Ln(4);
-
-            // 3. TUJUAN
-            $pdf->SetFont('Arial', '', 9.5);
-            $pdf->Cell(0, 4.5, 'Kepada Yth.', 0, 1);
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 4.5, 'Kepala Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa (BBSPJIS)', 0, 1);
-            $pdf->SetFont('Arial', '', 9.5);
-            $pdf->Cell(0, 4.5, 'Kementerian Perindustrian Republik Indonesia', 0, 1);
-            $pdf->Cell(0, 4.5, 'Jl. Raya Dayeuhkolot No. 132, Bandung, Jawa Barat 40258', 0, 1);
-            $pdf->Ln(4);
-
-            // 4. PEMBUKA
-            $pdf->Cell(0, 5, 'Dengan hormat,', 0, 1);
-            $pdf->MultiCell(0, 5, "Sehubungan dengan rencana pengujian mutu dan optimalisasi proses industri, bersama ini kami mengajukan permohonan kerjasama pelaksanaan Layanan Optimalisasi Teknologi Industri (OPTI) dengan rincian sebagai berikut:", 0, 'J');
-            $pdf->Ln(3);
-
-            // 5. DATA BERSTRUKTUR
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 5, '1. Data Pemohon / Instansi:', 0, 1);
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(8, 4.8, '', 0, 0);
-            $pdf->Cell(38, 4.8, 'a. Nama Perusahaan', 0, 0);
-            $pdf->Cell(4, 4.8, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(0, 4.8, ($surat['pt_cv'] ? $surat['pt_cv'].' ' : '').$surat['pengirim'], 0, 1);
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(8, 4.8, '', 0, 0);
-            $pdf->Cell(38, 4.8, 'b. Alamat', 0, 0);
-            $pdf->Cell(4, 4.8, ':', 0, 0);
-            $pdf->MultiCell(0, 4.8, $surat['alamat_pengirim'] ?: 'Kawasan Industri Terpadu, Indonesia', 0, 'L');
-            $pdf->Cell(8, 4.8, '', 0, 0);
-            $pdf->Cell(38, 4.8, 'c. Narahubung / PIC', 0, 0);
-            $pdf->Cell(4, 4.8, ':', 0, 0);
-            $pdf->Cell(0, 4.8, $surat['pic_pengirim'] ?: 'Penanggung Jawab Teknis', 0, 1);
-            $pdf->Cell(8, 4.8, '', 0, 0);
-            $pdf->Cell(38, 4.8, 'd. Telepon & Email', 0, 0);
-            $pdf->Cell(4, 4.8, ':', 0, 0);
-            $pdf->Cell(0, 4.8, ($surat['no_telp_pengirim'] ?: '-') . ' / ' . ($surat['email_pengirim'] ?: '-'), 0, 1);
-            $pdf->Ln(2);
-
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 5, '2. Rincian Kebutuhan Layanan OPTI:', 0, 1);
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(8, 4.8, '', 0, 0);
-            $pdf->Cell(38, 4.8, 'a. Judul Kegiatan', 0, 0);
-            $pdf->Cell(4, 4.8, ':', 0, 0);
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->MultiCell(0, 4.8, $surat['perihal'], 0, 'L');
-            $pdf->SetFont('Arial', '', 9);
-            $pdf->Cell(8, 4.8, '', 0, 0);
-            $pdf->Cell(38, 4.8, 'b. Layanan Dimohon', 0, 0);
-            $pdf->Cell(4, 4.8, ':', 0, 0);
-            $pdf->Cell(0, 4.8, 'Layanan Optimalisasi Teknologi Industri (OPTI)', 0, 1);
-            $pdf->Cell(8, 4.8, '', 0, 0);
-            $pdf->Cell(38, 4.8, 'c. Ruang Lingkup', 0, 0);
-            $pdf->Cell(4, 4.8, ':', 0, 0);
-            $pdf->MultiCell(0, 4.8, 'Kajian Teknis, Karakterisasi Laboratorium & Penerbitan Sertifikat / Laporan Hasil Pengujian Resmi Balai', 0, 'L');
-            $pdf->Ln(3);
-
-            // 6. PENUTUP
-            $pdf->SetFont('Arial', '', 9.5);
-            $pdf->MultiCell(0, 4.8, "Demikian surat permohonan ini kami sampaikan. Kami berharap dapat segera menerima Tinjauan Kelayakan Permintaan serta Surat Penawaran Biaya resmi dari BBSPJIS. Atas perhatian dan kerjasama Bapak/Ibu, kami ucapkan terima kasih.", 0, 'J');
-            $pdf->Ln(5);
-
-            // 7. TTD
-            $pdf->SetX(110);
-            $pdf->Cell(80, 4.5, 'Hormat kami,', 0, 1, 'C');
-            $pdf->SetX(110);
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(80, 4.5, ($surat['pt_cv'] ? $surat['pt_cv'].' ' : '').$surat['pengirim'], 0, 1, 'C');
-            $pdf->Ln(2);
-            $pdf->SetX(125);
-            $pdf->SetFont('Arial', '', 7.5);
-            $pdf->SetTextColor(90, 90, 90);
-            $pdf->Cell(50, 4, '[ TTD & STEMPEL RESMI ]', 1, 1, 'C');
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Ln(8);
-            $pdf->SetX(110);
-            $pdf->SetFont('Arial', 'BU', 9.5);
-            $pdf->Cell(80, 4.5, $surat['pic_pengirim'] ?: 'Pimpinan Perusahaan', 0, 1, 'C');
-            $pdf->SetX(110);
-            $pdf->SetFont('Arial', '', 8.5);
-            $pdf->Cell(80, 4, 'Direktur', 0, 1, 'C');
-
-            $fileDir = dirname($filePath);
-            if (!is_dir($fileDir)) @mkdir($fileDir, 0777, true);
-            $pdf->Output('F', $filePath);
-        }
+        // Pastikan file yang di-stream adalah berkas fisik asli yang diunggah sekretaris
 
         // Send fresh anti-cache headers and stream PDF inline
         header('Content-Type: application/pdf');

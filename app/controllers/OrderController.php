@@ -163,7 +163,7 @@ class OrderController extends Controller {
         
         $totalUserTasks = $userTasksMasuk + $userTasksBerlangsung;
         $f3->set('total_user_tasks', $totalUserTasks);
-        if ($userRole === 'tim_kerja' || $userRole === 'ketua_tim' || in_array($userRole, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra'])) {
+        if ($userRole !== 'superadmin') {
             $f3->set('jumlah_notif_order', $totalUserTasks);
             $f3->set('jumlah_notif_katim', $totalUserTasks);
         }
@@ -200,161 +200,7 @@ class OrderController extends Controller {
      * Tandai order yang butuh aksi / merupakan tugas dari user yang sedang login
      */
     protected function markUserTasks(array &$rows, string $userRole, ?int $userId, string $userLayanan): int {
-        // Super Admin tidak memiliki tugas pengerjaan alur operasional order (khusus maintenance & akses seluruh order)
-        if ($userRole === 'superadmin') {
-            foreach ($rows as &$r) {
-                $r['is_user_task'] = false;
-                $r['user_task_reason'] = '';
-                $r['user_task_badge'] = '';
-            }
-            unset($r);
-            return 0;
-        }
-
-        $count = 0;
-        foreach ($rows as &$r) {
-            $isTask = false;
-            $reason = '';
-            $badge = '';
-
-            if ($userRole === 'tim_kerja') {
-                if (!empty($userId) && (int)($r['ketua_pelaksana_id'] ?? 0) === (int)$userId) {
-                    // PO sedang di meja orang lain (menunggu review Ketua Tim, verifikasi Humas/Tim Mitra/PPK BLU): bukan tugas Ketua Pelaksana saat ini
-                    $pmPo = (string) ($r['po_pemegang'] ?? '');
-                    // PO Aktif juga bukan tugas Ketua Pelaksana: PO-nya sudah selesai diverifikasi
-                    if (($pmPo === '' || $pmPo === 'pic') && (string) ($r['keterangan_aksi'] ?? '') !== 'PO Aktif') {
-                        $isTask = true;
-                        $reason = 'Anda adalah Ketua Pelaksana kegiatan ini';
-                        $badge = 'Ketua Pelaksana';
-                    }
-                } elseif (!empty($userId) && (int)($r['pic_proposal_id'] ?? 0) === (int)$userId) {
-                    $proposalSelesai = in_array($r['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
-                        || in_array($r['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])
-                        || in_array($r['status'] ?? '', ['penawaran_deal', 'disetujui'])
-                        || ($r['status_penawaran'] ?? '') === 'deal';
-                    if (!$proposalSelesai) {
-                        $isTask = true;
-                        $reason = 'Anda ditugaskan sebagai PIC Proposal / Perhitungan Biaya';
-                        $badge = 'PIC Proposal';
-                    }
-                }
-            } elseif ($userRole === 'ketua_tim') {
-                $divMatch = in_array($userLayanan, ['selulosa', 'lingkungan']) ? (($r['jenis_layanan_opti'] ?? '') === $userLayanan) : true;
-                if ($divMatch) {
-                    // 1. Kaji Kelayakan 4 Pilar oleh Ketua Tim
-                    // Berlaku jika order sudah didisposisi oleh Mitra, tapi tinjauan kelayakan belum selesai/belum layak/menunggu
-                    $perluKajiKelayakan = (($r['status'] ?? '') !== 'permintaan_masuk')
-                        && !empty($r['jenis_layanan_opti'])
-                        && ($r['jenis_layanan_opti'] ?? '') !== 'belum_ditentukan'
-                        && (empty($r['status_tinjauan']) || in_array($r['status_tinjauan'] ?? '', ['belum_ditinjau', 'menunggu', 'draft']))
-                        && ($r['status_tinjauan'] ?? '') !== 'layak'
-                        && ($r['status_tinjauan'] ?? '') !== 'tidak_layak'
-                        && ($r['status'] ?? '') !== 'ditolak';
-
-                    // 2. Approval Proposal & Rincian Biaya oleh Ketua Tim
-                    $perluApprovalBiaya = (($r['status_proposal_biaya'] ?? '') === 'menunggu_approval')
-                        || (($r['status_proposal'] ?? '') === 'diajukan')
-                        || (($r['stage_label'] ?? '') === 'Review Proposal');
-
-                    // 3. Penunjukan Ketua Pelaksana setelah order DEAL
-                    $isDeal = in_array($r['status'] ?? '', ['disetujui', 'penawaran_deal'])
-                        || ($r['status_penawaran'] ?? '') === 'deal'
-                        || ($r['status_respon_klien'] ?? '') === 'deal'
-                        || ($r['stage_label'] ?? '') === 'Penunjukan Pelaksana';
-                    $perluTunjukPelaksana = $isDeal && empty($r['ketua_pelaksana_id']) && ($r['status'] ?? '') !== 'selesai';
-
-                    // 4. Penunjukan PIC Proposal Riset (KHUSUS Selulosa)
-                    // Setelah kelayakan layak, Ketua Tim Selulosa harus menunjuk PIC Proposal
-                    $perluTunjukPic = (($r['jenis_layanan_opti'] ?? '') === 'selulosa')
-                        && (($r['status_tinjauan'] ?? '') === 'layak')
-                        && empty($r['pic_proposal_id'])
-                        && empty($r['surat_penawaran_id'])
-                        && ($r['status_penawaran'] ?? '') !== 'deal'
-                        && ($r['status'] ?? '') !== 'ditolak';
-
-                    // 5. PO Kegiatan sedang di meja Ketua Tim (review PO, atau mengerjakan / mereview revisi PPK BLU)
-                    $perluPoKatim = ((string) ($r['po_pemegang'] ?? '') === 'katim');
-
-                    if ($perluKajiKelayakan) {
-                        $isTask = true;
-                        $reason = 'Perlu Tinjauan Kelayakan 4 Pilar oleh Ketua Tim';
-                        $badge = 'Kaji Kelayakan';
-                    } elseif ($perluApprovalBiaya) {
-                        $isTask = true;
-                        $reason = 'Proposal & Rincian Biaya menunggu persetujuan Anda';
-                        $badge = 'Approval Biaya';
-                    } elseif ($perluTunjukPelaksana) {
-                        $isTask = true;
-                        $reason = 'Order sudah deal, perlu penunjukan Ketua Pelaksana';
-                        $badge = 'Tunjuk Pelaksana';
-                    } elseif ($perluTunjukPic) {
-                        $isTask = true;
-                        $reason = 'Perlu penunjukan PIC Proposal Riset';
-                        $badge = 'Tunjuk PIC';
-                    } elseif ($perluPoKatim) {
-                        $isTask = true;
-                        $reason = 'PO Kegiatan menunggu tindakan Anda (review atau revisi)';
-                        $badge = 'Review PO';
-                    }
-                }
-            } elseif (in_array($userRole, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra'])) {
-                // Task Tim Mitra hanya pada tahap di mana Tim Mitra harus bertindak:
-                // 1. Permohonan baru masuk yang belum didisposisi ke Ketua Tim
-                $isPermohonanBaru = (($r['status'] ?? '') === 'permintaan_masuk')
-                    || empty($r['jenis_layanan_opti'])
-                    || (($r['jenis_layanan_opti'] ?? '') === 'belum_ditentukan')
-                    || (in_array($r['status'] ?? '', ['draft', 'draft_disimpan']) && empty($r['status_tinjauan']));
-
-                // 2. Proposal / Rincian Biaya telah disetujui (siap dibuatkan Surat Penawaran / SPH oleh Tim Mitra)
-                $isSiapPenawaran = (
-                    (($r['status_proposal_biaya'] ?? '') === 'siap_penawaran')
-                    || in_array($r['stage_label'] ?? '', ['Proposal Disetujui', 'Siap Penawaran'])
-                ) && (($r['status_penawaran'] ?? '') !== 'deal')
-                  && (empty($r['surat_penawaran_id']) && empty($r['nomor_penawaran']) || ($r['status_penawaran'] ?? '') === 'draft');
-
-                if ($isPermohonanBaru) {
-                    $isTask = true;
-                    $reason = 'Permohonan baru masuk, perlu penentuan jenis layanan & disposisi';
-                    $badge = 'Disposisi Masuk';
-                } elseif ($isSiapPenawaran) {
-                    $isTask = true;
-                    $reason = 'Proposal biaya disetujui, siap diterbitkan surat penawaran';
-                    $badge = 'Siap Penawaran';
-                } elseif ((string) ($r['po_pemegang'] ?? '') === 'mitra') {
-                    // 3. PO Kegiatan menunggu verifikasi Tim Mitra
-                    $isTask = true;
-                    $reason = 'PO Kegiatan menunggu verifikasi Tim Mitra';
-                    $badge = 'Verifikasi PO';
-                }
-            } elseif (in_array($userRole, ['keuangan', 'ketua_tim_keuangan'])) {
-                if (in_array($r['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian']) || (($r['status_penawaran'] ?? '') === 'deal' && ($r['status_keuangan'] ?? '') !== 'lunas')) {
-                    $isTask = true;
-                    $reason = 'Menunggu pencatatan / verifikasi pelunasan pembayaran';
-                    $badge = 'Perlu Pembayaran';
-                }
-            } elseif ($userRole === 'humas') {
-                if ((string) ($r['po_pemegang'] ?? '') === 'humas') {
-                    $isTask = true;
-                    $reason = 'PO Kegiatan menunggu verifikasi Humas';
-                    $badge = 'Verifikasi PO';
-                }
-            } elseif (in_array($userRole, ['ppk', 'ppk_blu', 'pejabat'], true)) {
-                if ((string) ($r['po_pemegang'] ?? '') === 'ppk') {
-                    $isTask = true;
-                    $reason = 'PO Kegiatan menunggu verifikasi PPK BLU';
-                    $badge = 'Verifikasi PO';
-                }
-            }
-
-            $r['is_user_task'] = $isTask;
-            $r['user_task_reason'] = $reason;
-            $r['user_task_badge'] = $badge;
-            if ($isTask) {
-                $count++;
-            }
-        }
-        unset($r);
-        return $count;
+        return \OrderLayanan::markRowsUserTasks($rows, $userRole, $userId, $userLayanan);
     }
 
     /**
@@ -564,21 +410,7 @@ class OrderController extends Controller {
 
             $this->logActivity($orderId, 'order', 'input_manual', "Input permohonan baru dari saluran {$labelChannel} ({$judulKegiatan})");
 
-            // Kirim notifikasi ke Ka. Tim OPTI / Superadmin
-            try {
-                \NotificationService::send($this->db, [
-                    'order_id'        => $orderId,
-                    'target_role'     => 'ketua_tim',
-                    'target_layanan'  => ($jenisLayananOpti !== 'belum_ditentukan') ? $jenisLayananOpti : 'semua',
-                    'judul'           => "Permintaan Masuk Baru ({$labelChannel})",
-                    'pesan'           => "Permohonan layanan baru via {$labelChannel} dari {$custName} ({$judulKegiatan}) telah dicatat oleh Tim Mitra. Mohon kaji kelayakan teknis dan tentukan PIC.",
-                    'tipe'            => 'primary',
-                    'icon'            => 'bi-inbox-fill',
-                    'link_url'        => "/order/{$orderId}",
-                    'created_by'      => $userId,
-                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
-                ]);
-            } catch (\Exception $eNotif) {}
+            // Permohonan manual dicatat oleh Tim Mitra (Notifikasi resmi ke Ka Tim dikirim saat Form Pelayanan disubmit)
 
             $this->setFlashSuccess("Permohonan layanan baru dari <strong>{$custName}</strong> via <strong>{$labelChannel}</strong> berhasil dicatat dengan Nomor Permintaan <strong>{$nomorReq}</strong>.");
             $f3->reroute("/order/{$orderId}");
@@ -738,7 +570,16 @@ class OrderController extends Controller {
         $invoices = $invModel->getByOrderId($id);
 
         $payModel = new OptiPembayaran($this->db);
-        $riwayatBayar = $payModel->getByOrderId($id);
+        $rawBayar = $payModel->getByOrderId($id);
+        $riwayatBayar = [];
+        $drafKesanggupan = null;
+        foreach ((array)$rawBayar as $rb) {
+            if (($rb['status_verifikasi'] ?? 'terverifikasi') === 'terverifikasi') {
+                $riwayatBayar[] = $rb;
+            } elseif (!empty($rb['is_kesanggupan_bayar'])) {
+                $drafKesanggupan = $rb;
+            }
+        }
         $rekapKeuangan = $payModel->getRekapKeuanganOrder($id);
 
         $poDetail = null;
@@ -796,6 +637,9 @@ class OrderController extends Controller {
             try {
                 $repoSurat = new \SuratMasukRepository($this->db, $this->dbSekretariat);
                 $suratMasuk = $repoSurat->getSuratById((int)$order['id_surat_masuk']);
+                if ($suratMasuk && !empty($suratMasuk['pengirim']) && $suratMasuk['pengirim'] !== 'Instansi / Perusahaan') {
+                    $order['nama_perusahaan_surat'] = $suratMasuk['pengirim'];
+                }
             } catch (\Exception $e) {
                 // Ignore DB error
             }
@@ -838,7 +682,8 @@ class OrderController extends Controller {
             in_array($proposal['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) ||
             in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'siap_penawaran', 'disetujui'])
         );
-        $canEditProposalRole = ($isPic || $isSuperadmin || $isKetuaTim || ($this->isTimKerja() && empty($order['pic_proposal_id'])) || $this->hasPermission('order:proposal'));
+        $isTimKerjaLayanan = ($this->isTimKerja() && ($userLayanan === ($order['jenis_layanan_opti'] ?? '') || $userLayanan === 'semua'));
+        $canEditProposalRole = ($isPic || $isTimKerjaLayanan || $isSuperadmin || $isKetuaTim || $this->hasPermission('order:proposal'));
         $canEditProposal = $canEditProposalRole && ($isRevisi || $this->canEditSubmittedData($isSubmitted));
         $canReviewProposal = ($isKetuaTim || $isSuperadmin);
 
@@ -852,7 +697,7 @@ class OrderController extends Controller {
         } elseif ($proposalDisetujui && !$isSuperadmin && !$this->canEditSubmittedData(true)) {
             $canEditProposal = false;
             $proposalLockMessage = "Proposal telah disetujui. Fitur edit data dikunci, silakan hubungi superadmin.";
-        } elseif ($isSubmitted && !$this->canEditSubmittedData(true)) {
+        } elseif ($isSubmitted && !$this->canEditSubmittedData(true) && !$isPic && !$isTimKerjaLayanan && !$isKetuaTim && !$isSuperadmin) {
             $canEditProposal = false;
             $proposalLockMessage = "Proposal telah diajukan ke Ketua Tim. Fitur edit data dikunci, silakan hubungi superadmin.";
         } elseif (!$canEditProposalRole) {
@@ -860,9 +705,9 @@ class OrderController extends Controller {
             $proposalLockMessage = "Anda tidak memiliki hak akses untuk mengubah dokumen proposal ini.";
         }
 
-        // KETUA TIM OPTI SELULOSA / SUPERADMIN BISA LANGSUNG EDIT & UPLOAD PROPOSAL:
-        // Ketua Tim OPTI Selulosa berhak langsung mengedit data dan mengunggah berkas proposal tanpa perlu menekan tombol revisi terlebih dahulu
-        if (($isKetuaSelulosa || $isSuperadmin) && !$proposalDisetujui && $tinjauanSelesai) {
+        // PIC PROPOSAL / TIM KERJA / KETUA TIM OPTI / SUPERADMIN BISA LANGSUNG EDIT & UPLOAD PROPOSAL:
+        // PIC Proposal, Tim Kerja, Ketua Tim, dan Superadmin berhak mengedit data dan mengunggah berkas proposal selama proposal belum disetujui penuh
+        if (($isPic || $isTimKerjaLayanan || $isKetuaTim || $isSuperadmin) && !$proposalDisetujui && $tinjauanSelesai) {
             $canEditProposal = true;
             $proposalLockMessage = '';
         }
@@ -874,12 +719,40 @@ class OrderController extends Controller {
             $proposalLockMessage = "PIC Peneliti / Penyusun Proposal belum ditentukan. Silakan tetapkan PIC Proposal terlebih dahulu agar pengisian proposal dapat dilakukan.";
         }
 
-        // Parse durasi kegiatan ke angka Hari Kerja (kosongkan default jika belum diisi)
+        // Parse durasi kegiatan / SPM layanan secara dinamis dan akurat
+        $durasiNilai = !empty($order['durasi_total_nilai']) ? (int)$order['durasi_total_nilai'] : (!empty($order['spm_durasi_nilai']) ? (int)$order['spm_durasi_nilai'] : (!empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 0));
+        $durasiSatuan = !empty($order['durasi_satuan_efektif']) ? $order['durasi_satuan_efektif'] : (!empty($order['spm_durasi_satuan']) ? $order['spm_durasi_satuan'] : (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Bulan' : 'Hari Kerja'));
+
         $durasiStr = $proposal['durasi_kegiatan'] ?? '';
-        $durasiHari = '';
         if (!empty($durasiStr) && preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
-            $durasiHari = (int)$matches[1];
+            $durasiNilai = (int)$matches[1];
+            if (stripos($durasiStr, 'bulan') !== false) {
+                $durasiSatuan = 'Bulan';
+            }
+        } elseif (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' && !empty($kalkulasiLingkungan) && $durasiNilai <= 0) {
+            $maxBulan = 0;
+            foreach ($kalkulasiLingkungan as $kIt) {
+                $b = (int)($kIt['durasi_bulan'] ?? ($kIt['durasi_nilai'] ?? 0));
+                if ($b > $maxBulan) $maxBulan = $b;
+            }
+            if ($maxBulan > 0) {
+                $durasiNilai = $maxBulan;
+                $durasiSatuan = 'Bulan';
+            }
         }
+
+        if ($durasiNilai <= 0 && !empty($order['spm_layanan'])) {
+            if (preg_match('/(\d+)\s*(bulan|hari)/i', $order['spm_layanan'], $m)) {
+                $durasiNilai = (int)$m[1];
+                $durasiSatuan = (stripos($m[2], 'bulan') !== false) ? 'Bulan' : 'Hari Kerja';
+            }
+        }
+
+        if ($durasiNilai <= 0) {
+            $durasiNilai = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 1 : 20;
+        }
+
+        $durasiHari = $durasiNilai;
 
         // Jejak audit & riwayat aktivitas khusus proposal teknis
         $proposalActivityLogs = [];
@@ -894,7 +767,7 @@ class OrderController extends Controller {
             );
         } catch (\Exception $eLogs) {}
 
-        $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0;
+        $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0 && !empty($durasiHari) && (int)$durasiHari > 0;
 
         // Siapkan Master Data & Hak Akses Form Kalkulasi Lingkungan (Tahap 4)
         $daftarMetode = [];
@@ -917,20 +790,25 @@ class OrderController extends Controller {
             $daftarLabEksternal = $this->db->exec("SELECT * FROM pengujian_eksternal WHERE status = 'aktif' ORDER BY nama_lembaga ASC");
 
             $isPicLingkungan = ((int)$this->getUserId() === (int)($order['pic_proposal_id'] ?? 0));
-            $isSubmittedLingkungan = !empty($kalkulasiLingkungan) && (in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai'])));
+            $isSubmittedLingkungan = !empty($kalkulasiLingkungan) && (in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai'])));
             $canEditRoleLingkungan = ($this->hasPermission('order:kalkulasi_biaya') || $this->isSuperadmin() || $this->isKetuaTim() || $isPicLingkungan || ($this->isTimKerja() && empty($order['pic_proposal_id'])));
-            $canEditLingkungan = $canEditRoleLingkungan && $this->canEditSubmittedData($isSubmittedLingkungan);
+            $canEditLingkungan = $canEditRoleLingkungan && $this->canEditSubmittedData($isSubmittedLingkungan, (int)$id);
 
             if ($this->isTimMitra() && !$this->isSuperadmin()) {
                 $canEditLingkungan = false;
                 $lingkunganLockMessage = "Mode Pratinjau (Read-Only): Tim Mitra hanya dapat memantau rincian tarif dan parameter pengujian yang disusun oleh PIC / Ketua Tim.";
-            } elseif ($isSubmittedLingkungan && !$this->canEditSubmittedData(true)) {
+            } elseif ($isSubmittedLingkungan && !$this->canEditSubmittedData(true, (int)$id)) {
+                $canEditLingkungan = false;
                 $lingkunganLockMessage = "Rincian tarif dan parameter telah diajukan atau disetujui. Pengeditan dikunci, silakan hubungi superadmin.";
             } elseif (!$canEditRoleLingkungan) {
                 $lingkunganLockMessage = "Anda tidak memiliki hak akses untuk mengubah kalkulasi tarif pengujian ini.";
             }
         }
 
+        $isUnlockedOrder = (new OrderLayanan($this->db))->isOrderUnlocked((int)$id);
+        $order['is_unlocked_edit'] = $isUnlockedOrder ? 1 : 0;
+        $canKoreksi = ($isSuperadmin || $isUnlockedOrder);
+        $f3->set('can_koreksi', $canKoreksi);
         $f3->set('order', $order);
         $f3->set('surat_masuk', $suratMasuk);
         $f3->set('tinjauan', $tinjauan);
@@ -949,7 +827,13 @@ class OrderController extends Controller {
         $f3->set('can_review_proposal', $canReviewProposal);
         $f3->set('is_revisi', $isRevisi);
         $f3->set('is_ketua_selulosa', $isKetuaSelulosa);
+        $f3->set('durasi_nilai', $durasiNilai);
+        $f3->set('durasi_satuan', $durasiSatuan);
+        $f3->set('durasi_nilai', $durasiNilai);
+        $f3->set('durasi_satuan', $durasiSatuan);
         $f3->set('durasi_hari', $durasiHari);
+        $f3->set('spm_layanan_val', "{$durasiNilai} {$durasiSatuan}");
+        $f3->set('spm_layanan_val', "{$durasiNilai} {$durasiSatuan}");
         $f3->set('proposal_lock_message', $proposalLockMessage);
         $f3->set('is_proposal_approved', $proposalDisetujui);
         $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
@@ -1085,11 +969,6 @@ class OrderController extends Controller {
         $lampiranUserExisting = !empty($spExisting['file_lampiran_user'])
             ? str_replace('\\', '/', (string)$spExisting['file_lampiran_user'])
             : str_replace('\\', '/', (string)($_SESSION['pending_lampiran_sp_' . $id] ?? ''));
-        if (($order['jenis_layanan_opti'] ?? '') === 'selulosa' && !empty($proposal['file_proposal'])) {
-            if (empty($_SESSION['pending_lampiran_sp_' . $id])) {
-                $lampiranUserExisting = str_replace('\\', '/', (string)$proposal['file_proposal']);
-            }
-        }
 
         $hasCatatanKelayakan = false;
         $hasKendalaKelayakan = false;
@@ -1188,7 +1067,7 @@ class OrderController extends Controller {
 
         // Step 4: Proposal Teknis (Selulosa) / Tarif & Parameter (Lingkungan)
         $hasPenawaran = !empty($penawaran);
-        $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0;
+        $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0 && !empty($durasiHari) && (int)$durasiHari > 0;
 
         if ($isSelulosa) {
             // Selulosa: Wajib proposal lengkap & ACC Ka. Tim sebelum penawaran
@@ -1230,14 +1109,26 @@ class OrderController extends Controller {
         $bayarTermin = 0;      // termin terakhir yang sudah tercatat (ditampilkan sebagai "Termin N")
         $bayarBaris = 0;
         $punyaKesanggupan = false;
+        $drafKesanggupan = null;
+        $riwayatBayarValid = [];
         foreach ((array)$riwayatBayar as $rb) {
-            if (!empty($rb['is_kesanggupan_bayar'])) { $punyaKesanggupan = true; continue; }
+            if (!empty($rb['is_kesanggupan_bayar'])) {
+                if (($rb['status_verifikasi'] ?? '') === 'terverifikasi') {
+                    $punyaKesanggupan = true;
+                    $riwayatBayarValid[] = $rb;
+                } else {
+                    $drafKesanggupan = $rb;
+                }
+                continue;
+            }
             if (($rb['status_verifikasi'] ?? 'terverifikasi') === 'terverifikasi') {
                 $bayarTotal += (float)($rb['jumlah'] ?? 0);
                 $bayarBaris++;
                 $bayarTermin = max($bayarTermin, (int)($rb['termin_ke'] ?? 0));
+                $riwayatBayarValid[] = $rb;
             }
         }
+        $f3->set('draf_kesanggupan', $drafKesanggupan);
         if ($bayarTermin <= 0) { $bayarTermin = max(1, $bayarBaris); }
         $f3->set('bayar_termin', $bayarTermin);
         $bayarAcuan = !empty($penawaran['nominal_penawaran']) ? (float)$penawaran['nominal_penawaran'] : (float)($order['estimasi_biaya'] ?? 0);
@@ -1455,7 +1346,7 @@ class OrderController extends Controller {
             $langkahBerikutnya['role_icon'] = 'bi-clipboard-check-fill';
             $langkahBerikutnya['tipe_badge'] = 'primary';
             $langkahBerikutnya['tombol_teks'] = 'Lakukan Kaji Kelayakan';
-            $langkahBerikutnya['tombol_url'] = $f3->get('BASE') . "/order/{$id}/tinjauan";
+            $langkahBerikutnya['tombol_url'] = '#cardKajiKelayakan';
             $langkahBerikutnya['tombol_icon'] = 'bi-clipboard-check-fill';
             $langkahBerikutnya['tombol_class'] = 'btn-primary';
             $langkahBerikutnya['target_card'] = '#cardKajiKelayakan';
@@ -1992,6 +1883,12 @@ class OrderController extends Controller {
                 throw new \Exception("Order #{$orderId} tidak ditemukan.");
             }
 
+            if (!$this->canEditSubmittedData(true, $orderId)) {
+                $this->setFlashError('Akses ditolak: Data order ini terkunci dari pengeditan. Hubungi Superadmin untuk membuka izin edit.');
+                $f3->reroute("/order/{$orderId}");
+                return;
+            }
+
             $customerModel = new Customer($this->db);
             $pilihCustomerId = (int)($post['pilih_id_customer'] ?? 0);
 
@@ -2170,6 +2067,9 @@ class OrderController extends Controller {
             try {
                 $repoSurat = new \SuratMasukRepository($this->db, $this->dbSekretariat);
                 $suratMasuk = $repoSurat->getSuratById((int)$order['id_surat_masuk']);
+                if ($suratMasuk && !empty($suratMasuk['pengirim']) && $suratMasuk['pengirim'] !== 'Instansi / Perusahaan') {
+                    $order['nama_perusahaan_surat'] = $suratMasuk['pengirim'];
+                }
             } catch (\Exception $e) {
                 // Ignore DB error
             }
@@ -2212,7 +2112,7 @@ class OrderController extends Controller {
 
         if (!$this->hasPermission('order:tinjau') && !$this->isSuperadmin() && !$this->isTimMitra()) {
             $this->setFlashError('Akses Ditolak: Kaji kelayakan teknis dan penunjukan PIC merupakan wewenang Ketua Tim OPTI / Tim Mitra.');
-            $f3->reroute("/order/{$id}/tinjauan");
+            $f3->reroute("/order/{$id}");
             return;
         }
 
@@ -2244,8 +2144,17 @@ class OrderController extends Controller {
 
         $existingTinjauan = $orderModel->getTinjauanKelayakan($id);
         $tinjauanAlreadyDone = !empty($existingTinjauan) && empty($existingTinjauan['is_draft']) && !empty($existingTinjauan['keputusan']);
-        if ($tinjauanAlreadyDone) {
+        // Simpan draf murni: jika tombol yang diklik adalah draf, JANGAN pernah paksa isDraft menjadi false!
+        if ($actionBtn === 'draft') {
+            $isDraft = true;
+        } elseif ($tinjauanAlreadyDone) {
             $isDraft = false;
+        }
+
+        if ($tinjauanAlreadyDone && !$isDraft && !$this->canEditSubmittedData(true, $id)) {
+            $this->setFlashError("Akses Ditolak: Kaji kelayakan teknis telah ditetapkan dan terkunci. Hubungi Superadmin untuk membuka izin edit.");
+            $f3->reroute($redirectBack);
+            return;
         }
 
         $keputusan = ($post['keputusan'] ?? '') === 'tidak_dapat_dilaksanakan' ? 'tidak_dapat_dilaksanakan' : 'dapat_dilaksanakan';
@@ -2322,13 +2231,14 @@ class OrderController extends Controller {
 
                     // Notif ke PIC Peneliti / Tim Kerja
                     if (!empty($post['pic_proposal_id'])) {
+                        $nomorReq = !empty($order['nomor_permintaan']) ? $order['nomor_permintaan'] : (!empty($order['nomor_order']) ? $order['nomor_order'] : ('REQ-' . $id));
                         \NotificationService::send($this->db, [
                             'order_id'       => $id,
                             'target_role'    => 'tim_kerja',
                             'target_user_id' => (int)$post['pic_proposal_id'],
                             'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
-                            'judul'          => 'Penugasan Dokumen Proposal Teknis',
-                            'pesan'          => "Anda ditugaskan sebagai PIC untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon susun dan unggah dokumen proposal teknis.",
+                            'judul'          => 'Penugasan PIC Dokumen Proposal',
+                            'pesan'          => "Ditugaskan sebagai PIC untuk order {$nomorReq}. Mohon susun dan unggah dokumen proposal teknis.",
                             'tipe'           => 'primary',
                             'icon'           => 'bi-file-earmark-arrow-up-fill',
                             'link_url'       => "/order/{$id}",
@@ -2364,7 +2274,7 @@ class OrderController extends Controller {
             $f3->reroute("/order/{$id}");
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menyimpan tinjauan kelayakan: ' . $e->getMessage());
-            $f3->reroute("/order/{$id}/tinjauan");
+            $f3->reroute("/order/{$id}");
         }
     }
 
@@ -2499,9 +2409,9 @@ class OrderController extends Controller {
         }
 
         $existingKalkulasi = $orderModel->getKalkulasiLingkungan($id);
-        $isSubmitted = !empty($existingKalkulasi) && (in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai'])));
-        if ($isSubmitted && !$this->canEditSubmittedData(true)) {
-            $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada data yang sudah diajukan/disetujui tidak diperbolehkan.");
+        $isSubmitted = !empty($existingKalkulasi) && (in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai'])));
+        if ($isSubmitted && !$this->canEditSubmittedData(true, $id)) {
+            $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada data yang sudah diajukan/disetujui tidak diperbolehkan tanpa izin Super Admin.");
             $f3->reroute("/order/{$id}");
             return;
         }
@@ -2554,20 +2464,33 @@ class OrderController extends Controller {
 
             $actionBtn = $post['action_btn'] ?? 'save_draft';
             $isAlreadyApproved = in_array($orderBefore['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui']);
-            $isDraft = in_array($actionBtn, ['save_draft', 'draft']) && !$isAlreadyApproved;
+            // Jika tombol Simpan Draf diklik, prioritaskan sebagai draft murni tanpa memajukan status
+            $isDraft = in_array($actionBtn, ['save_draft', 'draft']);
 
             $statusToSave = 'siap_penawaran';
             if ($isDraft) {
                 $statusToSave = 'draft_disimpan';
             } elseif ($actionBtn === 'kirim_katim') {
                 $statusToSave = 'menunggu_approval';
+            } elseif ($isAlreadyApproved) {
+                $statusToSave = $orderBefore['status_proposal_biaya'];
             }
 
+            $judulKegiatan = isset($post['judul_kegiatan']) ? trim($post['judul_kegiatan']) : null;
             $hasil = $orderModel->simpanKalkulasiLingkungan(
                 $id, $items, $diskon, $tglSampel, $userId,
                 $spmLayanan, $spmDurasiNilai, $spmDurasiSatuan, $spmTriggerTipe,
-                $statusToSave
+                $statusToSave,
+                $judulKegiatan
             );
+            if (!empty($judulKegiatan)) {
+                try {
+                    $this->db->exec(
+                        "UPDATE tb_surat_penawaran SET perihal = CONCAT('Penawaran Layanan Jasa OPTI - ', ?) WHERE order_id = ? AND (status_respon_klien IS NULL OR status_respon_klien = 'draft')",
+                        [1 => $judulKegiatan, 2 => $id]
+                    );
+                } catch (\Exception $eSp) {}
+            }
 
             // Simpan / Perbarui Penunjukan PIC Pengujian / Ketua Tim Pelaksana Lingkungan (Tahap 4)
             if (isset($post['pic_proposal_id'])) {
@@ -2575,7 +2498,7 @@ class OrderController extends Controller {
                 $oldPicId = !empty($orderBefore['pic_proposal_id']) ? (int)$orderBefore['pic_proposal_id'] : null;
                 if ($newPicId !== $oldPicId) {
                     $this->db->exec("UPDATE order_layanan SET pic_proposal_id = ?, ketua_pelaksana_id = COALESCE(ketua_pelaksana_id, ?), ketua_pelaksana_at = COALESCE(ketua_pelaksana_at, NOW()) WHERE id = ?", [$newPicId, $newPicId, $id]);
-                    if (!empty($newPicId)) {
+                    if (!empty($newPicId) && !$isDraft) {
                         try {
                             $uPic = $this->db->exec("SELECT nama_user FROM tb_arsipuser WHERE id_user = ?", [1 => $newPicId]);
                             $picNama = !empty($uPic) ? $uPic[0]['nama_user'] : 'PIC';
@@ -2928,13 +2851,14 @@ class OrderController extends Controller {
 
                 // 3. Notif ke PIC jika sudah langsung ditunjuk
                 if (!empty($picId)) {
+                    $nomorReq = !empty($order->nomor_permintaan) ? $order->nomor_permintaan : (!empty($order->nomor_order) ? $order->nomor_order : ('REQ-' . $id));
                     \NotificationService::send($this->db, [
                         'order_id'       => $id,
                         'target_role'    => 'tim_kerja',
                         'target_user_id' => $picId,
                         'target_layanan' => $jenisOpti,
                         'judul'          => 'Penugasan PIC Dokumen Proposal',
-                        'pesan'          => "Anda telah ditugaskan sebagai PIC Proposal untuk Order #{$nomorOrderStr} ({$perusahaanStr}).",
+                        'pesan'          => "Ditugaskan sebagai PIC untuk order {$nomorReq}. Mohon susun dan unggah dokumen proposal teknis.",
                         'tipe'           => 'primary',
                         'icon'           => 'bi-person-check-fill',
                         'link_url'       => "/order/{$id}",
@@ -3699,13 +3623,14 @@ class OrderController extends Controller {
 
             // Kirim notifikasi ke PIC yang baru ditunjuk & Tim Mitra
             try {
+                $nomorReq = !empty($order['nomor_permintaan']) ? $order['nomor_permintaan'] : (!empty($order['nomor_order']) ? $order['nomor_order'] : ('REQ-' . $id));
                 \NotificationService::send($this->db, [
                     'order_id'       => $id,
                     'target_role'    => 'tim_kerja',
                     'target_user_id' => $picId,
                     'target_layanan' => $order['jenis_layanan_opti'] ?? 'selulosa',
-                    'judul'          => 'Penugasan Dokumen Proposal Teknis',
-                    'pesan'          => "Anda telah ditunjuk oleh Ketua Tim OPTI ({$userNama}) sebagai PIC Peneliti untuk menyusun proposal teknis Order #{$order['nomor_order']} ({$order['nama_perusahaan']}).",
+                    'judul'          => 'Penugasan PIC Dokumen Proposal',
+                    'pesan'          => "Ditugaskan sebagai PIC untuk order {$nomorReq}. Mohon susun dan unggah dokumen proposal teknis.",
                     'tipe'           => 'primary',
                     'icon'           => 'bi-person-check-fill',
                     'link_url'       => "/order/{$id}",
@@ -3947,6 +3872,18 @@ class OrderController extends Controller {
                 throw new \Exception("Order #{$id} tidak ditemukan.");
             }
 
+            $isPelayananSubmitted = !in_array($order->status ?? '', ['draft', 'permohonan']);
+            if ($isPelayananSubmitted && !$this->canEditSubmittedData(true, $id)) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Akses ditolak: Formulir pelayanan telah disubmit dan terkunci. Hubungi Superadmin untuk membuka izin edit.']);
+                    exit;
+                }
+                $this->setFlashError('Akses ditolak: Formulir pelayanan telah disubmit dan terkunci. Hubungi Superadmin untuk membuka izin edit.');
+                $f3->reroute("/order/{$id}#pane-stage-2");
+                return;
+            }
+
             $order->jenis_layanan_opti = $jenisLayanan;
             $order->deskripsi = !empty($penjelasan) ? trim($penjelasan) : null;
             $order->media_permohonan = $permintaanMelalui;
@@ -3978,26 +3915,23 @@ class OrderController extends Controller {
                 }
             }
 
-            // Sinkronisasi ke tb_surat_penawaran jika ada
+            // Sinkronisasi ke tb_surat_penawaran HANYA jika surat penawaran sudah pernah dibuat (Tahap 5)
             try {
                 $spModel = new \DB\SQL\Mapper($this->db, 'tb_surat_penawaran');
                 $spModel->load(['order_id = ?', $id]);
-                if ($spModel->dry()) {
-                    $spModel->order_id = $id;
-                    $spModel->customer_id = (int)($order->id_customer ?? 0);
-                    $spModel->status = 'draft';
-                    $spModel->status_respon_klien = 'draft';
-                    $spModel->tanggal_surat = date('Y-m-d');
-                    $spModel->created_at = date('Y-m-d H:i:s');
+                if (!$spModel->dry()) {
+                    if (!empty($nama)) $spModel->nama = $nama;
+                    if (!empty($perusahaan)) $spModel->perusahaan = $perusahaan;
+                    if (!empty($alamat)) $spModel->alamat = $alamat;
+                    $spModel->penjelasan = !empty($penjelasan) ? trim($penjelasan) : null;
+                    $spModel->permintaan_melalui = $permintaanMelalui;
+                    if (!empty($pegawaiId)) $spModel->pegawai_id = $pegawaiId;
+                    if (!empty($jenisLayanan) && $jenisLayanan !== 'belum_ditentukan') {
+                        $spModel->jenis_layanan = $jenisLayanan;
+                    }
+                    $spModel->updated_at = date('Y-m-d H:i:s');
+                    $spModel->save();
                 }
-                if (!empty($nama)) $spModel->nama = $nama;
-                if (!empty($perusahaan)) $spModel->perusahaan = $perusahaan;
-                if (!empty($alamat)) $spModel->alamat = $alamat;
-                $spModel->penjelasan = !empty($penjelasan) ? trim($penjelasan) : null;
-                $spModel->permintaan_melalui = $permintaanMelalui;
-                $spModel->pegawai_id = $pegawaiId;
-                $spModel->jenis_layanan = $jenisLayanan;
-                $spModel->save();
             } catch (\Exception $eSp) {}
 
             if ($actionBtn === 'kirim_katim') {
@@ -4031,17 +3965,32 @@ class OrderController extends Controller {
                         $order->save();
                         $this->logActivity($id, 'form_pelayanan', 'simpan_form_pelayanan', 'Formulir layanan & kaji kelayakan disetujui (OPTI ' . ucfirst($jenisLayanan) . ')');
 
-                        // Notifikasi Khusus ke Ketua Tim OPTI Selulosa jika belum ditunjuk PIC
-                        if ($jenisLayanan === 'selulosa' && empty($order->pic_proposal_id)) {
+                        // Notifikasi ke Ketua Tim Layanan OPTI & Tim Mitra
+                        if (in_array($jenisLayanan, ['selulosa', 'lingkungan']) && empty($order->pic_proposal_id)) {
                             try {
+                                $nomorReq = !empty($order->nomor_permintaan) ? $order->nomor_permintaan : ('REQ-' . date('Ym') . '-' . str_pad($id, 4, '0', STR_PAD_LEFT));
+                                $judulKeg = !empty($order->judul_kegiatan) ? " ({$order->judul_kegiatan})" : "";
                                 \NotificationService::send($this->db, [
                                     'order_id'       => $id,
                                     'target_role'    => 'ketua_tim',
-                                    'target_layanan' => 'selulosa',
-                                    'judul'          => 'Perlu Penunjukan PIC Proposal Selulosa',
-                                    'pesan'          => "Tim Mitra telah menyetujui kelayakan untuk Order #{$order->nomor_order} ({$perusahaan}), namun belum menetapkan PIC Peneliti. Mohon Ketua Tim segera menetapkan PIC Proposal agar proposal teknis dapat mulai disusun.",
-                                    'tipe'           => 'warning',
-                                    'icon'           => 'bi-person-exclamation',
+                                    'target_layanan' => $jenisLayanan,
+                                    'judul'          => 'Permintaan Permohonan Baru',
+                                    'pesan'          => "Permohonan layanan [{$nomorReq}] dari {$perusahaan}{$judulKeg}.\nTindakan: Tentukan PIC.",
+                                    'tipe'           => 'primary',
+                                    'icon'           => 'bi-person-check',
+                                    'link_url'       => "/order/{$id}",
+                                    'created_by'     => $userId,
+                                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                                ]);
+
+                                \NotificationService::send($this->db, [
+                                    'order_id'       => $id,
+                                    'target_role'    => 'tim_mitra',
+                                    'target_layanan' => 'semua',
+                                    'judul'          => 'Permohonan Diteruskan ke Ka. Tim OPTI',
+                                    'pesan'          => "Permohonan [{$nomorReq}] ({$perusahaan}) telah diteruskan ke Ketua Tim OPTI " . ucfirst($jenisLayanan) . ".\nTindakan: Tentukan PIC.",
+                                    'tipe'           => 'info',
+                                    'icon'           => 'bi-send-check',
                                     'link_url'       => "/order/{$id}",
                                     'created_by'     => $userId,
                                     'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
@@ -4076,6 +4025,39 @@ class OrderController extends Controller {
 
                     $this->logActivity($id, 'form_pelayanan', 'disposisi_layanan', 'Disposisi layanan ke Ka. Tim OPTI ' . ucfirst($jenisLayanan));
 
+                    // Notifikasi ke Ketua Tim Layanan OPTI & Tim Mitra (Standar SOP: Kaji Kelayakan & PIC oleh Ketua Tim)
+                    if (in_array($jenisLayanan, ['selulosa', 'lingkungan'])) {
+                        try {
+                            $nomorReq = !empty($order->nomor_permintaan) ? $order->nomor_permintaan : ('REQ-' . date('Ym') . '-' . str_pad($id, 4, '0', STR_PAD_LEFT));
+                            $judulKeg = !empty($order->judul_kegiatan) ? " ({$order->judul_kegiatan})" : "";
+                            \NotificationService::send($this->db, [
+                                'order_id'       => $id,
+                                'target_role'    => 'ketua_tim',
+                                'target_layanan' => $jenisLayanan,
+                                'judul'          => 'Permintaan Permohonan Baru',
+                                'pesan'          => "Permohonan layanan [{$nomorReq}] dari {$perusahaan}{$judulKeg}.\nTindakan: Evaluasi kelayakan teknis dan tentukan PIC.",
+                                'tipe'           => 'primary',
+                                'icon'           => 'bi-clipboard2-check',
+                                'link_url'       => "/order/{$id}",
+                                'created_by'     => $userId,
+                                'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                            ]);
+
+                            \NotificationService::send($this->db, [
+                                'order_id'       => $id,
+                                'target_role'    => 'tim_mitra',
+                                'target_layanan' => 'semua',
+                                'judul'          => 'Permohonan Diteruskan ke Ka. Tim OPTI',
+                                'pesan'          => "Permohonan [{$nomorReq}] ({$perusahaan}) telah diteruskan ke Ketua Tim OPTI " . ucfirst($jenisLayanan) . ".\nTindakan: Evaluasi kelayakan teknis dan tentukan PIC.",
+                                'tipe'           => 'info',
+                                'icon'           => 'bi-send-check',
+                                'link_url'       => "/order/{$id}",
+                                'created_by'     => $userId,
+                                'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                            ]);
+                        } catch (\Exception $eNotif) {}
+                    }
+
                     // Audit Waktu & Pengirim Tahap 2 (First time only)
                     StageAudit::recordKirim(
                         $this->db,
@@ -4092,7 +4074,9 @@ class OrderController extends Controller {
                     $this->setFlashSuccess("Formulir Pelayanan Jasa berhasil dikirim ke <strong>Ketua Tim OPTI " . ucfirst($jenisLayanan) . "</strong> untuk Kaji Ulang Kelayakan Teknis &amp; Penunjukan PIC (Tahap 3).");
                 }
             } else {
-                $order->status = 'draft_disimpan';
+                if (in_array($order->status, ['draft', 'draft_disimpan', '']) || empty($order->status)) {
+                    $order->status = 'draft_disimpan';
+                }
                 $order->media_permohonan = $permintaanMelalui;
                 $order->save();
                 if ($sertakanKaji) {
@@ -4168,7 +4152,7 @@ class OrderController extends Controller {
         $isTimKerja = ($userRole === 'tim_kerja');
 
         if ($this->isTimMitra() && !$isSuperadmin) {
-            $this->setFlashError("Akses Ditolak: Halaman Tugas Proposal Teknis hanya untuk Tim Kerja (PIC Peneliti) dan Ketua Tim OPTI.");
+            $this->setFlashError("Akses Ditolak: Halaman Tugas Tim Kerja hanya untuk Tim Kerja (PIC Peneliti) dan Ketua Tim OPTI.");
             $f3->reroute('/order');
             return;
         }
@@ -4351,7 +4335,7 @@ class OrderController extends Controller {
         $f3->set('daftar_bulan', $daftarBulan);
         $f3->set('is_tim_kerja', $isTimKerja);
 
-        $this->render('order/proposal_index.html', 'Pusat Tugas Proposal Teknis', 'proposal');
+        $this->render('order/proposal_index.html', 'Pusat Tugas Tim Kerja', 'proposal');
     }
 
     /**
@@ -4422,7 +4406,8 @@ class OrderController extends Controller {
             in_array($proposal['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan']) ||
             in_array($order['status_proposal_biaya'] ?? '', ['menunggu_approval', 'siap_penawaran', 'disetujui'])
         );
-        $canEditRole = ($isPic || $isSuperadmin || $isKetuaTim || ($this->isTimKerja() && empty($order['pic_proposal_id'])) || $this->hasPermission('order:proposal'));
+        $isTimKerjaLayanan = ($this->isTimKerja() && ($userLayanan === ($order['jenis_layanan_opti'] ?? '') || $userLayanan === 'semua'));
+        $canEditRole = ($isPic || $isTimKerjaLayanan || $isSuperadmin || $isKetuaTim || $this->hasPermission('order:proposal'));
         $canEdit = $canEditRole && ($isRevisi || $this->canEditSubmittedData($isSubmitted));
         $canReview = ($isKetuaTim || $isSuperadmin);
 
@@ -4436,7 +4421,7 @@ class OrderController extends Controller {
         } elseif ($proposalDisetujui && !$isSuperadmin && !$this->canEditSubmittedData(true)) {
             $canEdit = false;
             $lockMessage = "Proposal telah disetujui. Fitur edit data dikunci, silakan hubungi superadmin.";
-        } elseif ($isSubmitted && !$this->canEditSubmittedData(true)) {
+        } elseif ($isSubmitted && !$this->canEditSubmittedData(true) && !$isPic && !$isTimKerjaLayanan && !$isKetuaTim && !$isSuperadmin) {
             $canEdit = false;
             $lockMessage = "Proposal telah diajukan ke Ketua Tim. Fitur edit data dikunci, silakan hubungi superadmin.";
         } elseif (!$canEditRole) {
@@ -4444,9 +4429,8 @@ class OrderController extends Controller {
             $lockMessage = "Anda tidak memiliki hak akses untuk mengubah dokumen proposal ini.";
         }
 
-        // KETUA TIM OPTI SELULOSA / SUPERADMIN BISA LANGSUNG EDIT & UPLOAD PROPOSAL:
-        // Ketua Tim OPTI Selulosa berhak penuh mengedit dan mengunggah dokumen proposal langsung tanpa harus menekan tombol 'Minta Revisi' terlebih dahulu
-        if (($isKetuaSelulosa || $isSuperadmin) && !$proposalDisetujui && $tinjauanSelesai) {
+        // PIC PROPOSAL / TIM KERJA / KETUA TIM OPTI / SUPERADMIN BISA LANGSUNG EDIT & UPLOAD PROPOSAL:
+        if (($isPic || $isTimKerjaLayanan || $isKetuaTim || $isSuperadmin) && !$proposalDisetujui && $tinjauanSelesai) {
             $canEdit = true;
             $lockMessage = '';
         }
@@ -4475,12 +4459,40 @@ class OrderController extends Controller {
             } catch (\Exception $e) {}
         }
 
-        // Parse durasi kegiatan ke angka Hari Kerja (kosongkan default jika belum diisi)
+        // Parse durasi kegiatan / SPM layanan secara dinamis dan akurat
+        $durasiNilai = !empty($order['durasi_total_nilai']) ? (int)$order['durasi_total_nilai'] : (!empty($order['spm_durasi_nilai']) ? (int)$order['spm_durasi_nilai'] : (!empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 0));
+        $durasiSatuan = !empty($order['durasi_satuan_efektif']) ? $order['durasi_satuan_efektif'] : (!empty($order['spm_durasi_satuan']) ? $order['spm_durasi_satuan'] : (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Bulan' : 'Hari Kerja'));
+
         $durasiStr = $proposal['durasi_kegiatan'] ?? '';
-        $durasiHari = '';
         if (!empty($durasiStr) && preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
-            $durasiHari = (int)$matches[1];
+            $durasiNilai = (int)$matches[1];
+            if (stripos($durasiStr, 'bulan') !== false) {
+                $durasiSatuan = 'Bulan';
+            }
+        } elseif (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' && !empty($kalkulasiLingkungan) && $durasiNilai <= 0) {
+            $maxBulan = 0;
+            foreach ($kalkulasiLingkungan as $kIt) {
+                $b = (int)($kIt['durasi_bulan'] ?? ($kIt['durasi_nilai'] ?? 0));
+                if ($b > $maxBulan) $maxBulan = $b;
+            }
+            if ($maxBulan > 0) {
+                $durasiNilai = $maxBulan;
+                $durasiSatuan = 'Bulan';
+            }
         }
+
+        if ($durasiNilai <= 0 && !empty($order['spm_layanan'])) {
+            if (preg_match('/(\d+)\s*(bulan|hari)/i', $order['spm_layanan'], $m)) {
+                $durasiNilai = (int)$m[1];
+                $durasiSatuan = (stripos($m[2], 'bulan') !== false) ? 'Bulan' : 'Hari Kerja';
+            }
+        }
+
+        if ($durasiNilai <= 0) {
+            $durasiNilai = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 1 : 20;
+        }
+
+        $durasiHari = $durasiNilai;
 
         // Ambil jejak audit & riwayat aktivitas khusus proposal teknis (Pengerjaan, Revisian, dan ACC antara Ka Tim OPTI & PIC)
         $activityLogs = $this->db->exec(
@@ -4497,7 +4509,13 @@ class OrderController extends Controller {
         $f3->set('surat_masuk', $suratMasuk);
         $f3->set('tinjauan', $tinjauan);
         $f3->set('activity_logs', $activityLogs);
+        $f3->set('durasi_nilai', $durasiNilai);
+        $f3->set('durasi_satuan', $durasiSatuan);
+        $f3->set('durasi_nilai', $durasiNilai);
+        $f3->set('durasi_satuan', $durasiSatuan);
         $f3->set('durasi_hari', $durasiHari);
+        $f3->set('spm_layanan_val', "{$durasiNilai} {$durasiSatuan}");
+        $f3->set('spm_layanan_val', "{$durasiNilai} {$durasiSatuan}");
         $f3->set('is_pic', $isPic);
         $f3->set('can_edit', $canEdit);
         $f3->set('can_review', $canReview);
@@ -4505,7 +4523,7 @@ class OrderController extends Controller {
         $f3->set('is_ketua_selulosa', $isKetuaSelulosa);
         $f3->set('lock_message', $lockMessage);
         $f3->set('is_proposal_approved', $proposalDisetujui);
-        $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0;
+        $proposalHasFileAndCost = !empty($proposal) && !empty($proposal['file_proposal']) && (float)($proposal['estimasi_total_biaya'] ?? 0) > 0 && !empty($durasiHari) && (int)$durasiHari > 0;
         $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
 
         // Ambil ruang lingkup / penjelasan murni dari Tim Mitra (Tahap 2) tanpa fallback ke judul kegiatan
@@ -4601,10 +4619,16 @@ class OrderController extends Controller {
 
         $isSubmitted = $hasProposalFile && !$isRevisi && in_array($existing['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan']);
 
-        // Jika Ketua Tim Selulosa, Superadmin, atau PIC saat revisi sedang mengedit proposal, jangan dikunci!
-        $canBypassLock = ($isKetuaSelulosa || $isSuperadmin || ($isPic && $isRevisi));
-        if ($isSubmitted && !$this->canEditSubmittedData(true) && $actionType !== 'revisi' && !$canBypassLock) {
-            $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada proposal yang sudah diajukan/disetujui tidak diperbolehkan.");
+        // Jika Ketua Tim, Superadmin, atau PIC Proposal / Tim Kerja sedang mengedit proposal (sebelum disetujui), jangan dikunci!
+        $isTimKerjaLayanan = ($this->isTimKerja() && ($userLayanan === ($order['jenis_layanan_opti'] ?? '') || $userLayanan === 'semua'));
+        $canBypassLock = ($isKetuaTim || $isSuperadmin || $isPic || $isTimKerjaLayanan);
+        if ($proposalDisetujui && !$this->canEditSubmittedData(true, $id) && !$isSuperadmin) {
+            $this->setFlashError("Gagal: Fitur edit data dikunci. Proposal sudah disetujui. Hubungi Superadmin untuk membuka izin edit.");
+            $f3->reroute($redirectUrl);
+            return;
+        }
+        if ($isSubmitted && !$this->canEditSubmittedData(true, $id) && $actionType !== 'revisi' && !$canBypassLock) {
+            $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada proposal yang sudah diajukan/disetujui tidak diperbolehkan tanpa izin Super Admin.");
             $f3->reroute($redirectUrl);
             return;
         }
@@ -4632,9 +4656,10 @@ class OrderController extends Controller {
         $judulProposal = trim($post['judul_proposal'] ?? '');
         $ruangLingkup = trim($post['ruang_lingkup'] ?? '');
         
-        $durasiHari = (int)($post['durasi_hari'] ?? ($post['durasi_angka'] ?? 30));
-        if ($durasiHari <= 0) $durasiHari = 30;
-        $durasiKegiatan = "{$durasiHari} Hari Kerja";
+        $durasiHari = (isset($post['durasi_hari']) && trim($post['durasi_hari']) !== '') ? (int)$post['durasi_hari'] : ((isset($post['durasi_angka']) && trim($post['durasi_angka']) !== '') ? (int)$post['durasi_angka'] : 0);
+        $durasiKegiatan = $durasiHari > 0 ? "{$durasiHari} Hari Kerja" : "";
+        // Durasi kegiatan proposal
+
 
         $rawBiaya = str_replace(['Rp', '.', ' '], '', $post['estimasi_total_biaya'] ?? '0');
         $rawBiaya = str_replace(',', '.', $rawBiaya);
@@ -4689,13 +4714,14 @@ class OrderController extends Controller {
             }
 
             $uploadDir = 'public/uploads/proposals/';
-            if (!is_dir('c:/xampp/htdocs/Mini OPTI Tracker/' . $uploadDir)) {
-                @mkdir('c:/xampp/htdocs/Mini OPTI Tracker/' . $uploadDir, 0777, true);
+            $baseDir = dirname(__DIR__, 2);
+            if (!is_dir($baseDir . '/' . $uploadDir)) {
+                @mkdir($baseDir . '/' . $uploadDir, 0777, true);
             }
 
             $newFileName = 'Proposal_Order_' . $id . '_' . time() . '.' . $ext;
             $destPath = $uploadDir . $newFileName;
-            $fullDest = 'c:/xampp/htdocs/Mini OPTI Tracker/' . $destPath;
+            $fullDest = $baseDir . '/' . $destPath;
 
             if (move_uploaded_file($file['tmp_name'], $fullDest)) {
                 $filePath = $destPath;
@@ -4708,6 +4734,11 @@ class OrderController extends Controller {
 
         // Validasi jika diajukan ke Ketua Tim / disetujui: Dokumen proposal fisik wajib diunggah
         if ($actionType === 'ajukan' || $actionType === 'simpan_dan_approve') {
+            if ($durasiHari <= 0) {
+                $this->setFlashError("Gagal: Estimasi kerja / durasi pelaksanaan (minimal 1 hari kerja) wajib diisi sebelum proposal dapat diajukan/disetujui.");
+                $f3->reroute($redirectUrl);
+                return;
+            }
             if (empty($filePath)) {
                 $this->setFlashError("Gagal: Berkas dokumen proposal resmi Word (.doc/.docx) wajib diunggah sebelum dapat diajukan/disetujui.");
                 $f3->reroute($redirectUrl);
@@ -4802,17 +4833,33 @@ class OrderController extends Controller {
             }
 
             // Sinkronkan status, durasi, dan estimasi biaya ke tabel order_layanan
-            if ($actionType === 'simpan_dan_approve' || $proposalDisetujui || in_array($statusProposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) {
+            if ($actionType === 'draft') {
+                $statusProposalBiaya = 'draft_disimpan';
+            } elseif ($actionType === 'simpan_dan_approve' || $proposalDisetujui || in_array($statusProposal, ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])) {
                 $statusProposalBiaya = 'siap_penawaran';
             } elseif ($actionType === 'ajukan' || $statusProposal === 'diajukan') {
                 $statusProposalBiaya = 'menunggu_approval';
             } else {
                 $statusProposalBiaya = 'draft_disimpan';
             }
-            $this->db->exec(
-                "UPDATE order_layanan SET estimasi_biaya = ?, status_proposal_biaya = ?, spm_layanan = ?, durasi_hari_kerja = ?, spm_durasi_nilai = ?, spm_durasi_satuan = 'Hari Kerja' WHERE id = ?",
-                [1 => $estimasiBiaya, 2 => $statusProposalBiaya, 3 => $durasiKegiatan, 4 => $durasiHari, 5 => $durasiHari, 6 => $id]
-            );
+            $orderUpdateSql = "UPDATE order_layanan SET estimasi_biaya = ?, status_proposal_biaya = ?, spm_layanan = ?, durasi_hari_kerja = ?, spm_durasi_nilai = ?, spm_durasi_satuan = 'Hari Kerja'";
+            $orderUpdateParams = [1 => $estimasiBiaya, 2 => $statusProposalBiaya, 3 => $durasiKegiatan, 4 => $durasiHari, 5 => $durasiHari, 6 => $durasiHari];
+            if (!empty($judulProposal)) {
+                $orderUpdateSql .= ", judul_kegiatan = ?";
+                $orderUpdateParams[] = $judulProposal;
+            }
+            $orderUpdateSql .= " WHERE id = ?";
+            $orderUpdateParams[] = $id;
+            $this->db->exec($orderUpdateSql, $orderUpdateParams);
+
+            if (!empty($judulProposal)) {
+                try {
+                    $this->db->exec(
+                        "UPDATE tb_surat_penawaran SET perihal = CONCAT('Penawaran Layanan Jasa OPTI - ', ?) WHERE order_id = ? AND (status_respon_klien IS NULL OR status_respon_klien = 'draft')",
+                        [1 => $judulProposal, 2 => $id]
+                    );
+                } catch (\Exception $eSp) {}
+            }
 
             // Audit Trail Activity Log
             if ($actionType === 'simpan_dan_approve') {
@@ -4956,7 +5003,7 @@ class OrderController extends Controller {
             // Lingkungan: Proposal teknis pasca bayar terkunci jika sudah di-ACC Ketua Tim
             $proposalDisetujui = ($hasProposalFile && in_array($existing['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan']));
         }
-        if ($proposalDisetujui && !$this->isSuperadmin() && !$this->canEditSubmittedData(true)) {
+        if ($proposalDisetujui && !$this->isSuperadmin() && !$this->canEditSubmittedData(true, $id)) {
             $this->setFlashError("Dokumen proposal telah disetujui oleh Ketua Tim OPTI. Fitur edit data dikunci, berkas tidak dapat diunggah ulang.");
             $f3->reroute($redirectUrl);
             return;
@@ -5025,13 +5072,14 @@ class OrderController extends Controller {
         }
 
         $targetDir = 'public/uploads/proposals';
-        if (!is_dir('c:/xampp/htdocs/Mini OPTI Tracker/' . $targetDir)) {
-            @mkdir('c:/xampp/htdocs/Mini OPTI Tracker/' . $targetDir, 0777, true);
+        $baseDir = dirname(__DIR__, 2);
+        if (!is_dir($baseDir . '/' . $targetDir)) {
+            @mkdir($baseDir . '/' . $targetDir, 0777, true);
         }
 
         $filename = ($isSelulosa ? 'Proposal_Selulosa_' : 'Proposal_Lingkungan_') . 'Order_' . $id . '_' . time() . '.' . $ext;
         $dest = $targetDir . '/' . $filename;
-        $fullDest = 'c:/xampp/htdocs/Mini OPTI Tracker/' . $dest;
+        $fullDest = $baseDir . '/' . $dest;
 
         if (move_uploaded_file($file['tmp_name'], $fullDest)) {
             $initialStatus = (!$isSelulosa) ? 'menunggu_approval' : 'draft';
@@ -5450,9 +5498,9 @@ class OrderController extends Controller {
                 throw new \Exception("Order Layanan #{$id} tidak ditemukan.");
             }
 
-            // 1. Syarat Utama: Ketua Tim harus sudah memilih PIC PO / Ketua Pelaksana terlebih dahulu
+            // 1. Syarat Utama: Ketua Tim harus sudah memilih PIC PO / Ketua Pelaksana terlebih dahulu (hanya saat aktivasi resmi, bukan draf)
             $pelaksanaId = !empty($order['ketua_pelaksana_id']) ? (int)$order['ketua_pelaksana_id'] : 0;
-            if ($pelaksanaId <= 0) {
+            if (!$isDraft && $pelaksanaId <= 0) {
                 $this->setFlashError('Aktivasi SPM belum dapat dilakukan: Ketua Tim harus menunjuk PIC PO / Ketua Pelaksana terlebih dahulu.');
                 $f3->reroute("/order/{$id}#pane-stage-7");
                 return;
@@ -5466,6 +5514,13 @@ class OrderController extends Controller {
 
             if (!$isSuperadmin && !$isKetuaTim && !$isPicPo) {
                 $this->setFlashError('Akses Ditolak: Aktivasi titik awal SPM hanya dapat dilakukan oleh Ketua Tim atau PIC PO yang ditugaskan.');
+                $f3->reroute("/order/{$id}#pane-stage-7");
+                return;
+            }
+
+            $isAlreadyActivated = !empty($order['tanggal_spm_mulai']) || !empty($order['tanggal_terima_sampel']);
+            if ($isAlreadyActivated && !$isDraft && !$this->canEditSubmittedData(true, $id)) {
+                $this->setFlashError("Akses Ditolak: SPM telah diaktifkan dan dikunci. Hubungi Superadmin untuk membuka izin edit titik awal.");
                 $f3->reroute("/order/{$id}#pane-stage-7");
                 return;
             }
@@ -5545,7 +5600,7 @@ class OrderController extends Controller {
                     'icon'           => 'bi-box-seam-fill',
                     'link_url'       => "/order/{$id}",
                     'created_by'     => $currentUserId > 0 ? $currentUserId : null,
-                    'created_by_name'=> $namaPetugas
+                    'created_by_name'=> 'Bagian Keuangan'
                 ]);
 
                 \NotificationService::send($this->db, [
@@ -5558,7 +5613,7 @@ class OrderController extends Controller {
                     'icon'           => 'bi-box-seam-fill',
                     'link_url'       => "/order/{$id}",
                     'created_by'     => $currentUserId > 0 ? $currentUserId : null,
-                    'created_by_name'=> $namaPetugas
+                    'created_by_name'=> 'Bagian Keuangan'
                 ]);
             } catch (\Exception $eNotif) {}
 
@@ -5611,38 +5666,84 @@ class OrderController extends Controller {
         // 1. Jalur Surat Kesanggupan Bayar (Skip pembayaran sekarang)
         if ($isKesanggupanBayar) {
             try {
-                $pembayaran = new OptiPembayaran($this->db);
-                $pembayaran->order_id = $id;
-                $pembayaran->termin_ke = 0;
-                $pembayaran->tanggal_bayar = date('Y-m-d');
-                $pembayaran->jumlah = 0;
-                $pembayaran->metode_pembayaran = null;
-                $pembayaran->nomor_transaksi_ntpn = null;
-                $pembayaran->keterangan = $keterangan ?: 'Dicatat via Surat Kesanggupan Bayar.';
-                $pembayaran->bukti_bayar = null;
-                $pembayaran->status_verifikasi = 'terverifikasi';
-                $pembayaran->is_kesanggupan_bayar = 1;
-                $pembayaran->verifikator_id = $userId;
-                $pembayaran->created_at = date('Y-m-d H:i:s');
-                $pembayaran->save();
+                $isDisposisi = !empty($post['disposisi_langsung']) && $post['disposisi_langsung'] == '1';
+                $statusVerif = $isDisposisi ? 'terverifikasi' : 'menunggu';
 
-                $orderModel->terbitkanNomorOrder($id);
-
-                if (!empty($post['disposisi_langsung'])) {
+                // Cek jika sudah ada draf kesanggupan bayar sebelumnya
+                $existingKb = $this->db->exec("SELECT id FROM opti_pembayaran WHERE order_id = ? AND is_kesanggupan_bayar = 1 ORDER BY id DESC LIMIT 1", [$id]);
+                if (!empty($existingKb)) {
+                    $payId = (int)$existingKb[0]['id'];
                     $this->db->exec(
-                        "UPDATE order_layanan SET disposisi_katim_at = NOW(), disposisi_katim_oleh = ? WHERE id = ?",
-                        [1 => $userId, 2 => $id]
+                        "UPDATE opti_pembayaran SET keterangan = ?, status_verifikasi = ?, verifikator_id = ?, tanggal_bayar = ? WHERE id = ?",
+                        [1 => ($keterangan ?: 'Dicatat via Surat Kesanggupan Bayar.'), 2 => $statusVerif, 3 => $userId, 4 => date('Y-m-d'), 5 => $payId]
                     );
-                    $this->setFlashSuccess('Order dicatat via Surat Kesanggupan Bayar &amp; sudah didisposisikan ke Ketua Tim.');
                 } else {
-                    $this->setFlashSuccess('Order dicatat via Surat Kesanggupan Bayar. Order masuk ke tahap berjalan.');
+                    $pembayaran = new OptiPembayaran($this->db);
+                    $pembayaran->order_id = $id;
+                    $pembayaran->termin_ke = 0;
+                    $pembayaran->tanggal_bayar = date('Y-m-d');
+                    $pembayaran->jumlah = 0;
+                    $pembayaran->metode_pembayaran = null;
+                    $pembayaran->nomor_transaksi_ntpn = null;
+                    $pembayaran->keterangan = $keterangan ?: 'Dicatat via Surat Kesanggupan Bayar.';
+                    $pembayaran->bukti_bayar = null;
+                    $pembayaran->status_verifikasi = $statusVerif;
+                    $pembayaran->is_kesanggupan_bayar = 1;
+                    $pembayaran->verifikator_id = $userId;
+                    $pembayaran->created_at = date('Y-m-d H:i:s');
+                    $pembayaran->save();
                 }
 
-                $this->logActivity($id, 'pembayaran', 'verifikasi_pembayaran', "Pencatatan Surat Kesanggupan Bayar (Berjalan)");
+                if ($isDisposisi) {
+                    $orderModel->terbitkanNomorOrder($id);
+                    $this->db->exec(
+                        "UPDATE order_layanan SET status_keuangan = 'lunas', disposisi_katim_at = NOW(), disposisi_katim_oleh = ? WHERE id = ?",
+                        [1 => $userId, 2 => $id]
+                    );
+                    $this->setFlashSuccess('Order berhasil dikonfirmasi via Surat Kesanggupan Bayar dan didisposisikan ke Ketua Tim. Tahap 7 (Aktivasi SPM) telah aktif.');
+                    $this->logActivity($id, 'pembayaran', 'verifikasi_pembayaran', "Pencatatan Surat Kesanggupan Bayar (Diverifikasi & Disposisi ke Ketua Tim)");
+
+                    // Kirim notifikasi ke Tim Mitra & Ketua Tim OPTI
+                    try {
+                        $namaPetugas = $_SESSION['nama_lengkap'] ?? 'Tim Keuangan';
+                        $layananOpti = $order['jenis_layanan_opti'] ?? 'semua';
+                        $nomorOrderStr = !empty($order['nomor_order']) ? "#{$order['nomor_order']}" : "#REQ-{$order['nomor_permohonan']}";
+                        $namaPt = $order['nama_perusahaan'] ?? 'Pelanggan';
+
+                        \NotificationService::send($this->db, [
+                            'order_id'       => $id,
+                            'target_role'    => 'tim_mitra',
+                            'target_layanan' => 'semua',
+                            'judul'          => 'Pencatatan Surat Kesanggupan Bayar',
+                            'pesan'          => "Order {$nomorOrderStr} ({$namaPt}) telah dikonfirmasi oleh Bagian Keuangan via Surat Kesanggupan Bayar.",
+                            'tipe'           => 'info',
+                            'icon'           => 'bi-file-earmark-check',
+                            'link_url'       => "/order/{$id}",
+                            'created_by'     => $userId > 0 ? $userId : null,
+                            'created_by_name'=> 'Bagian Keuangan'
+                        ]);
+
+                        \NotificationService::send($this->db, [
+                            'order_id'       => $id,
+                            'target_role'    => 'ketua_tim',
+                            'target_layanan' => $layananOpti,
+                            'judul'          => 'Pencatatan Surat Kesanggupan Bayar',
+                            'pesan'          => "Order {$nomorOrderStr} ({$namaPt}) telah dikonfirmasi oleh Bagian Keuangan via Surat Kesanggupan Bayar. Pelaksanaan pengujian dapat diproses.",
+                            'tipe'           => 'info',
+                            'icon'           => 'bi-file-earmark-check',
+                            'link_url'       => "/order/{$id}",
+                            'created_by'     => $userId > 0 ? $userId : null,
+                            'created_by_name'=> 'Bagian Keuangan'
+                        ]);
+                    } catch (\Exception $eNotif) {}
+                } else {
+                    $this->setFlashSuccess('Draf Surat Kesanggupan Bayar berhasil disimpan. Pembayaran belum didisposisikan ke Ketua Tim (order tetap di Tahap Pembayaran).');
+                    $this->logActivity($id, 'pembayaran', 'simpan_draf_kesanggupan', "Simpan Draf Surat Kesanggupan Bayar");
+                }
             } catch (\Exception $e) {
                 $this->setFlashError('Gagal mencatat kesanggupan bayar: ' . $e->getMessage());
             }
-            $f3->reroute("/order/{$id}");
+            $f3->reroute("/order/{$id}?tahap=6");
             return;
         }
 
@@ -5748,34 +5849,51 @@ class OrderController extends Controller {
 
             // Kirim notifikasi ke Tim Mitra & Ka Tim OPTI
             try {
+                $isLunas = ($statusBaru === 'lunas');
+                $layananOpti = $order['jenis_layanan_opti'] ?? 'semua';
+                $nomorOrderStr = !empty($order['nomor_order']) ? "#{$order['nomor_order']}" : "#REQ-{$order['nomor_permohonan']}";
+                $namaPt = $order['nama_perusahaan'] ?? 'Pelanggan';
+
+                $judulNotif = $isLunas ? 'Konfirmasi Pembayaran Lunas' : "Konfirmasi Bukti Pembayaran Termin #{$terminKe}";
+                $pesanMitra = $isLunas
+                    ? "Bukti pembayaran untuk Order {$nomorOrderStr} ({$namaPt}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah diverifikasi lunas oleh {$namaPetugas}."
+                    : "Bukti pembayaran Termin #{$terminKe} untuk Order {$nomorOrderStr} ({$namaPt}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dikonfirmasi dan dicatat oleh {$namaPetugas}.";
+
                 \NotificationService::send($this->db, [
                     'order_id'       => $id,
                     'target_role'    => 'tim_mitra',
                     'target_layanan' => 'semua',
-                    'judul'          => 'Pembayaran Lunas Diverifikasi',
-                    'pesan'          => "Pembayaran untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah diverifikasi lunas oleh {$namaPetugas}.",
+                    'judul'          => $judulNotif,
+                    'pesan'          => $pesanMitra,
                     'tipe'           => 'success',
                     'icon'           => 'bi-cash-coin',
                     'link_url'       => "/order/{$id}",
                     'created_by'     => $currentUserId > 0 ? $currentUserId : null,
-                    'created_by_name'=> $namaPetugas
+                    'created_by_name'=> 'Bagian Keuangan'
                 ]);
+
+                $pesanKatim = $isLunas
+                    ? "Bukti pembayaran untuk Order {$nomorOrderStr} ({$namaPt}) telah diverifikasi lunas oleh {$namaPetugas}. Pelaksanaan pengujian laboratorium dapat dimulai/diproses."
+                    : "Bukti pembayaran Termin #{$terminKe} untuk Order {$nomorOrderStr} ({$namaPt}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dikonfirmasi dan dicatat oleh {$namaPetugas}.";
 
                 \NotificationService::send($this->db, [
                     'order_id'       => $id,
                     'target_role'    => 'ketua_tim',
-                    'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
-                    'judul'          => 'Pembayaran Lunas Diverifikasi',
-                    'pesan'          => "Pembayaran untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah diverifikasi lunas. Pelaksanaan pengujian laboratorium dapat dimulai.",
+                    'target_layanan' => $layananOpti,
+                    'judul'          => $judulNotif,
+                    'pesan'          => $pesanKatim,
                     'tipe'           => 'success',
                     'icon'           => 'bi-cash-coin',
                     'link_url'       => "/order/{$id}",
                     'created_by'     => $currentUserId > 0 ? $currentUserId : null,
-                    'created_by_name'=> $namaPetugas
+                    'created_by_name'=> 'Bagian Keuangan'
                 ]);
             } catch (\Exception $eNotif) {}
 
-            $this->setFlashSuccess("Bukti pembayaran berhasil diunggah! Status pembayaran: <strong>Lunas</strong>. Tim OPTI dapat segera memulai pelaksanaan pengujian laboratorium.");
+            $pesanFlash = ($statusBaru === 'lunas')
+                ? "Bukti pembayaran berhasil diunggah! Status pembayaran: <strong>Lunas</strong>. Tim OPTI dapat segera memulai pelaksanaan pengujian laboratorium."
+                : "Bukti pembayaran Termin #{$terminKe} berhasil dicatat!";
+            $this->setFlashSuccess($pesanFlash);
         } catch (\Exception $e) {
             $this->setFlashError('Gagal menyimpan konfirmasi pembayaran: ' . $e->getMessage());
         }
@@ -5800,7 +5918,8 @@ class OrderController extends Controller {
         $proposal = $orderModel->getProposalRiset($id);
         $filePath = '';
         if (!empty($proposal['file_proposal'])) {
-            $target = 'c:/xampp/htdocs/Mini OPTI Tracker/' . ltrim($proposal['file_proposal'], "/\\");
+            $baseDir = dirname(__DIR__, 2);
+            $target = $baseDir . '/' . ltrim($proposal['file_proposal'], "/\\");
             if (file_exists($target)) {
                 $filePath = $target;
             }
@@ -5851,7 +5970,8 @@ class OrderController extends Controller {
         $filePath = '';
         $isUploaded = false;
         if (!empty($proposal['file_proposal'])) {
-            $target = 'c:/xampp/htdocs/Mini OPTI Tracker/' . ltrim($proposal['file_proposal'], "/\\");
+            $baseDir = dirname(__DIR__, 2);
+            $target = $baseDir . '/' . ltrim($proposal['file_proposal'], "/\\");
             if (file_exists($target)) {
                 $filePath = $target;
                 $isUploaded = true;
@@ -5881,7 +6001,7 @@ class OrderController extends Controller {
             $previewPdfPath = $filePath;
         } elseif ($isWord && file_exists($filePath)) {
             // Konversi Word (.docx / .doc) ke PDF beresolusi tinggi di server via Microsoft Word COM
-            $cacheDir = 'c:/xampp/htdocs/Mini OPTI Tracker/storage/cache/proposals_pdf';
+            $cacheDir = $baseDir . '/storage/cache/proposals_pdf';
             if (!is_dir($cacheDir)) {
                 @mkdir($cacheDir, 0777, true);
             }
@@ -5957,7 +6077,8 @@ class OrderController extends Controller {
             exit;
         }
 
-        $targetPath = 'c:/xampp/htdocs/Mini OPTI Tracker/' . ltrim($proposal['file_proposal'], "/\\");
+        $baseDir = dirname(__DIR__, 2);
+        $targetPath = $baseDir . '/' . ltrim($proposal['file_proposal'], "/\\");
         if (!file_exists($targetPath)) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Berkas proposal fisik tidak ditemukan di server: ' . basename($targetPath)]);
@@ -6007,7 +6128,7 @@ class OrderController extends Controller {
         @copy($targetPath, $backupPath);
 
         // Eksekusi skrip helper PowerShell Word COM
-        $helperScript = 'c:/xampp/htdocs/Mini OPTI Tracker/app/helpers/save_html_to_docx.ps1';
+        $helperScript = $baseDir . '/app/helpers/save_html_to_docx.ps1';
         $cmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File ' . escapeshellarg($helperScript) . 
                ' -htmlPath ' . escapeshellarg($tempHtml) . 
                ' -docxPath ' . escapeshellarg($targetPath);
@@ -6199,4 +6320,19 @@ class OrderController extends Controller {
             $f3->reroute('/order/' . $id);
         }
     }
+    public function hapusDrafPembayaran($f3, $params) {
+        $this->requireAuth();
+        $id = (int)($params['id'] ?? 0);
+        $payId = (int)($params['pay_id'] ?? 0);
+        $role = $this->getUserRole();
+        if (!$this->isSuperadmin() && !$this->isKeuangan() && $role !== 'keuangan') {
+            $this->setFlashError('Akses Ditolak.');
+            $f3->reroute("/order/{$id}?tahap=6");
+            return;
+        }
+        $this->db->exec("DELETE FROM opti_pembayaran WHERE id = ? AND order_id = ? AND status_verifikasi = 'menunggu'", [$payId, $id]);
+        $this->setFlashSuccess('Draf kesanggupan bayar berhasil dihapus.');
+        $f3->reroute("/order/{$id}?tahap=6");
+    }
+
 }

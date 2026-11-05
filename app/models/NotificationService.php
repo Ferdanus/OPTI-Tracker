@@ -60,25 +60,25 @@ class NotificationService
 
         // 1. Direct user target (e.g. PIC Proposal, specific assignee)
         if ($userId > 0) {
-            $conditions[] = "target_user_id = ?";
+            $conditions[] = "n.target_user_id = ?";
             $params[] = $userId;
         }
 
         // 2. Role-based matching (only when target_user_id IS NULL or 0)
         $roleMatch = [];
-        if (in_array($role, ['ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'mitra'])) {
-            // Seluruh personil Tim Mitra (Ketua maupun staf) menerima notifikasi alur kerja Tim Mitra & broadcast
-            $roleMatch[] = "target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'mitra', 'all')";
-        } elseif (in_array($role, ['ketua_tim_keuangan', 'keuangan'])) {
-            // Seluruh personil Tim Keuangan menerima notifikasi alur kerja Keuangan & broadcast
-            $roleMatch[] = "target_role IN ('ketua_tim_keuangan', 'keuangan', 'all')";
+        $isMitra = in_array($role, ['ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'mitra']) || ($role === 'ketua_tim' && $layanan === 'mitra');
+        $isKeuangan = in_array($role, ['ketua_tim_keuangan', 'keuangan']) || ($role === 'ketua_tim' && $layanan === 'keuangan');
+
+        if ($isMitra) {
+            $roleMatch[] = "n.target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'mitra', 'all')";
+        } elseif ($isKeuangan) {
+            $roleMatch[] = "n.target_role IN ('ketua_tim_keuangan', 'keuangan', 'all')";
         } elseif ($role === 'ketua_tim') {
-            $roleMatch[] = "target_role IN ('ketua_tim', 'all')";
-        } elseif ($role === 'tim_kerja') {
-            // Personil tim kerja menerima notifikasi peran tim_kerja atau broadcast umum (selain target_user_id spesifik)
-            $roleMatch[] = "target_role IN ('tim_kerja', 'all')";
+            $roleMatch[] = "n.target_role IN ('ketua_tim', 'all')";
+        } elseif (in_array($role, ['tim_kerja', 'tim_kerja_selulosa', 'tim_kerja_lingkungan', 'tim_kerja_pengujian', 'tim_kerja_sertifikasi'])) {
+            $roleMatch[] = "n.target_role IN ('tim_kerja', 'all')";
         } else {
-            $roleMatch[] = "(target_role = ? OR target_role = 'all')";
+            $roleMatch[] = "(n.target_role = ? OR n.target_role = 'all')";
             $params[] = $role;
         }
 
@@ -86,11 +86,11 @@ class NotificationService
 
         // Filter layanan for ketua_tim when matching role-based
         if (in_array($role, ['ketua_tim']) && in_array($layanan, ['selulosa', 'lingkungan'])) {
-            $roleSql = "({$roleSql}) AND (target_layanan = 'semua' OR target_layanan = ? OR target_layanan = 'belum_ditentukan' OR target_layanan IS NULL OR target_layanan = '')";
+            $roleSql = "({$roleSql}) AND (n.target_layanan = 'semua' OR n.target_layanan = ? OR n.target_layanan = 'belum_ditentukan' OR n.target_layanan IS NULL OR n.target_layanan = '')";
             $params[] = $layanan;
         }
 
-        $conditions[] = "((target_user_id IS NULL OR target_user_id = 0) AND ({$roleSql}))";
+        $conditions[] = "((n.target_user_id IS NULL OR n.target_user_id = 0) AND ({$roleSql}))";
 
         $fullCondition = "(" . implode(' OR ', $conditions) . ")";
         return [$fullCondition, $params];
@@ -101,23 +101,37 @@ class NotificationService
      */
     public static function getUserNotifications(\DB\SQL $db, int $userId, string $role, string $layanan = 'semua', int $limit = 15, string $search = '', bool $unreadOnly = false): array
     {
-        list($whereClause, $params) = self::buildTargetCondition($userId, $role, $layanan);
-        
+        list($whereClause, $targetParams) = self::buildTargetCondition($userId, $role, $layanan);
+
+        $params = [$userId];
+        $params = array_merge($params, $targetParams);
+
         $unreadSql = '';
         if ($unreadOnly) {
-            $unreadSql = " AND is_read = 0";
+            $unreadSql = " AND (nr.id IS NULL AND (n.target_user_id != {$userId} OR n.target_user_id IS NULL OR n.is_read = 0))";
         }
 
         $searchSql = '';
         if (!empty(trim($search))) {
-            $searchSql = " AND (judul LIKE ? OR pesan LIKE ? OR created_by_name LIKE ?)";
+            $searchSql = " AND (n.judul LIKE ? OR n.pesan LIKE ? OR n.created_by_name LIKE ?)";
             $keyword = '%' . trim($search) . '%';
             $params[] = $keyword;
             $params[] = $keyword;
             $params[] = $keyword;
         }
 
-        $sql = "SELECT * FROM `opti_notifikasi` WHERE {$whereClause}{$unreadSql}{$searchSql} ORDER BY created_at DESC, id DESC LIMIT " . (int)$limit;
+        $sql = "SELECT n.*, 
+                       COALESCE(nr.read_at, n.read_at) AS user_read_at,
+                       CASE 
+                           WHEN nr.id IS NOT NULL THEN 1 
+                           WHEN n.target_user_id = {$userId} AND n.is_read = 1 THEN 1 
+                           ELSE 0 
+                       END AS is_read
+                FROM `opti_notifikasi` n
+                LEFT JOIN `opti_notifikasi_user_read` nr ON nr.notifikasi_id = n.id AND nr.user_id = ?
+                WHERE {$whereClause}{$unreadSql}{$searchSql} 
+                ORDER BY n.created_at DESC, n.id DESC 
+                LIMIT " . (int)$limit;
 
         $rows = $db->exec($sql, $params);
         foreach ($rows as &$r) {
@@ -133,19 +147,34 @@ class NotificationService
      */
     public static function getUnreadCount(\DB\SQL $db, int $userId, string $role, string $layanan = 'semua'): int
     {
-        list($whereClause, $params) = self::buildTargetCondition($userId, $role, $layanan);
-        $sql = "SELECT COUNT(*) as c FROM `opti_notifikasi` WHERE is_read = 0 AND {$whereClause}";
-        $res = $db->exec($sql, $params);
+        list($whereClause, $targetParams) = self::buildTargetCondition($userId, $role, $layanan);
+        $params = [$userId];
+        $params = array_merge($params, $targetParams);
 
+        $sql = "SELECT COUNT(*) as c 
+                FROM `opti_notifikasi` n
+                LEFT JOIN `opti_notifikasi_user_read` nr ON nr.notifikasi_id = n.id AND nr.user_id = ?
+                WHERE {$whereClause} 
+                  AND (nr.id IS NULL AND (n.target_user_id != {$userId} OR n.target_user_id IS NULL OR n.is_read = 0))";
+
+        $res = $db->exec($sql, $params);
         return (int)($res[0]['c'] ?? 0);
     }
 
     /**
-     * Tandai satu notifikasi sebagai sudah dibaca
+     * Tandai satu notifikasi sebagai sudah dibaca per user
      */
-    public static function markAsRead(\DB\SQL $db, int $notifId): bool
+    public static function markAsRead(\DB\SQL $db, int $notifId, int $userId = 0): bool
     {
-        $db->exec("UPDATE `opti_notifikasi` SET is_read = 1 WHERE id = ?", [$notifId]);
+        if ($userId > 0) {
+            $db->exec(
+                "INSERT INTO `opti_notifikasi_user_read` (`notifikasi_id`, `user_id`, `read_at`)
+                 VALUES (?, ?, NOW())
+                 ON DUPLICATE KEY UPDATE read_at = read_at",
+                [$notifId, $userId]
+            );
+        }
+        $db->exec("UPDATE `opti_notifikasi` SET is_read = 1, read_at = COALESCE(read_at, NOW()) WHERE id = ?", [$notifId]);
         return true;
     }
 
@@ -154,9 +183,10 @@ class NotificationService
      */
     public static function markAllAsRead(\DB\SQL $db, int $userId, string $role, string $layanan = 'semua'): bool
     {
-        list($whereClause, $params) = self::buildTargetCondition($userId, $role, $layanan);
-        $sql = "UPDATE `opti_notifikasi` SET is_read = 1 WHERE is_read = 0 AND {$whereClause}";
-        $db->exec($sql, $params);
+        $notifs = self::getUserNotifications($db, $userId, $role, $layanan, 500, '', true);
+        foreach ($notifs as $n) {
+            self::markAsRead($db, (int)$n['id'], $userId);
+        }
         return true;
     }
 
