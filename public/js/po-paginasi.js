@@ -82,7 +82,7 @@
         }
 
         function judul(el) {
-            return !!(el.classList && (el.classList.contains('po-section-title') || el.classList.contains('rvw-sec-h') ||
+            return !!(el.classList && (el.classList.contains('po-section-title') || el.classList.contains('rvw-sec-h') || el.classList.contains('po-kt') ||
                 (el.classList.contains('po-body') && /font-weight:\s*700/.test(el.getAttribute('style') || ''))));
         }
         function bisaTurun(el) {
@@ -168,8 +168,12 @@
 
                 if (judul(el)) {      // judul ikut blok di bawahnya
                     var nx = null;
+                    // lewati judul-judul yang berurutan (mis. "Tahap 2" lalu label periode) sampai ketemu isinya (tabel)
                     for (var q = i + 1; q < anak.length; q++) {
-                        if (getComputedStyle(anak[q]).display !== 'none') { nx = anak[q]; break; }
+                        if (getComputedStyle(anak[q]).display === 'none') { continue; }
+                        nx = anak[q];
+                        if (!judul(nx)) { break; }
+                        nx = null;
                     }
                     if (nx) {
                         var perlu = (atas(nx) - y) + ukuranAwal(nx);

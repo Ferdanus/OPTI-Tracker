@@ -1917,8 +1917,20 @@
                         <span class="step-text {{ @stepper[8].state }}">PO Kegiatan</span>
                     </a>
 
+                    <!-- Step 9: Kontrak (nomor internal 10) -->
+                    <check if="{{ @kontrak_panel.alur }}">
+                    <a href="#cardKontrak" data-stage="10" class="step-checkpoint {{ !@kontrak_panel.akses ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 9: Kontrak / Perjanjian Kerja Sama (PKS)">
+                        <div class="step-circle {{ @stepper[10].state }}">
+                            <check if="{{ @stepper[10].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
+                            <check if="{{ @stepper[10].state == 'current' }}"><i class="bi bi-file-earmark-text-fill"></i></check>
+                            <check if="{{ @stepper[10].state == 'waiting' }}"><i class="bi bi-file-earmark-text"></i></check>
+                        </div>
+                        <span class="step-text {{ @stepper[10].state }}">Kontrak</span>
+                    </a>
+                    </check>
+
                     <!-- Step 9: BAST -->
-                    <a href="#cardBast" class="step-checkpoint {{ 9 > @max_accessible_step ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 9: Berita Acara Serah Terima (BAST)">
+                    <a href="#cardBast" data-stage="9" class="step-checkpoint {{ (9 > @max_accessible_step || @kontrak_panel.menunggu) ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap {{ @kontrak_panel.alur ? '10' : '9' }}: Berita Acara Serah Terima (BAST)">
                         <div class="step-circle {{ @stepper[9].state }}">
                             <check if="{{ @stepper[9].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[9].state == 'current' }}"><i class="bi bi-patch-check-fill"></i></check>
@@ -2284,11 +2296,33 @@
                     </div>
                 </button>
             </li>
-            <!-- Tahap 9 -->
+            <!-- Tahap 9: Kontrak (nomor internal 10) -->
+            <check if="{{ @kontrak_panel.alur }}">
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @active_step == 9 ? 'active' : '' }} {{ 9 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-9" {{ 9 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-9"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-9" aria-selected="{{ @active_step == 9 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 10 ? 'active' : '' }} {{ !@kontrak_panel.akses ? 'disabled' : '' }}" id="tab-stage-10" {{ @kontrak_panel.akses ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-10"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-10" aria-selected="{{ @active_step == 10 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">9</span>
+                        <span class="stage-nav-text">Kontrak</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ @stepper[10].state == 'done' }}">
+                            <true><span class="badge bg-light text-dark stage-status-badge">Selesai</span></true>
+                            <false>
+                                <check if="{{ @stepper[10].state == 'current' }}">
+                                    <true><span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span></true>
+                                    <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                </button>
+            </li>
+            </check>
+            <!-- Tahap 9 (BAST; tampil sebagai Tahap 10 bila ada langkah Kontrak) -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @active_step == 9 ? 'active' : '' }} {{ (9 > @max_accessible_step || @kontrak_panel.menunggu) ? 'disabled' : '' }}" id="tab-stage-9" {{ (9 <= @max_accessible_step && !@kontrak_panel.menunggu) ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-9"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-9" aria-selected="{{ @active_step == 9 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">{{ @kontrak_panel.alur ? '10' : '9' }}</span>
                         <span class="stage-nav-text">BAST</span>
                     </div>
                     <div class="stage-nav-status-row">
@@ -5214,14 +5248,9 @@
                                             </span>
                                         </div>
                                         <div class="col-sm-4 text-sm-end d-flex flex-wrap justify-content-sm-end gap-2">
-                                            <check if="{{ !empty(@riwayat_bayar[0].bukti_bayar) }}">
-                                                <button type="button" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @riwayat_bayar[0].bukti_bayar }}" data-title="Bukti Pembayaran" data-subtitle="Termin 1 &bull; {{ @order.nomor_order }}">
-                                                    <i class="bi bi-file-earmark-check-fill text-primary"></i> Lihat Bukti
-                                                </button>
-                                            </check>
-                                            <a href="{{ @BASE }}/pembayaran/tambah?order_id={{ @order.id }}&dari=order" class="btn btn-white border btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-dark" title="Buka detail transaksi pembayaran">
-                                                <i class="bi bi-box-arrow-up-right text-muted"></i> Detail Pembayaran
-                                            </a>
+                                            <button type="button" class="btn btn-white border btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5 text-dark" data-bs-toggle="modal" data-bs-target="#modalDetailPembayaran" title="Lihat riwayat dan bukti pembayaran">
+                                                <i class="bi bi-receipt text-muted"></i> Detail Pembayaran
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -6219,7 +6248,7 @@
                                             <button type="button" class="btn btn-dark btn-sm fw-semibold px-3{{ @po_alur.tombol_baru ? ' po-btn-baru' : '' }}" title="{{ @po_alur.tombol_baru ? 'Belum Anda buka' : '' }}" onclick="bukaPanelPo({{ @po_alur.aksi.panel_lihat }}, '{{ @po_alur.aksi.panel_jenis }}')"><i class="bi bi-eye me-1"></i> Lihat PO</button>
                                         </check>
                                         <check if="{{ !@po_alur.aksi.panel && !@po_alur.aksi.panel_lihat }}">
-                                            <button type="button" class="btn btn-dark btn-sm fw-semibold px-3{{ @po_alur.tombol_baru ? ' po-btn-baru' : '' }}" title="{{ @po_alur.tombol_baru ? 'Belum Anda buka' : '' }}" onclick="lihatPoOpti({{ @po_alur.po_id }})"><i class="bi bi-eye me-1"></i> Lihat PO</button>
+                                            <button type="button" class="btn btn-dark btn-sm fw-semibold px-3{{ @po_alur.tombol_baru ? ' po-btn-baru' : '' }}" title="{{ @po_alur.tombol_baru ? 'Belum Anda buka' : '' }}" onclick="lihatPoOpti({{ @po_alur.po_id }}, '{{ @po_alur.state }}')"><i class="bi bi-eye me-1"></i> Lihat PO</button>
                                         </check>
                                     </div>
                                 </div>
@@ -6234,7 +6263,7 @@
                                         </div>
                                     </repeat>
                                 </div>
-                                <div class="alert alert-{{ @po_alur.info.tipe }} po-alert-{{ @po_alur.info.tipe }} border-0 shadow-xs small mb-0">{{ @po_alur.info.html | raw }}</div>
+                                <check if="{{ @po_alur.info.html }}"><div class="alert alert-{{ @po_alur.info.tipe }} po-alert-{{ @po_alur.info.tipe }} border-0 shadow-xs small mb-0">{{ @po_alur.info.html | raw }}</div></check>
                                 </div>
                                 </check>
                             </check>
@@ -6248,38 +6277,77 @@
                                 <check if="{{ @po_alur.aktif }}">
                                     <style>
                                         @keyframes ptUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
-                                        @keyframes ptInd { from { margin-left:0; } to { margin-left:60%; } }
                                         @keyframes ptShk { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-6px); } 40% { transform:translateX(6px); } 60% { transform:translateX(-4px); } 80% { transform:translateX(4px); } }
-                                        @keyframes ptUnl { 0% { box-shadow:0 0 0 0 rgba(30,41,59,.45); } 100% { box-shadow:0 0 0 12px rgba(30,41,59,0); } }
-                                        #poTtdBox .pt-drop, #poTtdBox .pt-file { animation:ptUp .35s ease both; }
+                                        @keyframes ptPulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+                                        @keyframes ptFade { from { opacity:0; } to { opacity:1; } }
+                                        @keyframes ptRise { from { opacity:0; transform:translateY(12px) scale(.98); } to { opacity:1; transform:none; } }
+                                        #poTtdBox .pt-drop, #poTtdBox .pt-file, #poTtdBox .pt-next { animation:ptUp .35s ease both; }
                                         #poTtdBox .pt-drop { display:flex; align-items:center; gap:12px; flex-wrap:wrap; border:1.5px dashed #94a3b8; border-radius:10px; padding:14px 16px; background:#f8fafc; color:#1e293b; transition:background .15s, border-color .15s; }
                                         #poTtdBox .pt-drop.pt-drag { background:#e2e8f0; border-color:#1e293b; }
+                                        #poTtdBox .pt-drop.pt-bad { border-color:#b91c1c; background:#fef2f2; animation:ptShk .4s; }
                                         #poTtdBox .pt-file { display:flex; align-items:center; gap:12px; flex-wrap:wrap; border:1px solid #cbd5e1; border-radius:10px; padding:12px 16px; background:#f8fafc; color:#1e293b; }
                                         #poTtdBox .pt-ico { font-size:1.5rem; color:#1e293b; }
-                                        #poTtdBox .pt-tag { display:inline-block; background:#e2e8f0; color:#334155; font-size:.72rem; padding:1px 8px; border-radius:99px; margin-top:3px; }
+                                        #poTtdBox .pt-tag { display:inline-block; background:#e2e8f0; color:#334155; font-size:.72rem; padding:1px 8px; border-radius:99px; margin-top:3px; margin-right:4px; }
                                         #poTtdBox .pt-prog { height:6px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin-top:6px; }
                                         #poTtdBox .pt-prog > div { height:100%; width:0; background:#1e293b; transition:width .12s linear; }
-                                        #poTtdBox .pt-prog > div.pt-ind { width:40% !important; animation:ptInd .9s ease-in-out infinite alternate; }
+                                        #poTtdBox .pt-warn { margin-top:10px; border:1px solid #fecaca; background:#fef2f2; color:#991b1b; border-radius:10px; padding:10px 14px; font-size:.82rem; animation:ptUp .3s ease both; }
+                                        #poTtdBox .pt-next { margin-top:12px; display:flex; align-items:flex-start; gap:10px; border:1px solid #cbd5e1; border-radius:10px; padding:10px 14px; background:#f8fafc; font-size:.84rem; color:#1e293b; }
+                                        #poTtdBox .pt-next .pt-dot { width:9px; height:9px; border-radius:50%; background:#b91c1c; margin-top:5px; flex-shrink:0; animation:ptPulse 1.6s ease-in-out infinite; }
+                                        #poTtdBox .pt-next.ok .pt-dot { background:#1e293b; animation:none; }
                                         #poTtdBox .pt-lock { background:#f1f5f9; color:#94a3b8; border:1px solid #cbd5e1; cursor:not-allowed; }
                                         #poTtdBox .pt-lock.pt-shake { animation:ptShk .4s; }
-                                        #poTtdBox .pt-unlock { animation:ptUnl 1s ease-out 2; }
-                                        @media (prefers-reduced-motion: reduce) { #poTtdBox * { animation:none !important; transition:none !important; } }
+                                        .pt-ov { position:fixed; inset:0; background:rgba(15,23,42,.55); display:grid; place-items:center; padding:16px; z-index:2000; overflow-y:auto; animation:ptFade .2s ease both; }
+                                        .pt-dlg { width:min(520px,100%); background:#fff; border-radius:16px; box-shadow:0 24px 60px rgba(15,23,42,.35); padding:22px; animation:ptRise .28s cubic-bezier(.2,.8,.2,1) both; max-height:calc(100vh - 32px); overflow-y:auto; color:#1e293b; }
+                                        .pt-dlg h5 { font-size:1.05rem; font-weight:800; margin:0; }
+                                        .pt-dlg p { margin:6px 0 0; color:#475569; font-size:.86rem; }
+                                        .pt-dlg .pt-big { width:46px; height:46px; border-radius:50%; display:grid; place-items:center; margin-bottom:12px; background:#e2e8f0; color:#1e293b; font-size:1.4rem; }
+                                        .pt-dlg .pt-sum { margin-top:14px; border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; padding:10px 12px; font-size:.82rem; display:grid; grid-template-columns:auto 1fr; gap:4px 12px; }
+                                        .pt-dlg .pt-sum span { color:#64748b; }
+                                        .pt-dlg .pt-sum b { word-break:break-word; }
+                                        .pt-dlg .pt-hint { margin-top:12px; font-size:.78rem; color:#64748b; }
+                                        .pt-dlg .pt-foot { display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top:18px; }
+                                        .pt-dlg .pt-view { margin-top:12px; border:1px solid #cbd5e1; border-radius:8px; background:#f1f5f9; height:min(60vh,460px); overflow:hidden; }
+                                        .pt-dlg.pt-lebar { width:min(1100px,100%); }
+                                        .pt-dlg.pt-lebar .pt-view { height:calc(100vh - 220px); min-height:320px; }
+                                        .pt-dlg .pt-view iframe { width:100%; height:100%; border:0; background:#fff; }
+                                        .pt-dlg .pt-view img { width:100%; height:100%; object-fit:contain; display:block; }
+                                        .pt-list { margin-top:2px; max-height:300px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:10px; background:#fff; flex:0 0 100%; }
+                                        .pt-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border-bottom:1px solid #e2e8f0; }
+                                        .pt-row:last-child { border-bottom:0; }
+                                        .pt-no { width:22px; height:22px; border-radius:50%; background:#1e293b; color:#fff; font-size:.72rem; display:grid; place-items:center; flex:none; }
+                                        .pt-th { width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1; flex:none; background:#fff; }
+                                        .pt-rn { flex:1; min-width:0; font-size:.82rem; }
+                                        .pt-rn b { display:block; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+                                        .pt-rn small { color:#64748b; }
+                                        .pt-rb { display:flex; gap:4px; flex:none; }
+                                        .pt-rb .btn { padding:2px 7px; }
+                                        .pt-dlg .pt-view.pt-scroll { overflow-y:auto; padding:10px; background:#e2e8f0; }
+                                        .pt-dlg .pt-view.pt-scroll .pt-hal { margin:0 auto 14px; max-width:780px; }
+                                        .pt-dlg .pt-view.pt-scroll .pt-hal span { display:block; font-size:.72rem; color:#475569; margin-bottom:3px; }
+                                        .pt-dlg .pt-view.pt-scroll img { width:100%; height:auto; object-fit:fill; background:#fff; box-shadow:0 2px 8px rgba(15,23,42,.18); display:block; }
+                                        @media (prefers-reduced-motion: reduce) { #poTtdBox *, .pt-ov, .pt-dlg { animation:none !important; transition:none !important; } }
                                     </style>
                                     <div class="mt-3" id="poTtdBox">
                                         <check if="{{ @po_alur.ttd.ada }}">
                                             <true>
-                                                <div class="pt-file">
-                                                    <i class="bi bi-file-earmark-pdf pt-ico"></i>
-                                                    <div class="flex-grow-1" style="min-width:200px;">
-                                                        <div class="fw-semibold" style="word-break:break-word;">{{ @po_alur.ttd.nama }}</div>
-                                                        <div class="small text-secondary">Diunggah {{ @po_alur.ttd.oleh }} &middot; {{ @po_alur.ttd.at }}</div>
-                                                        <check if="{{ @po_alur.ttd.asal }}"><span class="pt-tag">Foto {{ @po_alur.ttd.asal }} diubah otomatis ke PDF</span></check>
+                                                <include href="order/_kartu_dokumen_css.html" />
+                                                <div class="kt-doc">
+                                                    <a class="kt-th" href="{{ @po_alur.ttd.url_lihat }}" target="_blank" rel="noopener" aria-label="Lihat PO bertanda tangan" title="Lihat PO bertanda tangan"><div class="kt-th-mock" aria-hidden="true"><div class="lg"><i></i><i></i></div><div class="t"></div><div class="n"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div><div class="l"></div></div><span class="kt-th-tag">PDF</span></a>
+                                                    <div style="min-width:0;">
+                                                        <h5 class="kt-doc-st"><span class="ck"><i class="bi bi-check-lg"></i></span>PO sudah ditandatangani</h5>
+                                                        <div class="kt-doc-no" style="word-break:break-word;">{{ @po_alur.ttd.nama }}</div>
+                                                        <div class="kt-grid">
+                                                            <div><small>Di-upload</small><span>{{ @po_alur.ttd.at }}</span></div>
+                                                            <div><small>Oleh</small><span>{{ @po_alur.ttd.oleh }}</span></div>
+                                                            <div><small>Nomor PO</small><span>{{ @po_kegiatan.nomor_po }}</span></div>
+                                                            <check if="{{ @po_alur.ttd.asal }}"><div><small>Format</small><span>{{ @po_alur.ttd.asal }} diubah otomatis ke PDF</span></div></check>
+                                                        </div>
+                                                        <div class="kt-acts"><a href="{{ @po_alur.ttd.url_lihat }}" target="_blank" rel="noopener" class="kt-btn pri"><i class="bi bi-eye"></i>Lihat PO</a></div>
                                                     </div>
-                                                    <a href="{{ @po_alur.ttd.url_lihat }}" target="_blank" rel="noopener" class="btn btn-outline-dark btn-sm"><i class="bi bi-eye me-1"></i> Lihat</a>
-                                                    <check if="{{ @po_alur.ttd.boleh_ganti }}">
-                                                        <button type="button" class="btn btn-outline-dark btn-sm" onclick="document.getElementById('poTtdFile').click()"><i class="bi bi-arrow-repeat me-1"></i> Ganti file</button>
-                                                    </check>
                                                 </div>
+                                                <check if="{{ !@po_alur.ttd.kontrak_ada }}">
+                                                    <div class="pt-next"><span class="pt-dot"></span><div><b>Diteruskan ke Humas.</b> Humas membuat kontrak di Tahap 9. BAST (Tahap 10) terbuka setelah kontrak selesai.</div></div>
+                                                </check>
                                             </true>
                                             <false>
                                                 <check if="{{ @po_alur.ttd.boleh_unggah }}">
@@ -6287,15 +6355,32 @@
                                                         <i class="bi bi-cloud-arrow-up pt-ico"></i>
                                                         <div class="flex-grow-1" style="min-width:200px;" id="poTtdInfo">
                                                             <div class="fw-semibold">Upload PO yang sudah ditandatangani.</div>
-                                                            <div class="small text-secondary">PDF, JPG, atau PNG &middot; maks. 5 MB</div>
+                                                            <div class="small text-secondary">PDF, atau foto JPG/PNG (bisa pilih beberapa foto sekaligus, maks. 10). Foto otomatis digabung jadi satu PDF. Maks. 30 MB. Tarik file ke sini atau pilih dari komputer.</div>
                                                         </div>
                                                         <button type="button" class="btn btn-dark btn-sm px-3" id="poTtdPilih" onclick="document.getElementById('poTtdFile').click()"><i class="bi bi-upload me-1"></i> Pilih file</button>
                                                     </div>
+                                                    <div class="pt-file d-none" id="poTtdTerpilih">
+                                                        <i class="bi bi-file-earmark-pdf pt-ico" id="poTtdIkonPilih"></i>
+                                                        <div class="flex-grow-1" style="min-width:200px;">
+                                                            <div class="fw-semibold" style="word-break:break-word;" id="poTtdNamaPilih"></div>
+                                                            <div id="poTtdTagPilih"></div>
+                                                            <div class="pt-prog d-none" id="poTtdProg"><div id="poTtdBar"></div></div>
+                                                        </div>
+                                                        <div class="d-flex gap-2 flex-wrap" id="poTtdAksiPilih">
+                                                            <button type="button" class="btn btn-outline-dark btn-sm" id="poTtdUlang"><i class="bi bi-arrow-repeat me-1"></i> Pilih ulang</button>
+                                                            <button type="button" class="btn btn-outline-dark btn-sm d-none" id="poTtdTambah"><i class="bi bi-plus-lg me-1"></i> Tambah foto</button>
+                                                            <button type="button" class="btn btn-outline-dark btn-sm" id="poTtdLihat"><i class="bi bi-eye me-1"></i> Lihat file</button>
+                                                            <button type="button" class="btn btn-dark btn-sm fw-semibold px-3" id="poTtdUpload"><i class="bi bi-cloud-arrow-up me-1"></i> Upload PO</button>
+                                                        </div>
+                                                        <div class="pt-list d-none" id="poTtdDaftar"></div>
+                                                    </div>
+                                                    <div class="small text-secondary mt-2 d-none" id="poTtdSiap"></div>
+                                                    <div class="pt-warn d-none" id="poTtdWarn" role="alert"></div>
                                                 </check>
                                             </false>
                                         </check>
                                         <check if="{{ @po_alur.ttd.boleh_unggah }}">
-                                            <input type="file" id="poTtdFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="display:none;">
+                                            <input type="file" id="poTtdFile" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="display:none;">
                                         </check>
                                         <div class="mt-3 d-flex gap-2 flex-wrap align-items-center">
                                             <check if="{{ @po_alur.ttd.boleh_unggah }}">
@@ -6303,13 +6388,15 @@
                                             </check>
                                             <check if="{{ @po_alur.ttd.ada }}">
                                                 <true>
-                                                    <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" onclick="switchStage(9, true)">
-                                                        Lanjut ke Tahap 9 (BAST) <i class="bi bi-arrow-right ms-1"></i>
+                                                    <check if="{{ !@kontrak_panel.alur || @kontrak_panel.menunggu }}">
+                                                    <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" onclick="switchStage({{ @kontrak_panel.menunggu ? 10 : 9 }}, true)">
+                                                        Lanjut ke Tahap {{ @kontrak_panel.menunggu ? '9 (Kontrak)' : (@kontrak_panel.alur ? '10 (BAST)' : '9 (BAST)') }} <i class="bi bi-arrow-right ms-1"></i>
                                                     </button>
+                                                    </check>
                                                 </true>
                                                 <false>
-                                                    <button type="button" class="btn btn-sm fw-semibold pt-lock" id="poTtdKunci" onclick="poTtdKunciKlik(this)">
-                                                        <i class="bi bi-lock-fill me-1"></i> Lanjut ke Tahap 9 (BAST)
+                                                    <button type="button" class="btn btn-sm fw-semibold pt-lock" id="poTtdKunci" data-ttd="{{ @po_alur.ttd.ada ? '1' : '0' }}" onclick="poTtdKunciKlik(this)">
+                                                        <i class="bi bi-lock-fill me-1"></i> Lanjut ke Tahap {{ @kontrak_panel.alur ? '9 (Kontrak)' : '9 (BAST)' }}
                                                     </button>
                                                 </false>
                                             </check>
@@ -6321,65 +6408,249 @@
                                         var pesan = document.getElementById('poTtdPesan');
                                         window.poTtdKunciKlik = function (el) {
                                             el.classList.remove('pt-shake'); void el.offsetWidth; el.classList.add('pt-shake');
-                                            if (pesan) { pesan.textContent = 'Upload PO yang sudah ditandatangani dulu untuk lanjut ke BAST.'; }
+                                            if (pesan) {
+                                                pesan.textContent = el.getAttribute('data-ttd') === '1'
+                                                    ? 'Humas membuat kontrak di Tahap 9. BAST (Tahap 10) terbuka setelah kontrak selesai.'
+                                                    : 'Upload PO yang sudah ditandatangani dulu. Setelah itu Humas membuat kontrak di Tahap 9, lalu BAST (Tahap 10) terbuka.';
+                                            }
                                         };
                                         var inp = document.getElementById('poTtdFile');
                                         if (!inp) { return; }
+                                        var MAKS_BYTE = 30 * 1024 * 1024, MAKS_FOTO = 10, MAKS_ASLI = 30 * 1024 * 1024, SISI = 2000;
+                                        var NOMOR_PO = '{{ @po_alur.nomor_po }}';
                                         var drop = document.getElementById('poTtdDrop');
-                                        var info = document.getElementById('poTtdInfo');
-                                        var sedang = false;
-                                        function ralat(t) { if (pesan) { pesan.textContent = t; } }
-                                        function kirim(f) {
-                                            if (sedang) { return; }
+                                        var terpilih = document.getElementById('poTtdTerpilih');
+                                        var warn = document.getElementById('poTtdWarn');
+                                        var daftar = [], sedang = false, sibuk = false, tambah = false, blobUrl = '';
+                                        function el(id) { return document.getElementById(id); }
+                                        function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+                                        function mb(n) { return (n / 1048576).toLocaleString('id-ID', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' MB'; }
+                                        function ekstensi(n) { var m = /\.([^.]+)$/.exec(n || ''); return m ? m[1].toLowerCase() : ''; }
+                                        function ralat(t) { if (pesan) { pesan.textContent = t || ''; } }
+                                        function adaPdf() { return daftar.length === 1 && daftar[0].pdf; }
+                                        function totalByte() { var t = 0; daftar.forEach(function (d) { t += d.f.size; }); return t; }
+                                        function lepasThumb() { daftar.forEach(function (d) { if (d.thumb) { URL.revokeObjectURL(d.thumb); } }); }
+
+                                        // Foto dikecilkan di browser (sisi terpanjang 2000 px, JPEG 85%) supaya upload cepat dan hasil PDF tidak melebihi batas.
+                                        function kecilkan(f) {
+                                            return new Promise(function (ok) {
+                                                var url = URL.createObjectURL(f), im = new Image();
+                                                im.onload = function () {
+                                                    try {
+                                                        var w = im.naturalWidth, h = im.naturalHeight, s = Math.min(1, SISI / Math.max(w, h));
+                                                        var cw = Math.max(1, Math.round(w * s)), ch = Math.max(1, Math.round(h * s));
+                                                        var c = document.createElement('canvas'); c.width = cw; c.height = ch;
+                                                        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cw, ch); g.drawImage(im, 0, 0, cw, ch);
+                                                        c.toBlob(function (b) {
+                                                            URL.revokeObjectURL(url);
+                                                            if (!b || (b.size >= f.size && ekstensi(f.name) !== 'png')) { ok(f); return; }
+                                                            ok(new File([b], f.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
+                                                        }, 'image/jpeg', 0.85);
+                                                    } catch (e) { URL.revokeObjectURL(url); ok(f); }
+                                                };
+                                                im.onerror = function () { URL.revokeObjectURL(url); ok(f); };
+                                                im.src = url;
+                                            });
+                                        }
+
+                                        // Pemeriksaan langsung saat file dipilih: format, jumlah, dan ukuran. Salah satu gagal = ditolak saat itu juga.
+                                        function periksaBaru(arr, tambahan) {
+                                            var i, e, pdfBaru = 0;
+                                            for (i = 0; i < arr.length; i++) {
+                                                e = ekstensi(arr[i].name);
+                                                if (['pdf', 'jpg', 'jpeg', 'png'].indexOf(e) === -1) { return { t: 'Format file tidak didukung' + (e ? ' (.' + e + ')' : '') + '.', s: 'File belum bisa di-upload. Gunakan PDF, JPG, atau PNG.' }; }
+                                                if (arr[i].size <= 0) { return { t: 'File kosong.', s: 'File belum bisa di-upload. Pilih file yang benar.' }; }
+                                                if (e === 'pdf') { pdfBaru++; }
+                                            }
+                                            if (pdfBaru) {
+                                                if (arr.length > 1 || (tambahan && daftar.length)) { return { t: 'PDF tidak bisa dicampur dengan foto.', s: 'Upload satu file PDF saja, atau pilih satu atau beberapa foto saja.' }; }
+                                                if (arr[0].size > MAKS_BYTE) { return { t: 'Ukuran file terlalu besar (' + mb(arr[0].size) + ').', s: 'File belum bisa di-upload. Batas maksimal 30 MB. Kompres PDF atau pindai ulang dengan resolusi lebih rendah.' }; }
+                                                return null;
+                                            }
+                                            if (tambahan && adaPdf()) { return { t: 'PDF tidak bisa dicampur dengan foto.', s: 'Upload satu file PDF saja, atau pilih satu atau beberapa foto saja.' }; }
+                                            var jml = (tambahan ? daftar.length : 0) + arr.length;
+                                            if (jml > MAKS_FOTO) { return { t: 'Terlalu banyak foto (' + jml + ').', s: 'Maksimal ' + MAKS_FOTO + ' foto dalam satu kali upload.' }; }
+                                            for (i = 0; i < arr.length; i++) {
+                                                if (arr[i].size > MAKS_ASLI) { return { t: 'Ukuran foto terlalu besar (' + mb(arr[i].size) + ').', s: 'Satu foto maksimal 30 MB.' }; }
+                                            }
+                                            return null;
+                                        }
+                                        function tampilWarn(m) {
+                                            warn.innerHTML = '<b>' + esc(m.t) + '</b><br>' + esc(m.s);
+                                            warn.classList.remove('d-none');
+                                            drop.classList.remove('pt-bad'); void drop.offsetWidth; drop.classList.add('pt-bad');
+                                        }
+                                        function barisFoto() {
+                                            return daftar.map(function (d, i) {
+                                                return '<div class="pt-row"><span class="pt-no">' + (i + 1) + '</span><img class="pt-th" src="' + d.thumb + '" alt="Halaman ' + (i + 1) + '">' +
+                                                    '<div class="pt-rn"><b>' + esc(d.f.name) + '</b><small>' + mb(d.f.size) + '</small></div>' +
+                                                    '<div class="pt-rb">' +
+                                                    '<button type="button" class="btn btn-outline-dark btn-sm" data-a="naik" data-i="' + i + '" title="Naikkan"' + (i === 0 ? ' disabled' : '') + '><i class="bi bi-arrow-up"></i></button>' +
+                                                    '<button type="button" class="btn btn-outline-dark btn-sm" data-a="turun" data-i="' + i + '" title="Turunkan"' + (i === daftar.length - 1 ? ' disabled' : '') + '><i class="bi bi-arrow-down"></i></button>' +
+                                                    '<button type="button" class="btn btn-outline-dark btn-sm" data-a="hapus" data-i="' + i + '" title="Hapus"><i class="bi bi-x-lg"></i></button></div></div>';
+                                            }).join('');
+                                        }
+                                        function gambar() {
+                                            var n = daftar.length;
+                                            if (!n) { terpilih.classList.add('d-none'); drop.classList.remove('d-none'); return; }
+                                            var pdf = adaPdf();
+                                            drop.classList.add('d-none'); terpilih.classList.remove('d-none');
+                                            el('poTtdIkonPilih').className = 'bi ' + (pdf ? 'bi-file-earmark-pdf' : 'bi-file-earmark-image') + ' pt-ico';
+                                            var daf = el('poTtdDaftar');
+                                            if (pdf) {
+                                                var f = daftar[0].f;
+                                                el('poTtdNamaPilih').textContent = f.name;
+                                                el('poTtdTagPilih').innerHTML = '<span class="pt-tag">PDF</span><span class="pt-tag">' + mb(f.size) + '</span><span class="pt-tag">Format dan ukuran sesuai</span>';
+                                                daf.innerHTML = ''; daf.classList.add('d-none');
+                                            } else {
+                                                var st = daf.scrollTop;
+                                                el('poTtdNamaPilih').textContent = n + (n > 1 ? ' foto akan digabung menjadi 1 PDF' : ' foto akan diubah menjadi PDF');
+                                                el('poTtdTagPilih').innerHTML = '<span class="pt-tag">' + n + ' foto</span><span class="pt-tag">' + mb(totalByte()) + '</span><span class="pt-tag">Urutan halaman sesuai daftar</span>';
+                                                daf.innerHTML = barisFoto(); daf.classList.remove('d-none'); daf.scrollTop = st;
+                                            }
+                                            el('poTtdTambah').classList.toggle('d-none', pdf || n >= MAKS_FOTO);
+                                        }
+                                        function terima(arr, tambahan) {
+                                            if (sedang || sibuk) { return; }
                                             ralat('');
-                                            if (!/\.(pdf|jpe?g|png)$/i.test(f.name)) { ralat('Format file harus PDF, JPG, atau PNG.'); return; }
-                                            if (f.size > 5 * 1024 * 1024) { ralat('Ukuran file maksimal 5 MB.'); return; }
-                                            var foto = !/\.pdf$/i.test(f.name);
+                                            var m = periksaBaru(arr, tambahan);
+                                            if (m) { tampilWarn(m); return; }
+                                            warn.classList.add('d-none'); drop.classList.remove('pt-bad');
+                                            if (ekstensi(arr[0].name) === 'pdf') { lepasThumb(); daftar = [{ f: arr[0], pdf: true, thumb: '' }]; gambar(); return; }
+                                            sibuk = true;
+                                            var siap = el('poTtdSiap'); siap.classList.remove('d-none');
+                                            var hasil = [];
+                                            function selesai() {
+                                                sibuk = false; siap.classList.add('d-none');
+                                                var dasar = tambahan ? daftar.slice() : [], t = 0;
+                                                dasar.concat(hasil).forEach(function (d) { t += d.f.size; });
+                                                if (t > MAKS_BYTE) {
+                                                    hasil.forEach(function (d) { URL.revokeObjectURL(d.thumb); });
+                                                    tampilWarn({ t: 'Total ukuran foto ' + mb(t) + ' melebihi 30 MB.', s: 'Kurangi jumlah foto lalu coba lagi.' });
+                                                    return;
+                                                }
+                                                if (!tambahan) { lepasThumb(); }
+                                                daftar = dasar.concat(hasil); gambar();
+                                            }
+                                            (function langkah(i) {
+                                                if (i >= arr.length) { selesai(); return; }
+                                                siap.textContent = 'Menyiapkan foto ' + (i + 1) + ' dari ' + arr.length + '...';
+                                                kecilkan(arr[i]).then(function (f) { hasil.push({ f: f, pdf: false, thumb: URL.createObjectURL(f) }); langkah(i + 1); });
+                                            })(0);
+                                        }
+
+                                        /* ---------- Dialog ---------- */
+                                        function tutupDlg() { var o = el('ptOv'); if (o && o.parentNode) { o.parentNode.removeChild(o); } document.removeEventListener('keydown', escTutup); }
+                                        function escTutup(e) { if (e.key === 'Escape' && !sedang) { tutupDlg(); } }
+                                        function bukaDlg(html) {
+                                            tutupDlg();
+                                            var o = document.createElement('div'); o.className = 'pt-ov'; o.id = 'ptOv';
+                                            o.innerHTML = '<div class="pt-dlg" role="dialog" aria-modal="true">' + html + '</div>';
+                                            o.addEventListener('mousedown', function (e) { if (e.target === o && !sedang) { tutupDlg(); } });
+                                            document.body.appendChild(o);
+                                            document.addEventListener('keydown', escTutup);
+                                            return o;
+                                        }
+                                        function ringkasIsi() { return adaPdf() ? daftar[0].f.name : (daftar.length + ' foto (digabung jadi 1 PDF)'); }
+                                        function dlgKonfirmasi() {
+                                            var o = bukaDlg(
+                                                '<div class="pt-big"><i class="bi bi-file-earmark-check"></i></div>' +
+                                                '<h5>Sudah yakin file PO ini benar?</h5>' +
+                                                '<p>Cek kembali file di bawah. Jika sudah benar, PO langsung Aktif penuh dan otomatis diteruskan ke Humas untuk dibuatkan kontrak.</p>' +
+                                                '<div class="pt-sum"><span>Nomor PO</span><b>' + esc(NOMOR_PO || '-') + '</b><span>File</span><b>' + esc(ringkasIsi()) + '</b><span>Ukuran</span><b>' + mb(totalByte()) + '</b></div>' +
+                                                '<div class="pt-hint">Pastikan nomor PO sesuai, dokumen sudah ditandatangani, semua halaman terbaca jelas, dan urutan halaman benar. File tidak dapat diganti setelah di-upload.</div>' +
+                                                '<div class="pt-foot"><button type="button" class="btn btn-outline-dark fw-semibold" data-pt="cek">Cek lagi</button><button type="button" class="btn btn-dark fw-semibold" data-pt="ya"><i class="bi bi-cloud-arrow-up me-1"></i>Ya, upload PO</button></div>');
+                                            o.addEventListener('click', function (e) {
+                                                var b = e.target.closest ? e.target.closest('[data-pt]') : null; if (!b) { return; }
+                                                var k = b.getAttribute('data-pt');
+                                                if (k === 'cek') { dlgPratinjau(dlgKonfirmasi); } else if (k === 'ya') { kirim(); }
+                                            });
+                                        }
+                                        function dlgPratinjau(kembali) {
+                                            var pdf = adaPdf(), n = daftar.length, isi, sub;
+                                            if (pdf) {
+                                                if (blobUrl) { URL.revokeObjectURL(blobUrl); }
+                                                blobUrl = URL.createObjectURL(daftar[0].f);
+                                                isi = '<div class="pt-view"><iframe src="' + blobUrl + '" title="Pratinjau PO"></iframe></div>';
+                                                sub = esc(daftar[0].f.name) + ' &middot; ' + mb(daftar[0].f.size);
+                                            } else {
+                                                isi = '<div class="pt-view pt-scroll">' + daftar.map(function (d, i) { return '<div class="pt-hal"><span>Halaman ' + (i + 1) + ' dari ' + n + '</span><img src="' + d.thumb + '" alt="Halaman ' + (i + 1) + '"></div>'; }).join('') + '</div>';
+                                                sub = n + ' foto &middot; ' + mb(totalByte()) + ' &middot; digabung jadi 1 PDF sesuai urutan ini';
+                                            }
+                                            var o = bukaDlg(
+                                                '<h5>Pratinjau file</h5><p>' + sub + '</p>' + isi +
+                                                '<div class="pt-foot"><button type="button" class="btn btn-outline-dark fw-semibold" data-pt="ganti">Pilih file lain</button><button type="button" class="btn btn-dark fw-semibold" data-pt="balik">Kembali</button></div>');
+                                            var dl = o.querySelector('.pt-dlg'); if (dl) { dl.classList.add('pt-lebar'); }
+                                            o.addEventListener('click', function (e) {
+                                                var b = e.target.closest ? e.target.closest('[data-pt]') : null; if (!b) { return; }
+                                                if (b.getAttribute('data-pt') === 'balik') { if (kembali) { kembali(); } else { tutupDlg(); } } else { tutupDlg(); tambah = false; inp.click(); }
+                                            });
+                                        }
+
+                                        /* ---------- Kirim: langsung upload, tanpa langkah pemeriksaan tambahan; foto digabung jadi satu PDF oleh server ---------- */
+                                        function kirim() {
+                                            if (sedang || !daftar.length) { return; }
                                             sedang = true;
-                                            var tmpl = '<div class="fw-semibold" style="word-break:break-word;"></div><div class="small text-secondary" id="poTtdSt">Mengunggah&hellip; 0%</div><div class="pt-prog"><div id="poTtdBar"></div></div>';
-                                            var tujuan = info || null;
-                                            if (!tujuan) { ralat('Mengunggah file\u2026'); }
-                                            if (tujuan) { tujuan.innerHTML = tmpl; tujuan.firstChild.textContent = f.name; }
-                                            var btn = document.getElementById('poTtdPilih'); if (btn) { btn.disabled = true; }
-                                            var bar = document.getElementById('poTtdBar'), st = document.getElementById('poTtdSt');
+                                            tutupDlg();
+                                            var foto = !adaPdf(), jml = daftar.length;
+                                            var prog = el('poTtdProg'), bar = el('poTtdBar');
+                                            prog.classList.remove('d-none');
+                                            el('poTtdAksiPilih').classList.add('d-none');
+                                            el('poTtdDaftar').classList.add('d-none');
+                                            var tag = el('poTtdTagPilih');
                                             var fd = new FormData();
                                             fd.append('csrf_token', '{{ @csrf_token }}');
-                                            fd.append('file_po_ttd', f);
+                                            daftar.forEach(function (d) { fd.append('file_po_ttd[]', d.f, d.f.name); });
                                             var x = new XMLHttpRequest();
                                             x.open('POST', '{{ @po_alur.ttd.url_unggah }}');
                                             x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                                             x.upload.onprogress = function (e) {
-                                                if (!e.lengthComputable || !bar) { return; }
-                                                var p = Math.round(e.loaded / e.total * 100);
-                                                bar.style.width = p + '%';
-                                                if (p >= 100) {
-                                                    if (foto) { st.textContent = 'Mengubah foto menjadi PDF…'; bar.className = 'pt-ind'; }
-                                                    else { st.textContent = 'Menyimpan…'; }
-                                                } else { st.textContent = 'Mengunggah… ' + p + '%'; }
+                                                if (!e.lengthComputable) { return; }
+                                                bar.style.width = Math.round(e.loaded / e.total * 100) + '%';
                                             };
                                             x.onload = function () {
                                                 var r = null; try { r = JSON.parse(x.responseText); } catch (e) {}
                                                 if (r && r.success) {
-                                                    if (bar) { bar.className = ''; bar.style.width = '100%'; }
-                                                    if (st) { st.textContent = 'Selesai'; }
-                                                    setTimeout(function () { window.location.reload(); }, 450);
+                                                    bar.style.width = '100%';
+                                                    tag.innerHTML = '<span class="pt-tag">' + (foto ? (jml > 1 ? 'Foto digabung ke PDF dan ' : 'Foto diubah ke PDF dan ') : '') + 'PO diteruskan ke Humas</span>';
+                                                    setTimeout(function () { window.location.reload(); }, 500);
                                                 } else {
-                                                    sedang = false; if (btn) { btn.disabled = false; }
-                                                    ralat((r && r.message) ? r.message : 'Gagal mengunggah file. Coba lagi.');
-                                                    if (tujuan) { tujuan.innerHTML = '<div class="fw-semibold">Upload PO yang sudah ditandatangani.</div><div class="small text-secondary">PDF, JPG, atau PNG &middot; maks. 5 MB</div>'; }
+                                                    gagal((r && r.message) ? r.message : 'Gagal meng-upload file. Coba lagi.');
                                                 }
                                             };
-                                            x.onerror = function () {
-                                                sedang = false; if (btn) { btn.disabled = false; }
-                                                ralat('Koneksi terputus saat mengunggah. Coba lagi.');
-                                            };
+                                            x.onerror = function () { gagal('Koneksi terputus saat meng-upload. Coba lagi.'); };
                                             x.send(fd);
                                         }
-                                        inp.addEventListener('change', function () { if (inp.files && inp.files[0]) { kirim(inp.files[0]); } inp.value = ''; });
+                                        function gagal(t) {
+                                            sedang = false;
+                                            el('poTtdProg').classList.add('d-none'); el('poTtdBar').style.width = '0';
+                                            el('poTtdAksiPilih').classList.remove('d-none');
+                                            if (!adaPdf()) { el('poTtdDaftar').classList.remove('d-none'); }
+                                            warn.innerHTML = '<b>' + esc(t) + '</b>'; warn.classList.remove('d-none');
+                                        }
+
+                                        inp.addEventListener('change', function () {
+                                            var fl = [].slice.call(inp.files || []); inp.value = '';
+                                            var t = tambah; tambah = false;
+                                            if (fl.length) { terima(fl, t); }
+                                        });
+                                        el('poTtdUpload').addEventListener('click', function () { if (daftar.length && !sedang && !sibuk) { dlgKonfirmasi(); } });
+                                        el('poTtdLihat').addEventListener('click', function () { if (daftar.length && !sedang && !sibuk) { dlgPratinjau(null); } });
+                                        el('poTtdUlang').addEventListener('click', function () { if (!sedang && !sibuk) { tambah = false; inp.click(); } });
+                                        el('poTtdTambah').addEventListener('click', function () { if (!sedang && !sibuk) { tambah = true; inp.click(); } });
+                                        el('poTtdDaftar').addEventListener('click', function (e) {
+                                            if (sedang || sibuk) { return; }
+                                            var b = e.target.closest ? e.target.closest('[data-a]') : null; if (!b) { return; }
+                                            var a = b.getAttribute('data-a'), i = parseInt(b.getAttribute('data-i'), 10), t;
+                                            if (a === 'naik' && i > 0) { t = daftar[i - 1]; daftar[i - 1] = daftar[i]; daftar[i] = t; }
+                                            else if (a === 'turun' && i < daftar.length - 1) { t = daftar[i + 1]; daftar[i + 1] = daftar[i]; daftar[i] = t; }
+                                            else if (a === 'hapus') { URL.revokeObjectURL(daftar[i].thumb); daftar.splice(i, 1); warn.classList.add('d-none'); }
+                                            gambar();
+                                        });
                                         if (drop) {
                                             drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('pt-drag'); });
                                             drop.addEventListener('dragleave', function () { drop.classList.remove('pt-drag'); });
-                                            drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('pt-drag'); if (e.dataTransfer.files && e.dataTransfer.files[0]) { kirim(e.dataTransfer.files[0]); } });
+                                            drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('pt-drag'); var fl = [].slice.call(e.dataTransfer.files || []); if (fl.length) { terima(fl, false); } });
                                         }
                                     })();
                                     </script>
@@ -6397,6 +6668,136 @@
             </div>
         </div>
         <!-- End of Pane Stage 8 -->
+
+        <!-- ======================================================== -->
+        <!-- PANE TAHAP 9: KONTRAK / PERJANJIAN KERJA SAMA (PKS)      -->
+        <!-- (nomor internal 10: BAST tetap nomor internal 9)          -->
+        <!-- ======================================================== -->
+        <check if="{{ @kontrak_panel.alur }}">
+        <div class="tab-pane fade {{ @active_step == 10 ? 'show active' : '' }}" id="pane-stage-10" role="tabpanel" aria-labelledby="tab-stage-10">
+                <style>
+                    .kt-ok { display:flex; align-items:flex-start; gap:10px; background:#f1f5f9; border:1px solid #cbd5e1; border-left:5px solid #1e293b; border-radius:10px; padding:12px 14px; }
+                    .kt-ok .kt-ic { color:#1e293b; font-size:1.15rem; line-height:1.2; }
+                    .kt-wait { display:flex; align-items:flex-start; gap:10px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:12px 14px; color:#475569; }
+                    .kt-frame { margin-top:12px; border:1px solid #cbd5e1; border-radius:10px; overflow:hidden; background:#fff; }
+                    .kt-fh { background:#f1f5f9; border-bottom:1px solid #cbd5e1; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#1e293b; }
+                    .kt-frame iframe { display:block; width:100%; height:calc(100vh - 150px); min-height:560px; border:0; background:#fff; }
+                    .kt-frame.kt-full { position:fixed; inset:0; margin:0; z-index:1060; border-radius:0; border:0; display:flex; flex-direction:column; }
+                    .kt-frame.kt-full iframe { flex:1; height:auto; min-height:0; }
+                </style>
+                <div class="system-section-card mb-3" id="cardKontrak">
+                    <div class="system-section-header">
+                        <div>
+                            <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
+                                <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">9</span>
+                                <i class="bi bi-file-earmark-text text-primary fs-5"></i> Kontrak / Perjanjian Kerja Sama (PKS)
+                            </h6>
+                        </div>
+                        <check if="{{ @kontrak_panel.ada }}">
+                            <true><span class="badge text-white" style="background-color:#1e293b !important;"><i class="bi bi-check2-circle me-1"></i> PKS telah dibuat</span></true>
+                            <false>
+                                <check if="{{ @kontrak_panel.akses }}">
+                                    <true><span class="badge bg-light text-secondary border"><i class="bi bi-hourglass-split me-1"></i> Menunggu Humas</span></true>
+                                    <false><span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu PO TTD)</span></false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                    <div class="p-4">
+                        <check if="{{ !@kontrak_panel.akses }}">
+                            <div class="p-3 text-center text-muted bg-light rounded-3 small">
+                                <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
+                                Kontrak dibuat Humas setelah <strong>PO bertanda tangan di-upload</strong> pada <strong>Tahap 8</strong>.
+                            </div>
+                        </check>
+                        <check if="{{ @kontrak_panel.akses }}">
+                        <check if="{{ @kontrak_panel.ada }}">
+                            <true>
+                                <include href="order/_kartu_dokumen_css.html" />
+                                <div class="kt-doc" id="ktDoc" data-po="{{ @kontrak_panel.po_id }}" data-nomor="{{ @kontrak_panel.nomor }}" data-mitra="{{ @order.nama_perusahaan }}" data-layanan="{{ @order.jenis_layanan_opti }}" data-at="{{ @kontrak_panel.at }}">
+                                    <check if="{{ @kontrak_panel.boleh }}">
+                                        <true>
+                                            <div class="kt-th" id="ktTh" data-kt-lihat role="button" tabindex="0" aria-label="Lihat kontrak" title="Lihat kontrak">
+                                                <div class="kt-th-mock" aria-hidden="true"><div class="lg"><i></i><i></i></div><div class="t"></div><div class="n"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div><div class="l"></div></div>
+                                                <iframe id="ktThFrame" data-src="{{ @BASE }}/kontrak/{{ @kontrak_panel.po_id }}/form?embed=1&amp;lihat=1" title="Miniatur halaman 1 kontrak" tabindex="-1" aria-hidden="true"></iframe>
+                                            </div>
+                                        </true>
+                                        <false>
+                                            <div class="kt-th" aria-hidden="true"><div class="kt-th-mock" aria-hidden="true"><div class="lg"><i></i><i></i></div><div class="t"></div><div class="n"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div><div class="l"></div></div></div>
+                                        </false>
+                                    </check>
+                                    <div style="min-width:0;">
+                                        <h5 class="kt-doc-st"><span class="ck"><i class="bi bi-check-lg"></i></span>PKS telah dibuat</h5>
+                                        <check if="{{ @kontrak_panel.nomor }}"><div class="kt-doc-no">{{ @kontrak_panel.nomor }}</div></check>
+                                        <div class="kt-grid">
+                                            <div><small>Dibuat</small><span>{{ @kontrak_panel.at }}</span></div>
+                                            <div><small>Oleh</small><span>{{ @kontrak_panel.oleh }}</span></div>
+                                            <div><small>Mitra</small><span>{{ @order.nama_perusahaan }}</span></div>
+                                            <div><small>Nomor PO</small><span>{{ @po_kegiatan.nomor_po }}</span></div>
+                                        </div>
+                                        <check if="{{ @kontrak_panel.boleh }}">
+                                            <div class="kt-acts">
+                                                <button type="button" class="kt-btn pri" data-kt-lihat><i class="bi bi-eye"></i>Lihat kontrak</button>
+                                                <div class="kt-dd">
+                                                    <button type="button" class="kt-btn" data-kt-menu aria-haspopup="true" aria-expanded="false"><i class="bi bi-download"></i>Unduh<i class="bi bi-chevron-down kt-chev"></i></button>
+                                                    <div class="kt-menu" role="menu">
+                                                        <button type="button" class="kt-mi" role="menuitem" data-kt-unduh="word"><span class="ic"><i class="bi bi-file-earmark-word"></i></span><span><b>Word (.docx)</b><small>Bisa diedit lagi</small></span></button>
+                                                        <button type="button" class="kt-mi" role="menuitem" data-kt-unduh="pdf"><span class="ic"><i class="bi bi-file-earmark-pdf"></i></span><span><b>PDF</b><small>Siap dikirim ke perusahaan</small></span></button>
+                                                        <button type="button" class="kt-mi" role="menuitem" data-kt-unduh="cetak"><span class="ic"><i class="bi bi-printer"></i></span><span><b>Cetak langsung</b><small>Pilih ukuran kertas di panel</small></span></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <a class="kt-menu-link" href="{{ @BASE }}/kontrak?tab=selesai"><i class="bi bi-box-arrow-up-right"></i>Buka di menu Kontrak</a>
+                                        </check>
+                                    </div>
+                                </div>
+                                <include href="kontrak/_slide_detail.html" />
+                            </true>
+                            <false>
+                                <check if="{{ @kontrak_panel.boleh }}">
+                                    <true>
+                                        <div class="small text-secondary mb-1">Isi data kontrak di bawah, lalu klik <b>Selesai</b>. Setelah kontrak selesai, kartu BAST di bawahnya langsung terbuka.</div>
+                                        <div class="kt-frame" id="ktWrap">
+                                            <div class="kt-fh">
+                                                <span><b>Buat Kontrak (PKS)</b> &middot; PO {{ @po_kegiatan.nomor_po }}</span>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="ktFull"><i class="bi bi-arrows-fullscreen me-1"></i><span>Layar penuh</span></button>
+                                            </div>
+                                            <iframe id="ktFrame" src="{{ @kontrak_panel.embed_url }}" title="Form Kontrak (PKS)" loading="lazy"></iframe>
+                                        </div>
+                                    </true>
+                                    <false>
+                                        <div class="kt-wait"><i class="bi bi-hourglass-split"></i><div><b>Menunggu Humas membuat kontrak.</b><div class="small">BAST terbuka setelah kontrak selesai. Form kontrak hanya tampil untuk Humas.</div></div></div>
+                                    </false>
+                                </check>
+                            </false>
+                        </check>
+                        </check>
+                    </div>
+                </div>
+                <script>
+                (function () {
+                    var wrap = document.getElementById('ktWrap'), fr = document.getElementById('ktFrame'), full = document.getElementById('ktFull'), buka = document.getElementById('ktBuka');
+                    if (!wrap || !fr) { return; }
+                    function penuh(on) {
+                        wrap.classList.toggle('kt-full', on);
+                        document.body.style.overflow = on ? 'hidden' : '';
+                        if (full) { full.querySelector('span').textContent = on ? 'Tutup layar penuh' : 'Layar penuh'; }
+                    }
+                    if (full) { full.addEventListener('click', function () { penuh(!wrap.classList.contains('kt-full')); }); }
+                    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && wrap.classList.contains('kt-full')) { penuh(false); } });
+                    if (buka) {
+                        buka.addEventListener('click', function () {
+                            var tampil = wrap.hidden;
+                            wrap.hidden = !tampil;
+                            if (tampil && !fr.getAttribute('src')) { fr.setAttribute('src', fr.getAttribute('data-src')); }
+                            buka.querySelector('span').textContent = tampil ? 'Tutup kontrak' : 'Buka kontrak';
+                        });
+                    }
+                })();
+                </script>
+        </div>
+        </check>
+        <!-- End of Pane Stage 10 (Kontrak) -->
 
         <!-- ======================================================== -->
         <!-- PANE TAHAP 9: BERITA ACARA SERAH TERIMA (BAST) & LHU     -->
@@ -6424,7 +6825,7 @@
                             <span class="badge bg-info-subtle text-info border border-info-subtle">Siap Penerbitan BAST</span>
                         </check>
                         <check if="{{ !@po_bast_terbuka }}">
-                            <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu PO)</span>
+                            <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu {{ @kontrak_panel.tampil ? 'Kontrak' : 'PO' }})</span>
                         </check>
                     </check>
                 </div>
@@ -6450,7 +6851,7 @@
                         <check if="{{ !@po_bast_terbuka }}">
                             <div class="p-3 text-center text-muted bg-light rounded-3 small">
                                 <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
-                                Berita Acara Serah Terima (BAST) dapat diterbitkan setelah Petunjuk Operasional (PO) diterbitkan dan pekerjaan pengujian laboratorium diselesaikan pada <strong>Tahap 8</strong>.
+                                Berita Acara Serah Terima (BAST) dapat diterbitkan setelah PO bertanda tangan di-upload dan <strong>kontrak selesai dibuat Humas</strong> pada <strong>Tahap 9 (Kontrak)</strong>.
                             </div>
                         </check>
                     </check>
@@ -6890,8 +7291,32 @@
    yang hanya menampilkan panel slide-nya. Menutup panel melepas iframe; kalau ada tindakan yang mengubah status PO, halaman dimuat ulang. */
 // alamat slide menurut jenis. 'ppk_lihat' = slide PPK BLU mode baca-saja (revisi sedang dikerjakan)
 function srcPanelPo(poId, jenis, sc, tambah) {
+    // 'lihat1ro' / 'lihat2ro' = slide Daftar PO baca-saja untuk PO yang bukan tanggung jawab pengguna (mis. divisi lain); 2 = dengan catatan revisi
+    var ro = /^lihat([12])ro$/.exec(jenis);
+    if (ro) { return '{{ @BASE }}/po-kegiatan/daftar?embed=1&lihat=' + ro[1] + '&ro=1&buka=' + encodeURIComponent(poId) + sc + (tambah || ''); }
     var u = (jenis === 'humas' ? '{{ @BASE }}/po-humas?embed=1&buka=' : (jenis === 'mitra' ? '{{ @BASE }}/po-kegiatan/validasi-mitra?embed=1&buka=' : (jenis === 'ppk' ? '{{ @BASE }}/po-ppk?embed=1&buka=' : (jenis === 'ppk_lihat' ? '{{ @BASE }}/po-ppk?embed=1&lihat=1&buka=' : (jenis === 'revisi' ? '{{ @BASE }}/po-revisi-ppk?embed=1&buka=' : '{{ @BASE }}/po-kegiatan/daftar?embed=1&buka=')))));
     return u + encodeURIComponent(poId) + sc + (tambah || '');
+}
+// Penanda memuat berbentuk slide (muncul dari kanan, spinner di DALAM slide), bukan lapisan gelap dengan spinner di luar slide
+function poBuatMuat() {
+    if (document.getElementById('poPanelMuat')) { return; }
+    if (!document.getElementById('poMuatCss')) {
+        var st = document.createElement('style'); st.id = 'poMuatCss';
+        st.textContent = '#poPanelMuat { position: fixed; inset: 0; z-index: 1079; background: rgba(15,23,42,.45); animation: poMuatBg .3s ease both; }' +
+            '#poPanelMuat .pm-sl { position: absolute; top: 0; right: 0; bottom: 0; width: calc(100vw - var(--sidebar-expanded-width, 264px)); background: #e2e8f0; display: grid; place-content: center; justify-items: center; gap: 10px; color: #64748b; font-size: .85rem; box-shadow: -12px 0 40px rgba(15,23,42,.22); animation: poMuatSl .42s cubic-bezier(.22,.9,.25,1) both; }' +
+            'body.sidebar-collapsed #poPanelMuat .pm-sl { width: calc(100vw - var(--sidebar-mini-width, 74px)); }' +
+            '@media (max-width: 991.98px) { #poPanelMuat .pm-sl, body.sidebar-collapsed #poPanelMuat .pm-sl { width: 100vw; } }' +
+            '#poPanelMuat .pm-sp { width: 22px; height: 22px; border: 2.5px solid #94a3b8; border-right-color: transparent; border-radius: 50%; animation: poMuatRot .7s linear infinite; }' +
+            '@keyframes poMuatBg { from { opacity: 0; } to { opacity: 1; } }' +
+            '@keyframes poMuatSl { from { transform: translateX(104%); } to { transform: none; } }' +
+            '@keyframes poMuatRot { to { transform: rotate(1turn); } }';
+        document.head.appendChild(st);
+    }
+    var muat = document.createElement('div');
+    muat.id = 'poPanelMuat';
+    muat.setAttribute('role', 'status');
+    muat.innerHTML = '<div class="pm-sl"><span class="pm-sp"></span>Memuat dokumen PO...</div>';
+    document.body.appendChild(muat);
 }
 // Slide baca-saja dimuat lebih dulu (tersembunyi) begitu halaman selesai dimuat, jadi saat "Lihat PO" diklik langsung tampil tanpa loading
 function poPraMuat(poId, jenis) {
@@ -6920,13 +7345,7 @@ function poPraTampil(f) {
     } else {
         // belum selesai dimuat (jarang): tampilkan penanda memuat, slide muncul begitu siap
         f.setAttribute('data-klik', '1');
-        if (!document.getElementById('poPanelMuat')) {
-            var muat = document.createElement('div');
-            muat.id = 'poPanelMuat';
-            muat.style.cssText = 'position:fixed;inset:0;z-index:1079;background:rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;';
-            muat.innerHTML = '<div class="spinner-border text-light" role="status" aria-label="Memuat panel"></div>';
-            document.body.appendChild(muat);
-        }
+        poBuatMuat();
     }
 }
 function bukaPanelPo(poId, jenis) {
@@ -6935,18 +7354,14 @@ function bukaPanelPo(poId, jenis) {
     if (pra && pra.getAttribute('data-pra') === '1') { poPraTampil(pra); return; }
     if (pra) { return; }
     var sc = document.body.classList.contains('sidebar-collapsed') ? '&sc=1' : '';
-    var muat = document.createElement('div');
-    muat.id = 'poPanelMuat';
-    muat.style.cssText = 'position:fixed;inset:0;z-index:1079;background:rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;';
-    muat.innerHTML = '<div class="spinner-border text-light" role="status" aria-label="Memuat panel"></div>';
-    document.body.appendChild(muat);
+    poBuatMuat();
     var f = document.createElement('iframe');
     f.id = 'poPanelFr';
     f.title = 'Panel review PO';
     f.setAttribute('allowtransparency', 'true');
     f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:1080;background:transparent;color-scheme:normal;';
     // jenis 'humas' = slide verifikasi Daftar PO Humas; 'mitra' = slide Verifikasi PO Tim Mitra; 'ppk' = slide Daftar Review PO PPK BLU; selain itu = slide Daftar Review PO
-    f.src = srcPanelPo(poId, jenis, sc, '');
+    f.src = srcPanelPo(poId, jenis, sc, '&ph=1');   // ph=1: slide langsung tampil tanpa animasi masuk ulang (penanda memuat sudah berbentuk slide)
     document.body.appendChild(f);
     window.__poPanelBuka = poId;
 }
@@ -6968,6 +7383,7 @@ function poSegarkanTahap8(opsi) {
     return fetch(window.location.pathname + q, { credentials: 'same-origin', cache: 'no-store', headers: { 'X-Requested-With': 'fetch' } })
         .then(function (r) { if (!r.ok) { throw new Error('gagal'); } return r.text(); })
         .then(function (html) {
+            if (window.segarkanBadgeOrder) { window.segarkanBadgeOrder(html); }   // badge merah Daftar Order di sidebar ikut diperbarui
             var doc = new DOMParser().parseFromString(html, 'text/html');
             var cBaru = doc.getElementById('cardPo'), cLama = document.getElementById('cardPo');
             if (!cBaru || !cLama) { throw new Error('tidak ada kartu PO'); }
@@ -7051,7 +7467,7 @@ window.addEventListener('message', function (e) {
         if (fs) {
             fs.setAttribute('data-siap', '1');
             // slide yang dimuat lebih dulu dan sudah diklik sebelum siap: tampilkan sekarang
-            if (fs.getAttribute('data-klik') === '1') { try { fs.contentWindow.postMessage({ silopti: 'po-panel-tampil' }, window.location.origin); fs.contentWindow.focus(); } catch (e) {} }
+            if (fs.getAttribute('data-klik') === '1') { try { fs.contentWindow.postMessage({ silopti: 'po-panel-tampil', ph: 1 }, window.location.origin); fs.contentWindow.focus(); } catch (e) {} }
         }
         if (muat && !(fs && fs.getAttribute('data-pra') === '1')) { muat.remove(); }
         return;
@@ -7069,6 +7485,197 @@ window.addEventListener('message', function (e) {
         else if (window.__poPraArgs) { setTimeout(function () { poPraMuat(window.__poPraArgs[0], window.__poPraArgs[1]); }, 400); }   // siapkan lagi supaya klik berikutnya juga langsung tampil
     }
 });
+</script>
+
+<!-- Modal Detail Pembayaran (Tahap 6): ringkasan + riwayat per termin + bukti yang diunggah -->
+<div class="modal fade" id="modalDetailPembayaran" tabindex="-1" aria-labelledby="modalDetailPembayaranLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title fw-bold text-dark mb-0" id="modalDetailPembayaranLabel"><i class="bi bi-receipt me-2"></i>Detail Pembayaran</h6>
+                    <div class="small text-muted">{{ @order.nomor_order ?: @order.nomor_permintaan }} &bull; {{ @bayar_status == 'lunas' ? 'Lunas' : (@bayar_status == 'sebagian' ? 'Belum lunas' : (@bayar_status == 'kesanggupan' ? 'Kesanggupan bayar' : 'Belum ada pembayaran')) }}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-4">
+                        <div class="bg-light rounded-3 p-3 h-100">
+                            <div class="text-muted" style="font-size: 0.75rem;">Nilai tagihan</div>
+                            <div class="fw-semibold text-dark">Rp {{ number_format(@bayar_acuan > 0 ? @bayar_acuan : (@penawaran.nominal_penawaran ?: @order.estimasi_biaya), 0, ',', '.') }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="bg-light rounded-3 p-3 h-100">
+                            <div class="text-muted" style="font-size: 0.75rem;">Total dibayar</div>
+                            <div class="fw-semibold text-dark">Rp {{ number_format(@bayar_total, 0, ',', '.') }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="bg-light rounded-3 p-3 h-100">
+                            <div class="text-muted" style="font-size: 0.75rem;">Sisa tagihan</div>
+                            <check if="{{ @bayar_status == 'kesanggupan' }}">
+                                <true><div class="fw-semibold text-dark">Sesuai kesanggupan</div></true>
+                                <false><div class="fw-semibold {{ @bayar_sisa > 0 ? 'text-danger' : 'text-dark' }}">Rp {{ number_format(@bayar_sisa, 0, ',', '.') }}</div></false>
+                            </check>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress mb-1" style="height: 6px;">
+                    <div class="progress-bar bg-dark" id="dpBar" role="progressbar" data-pct="{{ @bayar_status == 'lunas' ? 100 : (@bayar_acuan > 0 ? min(100, round(@bayar_total / @bayar_acuan * 100)) : 0) }}" style="width: {{ @bayar_status == 'lunas' ? 100 : (@bayar_acuan > 0 ? min(100, round(@bayar_total / @bayar_acuan * 100)) : 0) }}%;"></div>
+                </div>
+                <div class="small text-muted mb-3">
+                    <check if="{{ @bayar_status == 'kesanggupan' }}">
+                        <true>Belum ada pembayaran masuk, pembayaran mengikuti Surat Kesanggupan Bayar.</true>
+                        <false><span id="dpPct">{{ @bayar_status == 'lunas' ? 100 : (@bayar_acuan > 0 ? min(100, round(@bayar_total / @bayar_acuan * 100)) : 0) }}</span>% dari tagihan sudah terbayar.</false>
+                    </check>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead class="text-muted">
+                            <tr>
+                                <th class="fw-semibold">Termin</th>
+                                <th class="fw-semibold">Tanggal</th>
+                                <th class="fw-semibold text-end">Jumlah</th>
+                                <th class="fw-semibold">Metode / NTPN</th>
+                                <th class="fw-semibold">Status</th>
+                                <th class="fw-semibold text-end">Bukti</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <repeat group="{{ @riwayat_bayar }}" value="{{ @rb }}">
+                                <tr>
+                                    <td class="text-nowrap">
+                                        <check if="{{ !empty(@rb.is_kesanggupan_bayar) }}">
+                                            <true>Kesanggupan</true>
+                                            <false>Termin {{ @rb.termin_ke }}</false>
+                                        </check>
+                                    </td>
+                                    <td class="text-nowrap">{{ date('d M Y', strtotime(@rb.tanggal_bayar)) }}</td>
+                                    <td class="text-end text-nowrap">
+                                        <check if="{{ !empty(@rb.is_kesanggupan_bayar) }}">
+                                            <true>-</true>
+                                            <false>Rp {{ number_format(@rb.jumlah, 0, ',', '.') }}</false>
+                                        </check>
+                                    </td>
+                                    <td>
+                                        {{ !empty(@rb.is_kesanggupan_bayar) ? 'Surat Kesanggupan Bayar' : ucwords(str_replace('_', ' ', @rb.metode_pembayaran ?: 'transfer_bank')) }}
+                                        <check if="{{ !empty(@rb.nomor_transaksi_ntpn) }}">
+                                            <span class="d-block text-muted" style="font-size: 0.72rem;">NTPN {{ @rb.nomor_transaksi_ntpn }}</span>
+                                        </check>
+                                        <check if="{{ !empty(@rb.keterangan) }}">
+                                            <span class="d-block text-muted" style="font-size: 0.72rem;">{{ @rb.keterangan }}</span>
+                                        </check>
+                                        <check if="{{ !empty(@rb.verifikator_nama) }}">
+                                            <span class="d-block text-muted" style="font-size: 0.72rem;">Diverifikasi oleh {{ @rb.verifikator_nama }}</span>
+                                        </check>
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <check if="{{ !empty(@rb.is_kesanggupan_bayar) }}">
+                                            <true><span class="badge bg-light text-dark border">Tercatat</span></true>
+                                            <false>
+                                                <check if="{{ (@rb.status_verifikasi ?: 'terverifikasi') == 'terverifikasi' }}">
+                                                    <true><span class="badge bg-dark">Terverifikasi</span></true>
+                                                    <false><span class="badge bg-light text-dark border">Menunggu verifikasi</span></false>
+                                                </check>
+                                            </false>
+                                        </check>
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        <check if="{{ !empty(@rb.is_kesanggupan_bayar) }}">
+                                            <true>
+                                                <button type="button" class="dp-lihat btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @order.sp_id ?: @penawaran.id }}/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="Order: {{ @order.nomor_order ?: @order.nomor_permintaan }}">
+                                                    <i class="bi bi-eye"></i>Lihat
+                                                </button>
+                                            </true>
+                                            <false>
+                                                <check if="{{ !empty(@rb.bukti_bayar) }}">
+                                                    <true>
+                                                        <button type="button" class="dp-lihat btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @rb.bukti_bayar }}" data-title="Bukti Pembayaran" data-subtitle="Termin {{ @rb.termin_ke }} &bull; {{ @order.nomor_order }}">
+                                                            <i class="bi bi-eye"></i>Lihat
+                                                        </button>
+                                                    </true>
+                                                    <false><span class="text-muted small">Belum ada file</span></false>
+                                                </check>
+                                            </false>
+                                        </check>
+                                    </td>
+                                </tr>
+                            </repeat>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light border btn-sm fw-semibold px-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+#modalDetailPembayaran .dp-lihat { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 500; line-height: 1.4; padding: 5px 12px; border: 1px solid #e2e8f0; border-radius: 99px; background: #fff; color: #0f172a; cursor: pointer; transition: background .2s, color .2s, border-color .2s, transform .15s; }
+#modalDetailPembayaran .dp-lihat:hover { background: #0f172a; color: #fff; border-color: #0f172a; }
+#modalDetailPembayaran .dp-lihat:active { transform: scale(.96); }
+#modalDetailPembayaran .dp-lihat:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
+#modalDetailPembayaran #dpBar.dp-anim { transition: width 1.1s cubic-bezier(.22, .8, .2, 1) .15s; }
+#modalDetailPembayaran.dp-go tbody tr { animation: dpUp .45s ease-out both; }
+#modalDetailPembayaran.dp-go tbody tr:nth-child(1) { animation-delay: .25s; }
+#modalDetailPembayaran.dp-go tbody tr:nth-child(2) { animation-delay: .36s; }
+#modalDetailPembayaran.dp-go tbody tr:nth-child(3) { animation-delay: .47s; }
+#modalDetailPembayaran.dp-go tbody tr:nth-child(n+4) { animation-delay: .58s; }
+@keyframes dpUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+    #modalDetailPembayaran #dpBar.dp-anim { transition: none; }
+    #modalDetailPembayaran.dp-go tbody tr { animation: none; }
+}
+</style>
+<script>
+(function () {
+    var modal = document.getElementById('modalDetailPembayaran');
+    if (!modal) return;
+    var bar = document.getElementById('dpBar');
+    var pctEl = document.getElementById('dpPct');
+    var target = bar ? (parseInt(bar.getAttribute('data-pct'), 10) || 0) : 0;
+    var raf = null;
+
+    modal.addEventListener('show.bs.modal', function () {
+        modal.classList.remove('dp-go');
+        if (bar) { bar.classList.remove('dp-anim'); bar.style.width = '0%'; }
+        if (pctEl) pctEl.textContent = '0';
+    });
+
+    modal.addEventListener('shown.bs.modal', function () {
+        void modal.offsetWidth;
+        modal.classList.add('dp-go');
+        if (bar) {
+            bar.classList.add('dp-anim');
+            window.requestAnimationFrame(function () { bar.style.width = target + '%'; });
+        }
+        if (pctEl) {
+            var t0 = null, dur = 1100;
+            if (raf) window.cancelAnimationFrame(raf);
+            var step = function (ts) {
+                if (t0 === null) t0 = ts + 150;
+                var p = Math.min(1, Math.max(0, (ts - t0) / dur));
+                var e = 1 - Math.pow(1 - p, 3);
+                pctEl.textContent = Math.round(target * e);
+                if (p < 1) raf = window.requestAnimationFrame(step);
+            };
+            raf = window.requestAnimationFrame(step);
+        }
+    });
+
+    modal.addEventListener('hidden.bs.modal', function () {
+        if (raf) window.cancelAnimationFrame(raf);
+        if (pctEl) pctEl.textContent = target;
+        if (bar) { bar.classList.remove('dp-anim'); bar.style.width = target + '%'; }
+        modal.classList.remove('dp-go');
+    });
+})();
 </script>
 
 <!-- Modal Lihat PO OPTI (dokumen yang sama dengan Daftar PO: /po-kegiatan/@id/preview) -->
@@ -7089,7 +7696,14 @@ window.addEventListener('message', function (e) {
     </div>
 </div>
 <script>
-function lihatPoOpti(poId) {
+var PO_ROLE = '{{ @user_role }}';
+function lihatPoOpti(poId, state) {
+    // Superadmin / Ketua Tim / Tim Kerja: slide baca-saja yang sama dengan Daftar PO (bukan modal). Peran lain tetap memakai modal pratinjau.
+    if (['superadmin', 'ketua_tim', 'tim_kerja'].indexOf(PO_ROLE) !== -1) {
+        var sudahAktif = ['aktif', 'verif_humas', 'verif_mitra', 'verif_ppk'].indexOf(state) !== -1;
+        bukaPanelPo(poId, sudahAktif ? 'lihat1ro' : 'lihat2ro');
+        return;
+    }
     var body = document.getElementById('modalLihatPoOptiBody');
     body.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="small text-muted mt-2 mb-0">Memuat PO...</p></div>';
     document.getElementById('modalLihatPoOptiPdf').href = '{{ @BASE }}/po-kegiatan/' + poId + '/cetak';
@@ -8126,7 +8740,9 @@ var maxAccessibleStep = {{ (int)(@max_accessible_step ?: @current_step ?: 1) }};
 function switchStage(stageNum, smoothScroll, targetSelector) {
     if (!stageNum) return;
     // Proteksi: Tidak boleh melompat ke tahapan di masa depan (melebihi current_step)
-    if (stageNum > maxAccessibleStep) {
+    // Tahap Kontrak (nomor internal 10) punya aturan akses sendiri: terbuka kalau tombol tabnya aktif
+    var tabKontrak = (stageNum === 10) ? document.getElementById('tab-stage-10') : null;
+    if (stageNum === 10 ? (!tabKontrak || tabKontrak.disabled) : (stageNum > maxAccessibleStep)) {
         return;
     }
 
@@ -8211,7 +8827,9 @@ document.addEventListener('DOMContentLoaded', function() {
         '#cardPoBast': 8,
         '#pane-stage-8': 8,
         '#cardBast': 9,
-        '#pane-stage-9': 9
+        '#pane-stage-9': 9,
+        '#cardKontrak': 10,
+        '#pane-stage-10': 10
     };
 
     // Inisialisasi Upload 3 Dokumen Penawaran DEAL
@@ -8743,8 +9361,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.step-checkpoint').forEach(function(cp, idx) {
         cp.addEventListener('click', function(e) {
             e.preventDefault();
-            var stage = idx + 1;
-            if (stage <= maxAccessibleStep) {
+            var stage = parseInt(cp.getAttribute('data-stage'), 10) || (idx + 1);
+            if (cp.classList.contains('disabled')) { return; }
+            if (stage === 10 || stage <= maxAccessibleStep) {
                 switchStage(stage, true);
             }
         });

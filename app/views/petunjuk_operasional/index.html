@@ -251,6 +251,8 @@
 <include href="petunjuk_operasional/_modal_order_sertifikasi.html" />
 <!-- Modal pilih order Pengujian -->
 <include href="petunjuk_operasional/_modal_order_pengujian.html" />
+<!-- Modal pilih order Kalibrasi -->
+<include href="petunjuk_operasional/_modal_order_kalibrasi.html" />
 
 <!-- Modal pratinjau PO Pengujian (ikon mata di Daftar PO), ukuran sama seperti modal pratinjau PO OPTI -->
 <div class="modal fade" id="modalPreviewPoPengujian" tabindex="-1" aria-hidden="true">
@@ -364,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var u = new URL(window.location.href);
         if (u.searchParams.get('buat') === '1') {
             var lay = u.searchParams.get('layanan');
-            var buka = lay === 'pengujian' ? window.bukaModalPengujian : window.bukaModalSertifikasi;
+            var buka = lay === 'pengujian' ? window.bukaModalPengujian : (lay === 'kalibrasi' ? window.bukaModalKalibrasi : window.bukaModalSertifikasi);
             if (typeof buka === 'function') {
                 u.searchParams.delete('buat');
                 window.history.replaceState(null, '', u.pathname + (u.search || '') + u.hash);

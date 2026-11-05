@@ -13,28 +13,28 @@ class NotificationController extends Controller
         $layanan = $this->getUserLayanan();
 
         $unreadCount = NotificationService::getUnreadCount($this->db, $userId, $role, $layanan);
-        // Tampilkan 15 notifikasi terbaru (unread & read) di dropdown agar setelah dibuka tidak langsung kosong
-        $items = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 15, '', false);
+        $items = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 50, '', true);
+        $recent = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 30, '', false);
 
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true,
             'count'   => $unreadCount,
-            'items'   => $items
+            'items'   => $items,
+            'recent'  => $recent
         ]);
         exit;
     }
 
     /**
      * POST /notifikasi/mark-read/@id
-     * Menandai 1 notifikasi telah dibaca per user
+     * Menandai 1 notifikasi telah dibaca
      */
     public function markRead($f3, $params)
     {
         $notifId = (int)($params['id'] ?? 0);
-        $userId  = (int)($this->getUserId() ?? 0);
         if ($notifId > 0) {
-            NotificationService::markAsRead($this->db, $notifId, $userId);
+            NotificationService::markAsRead($this->db, $notifId);
         }
 
         header('Content-Type: application/json');

@@ -2050,7 +2050,7 @@
                     // Titik merah review (belum dibaca) dipindah ke menu Petunjuk Operasional (PO), karena review kini ada di halamannya
                     (function () {
                         try {
-                            var n = parseInt('{{ @jumlah_notif_daftar_po ?: 0 }}', 10) || 0;
+                            var n = parseInt('{{ @is_ketua_tim ? 0 : (@jumlah_notif_daftar_po ?: 0) }}', 10) || 0;   // Ketua Tim: badge menu sudah = jumlah Perlu Tindakan (tidak ditambah lagi)
                             if (n <= 0) { return; }
                             var tujuan = null;
                             Array.prototype.forEach.call(document.querySelectorAll('.sidebar-link'), function (a) {
@@ -2101,7 +2101,21 @@
                     </li>
                 </check>
 
-
+                <!-- 2. PELAKSANAAN TEKNIS -->
+                <check if="{{ @is_superadmin  || @is_admin_kontrak || @is_user_readonly || @is_humas}}">
+                    <li class="sidebar-section-label">Perjanjian Kerja Sama</li>
+                    
+                    <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Superadmin) -->
+                    <li>
+                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/pks" title="Perjanjian Kerja Sama">
+                            <i class="bi bi-journal-code"></i> <span>Kontrak</span>
+                            <check if="{{ @jumlah_notif_kontrak > 0 }}">
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_proposal }}</span>
+                            </check>
+                        </a>
+                    </li>
+                
+                </check>
 
 
                 <!-- 3. MASTER DATA (Khusus Superadmin) -->
@@ -2195,8 +2209,8 @@
                             <div class="list-group list-group-flush" style="max-height: 360px; overflow-y: auto;" id="notifListContainer">
                                 <check if="{{ @list_notifikasi_user && count(@list_notifikasi_user) > 0 }}">
                                     <repeat group="{{ @list_notifikasi_user }}" value="{{ @n }}">
-                                        <a href="{{ @BASE }}{{ @n.link_url }}" id="topbarNotifItem_{{ @n.id }}" onclick="window.markNotifRead({{ @n.id }}, '{{ @BASE }}{{ @n.link_url }}')" class="list-group-item list-group-item-action px-3 py-3 bg-light bg-opacity-40 border-bottom d-flex align-items-start text-decoration-none transition-all" style="gap: 14px;">
-                                            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 {{ @n.tipe == 'success' ? 'bg-success-subtle text-success' : (@n.tipe == 'warning' ? 'bg-warning-subtle text-warning' : (@n.tipe == 'primary' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info')) }}" style="width: 36px; height: 36px; margin-top: 2px;">
+                                        <a href="{{ @BASE }}{{ @n.link_url }}" id="topbarNotifItem_{{ @n.id }}" data-read="{{ @n.is_read ? '1' : '0' }}" onclick="window.markNotifRead({{ @n.id }}, '{{ @BASE }}{{ @n.link_url }}')" class="list-group-item list-group-item-action px-3 py-3 {{ @n.is_read ? 'bg-white' : 'bg-light bg-opacity-40' }} border-bottom d-flex align-items-start text-decoration-none transition-all" style="gap: 14px;{{ @n.is_read ? ' opacity: .72;' : '' }}">
+                                            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 bg-secondary-subtle text-dark" style="width: 36px; height: 36px; margin-top: 2px;">
                                                 <i class="bi {{ @n.icon ?: 'bi-bell-fill' }}" style="font-size: 0.95rem;"></i>
                                             </div>
                                             <div class="flex-grow-1 overflow-hidden" style="min-width: 0;">
@@ -2731,9 +2745,19 @@
         // NOTIFICATION & FLOATING BUBBLE ENGINE
         // ==========================================
         window.markNotifRead = function(notifId, redirectUrl) {
-            // Hapus item dari dropdown langsung untuk feedback instan
+            // Item yang sudah dibaca tetap ada di daftar lonceng: cukup buka tautannya (angka belum dibaca tidak berubah)
             var itemEl = document.getElementById('topbarNotifItem_' + notifId);
-            if (itemEl) itemEl.remove();
+            if (itemEl && itemEl.getAttribute('data-read') === '1') {
+                if (redirectUrl && redirectUrl !== '#') { window.location.href = redirectUrl; }
+                return;
+            }
+            // Belum dibaca: tandai dibaca langsung (item tidak dihapus, hanya diredupkan) untuk feedback instan
+            if (itemEl) {
+                itemEl.setAttribute('data-read', '1');
+                itemEl.classList.remove('bg-light', 'bg-opacity-40');
+                itemEl.classList.add('bg-white');
+                itemEl.style.opacity = '.72';
+            }
 
             var badge = document.getElementById('notifBadgeCount');
             if (badge) {
@@ -2792,10 +2816,15 @@
                 var bubble = document.getElementById('activeFloatingBubble');
                 if (bubble) bubble.remove();
 
-                // Dropdown topbar hanya menampilkan yang belum dibaca: kosongkan daftar dan beri pesan status
+                // Daftar lonceng tetap menampilkan pemberitahuan terbaru, hanya diredupkan sebagai sudah dibaca
                 var container = document.getElementById('notifListContainer');
                 if (container) {
-                    container.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash fs-3 d-block mb-1 opacity-40"></i><small class="text-muted">Tidak ada pemberitahuan baru</small></div>';
+                    Array.prototype.forEach.call(container.querySelectorAll('[id^="topbarNotifItem_"]'), function(a) {
+                        a.setAttribute('data-read', '1');
+                        a.classList.remove('bg-light', 'bg-opacity-40');
+                        a.classList.add('bg-white');
+                        a.style.opacity = '.72';
+                    });
                 }
 
                 // Jika sedang berada di halaman riwayat /notifikasi:
@@ -2836,12 +2865,67 @@
             }
         };
 
+        // Perbarui badge merah "Daftar Order" di sidebar tanpa memuat ulang halaman (dipanggil sesudah verifikasi/review PO).
+        // html: teks halaman yang baru diambil (opsional); kosong = ambil ulang halaman ini. Hanya badge menu Daftar Order yang disinkronkan.
+        window.segarkanBadgeOrder = function (html) {
+            function terapkan(teks) {
+                try {
+                    var doc = new DOMParser().parseFromString(teks, 'text/html');
+                    var hrefOrder = function (a) { return /\/order$/.test(((a.getAttribute('href') || '').split('#')[0]).split('?')[0]); };
+                    var baru = null, lama = null;
+                    Array.prototype.forEach.call(doc.querySelectorAll('.sidebar .sidebar-link'), function (a) { if (!baru && hrefOrder(a)) { baru = a; } });
+                    Array.prototype.forEach.call(document.querySelectorAll('.sidebar .sidebar-link'), function (a) { if (!lama && hrefOrder(a)) { lama = a; } });
+                    if (!baru || !lama) { return; }
+                    var bb = baru.querySelector('.sidebar-notif-badge'), bl = lama.querySelector('.sidebar-notif-badge');
+                    if (bb) {
+                        if (!bl) { bl = document.createElement('span'); bl.className = bb.className; bl.setAttribute('style', bb.getAttribute('style') || ''); lama.appendChild(bl); }
+                        bl.style.display = '';
+                        bl.textContent = bb.textContent.trim();
+                        bl.style.transition = 'transform .25s ease';
+                        bl.style.transform = 'scale(1.25)';
+                        setTimeout(function () { bl.style.transform = ''; }, 250);
+                    } else if (bl) {
+                        bl.style.transition = 'opacity .25s ease';
+                        bl.style.opacity = '0';
+                        setTimeout(function () { if (bl.parentNode) { bl.parentNode.removeChild(bl); } }, 260);
+                    }
+                } catch (e) { /* hanya tampilan menu */ }
+            }
+            if (typeof html === 'string') { terapkan(html); return; }
+            fetch(window.location.href, { credentials: 'same-origin', cache: 'no-store', headers: { 'X-Requested-With': 'fetch' } })
+                .then(function (r) { return r.ok ? r.text() : ''; })
+                .then(function (t) { if (t) { terapkan(t); } })
+                .catch(function () {});
+        };
+
+        // Daftar lonceng ikut diperbarui saat ada notifikasi baru (sebelumnya hanya angka yang berubah, daftar baru muncul setelah halaman dimuat ulang)
+        window.segarkanDaftarNotif = function(items) {
+            var c = document.getElementById('notifListContainer');
+            if (!c || !items || !items.length) { return; }
+            var sudah = Array.prototype.map.call(c.querySelectorAll('[id^="topbarNotifItem_"]'), function(a) { return a.id.replace('topbarNotifItem_', ''); }).join(',');
+            var sig = items.map(function(i) { return i.id; }).join(',');
+            var sudahBaca = function(n) { return String(n.is_read) === '1'; };
+            if (sig === sudah) { return; }
+            var BASE = '{{ @BASE }}';
+            var esc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); };
+            c.innerHTML = items.map(function(n) {
+                var baca = sudahBaca(n);
+                var warna = 'bg-secondary-subtle text-dark';
+                var url = BASE + (n.link_url || '/notifikasi');
+                return '<a href="' + esc(url) + '" id="topbarNotifItem_' + esc(n.id) + '" data-read="' + (baca ? '1' : '0') + '" onclick="window.markNotifRead(' + parseInt(n.id, 10) + ', \'' + esc(url) + '\')" class="list-group-item list-group-item-action px-3 py-3 ' + (baca ? 'bg-white' : 'bg-light bg-opacity-40') + ' border-bottom d-flex align-items-start text-decoration-none transition-all" style="gap: 14px;' + (baca ? ' opacity: .72;' : '') + '">' +
+                    '<div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 ' + warna + '" style="width: 36px; height: 36px; margin-top: 2px;"><i class="bi ' + esc(n.icon || 'bi-bell-fill') + '" style="font-size: 0.95rem;"></i></div>' +
+                    '<div class="flex-grow-1 overflow-hidden" style="min-width: 0;"><div class="d-flex justify-content-between align-items-baseline mb-1"><span class="fw-bold text-dark d-block text-truncate pe-2" style="font-size: 0.82rem;">' + esc(n.judul) + '</span><small class="text-muted text-nowrap" style="font-size: 0.68rem;">' + esc(n.time_ago) + '</small></div>' +
+                    '<p class="text-secondary small mb-0 text-truncate-2" style="font-size: 0.74rem; line-height: 1.35;">' + esc(n.pesan) + '</p></div></a>';
+            }).join('');
+        };
+
         // Live polling unread notification updates every 45 seconds
         setInterval(function() {
             fetch('{{ @BASE }}/notifikasi/unread')
                 .then(function(res) { return res.json(); })
                 .then(function(data) {
                     if (data && data.success) {
+                        if (data.recent && data.recent.length) { window.segarkanDaftarNotif(data.recent); }
                         var btn = document.getElementById('notifBellBtn');
                         var existingBadge = document.getElementById('notifBadgeCount');
                         var headerBadge = document.getElementById('notifHeaderBadge');
@@ -2866,7 +2950,7 @@
                             if (headerBadge) headerBadge.remove();
                             if (btnMarkAll) btnMarkAll.remove();
                             var container = document.getElementById('notifListContainer');
-                            if (container && (!data.items || data.items.length === 0)) {
+                            if (container && (!data.recent || data.recent.length === 0)) {
                                 container.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash fs-3 d-block mb-1 opacity-40"></i><small class="text-muted">Tidak ada pemberitahuan baru</small></div>';
                             }
                         }
@@ -2899,7 +2983,7 @@
                 <!-- MAIN CARD BODY -->
                 <div class="floating-bubble-body">
                     <div class="d-flex align-items-start gap-3">
-                        <div class="floating-bubble-icon {{ @list_notifikasi_user[0]['tipe'] == 'success' ? 'icon-success' : (@list_notifikasi_user[0]['tipe'] == 'warning' ? 'icon-warning' : 'icon-primary') }}">
+                        <div class="floating-bubble-icon icon-primary">
                             <i class="bi {{ @list_notifikasi_user[0]['icon'] ?: 'bi-bell-fill' }}"></i>
                         </div>
                         <div class="flex-grow-1">
@@ -3017,16 +3101,8 @@
             font-size: 1.15rem;
         }
         .floating-bubble-icon.icon-primary {
-            background: #f1f5f9;
-            color: #334155;
-        }
-        .floating-bubble-icon.icon-success {
-            background: #f0fdf4;
-            color: #16a34a;
-        }
-        .floating-bubble-icon.icon-warning {
-            background: #fffbeb;
-            color: #d97706;
+            background: #e2e8f0;
+            color: #1e293b;
         }
         .floating-bubble-title {
             font-size: 0.86rem;
@@ -3450,6 +3526,51 @@
         };
         /* Penampil berkas di modal Dokumen (Katim, Pembuat, Humas, Tim Mitra): PDF dan gambar lewat iframe seperti biasa,
            Word (.docx) dirender di dalam modal, .doc lama diberi pesan + tautan unduh. */
+        /* Pratinjau PDF dan gambar dirender sendiri (bukan lewat iframe) supaya latarnya sama dengan pratinjau Word: abu kebiruan, bukan hitam bawaan browser */
+        window.optiMuatPdfJs = function () {
+            if (window.pdfjsLib) { return Promise.resolve(window.pdfjsLib); }
+            if (window.__pdfjsP) { return window.__pdfjsP; }
+            window.__pdfjsP = new Promise(function (resolve, reject) {
+                var sc = document.createElement('script');
+                sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                sc.onload = function () {
+                    try {
+                        var w = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                        window.pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob(['importScripts("' + w + '");'], { type: 'application/javascript' }));
+                        resolve(window.pdfjsLib);
+                    } catch (e) { window.__pdfjsP = null; reject(e); }
+                };
+                sc.onerror = function () { window.__pdfjsP = null; reject(new Error('pdf.js gagal dimuat')); };
+                document.head.appendChild(sc);
+            });
+            return window.__pdfjsP;
+        };
+        window.optiRenderPdf = function (buf, docEl, masihAktif) {
+            return window.optiMuatPdfJs().then(function (lib) { return lib.getDocument({ data: buf }).promise; }).then(function (pdf) {
+                if (!masihAktif()) { return; }
+                docEl.innerHTML = '';
+                var wrap = document.createElement('div');
+                wrap.style.cssText = 'padding:16px;display:grid;justify-items:center;gap:12px;';
+                docEl.appendChild(wrap);
+                var avail = Math.max(280, Math.min(docEl.clientWidth - 32, 900)), dpr = window.devicePixelRatio || 1;
+                var rantai = Promise.resolve();
+                function halaman(i) {
+                    rantai = rantai.then(function () {
+                        if (!masihAktif()) { return; }
+                        return pdf.getPage(i + 1).then(function (pg) {
+                            var sk = avail / pg.getViewport({ scale: 1 }).width, v = pg.getViewport({ scale: sk * dpr });
+                            var c = document.createElement('canvas');
+                            c.width = Math.floor(v.width); c.height = Math.floor(v.height);
+                            c.style.cssText = 'width:' + Math.floor(v.width / dpr) + 'px;height:' + Math.floor(v.height / dpr) + 'px;max-width:100%;background:#fff;box-shadow:0 2px 10px rgba(15,23,42,.18);';
+                            wrap.appendChild(c);
+                            return pg.render({ canvasContext: c.getContext('2d'), viewport: v }).promise;
+                        });
+                    });
+                }
+                for (var i = 0; i < pdf.numPages; i++) { halaman(i); }
+                return rantai;
+            });
+        };
         window.optiTampilkanBerkas = function (url, frame, docEl, masihAktif) {
             masihAktif = masihAktif || function () { return true; };
             var urlFrame = url + (url.indexOf('#') === -1 ? '#toolbar=0&navpanes=0' : '');
@@ -3482,6 +3603,23 @@
                 var mime = (r.headers.get('Content-Type') || '').toLowerCase();
                 var baru = ext === 'docx' || mime.indexOf('wordprocessingml') !== -1;
                 var lama = ext === 'doc' || mime.indexOf('application/msword') !== -1;
+                var pdf = ext === 'pdf' || mime.indexOf('application/pdf') !== -1;
+                var gbr = mime.indexOf('image/') === 0 && mime.indexOf('svg') === -1;
+                if (r.ok && gbr) {
+                    try { r.body.cancel(); } catch (e) {}
+                    frame.style.display = 'none'; frame.src = 'about:blank'; docEl.style.display = 'block';
+                    docEl.innerHTML = '<div style="padding:16px;display:grid;justify-items:center;"><img alt="Pratinjau" style="max-width:100%;height:auto;background:#fff;box-shadow:0 2px 10px rgba(15,23,42,.18);"></div>';
+                    docEl.querySelector('img').src = url;
+                    return;
+                }
+                if (r.ok && pdf) {
+                    frame.style.display = 'none'; frame.src = 'about:blank'; docEl.style.display = 'block';
+                    pesan('Memuat dokumen PDF...');
+                    return r.arrayBuffer().then(function (buf) {
+                        if (!masihAktif()) { return; }
+                        return window.optiRenderPdf(buf, docEl, masihAktif);
+                    }).catch(function () { if (masihAktif()) { tampilFrame(); } });
+                }
                 if (!r.ok || (!baru && !lama)) { try { r.body.cancel(); } catch (e) {} tampilFrame(); return; }
                 modeWord = true;
                 frame.style.display = 'none'; frame.src = 'about:blank';

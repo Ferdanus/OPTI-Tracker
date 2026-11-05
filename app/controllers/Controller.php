@@ -206,7 +206,113 @@ class Controller {
         // - Untuk Superadmin: Total order masuk / tugas yang perlu ditindaklanjuti.
         $notifOrderCount = 0;
         try {
-            if ($role === 'superadmin') {
+            if ($isTimMitra) {
+                // Notifikasi Tim Mitra: Order yang benar-benar membutuhkan aksi dari Tim Mitra
+                // 1. Permohonan baru masuk yang belum didisposisi ke Ketua Tim
+                // 2. Proposal / rincian biaya yang telah disetujui dan siap diterbitkan Surat Penawaran (SPH)
+                $sqlOrderMitra = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
+                                  LEFT JOIN opti_proposal_riset pr ON pr.id = (SELECT id FROM opti_proposal_riset WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
+                                  LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
+                                  WHERE o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                                    AND (
+                                        (o.status = 'permintaan_masuk' OR o.jenis_layanan_opti IS NULL OR o.jenis_layanan_opti = 'belum_ditentukan' OR (o.status IN ('draft', 'draft_disimpan') AND o.status_tinjauan IS NULL))
+                                        OR (
+                                            (o.status_proposal_biaya = 'siap_penawaran' OR pr.status_proposal IN ('disetujui', 'disetujui_ketua', 'disetujui_pimpinan'))
+                                            AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
+                                            AND (sp.id IS NULL OR sp.status_respon_klien = 'draft')
+                                        )
+                                    )";
+                // Ditambah: PO yang sedang menunggu verifikasi Tim Mitra (sudah diverifikasi Humas, belum oleh Tim Mitra) - sama dengan tugas "Verifikasi PO" di Daftar Order
+                try {
+                    $sqlMitraPo = str_replace(
+                        "WHERE o.status != 'ditolak'",
+                        "LEFT JOIN po_kegiatan pk ON pk.id = (SELECT id FROM po_kegiatan WHERE order_id = o.id" . (class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('') : '') . " ORDER BY id ASC LIMIT 1)
+                         WHERE o.status != 'ditolak'",
+                        $sqlOrderMitra
+                    );
+                    $sqlMitraPo = preg_replace(
+                        '/\n\s*\)\s*$/',
+                        " OR (pk.status IN ('terkirim','disetujui_mitra','disetujui') AND pk.status_review = 'disetujui'
+                                            AND (pk.ppk_status IS NULL OR pk.ppk_status NOT IN ('minta','katim_kerja','ketupel_kerja','katim_review'))
+                                            AND pk.validasi_keuangan_at IS NULL AND pk.tervalidasi_mitra_at IS NULL AND pk.verifikasi_humas_at IS NOT NULL)
+                                    )",
+                        $sqlMitraPo, 1
+                    );
+                    if ($sqlMitraPo === $sqlOrderMitra) { throw new \Exception('pola SQL tidak cocok'); }
+                    $resOrderMitra = $this->db->exec($sqlMitraPo);
+                } catch (\Exception $eMitraPo) {
+                    $resOrderMitra = $this->db->exec($sqlOrderMitra);
+                }
+                $notifOrderCount = (int)($resOrderMitra[0]['c'] ?? 0);
+            } elseif ($role === 'tim_kerja') {
+                // Tim Kerja: Hitung seluruh order aktif tugas user (baik di tab Masuk maupun Berjalan) di mana user ditugaskan sebagai PIC Proposal atau Ketua Pelaksana
+                $sqlOrderPic = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
+                                LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
+                                LEFT JOIN opti_bast b ON b.id = (SELECT id FROM opti_bast WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
+                                WHERE (
+                                    (o.ketua_pelaksana_id = ?)
+                                    OR (
+                                        o.pic_proposal_id = ? 
+                                        AND (o.status_proposal_biaya IS NULL OR o.status_proposal_biaya NOT IN ('siap_penawaran', 'disetujui'))
+                                        AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
+                                        AND (sp.status_respon_klien IS NULL OR sp.status_respon_klien != 'deal')
+                                        AND o.status NOT IN ('penawaran_deal', 'disetujui')
+                                    )
+                                )
+                                  AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                                  AND (o.status != 'selesai' AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai'))
+                                  AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
+                // Order yang PO-nya sedang di meja orang lain (review Ketua Tim, verifikasi Humas / Tim Mitra / PPK BLU) bukan tugas Ketua Pelaksana saat ini
+                // (sama dengan penanda "Giliran Anda" di Daftar Order). Kalau kolom PO belum lengkap, kembali ke hitungan lama.
+                try {
+                    $joinPk = "LEFT JOIN po_kegiatan pk ON pk.id = (SELECT id FROM po_kegiatan WHERE order_id = o.id" . (class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('') : '') . " ORDER BY id ASC LIMIT 1) ";
+                    $sqlPic2 = preg_replace(
+                        '/WHERE\s*\(\s*\(o\.ketua_pelaksana_id = \?\)/',
+                        $joinPk . "WHERE ( (o.ketua_pelaksana_id = ? AND (pk.id IS NULL OR pk.status NOT IN ('terkirim', 'disetujui_mitra', 'disetujui') OR pk.status_review = 'perlu_revisi' OR (pk.status_review = 'disetujui' AND pk.validasi_keuangan_at IS NULL AND pk.ppk_status = 'ketupel_kerja')))",
+                        $sqlOrderPic, 1
+                    );
+                    if ($sqlPic2 === $sqlOrderPic) { throw new \Exception('pola SQL tidak cocok'); }
+                    $resOrderPic = $this->db->exec($sqlPic2, [1 => (int)$userId, 2 => (int)$userId]);
+                } catch (\Exception $ePk) {
+                    $resOrderPic = $this->db->exec($sqlOrderPic, [1 => (int)$userId, 2 => (int)$userId]);
+                }
+                $notifOrderCount = (int)($resOrderPic[0]['c'] ?? 0);
+            } elseif ($role === 'ketua_tim') {
+                $whereDiv = in_array($layanan, array('selulosa', 'lingkungan')) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
+                $sqlNotif = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
+                             LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
+                             LEFT JOIN opti_proposal_riset pr ON pr.id = (SELECT id FROM opti_proposal_riset WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
+                             WHERE o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
+                               AND {$whereDiv} (
+                                   -- 1. Kaji Kelayakan
+                                   (o.status != 'permintaan_masuk' AND o.jenis_layanan_opti IN ('selulosa', 'lingkungan') AND (o.status_tinjauan IS NULL OR o.status_tinjauan IN ('belum_ditinjau', 'menunggu', 'draft')))
+                                   -- 2. Approval Proposal / Biaya
+                                   OR (o.status_proposal_biaya = 'menunggu_approval' OR pr.status_proposal = 'diajukan')
+                                   -- 3. Tunjuk Pelaksana (setelah deal)
+                                   OR ((o.status IN ('disetujui', 'penawaran_deal') OR o.status_penawaran = 'deal' OR sp.status_respon_klien = 'deal') AND o.ketua_pelaksana_id IS NULL AND o.status != 'selesai')
+                                   -- 4. Tunjuk PIC Proposal (khusus Selulosa)
+                                   OR (o.jenis_layanan_opti = 'selulosa' AND o.status_tinjauan = 'layak' AND o.pic_proposal_id IS NULL AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal') AND sp.id IS NULL)
+                               )";
+                $resNotif = $this->db->exec($sqlNotif);
+                $notifOrderCount = (int)($resNotif[0]['c'] ?? 0);
+            } elseif ($role === 'humas') {
+                // Humas: PO yang sudah disetujui Ketua Tim dan menunggu verifikasi Humas (sama dengan "Verifikasi PO" di Daftar Order)
+                $resHumas = $this->db->exec(
+                    "SELECT COUNT(DISTINCT p.order_id) AS c FROM po_kegiatan p
+                      WHERE p.status IN ('terkirim','disetujui_mitra','disetujui') AND p.status_review = 'disetujui'
+                        AND p.verifikasi_humas_at IS NULL"
+                );
+                $notifOrderCount = (int)($resHumas[0]['c'] ?? 0);
+            } elseif (in_array($role, array('ppk', 'ppk_blu', 'pejabat'), true)) {
+                // PPK BLU: PO yang sudah diverifikasi Tim Mitra dan menunggu verifikasi PPK BLU (sama dengan "Verifikasi PO" di Daftar Order)
+                $resPpk = $this->db->exec(
+                    "SELECT COUNT(DISTINCT p.order_id) AS c FROM po_kegiatan p
+                      WHERE p.status IN ('terkirim','disetujui_mitra','disetujui') AND p.status_review = 'disetujui'
+                        AND (p.ppk_status IS NULL OR p.ppk_status NOT IN ('minta','katim_kerja','ketupel_kerja','katim_review'))
+                        AND p.tervalidasi_mitra_at IS NOT NULL AND p.validasi_keuangan_at IS NULL"
+                );
+                $notifOrderCount = (int)($resPpk[0]['c'] ?? 0);
+            } elseif ($role === 'superadmin') {
                 // Superadmin mengawasi seluruh order aktif yang sedang berjalan maupun order masuk
                 $sqlOrderSuper = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
                                   LEFT JOIN po p ON o.id = p.order_id
@@ -329,6 +435,25 @@ try {
 
         $sqlPo .= " GROUP BY o.jenis_layanan_opti";
 
+        if ($role === 'ketua_tim') {
+            // Ketua Tim tidak menyusun PO, jadi badge Daftar PO = jumlah PO di tab "Perlu Tindakan" divisinya (menunggu review / keputusan / review revisi Ketua Tim),
+            // bukan order yang belum dibuatkan PO (itu pekerjaan Ketua Pelaksana).
+            $sqlPo = "SELECT o.jenis_layanan_opti AS divisi, COUNT(DISTINCT p.id) AS c
+                      FROM po_kegiatan p
+                      JOIN order_layanan o ON o.id = p.order_id
+                      WHERE o.ketua_pelaksana_id IS NOT NULL
+                        AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa')
+                        AND ((p.status = 'terkirim' AND p.validasi_keuangan_at IS NULL AND COALESCE(p.status_review, '') NOT IN ('disetujui', 'perlu_revisi'))
+                             OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') IN ('minta', 'katim_kerja', 'katim_review')))"
+                   . \PoSchema::bukanSertifikasi('p');
+            $paramsPo = array();
+            if (in_array($layanan, array('selulosa', 'lingkungan'))) {
+                $sqlPo .= " AND o.jenis_layanan_opti = ?";
+                $paramsPo[1] = $layanan;
+            }
+            $sqlPo .= " GROUP BY o.jenis_layanan_opti";
+        }
+
         foreach ($this->db->exec($sqlPo, $paramsPo) as $r) {
             $notifPo[strtolower($r['divisi'])] = (int)$r['c'];
         }
@@ -441,7 +566,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
 
         // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble (hanya menampilkan pesan yang belum dibaca)
         try {
-            $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 15, '', false);
+            $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 30, '', false);   // terbaru dulu: yang belum dibaca tetap tebal, yang sudah dibaca diredupkan (tidak hilang dari lonceng)
             $unreadNotifCount = \NotificationService::getUnreadCount($this->db, (int)$userId, $role, $layanan);
         } catch (\Exception $eNotifSys) {
             $userNotifList = [];

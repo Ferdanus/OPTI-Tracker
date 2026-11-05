@@ -26,7 +26,7 @@ class BastController extends Controller {
         $bast = $bastModel->getByOrderId($orderId);
 
         if (empty($bast) && !$this->poTtdSudahDiunggah($orderId)) {
-            $this->setFlashError('BAST belum bisa dibuat: unggah dulu PO yang sudah ditandatangani di Tahap 8.');
+            $this->setFlashError('BAST belum bisa dibuat: upload dulu PO yang sudah ditandatangani, lalu tunggu Humas membuat kontrak (Tahap 8).');
             $f3->reroute("/order/{$orderId}");
             return;
         }
@@ -85,7 +85,7 @@ class BastController extends Controller {
             $existing = $bastModel->getByOrderId($orderId);
 
             if (empty($existing) && !$this->poTtdSudahDiunggah($orderId)) {
-                throw new \Exception('BAST belum bisa dibuat: unggah dulu PO yang sudah ditandatangani di Tahap 8.');
+                throw new \Exception('BAST belum bisa dibuat: upload dulu PO yang sudah ditandatangani, lalu tunggu Humas membuat kontrak (Tahap 8).');
             }
 
             $fileDokumen = $existing ? $existing['file_dokumen_bast'] : null;
@@ -187,7 +187,7 @@ class BastController extends Controller {
             $order = $orderModel->getDetail($orderId);
 
             if (!$bast && !$this->poTtdSudahDiunggah($orderId)) {
-                throw new \Exception('Order belum bisa ditutup: unggah dulu PO yang sudah ditandatangani di Tahap 8.');
+                throw new \Exception('Order belum bisa ditutup: upload dulu PO yang sudah ditandatangani, lalu tunggu Humas membuat kontrak (Tahap 8).');
             }
 
             if (!$bast) {
@@ -253,20 +253,20 @@ class BastController extends Controller {
     }
 
     /**
-     * Syarat BAST: PO kegiatan order ini sudah punya file PO bertanda tangan (diunggah Ketua Tim di Tahap 8).
-     * Order yang memakai PO versi lama (tanpa baris po_kegiatan) tidak dikunci.
+     * Syarat BAST: PO kegiatan order ini sudah punya file PO bertanda tangan (di-upload Ketua Tim di Tahap 8)
+     * DAN Humas sudah menandai kontraknya dibuat (kontrak_dibuat_at). Order yang memakai PO versi lama (tanpa baris po_kegiatan) tidak dikunci.
      */
     protected function poTtdSudahDiunggah($orderId) {
         try {
             \PoSchema::pastikan($this->db);
             $r = $this->db->exec(
-                'SELECT id, po_ttd_file FROM po_kegiatan WHERE order_id = ?' . \PoSchema::bukanSertifikasi('') . ' ORDER BY id DESC LIMIT 1',
+                'SELECT id, po_ttd_file, kontrak_dibuat_at FROM po_kegiatan WHERE order_id = ?' . \PoSchema::bukanSertifikasi('') . ' ORDER BY id DESC LIMIT 1',
                 array(1 => (int) $orderId)
             );
         } catch (\Throwable $e) {
             return true;
         }
         if (empty($r)) { return true; }
-        return !empty($r[0]['po_ttd_file']);
+        return !empty($r[0]['po_ttd_file']) && !empty($r[0]['kontrak_dibuat_at']);
     }
 }

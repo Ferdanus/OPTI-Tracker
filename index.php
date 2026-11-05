@@ -225,6 +225,8 @@ $f3->route('POST /po-kegiatan/@id/validasi', 'PoValidasiMitraController->validas
 $f3->route('GET /po-humas', 'PoHumasController->index');
 $f3->route('POST /po-humas/@id/verifikasi', 'PoHumasController->verifikasi');
 $f3->route('GET /po-humas/@id/berkas', 'PoHumasController->berkas');
+$f3->route('POST /po-humas/@id/kontrak', 'PoHumasController->tandaiKontrak');   // Humas menandai kontrak dibuat -> BAST terbuka
+$f3->route('GET /po-humas/@id/po-ttd', 'PoHumasController->lihatPoTtd');          // Humas membuka PO bertanda tangan
 $f3->route('GET /po-humas/@id/berkas/bukti/@pid', 'PoHumasController->berkasBukti');   // bukti pembayaran untuk Humas (bukan /pembayaran/bukti yang khusus Keuangan)
 
 $f3->route('GET /order/@id/berkas', 'BerkasController->index');
@@ -453,6 +455,9 @@ $f3->route('POST /po-kegiatan/@id/minta-revisi', 'PoReviewController->mintaRevis
 $f3->route('POST /po-kegiatan/@id/kirim-revisi', 'PoReviewController->kirimRevisi');
 $f3->route('POST /po-kegiatan/@id/setujui', 'PoReviewController->setujui');
 $f3->route('POST /po-kegiatan/@id/buka-kembali', 'PoReviewController->bukaKembali');
+$f3->route('GET /po-kegiatan/@id/po-ttd', 'PoReviewController->lihatPoTtd');   // tab PO TTD di slide Ketua Tim / Ketua Pelaksana
+$f3->route('GET /po-kegiatan/@id/po-ttd-mitra', 'PoValidasiMitraController->lihatPoTtd');   // tab PO TTD di slide Tim Mitra
+$f3->route('GET /po-ppk/@id/po-ttd', 'PoRevisiPpkController->lihatPoTtdPpk');   // tab PO TTD di slide PPK BLU
 $f3->route('GET /po-kegiatan/@id/berkas', 'PoReviewController->berkas');         // tab Dokumen: surat kesanggupan bayar + bukti pembayaran
 $f3->route('GET /po-kegiatan/@id/berkas/kesanggupan', 'PoReviewController->berkasKesanggupan');
 $f3->route('GET /po-kegiatan/@id/berkas/bukti/@pid', 'PoReviewController->berkasBukti');
@@ -480,6 +485,14 @@ $f3->route('GET /petunjuk-operasional/pengujian/@id/preview', 'petunjuk_operasio
 $f3->route('GET /petunjuk-operasional/pengujian/@id/cetak', 'petunjuk_operasional\PoPengujianController->cetakTersimpan');        // PDF PO tersimpan
 $f3->route('POST /petunjuk-operasional/pengujian/@id/update', 'petunjuk_operasional\PoPengujianController->update');
 $f3->route('GET /petunjuk-operasional/kalibrasi/create', 'petunjuk_operasional\PoKalibrasiController->create');
+$f3->route('POST /petunjuk-operasional/kalibrasi/simpan', 'petunjuk_operasional\PoKalibrasiController->simpan');
+$f3->route('GET /petunjuk-operasional/kalibrasi/@id/edit', 'petunjuk_operasional\PoKalibrasiController->edit');
+$f3->route('GET /petunjuk-operasional/kalibrasi/@id/lihat', 'petunjuk_operasional\PoKalibrasiController->lihat');
+$f3->route('POST /petunjuk-operasional/kalibrasi/@id/update', 'petunjuk_operasional\PoKalibrasiController->update');
+$f3->route('GET /petunjuk-operasional/kalibrasi/surat-keluar', 'petunjuk_operasional\PoKalibrasiController->daftarSurat');          // arsip surat keluar sekretariat yang belum diklaim (JSON)
+$f3->route('POST /petunjuk-operasional/kalibrasi/surat-keluar/klaim', 'petunjuk_operasional\PoKalibrasiController->klaimSurat');     // klaim surat penawaran untuk satu order kalibrasi
+$f3->route('POST /petunjuk-operasional/kalibrasi/surat-keluar/batal', 'petunjuk_operasional\PoKalibrasiController->batalKlaimSurat'); // batal klaim
+$f3->route('GET /petunjuk-operasional/kalibrasi/order', 'petunjuk_operasional\PoKalibrasiController->daftarOrder');   // daftar order kalibrasi untuk modal pilih order (JSON)
 $f3->route('GET /petunjuk-operasional/sertifikasi/create', 'petunjuk_operasional\PoSertifikasiController->create');
 $f3->route('GET /petunjuk-operasional/sertifikasi/order', 'petunjuk_operasional\PoSertifikasiController->daftarOrder');
 $f3->route('GET /petunjuk-operasional/sertifikasi/jadwal-kolom', 'petunjuk_operasional\PoSertifikasiController->jadwalKolom');
@@ -568,14 +581,32 @@ $f3->route('POST /push/subscribe', 'PushController->subscribe');
 $f3->route('POST /push/unsubscribe', 'PushController->unsubscribe');
 
 // ==========================================
-// kontrak
+// pks (Kontrak / Perjanjian Kerja Sama)
 // ==========================================
-$f3->route('GET /kontrak',               'PksKontrakController->index');
-$f3->route('GET /kontrak/@id/form',      'PksKontrakController->form');
-$f3->route('POST /kontrak/@id/simpan',   'PksKontrakController->simpan');    
-$f3->route('POST /kontrak/@id/selesai',  'PksKontrakController->selesai');  
-$f3->route('GET /kontrak/@id/unduh',     'PksKontrakController->unduh');     
-$f3->route('GET /kontrak/@id/logo',      'PksKontrakController->logo');  
+$f3->route('GET /pks',               'PksKontrakController->index');
+$f3->route('GET /pks/@id/form',      'PksKontrakController->form');
+$f3->route('POST /pks/@id/simpan',   'PksKontrakController->simpan');
+$f3->route('POST /pks/@id/selesai',  'PksKontrakController->selesai');
+$f3->route('GET /pks/@id/unduh',     'PksKontrakController->unduh');
+$f3->route('GET /pks/@id/pdf',       'PksKontrakController->pdf');
+$f3->route('GET /pks/@id/logo',      'PksKontrakController->logo');
+
+// Alamat lama /kontrak diarahkan ke /pks (query string ikut dibawa: ?tab=..., ?pesan=...).
+// Hanya rute milik halaman PKS; rute KontrakController lama (/kontrak/tambah, /kontrak/@id/edit, dst.) tidak disentuh.
+$f3->route('GET /kontrak', function ($f3) {
+    $qs = isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : '';
+    $f3->reroute('/pks' . $qs, true);
+});
+$f3->route('GET /kontrak/@id/form', function ($f3, $p) {
+    $qs = isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : '';
+    $f3->reroute('/pks/' . (int) $p['id'] . '/form' . $qs, true);
+});
+// Alias POST lama supaya halaman yang masih terbuka (belum direfresh) tetap bisa menyimpan.
+$f3->route('POST /kontrak/@id/simpan',  'PksKontrakController->simpan');
+$f3->route('POST /kontrak/@id/selesai', 'PksKontrakController->selesai');
+$f3->route('GET /kontrak/@id/unduh',    'PksKontrakController->unduh');
+$f3->route('GET /kontrak/@id/pdf',      'PksKontrakController->pdf');
+$f3->route('GET /kontrak/@id/logo',     'PksKontrakController->logo');
 
 // Jalankan Fat-Free Framework Router
 $f3->run();

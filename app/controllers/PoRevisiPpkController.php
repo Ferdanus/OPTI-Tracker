@@ -188,6 +188,12 @@ class PoRevisiPpkController extends Controller {
         $this->keluarkanJson($this->bangunBerkasPpk($po));
     }
 
+    /** GET /po-ppk/@id/po-ttd[?unduh=1] -- PO bertanda tangan untuk tab PO TTD di slide PPK BLU */
+    public function lihatPoTtdPpk($f3, $params) {
+        $po = $this->aksesPpk((int) $params['id']);
+        \PoSchema::kirimPoTtd($f3, $this->db, (int) $po['id']);
+    }
+
     /** GET /po-ppk/@id/berkas-bukti/@pid[?unduh=1] -- file bukti pembayaran satu termin (harus milik order PO ini) */
     public function berkasBuktiPpk($f3, $params) {
         $po = $this->aksesPpk((int) $params['id']);
@@ -662,25 +668,7 @@ class PoRevisiPpkController extends Controller {
         $this->pesan($po, $uid, 'katim', 'PPK BLU', 'memverifikasi PO.');
         $tujuan = self::idKatim($this->db, $po['jenis_layanan_opti']);
         $tujuan[] = (int) $po['ketua_pelaksana_id'];
-        $this->kabariKe($tujuan, 'PO diverifikasi PPK BLU', 'PO ' . $po['nomor_po'] . ' sudah diverifikasi PPK BLU.', '/po-kegiatan/daftar');
-        // Notifikasi ke Tim Mitra
-        if (class_exists('NotificationService')) {
-            try {
-                \NotificationService::send($this->db, [
-                    'order_id'        => (int) $po['order_id'],
-                    'po_id'           => (int) $po['id'],
-                    'target_role'     => 'tim_mitra',
-                    'target_layanan'  => 'semua',
-                    'judul'           => 'PO Selesai Diverifikasi PPK BLU',
-                    'pesan'           => 'PO ' . $po['nomor_po'] . ' telah diverifikasi dan disahkan oleh PPK BLU. Pelaksanaan kegiatan resmi berjalan.',
-                    'tipe'            => 'success',
-                    'icon'            => 'bi-patch-check-fill',
-                    'link_url'        => '/po',
-                    'created_by'      => $uid,
-                    'created_by_name' => 'PPK BLU'
-                ]);
-            } catch (\Throwable $eNotifM) {}
-        }
+        $this->kabariKe($tujuan, 'PO diverifikasi PPK BLU', 'PO ' . $po['nomor_po'] . ' sudah diverifikasi PPK BLU dan kini Aktif, menunggu TTD. Ketua Tim: cetak PO, tanda tangani, lalu upload PO bertanda tangan di Tahap 8.', !empty($po['order_id']) ? '/order/' . (int) $po['order_id'] : '/po-kegiatan/daftar');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], 'ppk'));
     }
 
@@ -1185,6 +1173,8 @@ class PoRevisiPpkController extends Controller {
         $ktMax = "x.putaran = (SELECT MAX(y.putaran) FROM po_revisi_catatan y WHERE y.po_id = p.id AND y.tahap = 'ppk' AND y.asal = 'katim' AND y.ronde = p.ronde_ppk AND y.state <> 'draf')";
         $sql = "SELECT p.id, p.nomor_po, p.ppk_status, p.ronde_ppk, p.ppk_dibaca_at, p.ppk_minta_at, p.ppk_status_at, p.ppk_alasan, p.validasi_keuangan_at,
                        p.created_at AS dibuat_at, COALESCE(p.dikirim_at, p.updated_at, p.created_at) AS dikirim_at, p.disetujui_at,
+                       " . $ex('po_ttd_at') . " AS po_ttd_at, " . $ex('kontrak_dibuat_at') . " AS kontrak_dibuat_at, " . $ex('kontrak_nomor') . " AS kontrak_nomor,
+                       " . $ex('po_ttd_nama') . " AS po_ttd_nama, " . $ex('po_ttd_oleh_nama') . " AS po_ttd_oleh_nama, " . $ex('kontrak_dibuat_oleh_nama') . " AS kontrak_dibuat_oleh_nama,
                        " . $ex('verifikasi_humas_at') . " AS humas_ver_at, " . $ex('catatan_tim_mitra') . " AS catatan_tim_mitra, " . $ex('catatan_ppk') . " AS catatan_ppk, " . $ex('catatan_humas') . " AS catatan_humas,
                        " . ($mitraKol !== '' ? 'p.' . $mitraKol : 'NULL') . " AS mitra_valid_at,
                        COALESCE(NULLIF(p.judul_kegiatan, ''), o.judul_kegiatan) AS judul,
@@ -1268,6 +1258,15 @@ class PoRevisiPpkController extends Controller {
                 // catatan PPK BLU (opsional, diisi di dock seperti catatan Tim Mitra, tersimpan otomatis); tampil di bawah dokumen PO (biru)
                 'catatan_ppk' => isset($r['catatan_ppk']) ? trim((string) $r['catatan_ppk']) : '',
                 'ppk_valid_at' => $r['validasi_keuangan_at'],
+                // posisi akhir di kolom Status PO: PO belum / sudah di TTD, PKS telah dibuat
+                'ttd_at'      => trim((string) ($r['po_ttd_at'] ?? '')),
+                'kontrak_at'  => trim((string) ($r['kontrak_dibuat_at'] ?? '')),
+                'kontrak_nomor' => (string) ($r['kontrak_nomor'] ?? ''),
+                'kontrak_oleh' => (string) ($r['kontrak_dibuat_oleh_nama'] ?? ''),
+                'ttd_nama'    => (string) ($r['po_ttd_nama'] ?? ''),
+                'ttd_oleh'    => (string) ($r['po_ttd_oleh_nama'] ?? ''),
+                'url_ttd'     => trim((string) ($r['po_ttd_at'] ?? '')) !== '' ? (\Base::instance()->get('BASE') . '/po-ppk/' . (int) $r['id'] . '/po-ttd') : '',
+                'kontrak_url' => (trim((string) ($r['kontrak_dibuat_at'] ?? '')) !== '' && $this->isSuperadmin()) ? (\Base::instance()->get('BASE') . '/pks/' . (int) $r['id'] . '/unduh') : '',
                 // ---- Map Kendali F.PJT-12-03/1 (kartu di tab Berkas; hanya tanggal, jam tidak dipakai) ----
                 'disiapkan'   => $div !== '' ? 'Tim Kerja OPTI ' . ucfirst(strtolower($div)) : 'Tim Kerja OPTI',
                 'map'         => [
@@ -1639,4 +1638,4 @@ class PoRevisiPpkController extends Controller {
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
-}
+}

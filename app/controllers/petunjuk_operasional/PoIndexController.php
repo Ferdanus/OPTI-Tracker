@@ -24,6 +24,17 @@ namespace petunjuk_operasional;
  */
 class PoIndexController extends PoSertifikasiController {
 
+    /** Rentang bulan dari Daftar PO gabungan: null = filter satu bulan; [awal, akhir] = 'YYYY-MM-DD' (akhir eksklusif). */
+    public $rentangPeriode = null;
+
+    /** Potongan SQL filter periode untuk satu kolom tanggal: satu bulan (bawaan) atau rentang bulan (bila $rentangPeriode terisi). */
+    protected function sqlPeriode($kol, $bulan, $tahun) {
+        if (is_array($this->rentangPeriode) && count($this->rentangPeriode) === 2) {
+            return "{$kol} IS NOT NULL AND {$kol} >= '" . $this->rentangPeriode[0] . "' AND {$kol} < '" . $this->rentangPeriode[1] . "'";
+        }
+        return "{$kol} IS NOT NULL AND MONTH({$kol}) = " . (int) $bulan . " AND YEAR({$kol}) = " . (int) $tahun;
+    }
+
     /** slug => label. Slug sama dengan yang dipakai kartu jenis PO di /po-kegiatan/pilih. */
     protected function daftarLayanan() {
         return [
@@ -266,9 +277,20 @@ class PoIndexController extends PoSertifikasiController {
     protected function petakanBarisDaftar(array $rows, $noAwal, array $semuaLayanan, $f3) {
         $daftar = [];
         $no = (int) $noAwal;
+        // PO Kalibrasi: nomor order order kalibrasi disimpan di po_kegiatan.order_nomor (satu query untuk semua baris halaman ini)
+        $nomorOrderKal = [];
+        $idKal = [];
+        foreach ($rows as $r) { if ((string) $r['layanan'] === 'kalibrasi') { $idKal[] = (int) $r['id']; } }
+        if ($idKal) {
+            try {
+                $rk = $this->db->exec('SELECT id, order_nomor FROM po_kegiatan WHERE id IN (' . implode(',', $idKal) . ')');
+                foreach ($rk as $x) { $nomorOrderKal[(int) $x['id']] = trim((string) $x['order_nomor']); }
+            } catch (\Throwable $e) { /* kolom order_nomor belum ada (belum ada PO Kalibrasi tersimpan): dikosongkan */ }
+        }
         foreach ($rows as $r) {
             $slug = (string) $r['layanan'];
             $order = trim((string) ($r['nomor_order'] ?? ''));
+            if ($order === '' && $slug === 'kalibrasi') { $order = isset($nomorOrderKal[(int) $r['id']]) ? $nomorOrderKal[(int) $r['id']] : ''; }
             if ($order === '') { $order = trim((string) ($r['no_id_order'] ?? '')); }
             if ($order === '') { $order = trim((string) ($r['nomor_surat'] ?? '')); } // Pengujian: nomor surat permintaan (order dari tb_arsipsurat)
             // PO Pengujian untuk banyak order: kolom No. Order = jumlah order, Mitra = teks yang diisi di form PO
@@ -322,8 +344,8 @@ class PoIndexController extends PoSertifikasiController {
                                     : (($r['nmcustomer'] ?? '') !== '' || ($r['pt_cv'] ?? '') !== ''
                                     ? \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nmcustomer'] ?? '') : trim((string) ($r['nama_perusahaan'] ?? ''))),
                 // baru layanan sertifikasi & pengujian yang punya form simpan/edit; layanan lain menyusul
-                'url_edit'      => (!$this->isKetuaSertifikasi() && in_array($slug, [\PoSchema::SERTIFIKASI, \PoPengujian::LAYANAN], true)) ? $f3->get('BASE') . '/petunjuk-operasional/' . $slug . '/' . (int) $r['id'] . '/edit' : '',
-                'url_lihat'     => in_array($slug, [\PoSchema::SERTIFIKASI, \PoPengujian::LAYANAN], true) ? $f3->get('BASE') . '/petunjuk-operasional/' . $slug . '/' . (int) $r['id'] . '/lihat' : '',
+                'url_edit'      => (!$this->isKetuaSertifikasi() && in_array($slug, [\PoSchema::SERTIFIKASI, \PoPengujian::LAYANAN, 'kalibrasi'], true)) ? $f3->get('BASE') . '/petunjuk-operasional/' . $slug . '/' . (int) $r['id'] . '/edit' : '',
+                'url_lihat'     => in_array($slug, [\PoSchema::SERTIFIKASI, \PoPengujian::LAYANAN, 'kalibrasi'], true) ? $f3->get('BASE') . '/petunjuk-operasional/' . $slug . '/' . (int) $r['id'] . '/lihat' : '',
             ];
         }
         return $daftar;
@@ -391,7 +413,7 @@ class PoIndexController extends PoSertifikasiController {
         foreach ($daftarStatus as $k) {
             $cond = "{$stEf} = '{$k}'";
             $semuaK = array_key_exists($k, $semuaPerTab) ? (bool) $semuaPerTab[$k] : (bool) $tampilkanSemua;
-            if (!$semuaK) { $cond .= " AND {$kolomTanggal} IS NOT NULL AND MONTH({$kolomTanggal}) = " . (int) $bulan . " AND YEAR({$kolomTanggal}) = " . (int) $tahun; }
+            if (!$semuaK) { $cond .= " AND " . $this->sqlPeriode($kolomTanggal, $bulan, $tahun); }
             $selF[] = "SUM(CASE WHEN {$cond} THEN 1 ELSE 0 END) AS {$k}";
         }
         // tab "Semua": gabungan status dengan aturan bulan tiap status (sama dengan tab penyusunnya)
@@ -399,7 +421,7 @@ class PoIndexController extends PoSertifikasiController {
         foreach ($statusSemua as $k) {
             $cS = "{$stEf} = '{$k}'";
             $semuaK2 = array_key_exists($k, $semuaPerTab) ? (bool) $semuaPerTab[$k] : (bool) $tampilkanSemua;
-            if (!$semuaK2) { $cS .= " AND {$kolomTanggal} IS NOT NULL AND MONTH({$kolomTanggal}) = " . (int) $bulan . " AND YEAR({$kolomTanggal}) = " . (int) $tahun; }
+            if (!$semuaK2) { $cS .= " AND " . $this->sqlPeriode($kolomTanggal, $bulan, $tahun); }
             $bagianSemua[] = "({$cS})";
         }
         $condSemua = '(' . implode(' OR ', $bagianSemua) . ')';
@@ -412,9 +434,7 @@ class PoIndexController extends PoSertifikasiController {
             $where = $whereQ . " AND {$stEf} = ?";
             $params = array_merge($paramsQ, [$tab]);
             if (!$tampilkanSemua) {
-                $where .= " AND {$kolomTanggal} IS NOT NULL AND MONTH({$kolomTanggal}) = ? AND YEAR({$kolomTanggal}) = ?";
-                $params[] = (int) $bulan;
-                $params[] = (int) $tahun;
+                $where .= " AND " . $this->sqlPeriode($kolomTanggal, $bulan, $tahun);
             }
         }
         $tabValid = ($tab === 'semua') || in_array($tab, $daftarStatus, true);   // tab "PO Masuk" hanya untuk order OPTI
@@ -539,7 +559,7 @@ class PoIndexController extends PoSertifikasiController {
         foreach (['draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'] as $tS) {
             if ($cond[$tS] === '1 = 0') { continue; }
             $cS = '(' . $cond[$tS] . ')';
-            if (!$semuaUntuk($tS)) { $cS .= " AND {$kolomTanggal[$tS]} IS NOT NULL AND MONTH({$kolomTanggal[$tS]}) = " . (int) $bulan . " AND YEAR({$kolomTanggal[$tS]}) = " . (int) $tahun; }
+            if (!$semuaUntuk($tS)) { $cS .= " AND " . $this->sqlPeriode($kolomTanggal[$tS], $bulan, $tahun); }
             $bagianSemua[] = '(' . $cS . ')';
         }
         $cond['semua'] = $bagianSemua ? '(' . implode(' OR ', $bagianSemua) . ')' : '1 = 0';
@@ -599,14 +619,13 @@ class PoIndexController extends PoSertifikasiController {
         $selF = [];
         foreach ($tabs as $t) {
             $c = $cond[$t];
-            if (!$semuaUntuk($t)) { $c .= " AND {$kolomTanggal[$t]} IS NOT NULL AND MONTH({$kolomTanggal[$t]}) = " . (int) $bulan . " AND YEAR({$kolomTanggal[$t]}) = " . (int) $tahun; }
+            if (!$semuaUntuk($t)) { $c .= " AND " . $this->sqlPeriode($kolomTanggal[$t], $bulan, $tahun); }
             $selF[] = "SUM(CASE WHEN {$c} THEN 1 ELSE 0 END) AS {$t}";
         }
         $where = $whereQ . " AND ({$cond[$tab]}){$tambahan}";
         $params = $paramsQ;
         if (!$semuaUntuk($tab)) {
-            $where .= " AND {$kolomTanggal[$tab]} IS NOT NULL AND MONTH({$kolomTanggal[$tab]}) = ? AND YEAR({$kolomTanggal[$tab]}) = ?";
-            $params[] = $bulan; $params[] = $tahun;
+            $where .= " AND " . $this->sqlPeriode($kolomTanggal[$tab], $bulan, $tahun);
         }
 
         $rows = [];
@@ -710,6 +729,8 @@ class PoIndexController extends PoSertifikasiController {
                 }
             }
             $bisaLihat = $punyaAksi && in_array($st, ['terkirim', 'disetujui_mitra', 'disetujui'], true) && ($st === 'terkirim' || $srv === 'disetujui');
+            // draft: Superadmin dan Tim Kerja Sertifikasi juga memakai slide (sama seperti PO yang sudah terkirim), bukan jendela pratinjau
+            if (!$bisaLihat && $st === 'draft' && in_array($peran, ['superadmin', 'tim'], true)) { $bisaLihat = true; }
             if ($pos['panel_jenis'] !== '' && !in_array($tab, ['berjalan', 'disetujui'], true)) { $pos['aksi_mode'] = 'review'; }
             elseif ($bisaLihat) { $pos['aksi_mode'] = 'lihat'; }
             else { $pos['aksi_mode'] = 'modal'; }

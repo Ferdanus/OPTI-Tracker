@@ -13,7 +13,51 @@
     .pp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     .pp-actions .form-select { width: auto; }
 
-    .pp-grid { max-width: 1100px; }
+    .pp-grid { max-width: none; width: 100%; }
+    .pp-root .pp-head p { margin-top: 2px; font-size: .9rem; color: #475569; }
+    .pp-link { border: 0; background: none; padding: 0; color: var(--color-primary, #334155); font-size: .8rem; font-weight: 600; text-decoration: underline; cursor: pointer; margin-left: 6px; }
+    .pp-root .pp-card > h3 .pp-ttl { display: block; min-width: 0; }
+    .pp-root .pp-card > h3 .pp-tt { display: block; font-size: .95rem; font-weight: 700; color: #0f172a; line-height: 1.25; }
+    .pp-root .pp-card > h3 .pp-dsc { display: block; font-size: .78rem; font-weight: 400; color: #64748b; line-height: 1.3; }
+    .pp-ro { min-height: 31px; padding: .25rem .5rem; font-size: .875rem; line-height: 1.4; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: #1e293b; word-break: break-word; }
+    .pp-ro.kosong { color: #94a3b8; font-style: italic; }
+    body.pp-view-only #ppForm, body.pp-view-only #ppBottomBar, body.pp-view-only .pp-fab { display: none !important; }
+    .pp-bad { border-color: #be123c !important; box-shadow: 0 0 0 .15rem rgba(190,18,60,.14) !important; }
+    .pp-rte.pp-bad { border-radius: 6px; }
+    .pp-pg-print { border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; font-size: .78rem; padding: 2px 10px; margin-left: 8px; cursor: pointer; color: #334155; }
+    .pp-pg-print:hover { background: #f1f5f9; }
+    /* Dimuat di dalam modal Daftar PO (?embed=1): hanya kartu pratinjau dokumen yang tampil, memenuhi seluruh area modal */
+    html.pp-embed, html.pp-embed body { overflow: hidden !important; background: #e9ecef !important; }
+    html.pp-embed .po-live-card { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; z-index: 2050; height: auto !important; min-height: 0 !important; border: 0; border-radius: 0; box-shadow: none; }
+    html.pp-embed #ppLiveBadge { display: none; }
+    .pp-devbar { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin-bottom: 12px; padding: 8px 12px; border: 1px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; font-size: .8rem; color: #64748b; }
+    .pp-devbar .form-select { width: auto; }
+    .pp-orderbar { max-width: 1100px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; font-size: .85rem; }
+    .pp-orderbar[hidden] { display: none; }
+    .pp-ob-info { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; min-width: 0; }
+    .pp-ob-lbl { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: #64748b; }
+    .pp-ob-info b { font-family: ui-monospace, Consolas, monospace; font-size: .8rem; }
+    .pp-ob-tag { font-size: .7rem; padding: 1px 9px; border-radius: 999px; background: #1e293b; color: #fff; }
+    /* ---- surat penawaran (klaim dari arsip) ---- */
+    .pp-sp-chip { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 12px; background: #fff; }
+    .pp-sp-fi { width: 34px; height: 40px; border: 1px solid #e2e8f0; border-radius: 6px; display: grid; place-items: center; background: #f8fafc; color: #0f172a; font-size: 1.1rem; flex-shrink: 0; }
+    .pp-sp-meta { flex: 1; min-width: 160px; display: flex; flex-direction: column; line-height: 1.3; }
+    .pp-sp-meta b { font-size: .82rem; word-break: break-all; }
+    .pp-sp-meta small { color: #64748b; font-size: .74rem; }
+    .pp-sp-act { display: flex; gap: 6px; flex-wrap: wrap; }
+    #ppNoSP[readonly], #ppTglSP[readonly] { background: #f8fafc; color: #1e293b; }
+    #ppSpModal .pp-sp-no { font-family: ui-monospace, Consolas, monospace; font-weight: 600; font-size: .8rem; }
+    #ppSpModal th { font-size: .68rem; letter-spacing: .05em; text-transform: uppercase; color: #64748b; font-weight: 700; background: #f8fafc; white-space: nowrap; }
+    #ppSpModal td { font-size: .82rem; vertical-align: top; }
+    #ppSpModal .pp-sp-sub { color: #64748b; font-size: .74rem; }
+    #ppSpModal tr.pp-sp-cocok { background: #f8fafc; }
+    #ppSpModal tr.pp-sp-out { opacity: 0; transform: translateX(20px); transition: all .35s; }
+    .pp-sp-pv { position: fixed; inset: 0; z-index: 2100; background: rgba(15,23,42,.6); display: none; align-items: center; justify-content: center; padding: 18px; }
+    .pp-sp-pv.on { display: flex; }
+    .pp-sp-pv > div { background: #fff; border-radius: 12px; width: 100%; max-width: 860px; height: calc(100vh - 36px); display: flex; flex-direction: column; overflow: hidden; }
+    .pp-sp-pv header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #e2e8f0; }
+    .pp-sp-pv header b { flex: 1; font-size: .9rem; min-width: 0; word-break: break-all; }
+    .pp-sp-pv iframe { flex: 1; border: 0; width: 100%; background: #f1f5f9; }
     .pp-fab { position: fixed; right: 24px; bottom: 24px; z-index: 1030; box-shadow: 0 6px 18px rgba(15,23,42,.3); border-radius: 999px; padding: 9px 18px; }
 
     /* ---------- Form ---------- */
@@ -129,46 +173,93 @@
 
 <include href="petunjuk_operasional/_tema_po.html" />
 <include href="petunjuk_operasional/_penandatangan.html" />
+<include href="petunjuk_operasional/_modal_order_kalibrasi.html" />
+<include href="petunjuk_operasional/_dialog_nomor_po.html" />
 
 <div class="pp-root">
     <div class="pp-head">
         <div class="d-flex align-items-center gap-3">
             <a href="{{ @BASE }}/petunjuk-operasional" class="btn btn-sm btn-outline-secondary pp-back"><i class="bi bi-arrow-left"></i> <span>Kembali</span></a>
             <div>
-            <div class="d-flex align-items-center gap-2"><h1>Buat PO Kalibrasi</h1>
-            <span class="pp-tag">Kalibrasi</span></div>
-            <p>Isi form di bawah; pratinjau dokumen PO tampil langsung di sebelah kanan. <span class="text-warning-emphasis">Tahap tampilan: data belum tersimpan ke database.</span></p>
+            <div class="d-flex align-items-center gap-2"><h1><span id="ppTitle">Buat Petunjuk Operasional</span> <span class="badge ms-1 d-none" id="ppStatus" style="font-size:.7rem;vertical-align:middle;"></span></h1>
+            <span class="pp-tag">Layanan Kalibrasi</span></div>
+            <p id="ppOrderInfo" hidden><span id="ppObText"></span><button type="button" class="pp-link" id="ppObGanti">Ganti order</button></p>
             </div>
         </div>
         <div class="pp-actions">
-            <select id="ppSample" class="form-select form-select-sm" title="Isi form dengan data dari PO contoh untuk mengecek hasilnya">
-                <option value="">Muat data contoh...</option>
-                <option value="mitra">Contoh - PT Contoh Kalibrasi</option>
-            </select>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="ppReset"><i class="bi bi-arrow-counterclockwise me-1"></i>Kosongkan</button>
             <button type="button" class="btn btn-sm btn-primary" id="ppPreview"><i class="bi bi-eye me-1"></i>Preview Data</button>
-            <button type="button" class="btn btn-sm btn-outline-primary" id="ppPrint"><i class="bi bi-printer me-1"></i>Cetak / PDF</button>
-            <button type="button" class="btn btn-sm btn-outline-success" disabled title="Penyimpanan dibuat di tahap berikutnya"><i class="bi bi-save me-1"></i>Simpan</button>
+            <button type="button" class="btn btn-sm btn-outline-primary d-none" id="ppPrint"><i class="bi bi-printer me-1"></i>Cetak / PDF</button>
         </div>
     </div>
+
+    <div class="alert py-2 small mb-3" id="ppFlash" role="alert" hidden></div>
 
     <div class="pp-grid">
         <!-- ===================== FORM ===================== -->
         <div id="ppForm">
-            <section class="pp-card">
-                <h3><span class="pp-num"><i class="bi bi-info"></i></span>Informasi Dokumen</h3>
+            <div class="pp-devbar">
+                <span><i class="bi bi-info-circle me-1"></i>Alat bantu pengisian form.</span>
+                <select id="ppSample" class="form-select form-select-sm ms-auto" title="Isi form dengan data dari PO contoh untuk mengecek hasilnya">
+                    <option value="">Muat data contoh...</option>
+                    <option value="mitra">Contoh - PT Contoh Kalibrasi</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="ppReset"><i class="bi bi-arrow-counterclockwise me-1"></i>Kosongkan</button>
+            </div>
+            <section class="pp-card" id="ppOrderCard" hidden>
+                <h3><span class="pp-num"><i class="bi bi-clipboard-check"></i></span><span class="pp-ttl"><span class="pp-tt">Informasi Order</span><span class="pp-dsc">Data order kalibrasi (hanya baca)</span></span></h3>
                 <div class="pp-body">
                     <div class="row g-2">
-                        <div class="col-sm-3">
-                            <label class="form-label">No. urut PO</label>
-                            <input type="text" class="form-control form-control-sm" data-bind="urut" inputmode="numeric" placeholder="201">
+                        <div class="col-sm-6">
+                            <label class="form-label">No. Order</label>
+                            <div class="pp-ro" data-order="nomor"></div>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Tanggal Order</label>
+                            <div class="pp-ro" data-order="tgl_order"></div>
+                        </div>
+                        <div class="col-sm-8">
+                            <label class="form-label">Customer</label>
+                            <div class="pp-ro" data-order="mitra"></div>
                         </div>
                         <div class="col-sm-4">
-                            <label class="form-label">Bulan &amp; tahun PO</label>
-                            <input type="month" class="form-control form-control-sm" data-bind="tanggal">
+                            <label class="form-label">Lokasi Kalibrasi</label>
+                            <div class="pp-ro" data-order="lokasi"></div>
                         </div>
-                        <div class="col-sm-5"></div>
-                        <div class="col-sm-7">
+                        <div class="col-12">
+                            <label class="form-label">Uraian Order</label>
+                            <div class="pp-ro" data-order="uraian" style="white-space:pre-wrap"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num"><i class="bi bi-file-earmark-text"></i></span><span class="pp-ttl"><span class="pp-tt">Informasi PO</span><span class="pp-dsc">Nomor berkas, tanggal, dan judul kegiatan kalibrasi</span></span></h3>
+                <div class="pp-body">
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <label class="form-label">Nomor PO</label>
+                            <div class="form-control form-control-sm bg-light fw-semibold" id="ppNomorBox" style="cursor:not-allowed;"><span class="text-muted fst-italic fw-normal">Diberikan saat PO dikirim</span></div>
+                            <div class="pp-hint">Dibuat otomatis &amp; terkunci saat PO dikirim (satu urutan dengan PO layanan lain), tidak bisa diubah manual.</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Tanggal PO</label>
+                            <div class="form-control form-control-sm bg-light fw-semibold" id="ppTanggal" style="cursor:not-allowed;"></div>
+                            <div class="pp-hint" id="ppTglInfo">Tercatat otomatis saat PO pertama kali disimpan.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Judul Kegiatan <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm" id="ppJudul" data-bind="judul" maxlength="255" placeholder="Isi judul kegiatan PO..." required>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pp-card">
+                <h3><span class="pp-num"><i class="bi bi-building"></i></span><span class="pp-ttl"><span class="pp-tt">Mitra &amp; Surat Penawaran</span><span class="pp-dsc">Nama dan alamat perusahaan, nomor dan tanggal surat penawaran</span></span></h3>
+                <div class="pp-body">
+                    <div class="row g-2">
+                        <div class="col-12">
                             <label class="form-label">Nama perusahaan / mitra</label>
                             <input type="text" class="form-control form-control-sm" data-bind="perusahaan" placeholder="PT Contoh Kalibrasi">
                         </div>
@@ -176,17 +267,27 @@
                             <label class="form-label">Alamat perusahaan</label>
                             <div class="pp-rte sm" data-rte="alamat" data-ph="Jl. Contoh No. 1, ..."></div>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label">Judul <span class="pp-auto" id="ppJudulAuto">otomatis</span><button type="button" class="pp-link" id="ppJudulReset" hidden>kembalikan otomatis</button></label>
-                            <input type="text" class="form-control form-control-sm" id="ppJudul" data-bind="judul">
-                        </div>
                         <div class="col-sm-7">
-                            <label class="form-label">No. surat penawaran</label>
-                            <input type="text" class="form-control form-control-sm" data-bind="noPenawaran" placeholder="B/0004/BBSPJIS/MS/VI/2026">
+                            <label class="form-label">No. surat penawaran <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control form-control-sm" data-bind="noPenawaran" id="ppNoSP" readonly placeholder="Belum ada surat dipilih">
+                                <button type="button" class="btn btn-dark fw-semibold" id="ppSpAmbil"><i class="bi bi-box-arrow-in-down me-1"></i>Ambil dari Arsip</button>
+                            </div>
+                            <div class="pp-hint" id="ppSpHint"></div>
                         </div>
                         <div class="col-sm-5">
-                            <label class="form-label">Tanggal surat penawaran</label>
-                            <input type="date" class="form-control form-control-sm" data-bind="tglPenawaran">
+                            <label class="form-label">Tanggal surat penawaran <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control form-control-sm" data-bind="tglPenawaran" id="ppTglSP" readonly>
+                        </div>
+                        <div class="col-12" id="ppSpInfo" hidden>
+                            <div class="pp-sp-chip">
+                                <span class="pp-sp-fi"><i class="bi bi-file-earmark-pdf"></i></span>
+                                <span class="pp-sp-meta"><b id="ppSpNama"></b><small id="ppSpCust"></small></span>
+                                <span class="pp-sp-act">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="ppSpLihat"><i class="bi bi-eye me-1"></i>Lihat</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="ppSpBatal"><i class="bi bi-x-circle me-1"></i>Batal Klaim</button>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -279,6 +380,12 @@
                 <h3><span class="pp-num"><i class="bi bi-pen"></i></span>Penandatanganan</h3>
                 <div class="pp-body"><div id="ppTtd"></div></div>
             </section>
+
+            <div class="d-flex flex-wrap justify-content-end gap-2 mb-5" id="ppBottomBar">
+                <a href="{{ @BASE }}/petunjuk-operasional?layanan=kalibrasi" class="btn btn-outline-secondary px-4" id="ppBack">Kembali</a>
+                <button type="button" id="btnDraft" class="btn btn-outline-secondary px-4"><i class="bi bi-save me-1"></i> Simpan sebagai Draft</button>
+                <button type="button" id="btnKirim" class="btn btn-primary px-4"><i class="bi bi-send me-1"></i> Kirim</button>
+            </div>
         </div>
     </div>
 </div>
@@ -291,6 +398,7 @@
         <div class="pp-modal-bar">
             <span class="lbl">Preview dokumen</span>
             <span id="ppPgBtns"></span>
+            <a href="#" class="pp-pg-print" id="ppModalEdit" style="display:none;text-decoration:none" title="Edit PO (masih draft)"><i class="bi bi-pencil me-1"></i>Edit</a>
             <button type="button" class="pp-modal-x" id="ppModalX" aria-label="Tutup">&times;</button>
         </div>
         <div class="pp-pv-box" id="pvBox">
@@ -300,6 +408,63 @@
 </div>
 <div class="pp-page pp-measure" id="ppMeasure" aria-hidden="true"></div>
 
+<!-- Modal: ambil surat penawaran dari arsip surat keluar sekretariat -->
+<div class="modal fade" id="ppSpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header py-3 px-4">
+                <div>
+                    <h6 class="modal-title fw-bold m-0">Ambil Surat Penawaran dari Arsip Surat Keluar</h6>
+                    <small class="text-muted">Klaim surat penawaran dari sekretariat untuk order kalibrasi ini</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body p-4 bg-light-subtle">
+                <div class="row g-2 mb-3 align-items-center">
+                    <div class="col-12 col-md-8">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control border-start-0" id="ppSpCari" placeholder="Cari nomor surat, perihal, nama perusahaan...">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4 d-flex gap-2 justify-content-md-end align-items-center">
+                        <span class="badge text-bg-light border" id="ppSpJml"></span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="ppSpSegar"><i class="bi bi-arrow-clockwise me-1"></i>Segarkan</button>
+                    </div>
+                </div>
+                <div id="ppSpLoad" class="text-center py-5 d-none"><div class="spinner-border spinner-border-sm text-dark" role="status"></div><div class="small text-muted mt-2">Mengambil arsip surat keluar...</div></div>
+                <div id="ppSpKosong" class="text-center py-5 d-none"><i class="bi bi-inbox fs-2 text-muted"></i><div class="fw-bold mt-1" id="ppSpKosongT">Tidak ada surat penawaran tersedia</div><div class="small text-muted" id="ppSpKosongP">Belum ada surat penawaran baru yang belum diklaim.</div></div>
+                <div class="table-responsive bg-white rounded-3 border" id="ppSpTblWrap">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead><tr><th class="text-center" style="width:44px">No</th><th style="width:200px">Nomor &amp; Tgl Surat</th><th style="width:220px">Instansi / Customer</th><th>Perihal &amp; Keterangan</th><th class="text-center" style="width:80px">Berkas</th><th class="text-center" style="width:100px">Aksi</th></tr></thead>
+                        <tbody id="ppSpBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-4"><small class="text-muted me-auto">Surat yang sudah diklaim tidak muncul lagi di daftar order Kalibrasi lain.</small><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button></div>
+        </div>
+    </div>
+</div>
+<div class="pp-sp-pv" id="ppSpPv"><div><header><b id="ppSpPvT">Surat Penawaran</b><button type="button" class="btn btn-sm btn-outline-secondary" id="ppSpPvX">Tutup</button></header><iframe id="ppSpPvF" title="Pratinjau surat"></iframe></div></div>
+
+<script>
+window.PO_SAVED = {{ @po_json | raw }};
+window.PO_KLAIM = {{ @klaim_json | raw }};   // surat penawaran yang sedang diklaim order ini (null = belum)
+window.PO_CSRF = '{{ @csrf_po }}';
+window.PP_LIVE_TEXT = 'Tersinkronisasi';
+window.PO_VIEW = {{ @mode_lihat }}; // true = hanya preview dokumen (ikon mata di daftar PO)
+window.PO_URLS = {
+    simpan: '{{ @BASE }}/petunjuk-operasional/kalibrasi/simpan',
+    update: '{{ @BASE }}/petunjuk-operasional/kalibrasi/{id}/update',
+    edit: '{{ @BASE }}/petunjuk-operasional/kalibrasi/{id}/edit',
+    daftar: '{{ @BASE }}/petunjuk-operasional?layanan=kalibrasi',
+    sp: {
+        daftar: '{{ @BASE }}/petunjuk-operasional/kalibrasi/surat-keluar',
+        klaim: '{{ @BASE }}/petunjuk-operasional/kalibrasi/surat-keluar/klaim',
+        batal: '{{ @BASE }}/petunjuk-operasional/kalibrasi/surat-keluar/batal'
+    }
+};
+</script>
 <script>
 (function () {
     'use strict';
@@ -336,8 +501,8 @@
 
     function blank0() {
         return {
-            urut: '', tanggal: todayMonth(), perusahaan: '', alamat: '', judul: '', judulManual: false,
-            noPenawaran: '', tglPenawaran: '',
+            urut: '', tanggal: todayMonth(), perusahaan: '', alamat: '', judul: '',
+            noPenawaran: '', tglPenawaran: '', idSuratKeluar: '',
             dasar: DEF_DASAR, tujuan: DEF_TUJUAN, ruang: DEF_RUANG,
             alat: [{ nama: '', jumlah: 1, menit: '', ket: 'Insitu' }],
             tim: ROLES.map(function (r) { return { nama: '', tugas: r.tugas, uraian: r.uraian }; }),
@@ -358,7 +523,7 @@
     var SAMPLES = {
         'mitra': function () {
             var s = blank();
-            s.tanggal = '2026-07'; s.perusahaan = 'PT Contoh Kalibrasi';
+            s.perusahaan = 'PT Contoh Kalibrasi';
             s.alamat = 'Jl. Contoh No. 1, Kec. Contoh, Kota Contoh, 40000';
             s.noPenawaran = 'B/0004/BBSPJIS/MS/VI/2026'; s.tglPenawaran = '2026-06-15';
             s.dasar = '<ol><li>Permintaan dari [perusahaan] pada 14 Juni 2026</li><li>Bukti bayar dari [perusahaan] pada 2026</li></ol>';
@@ -387,6 +552,7 @@
 
     function blank() { var s0 = blank0(); s0.ttd = PoTtd.baru(); return s0; }
     var S = blank();
+    var PO_SAVED = window.PO_SAVED || null;
 
     /* ---------------- util ---------------- */
     function huruf(i, kecil) {
@@ -504,8 +670,8 @@
         return out + esc(rumusText(it));
     }
 
-    function judulAuto() { return 'KS Jasa Layanan Teknis Tim Kalibrasi Dengan ' + (S.perusahaan || ''); }
-    function judulPakai() { return S.judulManual ? S.judul : judulAuto(); }
+    // Judul Kegiatan diisi manual oleh pembuat PO (wajib)
+    function judulPakai() { return S.judul || ''; }
 
     /* ---------------- builder dokumen ---------------- */
     function ph(v, fb) { return v ? esc(v) : '<span class="pp-ph">' + fb + '</span>'; }
@@ -584,7 +750,8 @@
     }
     function docHtml0(c) {
         var bt = bulanTahun(), j = judulPakai();
-        var nomor = (S.urut ? esc(S.urut) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ') + '/PO/BBSPJIS/' + bt.r + '/' + bt.y;
+        var nomor = (PO_SAVED && PO_SAVED.nomor) ? esc(PO_SAVED.nomor)
+            : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /PO/BBSPJIS/' + bt.r + '/' + bt.y;
         return '<div class="pp-doc-title blk">PETUNJUK OPERASIONAL (PO)</div>' +
             '<div class="pp-doc-nomor blk">Nomor : ' + nomor + '</div>' +
             '<div class="pp-judul blk">Judul : ' + ph(j, 'Judul kegiatan') + '</div>' +
@@ -679,8 +846,6 @@
     }
 
     function updateAuto() {
-        if (!S.judulManual) { $('ppJudul').value = judulAuto(); }
-        $('ppJudulAuto').hidden = S.judulManual; $('ppJudulReset').hidden = !S.judulManual;
         var bt = bulanTahun();
         $('ppBulan').placeholder = bt.b || 'otomatis'; $('ppTahun').placeholder = bt.y === '....' ? 'otomatis' : bt.y;
     }
@@ -834,13 +999,14 @@
     }
     function populate() { populate0(); pasangTtd(); }
     function populate0() {
+        spSinkron();
         Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-bind]'), function (el) {
             var v = getPath(S, el.dataset.bind);
-            if (el.dataset.bind === 'judul' && !S.judulManual) { return; }
             fmtBind(el, v);
         });
         Array.prototype.forEach.call(document.querySelectorAll('[data-rte]'), function (w) { w.querySelector('.pp-rte-body').innerHTML = ppToHtml(S[w.dataset.rte]); if (w.dataset.ph) { w.querySelector('.pp-rte-body').setAttribute('data-placeholder', w.dataset.ph); } });
         buildTim(); buildAlat(); buildRab(); buildJad();
+        spTampil();
         render();
     }
 
@@ -904,7 +1070,6 @@
             if (t.type === 'checkbox') { v = t.checked; }
             else if (t.dataset.type === 'money') { v = parseInt(String(t.value).replace(/\D/g, ''), 10) || 0; }
             else { v = t.value; }
-            if (path === 'judul') { S.judulManual = true; }
             setPath(S, path, v);
             schedule(); return;
         }
@@ -948,7 +1113,6 @@
     });
 
     /* ---------------- header & tombol ---------------- */
-    $('ppJudulReset').addEventListener('click', function () { S.judulManual = false; schedule(); });
     function scrollPv(pg) {
         var el = $('pv' + pg), box = $('pvBox'); if (!el) { return; }
         var top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 8;
@@ -959,7 +1123,23 @@
     document.body.appendChild(modal);
     document.body.appendChild($('ppMeasure'));
     function bukaPreview() { if (window.ppSplitSiap) { render(); fit(); return; } render(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; fit(); $('pvBox').scrollTop = 0; }
-    function tutupPreview() { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
+    // mode lihat (dari daftar PO) dimuat di dalam modal induk (?embed=1)
+    var EMBED = !!window.PO_VIEW && window.self !== window.top && /[?&]embed=1(&|$)/.test(window.location.search);
+    if (EMBED) {
+        document.documentElement.classList.add('pp-embed');
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { kabariInduk('tutup'); } });
+    }
+    function kabariInduk(pesan) { try { window.parent.postMessage({ poPreview: pesan }, window.location.origin); } catch (e) {} }
+    function kembaliKeDaftar() {
+        var ref = document.referrer || '';
+        if (ref.indexOf('/petunjuk-operasional') > -1 && ref.indexOf('/kalibrasi/') === -1 && window.history.length > 1) { window.history.back(); }
+        else { window.location.href = window.PO_URLS.daftar; }
+    }
+    function tutupPreview() {
+        if (EMBED) { kabariInduk('tutup'); return; }
+        modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = '';
+        if (window.PO_VIEW) { kembaliKeDaftar(); }
+    }
     $('ppPreview').addEventListener('click', bukaPreview);
     $('ppPreviewFab').addEventListener('click', bukaPreview);
     $('ppModalX').addEventListener('click', tutupPreview);
@@ -982,8 +1162,367 @@
     });
     window.addEventListener('resize', fit);
 
+    /* ---------------- ISI AWAL DARI ORDER (tb_arsip_kalibrasi) ---------------- */
+    var ORDER = {{ @order_json | raw }};   // satu order kalibrasi: {id, nomor, mitra, alamat, tipe, tgl_order, berangkat, pulang, target, teknisi, biaya, alat}
+    function isiDariOrder(o) {
+        S.perusahaan = o.mitra || '';
+        S.alamat = o.alamat || '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(o.tgl_order || '')) {
+            S.dasar = DEF_DASAR.replace('Permintaan dari [perusahaan] pada ...', 'Permintaan dari [perusahaan] pada ' + tglID(o.tgl_order));
+        }
+        // 3. Ruang lingkup: satu baris per alat (jumlah 1; waktu per unit diisi manual)
+        var ket = o.tipe === 'insitu' ? 'Insitu' : 'Inlab';
+        if (o.alat && o.alat.length) {
+            S.alat = o.alat.map(function (a) {
+                var nama = a.nama || a.tipe || '';
+                var rinci = [a.merk, a.nama ? a.tipe : '', a.kapasitas, a.sn ? 'SN ' + a.sn : ''].filter(Boolean).join(' ');
+                return { nama: rinci ? nama + ' (' + rinci + ')' : nama, jumlah: 1, menit: '', ket: ket };
+            });
+        }
+        // 4. Tim pelaksana: teknisi order mengisi baris bertugas "Teknisi" secara berurutan; kelebihannya jadi baris baru
+        if (o.teknisi && o.teknisi.length) {
+            var idx = [];
+            S.tim.forEach(function (t, i) { if (/teknisi/i.test(t.tugas)) { idx.push(i); } });
+            o.teknisi.forEach(function (nm, k) {
+                if (k < idx.length) { S.tim[idx[k]].nama = nm; }
+                else { S.tim.push({ nama: nm, tugas: 'Teknisi', uraian: 'Melaksanakan Kalibrasi Peralatan' }); }
+            });
+        }
+        // 5. RAB: transportasi terpisah; sisanya (kerja sama + in-situ + pembulatan) = biaya kalibrasi dan petugas
+        var b = o.biaya || {};
+        S.rab.transport = Math.round(b.transportasi || 0);
+        S.rab.kalibrasi = Math.max(0, Math.round((b.total || 0) - (b.transportasi || 0)));
+        // 6. Jadwal: bulan & tahun mengikuti keberangkatan (cadangan: target selesai / tanggal order)
+        var m = /^(\d{4})-(\d{2})/.exec(o.berangkat || o.target || o.tgl_order || '');
+        if (m) { S.jadwal.bulan = BULAN[parseInt(m[2], 10) - 1]; S.jadwal.tahun = m[1]; }
+    }
+    function isiBarOrder(o) {
+        $('ppObText').textContent = 'Nomor Order: ' + (o.nomor || '-') + ' \u2022 ' + (o.mitra || '-') + ' (' + (o.tipe === 'insitu' ? 'In-situ' : 'Di lab') + ')';
+        $('ppOrderInfo').hidden = false;
+        var isi = { nomor: o.nomor || '-', mitra: o.mitra || '-', tgl_order: o.tgl_order ? tglID(o.tgl_order) : '-', lokasi: o.tipe === 'insitu' ? 'In-situ' : 'Di lab', uraian: o.uraian || '-' };
+        Array.prototype.forEach.call(document.querySelectorAll('[data-order]'), function (el) { el.textContent = isi[el.dataset.order] || '-'; });
+        $('ppOrderCard').hidden = false;
+    }
+    $('ppObGanti').addEventListener('click', function () {
+        if (typeof window.bukaModalKalibrasi !== 'function') { return; }
+        window.bukaModalKalibrasi({ onPilih: function (o) {
+            if (ORDER && o.id === ORDER.id) { return; }
+            if (confirm('Ganti ke order ini? Isian form akan diganti dengan data order baru.')) {
+                window.location.href = '{{ @BASE }}/petunjuk-operasional/kalibrasi/create?order=' + encodeURIComponent(o.id);
+            }
+        } });
+    });
+    if (PO_SAVED && PO_SAVED.data && typeof PO_SAVED.data === 'object') {
+        // PO yang sudah tersimpan: isi form dari data tersimpan (bukan dari order)
+        var b0 = blank();
+        S = PO_SAVED.data;
+        Object.keys(b0).forEach(function (k) { if (S[k] === undefined) { S[k] = b0[k]; } });
+        if (!PO_SAVED.nomor) { S.tanggal = todayMonth(); }   // belum bernomor: bulan/tahun mengikuti hari ini
+        $('ppObGanti').hidden = true;
+    } else if (ORDER && ORDER.id) { isiDariOrder(ORDER); }
+    if (ORDER && ORDER.id) { isiBarOrder(ORDER); }
+
+
+    /* ---------------- simpan ke database (po_kegiatan, layanan 'kalibrasi') ---------------- */
+    var saving = false;
+    var SW_CLASS = { popup: 'bg-white rounded-3 shadow-sm border p-4', title: 'fw-bold text-dark fs-6 mb-2', htmlContainer: 'text-secondary small my-2',
+                     confirmButton: 'btn btn-primary btn-sm px-3 py-1 fw-semibold', cancelButton: 'btn btn-outline-secondary btn-sm px-3 py-1 me-2' };
+    function flash(msg, ok) {
+        var f = $('ppFlash');
+        f.className = 'alert py-2 small mb-3 ' + (ok ? 'alert-success' : 'alert-danger');
+        f.textContent = msg; f.hidden = false;
+        try { f.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (x) {}
+    }
+    function popup(icon, judul, teks, fokus) {
+        if (typeof Swal === 'undefined') { flash(judul + (teks ? ' — ' + teks : ''), icon === 'success'); return Promise.resolve(); }
+        return Swal.fire({ icon: icon, iconColor: icon === 'error' ? '#be123c' : '#64748b', title: judul, text: teks || '', background: '#ffffff',
+            confirmButtonText: 'Oke', buttonsStyling: false, customClass: SW_CLASS }).then(function () { if (fokus) { try { fokus.focus(); } catch (x) {} } });
+    }
+    function popupSukses(judul, teks, lanjut) {
+        if (typeof Swal === 'undefined') { flash(judul + (teks ? ' — ' + teks : ''), true); setTimeout(lanjut, 900); return; }
+        Swal.fire({ icon: 'success', iconColor: '#16a34a', title: judul, text: teks || '', background: '#ffffff', timer: 1800, timerProgressBar: true,
+            showConfirmButton: false, allowOutsideClick: false, allowEscapeKey: false, customClass: SW_CLASS }).then(lanjut);
+    }
+    function konfirmasiKirim(ya) {
+        if (typeof window.appConfirm === 'function') {
+            window.appConfirm({ title: 'Kirim PO?', text: 'Apakah Anda akan mengirim PO ini?', icon: 'question', confirmText: 'Ya, Kirim', cancelText: 'Tidak' }, ya);
+        } else if (typeof Swal !== 'undefined') {
+            Swal.fire({ title: 'Kirim PO?', text: 'Apakah Anda akan mengirim PO ini?', icon: 'question', iconColor: '#64748b', background: '#ffffff', showCancelButton: true,
+                confirmButtonText: 'Ya, Kirim', cancelButtonText: 'Tidak', reverseButtons: true, buttonsStyling: false, customClass: SW_CLASS })
+                .then(function (r) { if (r.isConfirmed) { ya(); } });
+        } else { flash('SweetAlert tidak termuat, muat ulang halaman lalu coba lagi.', false); }
+    }
+    function ymdHariWib() {
+        var d = new Date(Date.now() + (new Date().getTimezoneOffset() + 420) * 60000);   // WIB (UTC+7)
+        return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    }
+    function tglDMY(ymd) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+    function tampilNomor() {
+        var box = $('ppNomorBox');
+        if (PO_SAVED && PO_SAVED.nomor) { box.textContent = PO_SAVED.nomor; }
+        else { box.innerHTML = '<span class="text-muted fst-italic fw-normal">Diberikan saat PO dikirim</span>'; }
+        $('ppTanggal').textContent = tglDMY((PO_SAVED && PO_SAVED.tanggal_po) ? PO_SAVED.tanggal_po : ymdHariWib());
+        $('ppTglInfo').textContent = (PO_SAVED && PO_SAVED.nomor && PO_SAVED.dikirim) ? 'Dikirim pada ' + PO_SAVED.dikirim + ' (tercatat otomatis).'
+            : ((PO_SAVED && PO_SAVED.dibuat) ? 'Dibuat ' + PO_SAVED.dibuat + ' (tercatat otomatis saat PO pertama kali disimpan).' : 'Tercatat otomatis saat PO pertama kali disimpan.');
+        $('ppTitle').textContent = PO_SAVED ? 'Edit Petunjuk Operasional' : 'Buat Petunjuk Operasional';
+        var st = $('ppStatus'), s = PO_SAVED && PO_SAVED.status;
+        if (s === 'draft' || s === 'terkirim') {
+            st.textContent = s === 'terkirim' ? 'Terkirim' : 'Draft';
+            st.className = 'badge ms-1 ' + (s === 'terkirim' ? 'badge-pill-success' : 'badge-pill-secondary');
+        } else { st.className = 'badge ms-1 d-none'; }
+        if (render) { try { render(); } catch (e) {} }
+    }
+    function urlDari(tpl, id) { return String(tpl).replace('{id}', encodeURIComponent(id)); }
+    function setBusy(on, aksi) {
+        $('btnDraft').disabled = on; $('btnKirim').disabled = on;
+        $('btnDraft').innerHTML = on && aksi === 'draft' ? '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...' : '<i class="bi bi-save me-1"></i> Simpan sebagai Draft';
+        $('btnKirim').innerHTML = on && aksi === 'kirim' ? '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim...' : '<i class="bi bi-send me-1"></i> Kirim';
+    }
+    // satu permintaan ke server -> objek JSON {ok, ...}; gagal jaringan dibalas {ok:false, message}
+    function postKeServer(aksi) {
+        var fd = new FormData();
+        fd.append('csrf_token', window.PO_CSRF || '');
+        fd.append('aksi', aksi);
+        fd.append('order_id', ORDER ? ORDER.id : '');
+        fd.append('judul_kegiatan', judulPakai());
+        fd.append('isi_form', JSON.stringify(S));
+        var url = PO_SAVED ? urlDari(window.PO_URLS.update, PO_SAVED.id) : window.PO_URLS.simpan;
+        return fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+            .then(function (r) {
+                return r.json().then(function (j) { return j; }, function () { return { ok: false, message: 'Respons server tidak valid (HTTP ' + r.status + ').' }; });
+            })
+            .catch(function () { return { ok: false, message: 'Tidak bisa terhubung ke server. Periksa koneksi lalu coba lagi.' }; });
+    }
+    function simpanState(j, aksi) {
+        PO_SAVED = { id: j.id, nomor: j.nomor, tanggal_po: j.tanggal_po || ymdHariWib(), dikirim: j.dikirim || '', dibuat: j.dibuat || (PO_SAVED && PO_SAVED.dibuat) || '',
+                     judul: judulPakai(), status: j.status || (aksi === 'kirim' ? 'terkirim' : 'draft'), data: null };
+        tampilNomor();
+    }
+    function kirimKeServer(aksi) {
+        saving = true; setBusy(true, aksi);
+        postKeServer(aksi).then(function (j) {
+            if (j && j.ok) {
+                simpanState(j, aksi);
+                var tujuan = j.redirect_index || window.PO_URLS.daftar;
+                var teks = (j.nomor_baru && j.nomor) ? 'Nomor PO: ' + j.nomor : '';
+                // tombol dibiarkan nonaktif sampai pindah halaman (cegah klik ganda -> PO ganda)
+                popupSukses(aksi === 'kirim' ? 'PO berhasil dikirim' : 'Draft berhasil disimpan', teks, function () { window.location.href = tujuan; });
+            } else {
+                saving = false; setBusy(false); tampilNomor();
+                if (j && j.errors && j.errors.length) { popupBelumLengkap(j.errors.map(function (x) { return { msg: x }; })); return; }
+                popup('error', 'Gagal menyimpan PO', (j && j.message) || 'Terjadi kesalahan, coba lagi.').then(function () { if (j && j.redirect) { window.location.href = j.redirect; } });
+            }
+        });
+    }
+    /* ---------------- validasi saat Kirim (draft boleh belum lengkap); alamat boleh kosong ---------------- */
+    function kosong(v) { return String(v == null ? '' : v).trim() === ''; }
+    function teksRte(h) { return cleanHtml(h).replace(/<[^>]*>/g, ' ').replace(/&nbsp;| /g, ' ').replace(/\s+/g, ' ').trim(); }
+    function qs(list, i, k) { return '[data-list="' + list + '"][data-i="' + i + '"][data-k="' + k + '"]'; }
+    function validasiKirim() {
+        var m = [];
+        function add(msg, sel) { m.push({ msg: msg, sel: sel }); }
+        if (kosong(judulPakai())) { add('Judul Kegiatan belum diisi', '#ppJudul'); }
+        if (kosong(S.perusahaan)) { add('Nama perusahaan / mitra belum diisi', '[data-bind="perusahaan"]'); }
+        if (!KLAIM) { add('Surat penawaran belum diambil dari arsip surat keluar (klik "Ambil dari Arsip")', '#ppSpAmbil'); }
+        if (!teksRte(S.dasar)) { add('Dasar belum diisi', '[data-rte="dasar"]'); }
+        if (!teksRte(S.tujuan)) { add('Tujuan belum diisi', '[data-rte="tujuan"]'); }
+        if (!teksRte(S.ruang)) { add('Ruang lingkup belum diisi', '[data-rte="ruang"]'); }
+        if (!S.alat.length) { add('Daftar alat belum diisi', '#ppAlat'); }
+        else {
+            var an = S.alat.findIndex(function (a) { return kosong(a.nama); });
+            if (an >= 0) { add('Daftar alat: nama alat baris ' + (an + 1) + ' belum diisi', qs('alat', an, 'nama')); }
+        }
+        if (!S.tim.length) { add('Tim pelaksana belum diisi', '#ppTim'); }
+        else {
+            var tn = S.tim.findIndex(function (x) { return kosong(x.nama); });
+            if (tn >= 0) { add('Tim pelaksana: nama anggota baris ' + (tn + 1) + ' belum diisi', qs('tim', tn, 'nama')); }
+        }
+        PoTtd.kekurangan(S.ttd).forEach(function (msg) { add(msg, '#ppTtd'); });
+        return m;
+    }
+    function tandaiBelumLengkap(m) {
+        Array.prototype.forEach.call(document.querySelectorAll('.pp-bad'), function (e) { e.classList.remove('pp-bad'); });
+        var els = [];
+        m.forEach(function (x) { var e = x.sel ? document.querySelector(x.sel) : null; if (e) { e.classList.add('pp-bad'); els.push(e); } });
+        return els[0] || null;
+    }
+    root.addEventListener('input', function (e) {
+        var t = e.target; if (!t || !t.classList) { return; }
+        t.classList.remove('pp-bad');
+        var w = t.closest && t.closest('.pp-bad'); if (w) { w.classList.remove('pp-bad'); }
+    });
+    function fokusKe(el) {
+        if (!el) { return; }
+        try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (x) {}
+        var f = (el.matches('input,textarea,select') || el.isContentEditable) ? el : (el.querySelector('.pp-rte-body') || el.querySelector('input,textarea,select'));
+        try { if (f) { f.focus({ preventScroll: true }); } } catch (x) {}
+    }
+    function popupBelumLengkap(m) {
+        var first = tandaiBelumLengkap(m);
+        if (ttdUi && PoTtd.kekurangan(S.ttd).length) { ttdUi.tandaiKurang(); }
+        var tampil = m.slice(0, 8).map(function (x) { return x.msg; }), lebih = m.length - tampil.length;
+        var judul = 'Data PO belum lengkap', intro = 'Semua isian wajib diisi sebelum dikirim (kecuali alamat). Yang masih kurang:';
+        if (typeof Swal === 'undefined') { flash(judul + ' — ' + tampil.join('; ') + (lebih > 0 ? '; dan ' + lebih + ' lainnya' : ''), false); fokusKe(first); return; }
+        var html = '<div class="text-start small"><div class="mb-2 text-secondary">' + esc(intro) + '</div><ul class="mb-0 ps-3">' +
+            tampil.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+            (lebih > 0 ? '<div class="mt-2 text-muted">dan ' + lebih + ' isian lainnya.</div>' : '') + '</div>';
+        Swal.fire({ icon: 'warning', iconColor: '#d97706', title: judul, html: html, background: '#ffffff', confirmButtonText: 'Oke, saya lengkapi',
+            buttonsStyling: false, customClass: SW_CLASS }).then(function () { fokusKe(first); });
+    }
+    // aksi: 'draft' (Simpan sebagai Draft) | 'kirim' (Kirim)
+    function simpan(aksi) {
+        if (saving) { return; }
+        if (!ORDER || !ORDER.id) {
+            popup('warning', 'PO belum bisa disimpan', 'PO harus dibuat dari order. Pilih order dulu lewat Petunjuk Operasional → Kalibrasi.'); return;
+        }
+        if (aksi !== 'kirim') {
+            if (kosong(judulPakai())) { popup('warning', 'Judul Kegiatan wajib diisi', '', $('ppJudul')); return; }
+            kirimKeServer('draft'); return;
+        }
+        var kurang = validasiKirim();
+        if (kurang.length) { popupBelumLengkap(kurang); return; }
+        if (PO_SAVED && PO_SAVED.nomor) { konfirmasiKirim(function () { kirimKeServer('kirim'); }); return; }
+        // nomor baru diterbitkan saat Kirim: dialog "Generate Nomor PO" (satu permintaan ke server; lamanya dialog hanya tampilan)
+        PoNomorDialog.mulai({
+            durasi: 4000,
+            kirim: function () { saving = true; setBusy(true, 'kirim'); return postKeServer('kirim'); },
+            sukses: function (j) { simpanState(j, 'kirim'); },
+            tujuan: function (j) { return j.redirect_index || window.PO_URLS.daftar; },
+            gagal: function (j) {
+                saving = false; setBusy(false); tampilNomor();
+                if (j && j.errors && j.errors.length) { popupBelumLengkap(j.errors.map(function (x) { return { msg: x }; })); return; }
+                if (j && j.redirect) { window.location.href = j.redirect; }
+            }
+        });
+    }
+    $('btnDraft').addEventListener('click', function () { simpan('draft'); });
+    $('btnKirim').addEventListener('click', function () { simpan('kirim'); });
+
+    /* ---------------- SURAT PENAWARAN: ambil (klaim) dari arsip surat keluar sekretariat ---------------- */
+    var KLAIM = window.PO_KLAIM || null;   // {id, no_surat, tanggal, customer, preview_url, berkas, ...}
+    var spCari = null;
+    // S selalu mengikuti klaim di server: nomor & tanggal tidak diketik manual
+    function spSinkron() {
+        if (KLAIM) { S.idSuratKeluar = KLAIM.id; S.noPenawaran = KLAIM.no_surat; S.tglPenawaran = KLAIM.tanggal || ''; }
+        else { S.idSuratKeluar = ''; }
+    }
+    function spTampil() {
+        var ada = !!KLAIM;
+        $('ppSpAmbil').innerHTML = ada ? '<i class="bi bi-arrow-repeat me-1"></i>Ganti' : '<i class="bi bi-box-arrow-in-down me-1"></i>Ambil dari Arsip';
+        $('ppSpInfo').hidden = !ada;
+        if (ada) { $('ppSpNama').textContent = KLAIM.berkas || KLAIM.no_surat; $('ppSpCust').textContent = 'Terklaim dari arsip • ' + (KLAIM.customer || ''); }
+        $('ppSpHint').textContent = ada ? 'Nomor dan tanggal terisi otomatis dari arsip sekretariat.'
+            : (S.noPenawaran ? 'Nomor ini belum diklaim dari arsip. Klik "Ambil dari Arsip" untuk memilih surat resmi.' : 'Pilih surat penawaran dari arsip surat keluar sekretariat. Nomor dan tanggal terisi otomatis.');
+    }
+    function spTerapkan() {   // setelah klaim / batal: segarkan 2 kolom + tombol + dokumen
+        fmtBind($('ppNoSP'), S.noPenawaran); fmtBind($('ppTglSP'), S.tglPenawaran);
+        spTampil(); render();
+    }
+    function spPost(url, data) {
+        var fd = new FormData(); fd.append('csrf_token', window.PO_CSRF || '');
+        Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
+        return fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+            .then(function (r) { return r.json().then(function (j) { return j; }, function () { return { ok: false, message: 'Respons server tidak valid (HTTP ' + r.status + ').' }; }); })
+            .catch(function () { return { ok: false, message: 'Tidak bisa terhubung ke server. Periksa koneksi lalu coba lagi.' }; });
+    }
+    function spToast(teks) {
+        if (typeof Swal === 'undefined') { flash(teks, true); return; }
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', iconColor: '#0f172a', title: teks, showConfirmButton: false, timer: 2400, timerProgressBar: true });
+    }
+    function spBuka() {
+        if (!ORDER || !ORDER.id) { popup('error', 'Order belum dipilih', 'Pilih order kalibrasi dulu.'); return; }
+        var el = $('ppSpModal');
+        if (el.parentNode !== document.body) { document.body.appendChild(el); document.body.appendChild($('ppSpPv')); }
+        $('ppSpCari').value = '';
+        bootstrap.Modal.getOrCreateInstance(el).show();
+        spMuat();
+    }
+    function spMuat() {
+        var q = $('ppSpCari').value.trim();
+        $('ppSpLoad').classList.remove('d-none'); $('ppSpKosong').classList.add('d-none'); $('ppSpTblWrap').classList.add('d-none'); $('ppSpBody').innerHTML = '';
+        fetch(window.PO_URLS.sp.daftar + '?order=' + encodeURIComponent(ORDER.id) + (q ? '&q=' + encodeURIComponent(q) : ''), { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                $('ppSpLoad').classList.add('d-none');
+                if (!j || !j.ok) { spKosong('Gagal memuat arsip', (j && j.message) || 'Coba segarkan lagi.'); return; }
+                $('ppSpJml').textContent = j.total + ' surat tersedia';
+                if (!j.data.length) { spKosong(q ? 'Tidak ada yang cocok' : 'Tidak ada surat penawaran tersedia', q ? 'Coba kata kunci lain.' : 'Belum ada surat penawaran baru yang belum diklaim.'); return; }
+                spTabel(j.data);
+            })
+            .catch(function () { $('ppSpLoad').classList.add('d-none'); spKosong('Gagal memuat arsip', 'Tidak bisa terhubung ke server.'); });
+    }
+    function spKosong(judul, teks) { $('ppSpKosongT').textContent = judul; $('ppSpKosongP').textContent = teks; $('ppSpKosong').classList.remove('d-none'); }
+    function spTabel(list) {
+        $('ppSpTblWrap').classList.remove('d-none');
+        $('ppSpBody').innerHTML = list.map(function (r, i) {
+            return '<tr id="ppSpR' + r.id + '" class="' + (r.cocok ? 'pp-sp-cocok' : '') + '">'
+                + '<td class="text-center text-muted fw-bold">' + (i + 1) + '</td>'
+                + '<td><div class="pp-sp-no">' + esc(r.no_surat || '-') + '</div><div class="pp-sp-sub"><i class="bi bi-calendar3 me-1"></i>' + esc(r.tanggal_fmt) + '</div></td>'
+                + '<td><div class="fw-semibold">' + esc(r.customer) + (r.cocok ? ' <span class="badge text-bg-dark ms-1" style="font-size:.66rem">Sesuai Mitra</span>' : '') + '</div>' + (r.jabatan ? '<div class="pp-sp-sub">' + esc(r.jabatan) + '</div>' : '') + '</td>'
+                + '<td><div class="fw-semibold">' + esc(r.perihal || '-') + '</div>' + (r.keterangan ? '<div class="pp-sp-sub">' + esc(r.keterangan) + '</div>' : '') + '</td>'
+                + '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-secondary" data-sp-lihat="' + esc(r.preview_url) + '" data-sp-no="' + esc(r.no_surat) + '"><i class="bi bi-eye me-1"></i>Lihat</button></td>'
+                + '<td class="text-center"><button type="button" class="btn btn-sm btn-dark fw-semibold" data-sp-klaim="' + r.id + '" data-sp-no="' + esc(r.no_surat) + '"><i class="bi bi-check2-circle me-1"></i>Klaim</button></td></tr>';
+        }).join('');
+    }
+    function spLihat(url, no) { $('ppSpPvT').textContent = 'Surat Penawaran ' + (no || ''); $('ppSpPvF').src = url; $('ppSpPv').classList.add('on'); }
+    function spTutupLihat() { $('ppSpPv').classList.remove('on'); $('ppSpPvF').src = 'about:blank'; }
+    function spTanya(judul, teks, ya, fn, danger) {
+        if (typeof Swal === 'undefined') { if (confirm(judul + '\n' + teks)) { fn(); } return; }
+        Swal.fire({ title: judul, text: teks, icon: 'question', iconColor: '#64748b', background: '#ffffff', showCancelButton: true, confirmButtonText: ya, cancelButtonText: 'Batal',
+            reverseButtons: true, buttonsStyling: false, customClass: { popup: SW_CLASS.popup, title: SW_CLASS.title, htmlContainer: SW_CLASS.htmlContainer,
+            confirmButton: 'btn btn-' + (danger ? 'danger' : 'dark') + ' btn-sm px-3 py-1 fw-semibold', cancelButton: SW_CLASS.cancelButton } })
+            .then(function (r) { if (r.isConfirmed) { fn(); } });
+    }
+    function spKlaim(id, no, btn) {
+        spTanya('Klaim surat penawaran?', 'Surat ' + no + ' akan dipakai untuk PO Kalibrasi order ini dan tidak bisa dipilih order lain.', 'Ya, Klaim', function () {
+            btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            spPost(window.PO_URLS.sp.klaim, { order_id: ORDER.id, id_surat_keluar: id }).then(function (j) {
+                if (j && j.ok && j.surat) {
+                    KLAIM = j.surat; spSinkron(); spTerapkan();
+                    bootstrap.Modal.getOrCreateInstance($('ppSpModal')).hide();
+                    spToast('Surat penawaran berhasil diklaim');
+                } else {
+                    btn.disabled = false; btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Klaim';
+                    popup('error', 'Gagal mengklaim surat', (j && j.message) || 'Coba lagi.').then(function () { spMuat(); });
+                }
+            });
+        });
+    }
+    function spBatal() {
+        spTanya('Batalkan klaim surat?', 'Surat ' + (KLAIM ? KLAIM.no_surat : '') + ' dikembalikan ke daftar arsip, dan nomor/tanggal penawaran di form dikosongkan.', 'Ya, Batalkan', function () {
+            spPost(window.PO_URLS.sp.batal, { order_id: ORDER.id }).then(function (j) {
+                if (j && j.ok) { KLAIM = null; S.idSuratKeluar = ''; S.noPenawaran = ''; S.tglPenawaran = ''; spTerapkan(); spToast('Klaim dibatalkan'); }
+                else { popup('error', 'Gagal membatalkan klaim', (j && j.message) || 'Coba lagi.'); }
+            });
+        }, true);
+    }
+    $('ppSpAmbil').addEventListener('click', spBuka);
+    $('ppSpLihat').addEventListener('click', function () { if (KLAIM) { spLihat(KLAIM.preview_url, KLAIM.no_surat); } });
+    $('ppSpBatal').addEventListener('click', spBatal);
+    $('ppSpSegar').addEventListener('click', spMuat);
+    $('ppSpCari').addEventListener('input', function () { clearTimeout(spCari); spCari = setTimeout(spMuat, 350); });
+    $('ppSpPvX').addEventListener('click', spTutupLihat);
+    $('ppSpPv').addEventListener('click', function (e) { if (e.target === this) { spTutupLihat(); } });
+    $('ppSpBody').addEventListener('click', function (e) {
+        var l = e.target.closest('[data-sp-lihat]'); if (l) { spLihat(l.dataset.spLihat, l.dataset.spNo); return; }
+        var k = e.target.closest('[data-sp-klaim]'); if (k) { spKlaim(+k.dataset.spKlaim, k.dataset.spNo, k); }
+    });
+
     buildRte();
     populate();
+tampilNomor();
+    if (window.PO_VIEW && PO_SAVED) {
+        // mode lihat: form disembunyikan, langsung tampil preview dokumen
+        document.body.classList.add('pp-view-only');
+        if (!PO_SAVED.status || PO_SAVED.status === 'draft') {
+            var be = $('ppModalEdit');
+            be.href = urlDari(window.PO_URLS.edit, PO_SAVED.id);
+            be.style.display = '';
+            if (EMBED) { be.target = '_top'; }
+        }
+        bukaPreview();
+        if (EMBED) { setTimeout(function () { kabariInduk('siap'); }, 300); }
+    }
 window.ppRender = render;
 })();
 </script>
