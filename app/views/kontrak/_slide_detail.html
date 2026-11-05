@@ -1,0 +1,588 @@
+<!--
+    app/views/kontrak/_slide_detail.html
+    Slide "Lihat kontrak" (Tampilan PKS + Berkas, zoom, Unduh Word / PDF / Cetak dengan pilihan kertas) untuk kartu Kontrak di Detail Order.
+    Isinya disalin dari slide di kontrak/index.html (kelas "dpk-"), jadi tampilan dan perilakunya sama dengan menu Kontrak.
+    Dipakai lewat include di order/detail.html (saat kontrak sudah ada). JANGAN menulis tag include di komentar ini: Fat-Free ikut memprosesnya dan jadi loop.
+    Pintu masuk: elemen kartu #ktDoc (data-po, data-nomor, data-mitra, data-layanan, data-at) dengan tombol [data-kt-lihat], menu [data-kt-menu] dan [data-kt-unduh].
+-->
+<style>
+    .dpk-root {
+        --dpk-primary: var(--color-primary, #334155);
+        --dpk-primary-hover: var(--color-primary-hover, #1e293b);
+        --dpk-primary-light: var(--color-primary-light, #f1f5f9);
+        --dpk-border: var(--color-border, #e2e8f0);
+        --dpk-muted: var(--color-text-muted, #64748b);
+        --dpk-text: var(--color-text-main, #0f172a);
+        --dpk-display: var(--font-display, inherit);
+        --dpk-radius: var(--radius-md, 10px);
+        color: var(--dpk-text);
+    }
+    .dpk-root *, .dpk-root *::before, .dpk-root *::after { box-sizing: border-box; }
+    .dpk-root [hidden] { display: none !important; }
+    .dpk-root button { font-family: inherit; cursor: pointer; }
+    .dpk-root :focus-visible { outline: 2px solid var(--dpk-primary); outline-offset: 2px; }
+    .dpk-chip { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 9999px; font-size: .72rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #f1f5f9; color: #475569; border: 1px solid var(--dpk-border); font-variant-numeric: tabular-nums; }
+    .dpk-sub { font-size: .75rem; color: var(--dpk-muted); }
+    .dpk-btn { border: 1.5px solid var(--dpk-border); background: #fff; color: #334155; border-radius: 9px; padding: .38rem .8rem; font-size: .78rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; text-decoration: none; transition: background .15s, color .15s, border-color .15s, transform .12s; }
+    .dpk-btn:hover { border-color: var(--dpk-primary); color: var(--dpk-primary); }
+    .dpk-btn:active { transform: scale(.97); }
+    .dpk-btn.pri { background: var(--dpk-primary); border-color: var(--dpk-primary); color: #fff; }
+    .dpk-btn.pri:hover { background: var(--dpk-primary-hover); color: #fff; }
+    .dpk-btn[disabled] { opacity: .65; cursor: progress; }
+    .dpk-rise { opacity: 0; transform: translateY(7px); animation: dpkRise .4s ease-out forwards; }
+    @keyframes dpkRise { to { opacity: 1; transform: none; } }
+    .dpk-toast { position: fixed; left: 50%; top: 16px; transform: translate(-50%, -14px); background: #1e293b; color: #fff; padding: 11px 16px; border-radius: 12px; font-size: .82rem; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1100; max-width: calc(100vw - 24px); }
+    .dpk-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .dpk-toast.err { background: #b91c1c; }
+    .dpk-scrim.on { opacity: 1; pointer-events: auto; }
+    .dpk-sl { position: fixed; top: 0; right: 0; bottom: 0; width: calc(100vw - var(--sidebar-expanded-width, 264px)); background: #fff; z-index: 1055; display: flex; flex-direction: column; transform: translateX(104%); visibility: hidden; transition: transform .42s cubic-bezier(.22,.9,.25,1), width .24s ease, visibility 0s .42s; box-shadow: -12px 0 40px rgba(15,23,42,.22); }
+    .dpk-sl.on { transform: none; visibility: visible; transition: transform .42s cubic-bezier(.22,.9,.25,1), width .24s ease, visibility 0s; }
+    body.sidebar-collapsed .dpk-sl { width: calc(100vw - var(--sidebar-mini-width, 74px)); }   /* panel mentok sampai tepi sidebar, seperti slide PO */
+    .dpk-sl.wide, body.sidebar-collapsed .dpk-sl.wide { width: 100vw; }                         /* dilebarkan: menutup sidebar */
+    @media (max-width: 991.98px) { .dpk-sl, body.sidebar-collapsed .dpk-sl { width: 100vw; } }
+    @media (max-width: 1300px) { #dpkSlWide { display: none; } }
+    .dpk-sl-head { display: flex; gap: 12px; align-items: flex-start; padding: 18px 20px 12px; }
+    .dpk-sl-head .k { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dpk-muted); }
+    .dpk-sl-head h2 { margin: 2px 0 2px; font-size: 1.05rem; font-family: 'Courier New', monospace; font-weight: 700; overflow-wrap: anywhere; }
+    .dpk-sl-tools { margin-left: auto; display: flex; gap: 8px; flex: none; }
+    .dpk-x { flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #f1f5f9; color: var(--dpk-text); display: grid; place-items: center; transition: transform .3s cubic-bezier(.3,.8,.3,1), background .2s; }
+    .dpk-x:hover { transform: rotate(90deg); background: #e2e8f0; }
+    .dpk-x:active { transform: rotate(90deg) scale(.92); }
+    .dpk-x.wd:hover { transform: scale(1.1); }
+    .dpk-x.wd:active { transform: scale(.92); }
+    /* Kontrol zoom pratinjau (menggerakkan zoom di dalam iframe PKS) */
+    .dpk-zm { position: absolute; left: 30px; bottom: 22px; z-index: 6; display: flex; align-items: center; gap: 2px; background: #0f172a; color: #fff; border-radius: 999px; padding: 4px; box-shadow: 0 8px 22px rgba(15,23,42,.35); animation: dpkZmIn .35s ease both; }
+    .dpk-zm button { border: 0; background: transparent; color: #fff; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; font-size: .95rem; transition: background .15s, transform .15s; }
+    .dpk-zm button:hover { background: rgba(255,255,255,.16); }
+    .dpk-zm button:active { transform: scale(.9); }
+    .dpk-zm button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+    .dpk-zm .zl { width: auto; min-width: 56px; padding: 0 8px; border-radius: 999px; font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .dpk-zm .sep { width: 1px; height: 18px; background: rgba(255,255,255,.22); margin: 0 3px; }
+    .dpk-zm button.on { background: rgba(255,255,255,.2); }
+    @keyframes dpkZmIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (max-width: 575.98px) { .dpk-zm { left: 14px; bottom: 14px; } }
+    .dpk-sl-foot { position: absolute; right: 30px; bottom: 22px; z-index: 6; display: flex; justify-content: flex-end; }
+    .dpk-sl-foot .dpk-btn.pri { box-shadow: 0 8px 22px rgba(15,23,42,.35); }
+    .dpk-sl-foot .dpk-btn.pri:hover { transform: translateY(-2px); }
+    .dpk-sl-tabs { display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--dpk-border); position: relative; }
+    .dpk-sl-tab { border: 0; background: none; padding: 10px 14px; color: var(--dpk-muted); font-size: .85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; transition: color .2s; }
+    .dpk-sl-tab[aria-selected="true"] { color: var(--dpk-text); }
+    .dpk-ind { position: absolute; bottom: 0; left: 0; height: 2px; width: 0; background: var(--dpk-primary); transition: left .3s cubic-bezier(.3,.8,.3,1), width .3s cubic-bezier(.3,.8,.3,1); }
+    .dpk-sl-body { flex: 1; position: relative; background: #e2e8f0; min-height: 0; }
+    .dpk-sl-pane { position: absolute; inset: 0; animation: dpkRise .35s ease-out both; }
+    .dpk-sl-pane.scroll { overflow: auto; padding: 18px 20px; background: #f1f5f9; }
+    .dpk-sl-pane iframe { width: 100%; height: 100%; border: 0; display: block; background: #e2e8f0; }
+    .dpk-sl-load { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; background: #e2e8f0; color: var(--dpk-muted); font-size: .85rem; transition: opacity .25s; }
+    .dpk-sl-load.off { opacity: 0; pointer-events: none; }
+    .dpk-spin { width: 22px; height: 22px; border: 2.5px solid #94a3b8; border-right-color: transparent; border-radius: 50%; animation: dpkRot .7s linear infinite; }
+    @keyframes dpkRot { to { transform: rotate(1turn); } }
+    .dpk-files { display: grid; gap: 10px; }
+    .dpk-file { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; background: #fff; border: 1px solid var(--dpk-border); border-radius: 12px; padding: 12px 14px; animation: dpkRise .35s ease-out both; }
+    .dpk-file .ic { width: 40px; height: 40px; border-radius: 10px; background: #f1f5f9; display: grid; place-items: center; color: var(--dpk-muted); font-size: 1.15rem; }
+    .dpk-file b { display: block; font-weight: 600; font-size: .85rem; overflow-wrap: anywhere; }
+    .dpk-file small { color: var(--dpk-muted); font-size: .75rem; }
+    .dpk-bk-aksi { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .dpk-bk-no { font-size: .72rem; font-weight: 600; color: var(--dpk-muted); background: #f1f5f9; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+    .dpk-bk-ok { display: inline-flex; align-items: center; gap: 3px; font-size: .68rem; font-weight: 700; color: #0f172a; background: #e2e8f0; border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 1px; }
+    .dpk-bk-load, .dpk-bk-err, .dpk-bk-info { display: grid; justify-items: center; gap: 8px; padding: 40px 16px; color: var(--dpk-muted); font-size: .85rem; text-align: center; }
+    .dpk-bk-err { color: #b91c1c; }
+    .dpk-bk-sec { font-size: .72rem; font-weight: 700; color: var(--dpk-muted); text-transform: uppercase; letter-spacing: .4px; margin: 6px 2px 0; }
+    /* Pratinjau berkas di dalam slide */
+    .dpk-fv { position: absolute; inset: 0; z-index: 9; display: flex; flex-direction: column; background: #fff; animation: dpkFvIn .25s ease both; }
+    .dpk-fv[hidden] { display: none; }
+    @keyframes dpkFvIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .dpk-fv-top { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--dpk-border); }
+    .dpk-fv-back { width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 0; background: #f1f5f9; color: #0f172a; display: grid; place-items: center; transition: background .15s, transform .2s; }
+    .dpk-fv-back:hover { background: #e2e8f0; transform: translateX(-2px); }
+    .dpk-fv-tt { flex: 1; min-width: 0; }
+    .dpk-fv-tt b { display: block; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dpk-fv-tt small { display: block; color: var(--dpk-muted); font-size: .75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dpk-fv-top .dpk-btn { text-decoration: none; padding: .4rem .8rem; font-size: .8rem; }
+    .dpk-fv-body { flex: 1; position: relative; background: #2b2e31; min-height: 0; }
+    .dpk-fv-body iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+    .dpk-fv-doc { position: absolute; inset: 0; overflow: auto; background: #e2e8f0; }
+    .dpk-fv-doc .docx-wrapper { background: transparent !important; padding: 16px !important; }
+    @media (max-width: 575.98px) { .dpk-fv-top .dpk-btn span { display: none; } }
+    .dpk-dl { position: relative; }
+    .dpk-dl .dpk-btn { position: relative; overflow: hidden; padding: .5rem .95rem; font-size: .82rem; }
+    .dpk-dl .dpk-chev { transition: transform .25s; font-size: .7rem; }
+    .dpk-dl.open .dpk-chev { transform: rotate(180deg); }
+    .dpk-prog { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: rgba(255,255,255,.85); }
+    .dpk-dl.run .dpk-prog { animation: dpkProg 7s cubic-bezier(.1,.7,.3,1) forwards; }
+    @keyframes dpkProg { to { width: 92%; } }
+    .dpk-menu { position: absolute; bottom: calc(100% + 8px); right: 0; min-width: 280px; background: #fff; border: 1px solid var(--dpk-border); border-radius: 12px; box-shadow: 0 18px 44px rgba(15,23,42,.22); padding: 6px; z-index: 5; opacity: 0; transform: translateY(6px) scale(.98); transform-origin: bottom right; pointer-events: none; transition: opacity .18s, transform .18s; }
+    .dpk-dl.open .dpk-menu { opacity: 1; transform: none; pointer-events: auto; }
+    .dpk-paper { padding: 8px 10px 10px; border-bottom: 1px solid var(--dpk-border); margin-bottom: 4px; }
+    .dpk-paper .lb { font-size: .72rem; font-weight: 700; color: var(--dpk-muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .dpk-seg { display: grid; grid-template-columns: repeat(5, auto); gap: 4px; background: #f1f5f9; border-radius: 9px; padding: 3px; }
+    .dpk-seg button { border: 0; background: transparent; border-radius: 7px; padding: 6px 4px; font-size: .76rem; font-weight: 600; color: #475569; transition: background .15s, color .15s, box-shadow .15s; white-space: nowrap; }
+    .dpk-seg button:hover { background: #e2e8f0; }
+    .dpk-seg button.on { background: #0f172a; color: #fff; box-shadow: 0 2px 6px rgba(15,23,42,.25); }
+    .dpk-paper .ket { font-size: .72rem; color: var(--dpk-muted); margin-top: 6px; }
+    .dpk-mi { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: center; width: 100%; text-align: left; border: 0; background: none; padding: 9px 10px; border-radius: 8px; color: inherit; }
+    .dpk-mi:hover, .dpk-mi:focus-visible { background: #f1f5f9; }
+    .dpk-mi .ic { width: 32px; height: 32px; border-radius: 8px; background: #f1f5f9; display: grid; place-items: center; transition: background .15s, color .15s; }
+    .dpk-mi:hover .ic { background: var(--dpk-primary); color: #fff; }
+    .dpk-mi b { display: block; font-size: .85rem; }
+    .dpk-mi small { color: var(--dpk-muted); font-size: .75rem; }
+    @media (prefers-reduced-motion: reduce) { .dpk-root * { transition: none !important; animation: none !important; } .dpk-rise { opacity: 1; transform: none; } }
+</style>
+
+<div class="dpk-root" id="dpkRoot">
+        <div class="dpk-scrim" id="dpkScrim"></div>
+        <aside class="dpk-sl" id="dpkSl" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dpkSlNo">
+            <div class="dpk-sl-head">
+                <div style="min-width:0;">
+                    <div class="k">PKS telah dibuat</div>
+                    <h2 id="dpkSlNo"></h2>
+                    <div class="dpk-sub" id="dpkSlSub"></div>
+                </div>
+                <div class="dpk-sl-tools">
+                    <button type="button" class="dpk-x wd" id="dpkSlWide" aria-label="Lebarkan panel" aria-pressed="false" title="Lebarkan panel (sembunyikan sidebar)"><i class="bi bi-arrows-angle-expand"></i></button>
+                    <button type="button" class="dpk-x" id="dpkSlTutup" aria-label="Tutup" title="Tutup"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </div>
+            <div class="dpk-sl-tabs" id="dpkSlTabs" role="tablist">
+                <button type="button" class="dpk-sl-tab" role="tab" data-slt="pks" aria-selected="true">Tampilan PKS</button>
+                <button type="button" class="dpk-sl-tab" role="tab" data-slt="berkas" aria-selected="false">Berkas <span class="dpk-chip" id="dpkNBerkas">0</span></button>
+                <span class="dpk-ind" id="dpkSlInd"></span>
+            </div>
+            <div class="dpk-sl-body">
+                <div class="dpk-sl-pane" id="dpkPanePks">
+                    <iframe id="dpkSlFrame" title="Tampilan PKS"></iframe>
+                    <div class="dpk-sl-load off" id="dpkSlLoad"><span class="dpk-spin"></span>Memuat dokumen PKS...</div>
+                    <div class="dpk-zm" id="dpkZm" role="group" aria-label="Zoom pratinjau">
+                        <button type="button" data-zm="out" title="Perkecil" aria-label="Perkecil"><i class="bi bi-zoom-out"></i></button>
+                        <button type="button" class="zl" id="dpkZmL" data-zm="reset" title="Klik untuk kembali ke 100%">100%</button>
+                        <button type="button" data-zm="in" title="Perbesar" aria-label="Perbesar"><i class="bi bi-zoom-in"></i></button>
+                        <span class="sep"></span>
+                        <button type="button" id="dpkZmF" data-zm="fit" title="Pas lebar layar" aria-label="Pas lebar layar"><i class="bi bi-arrows-angle-expand"></i></button>
+                    </div>
+                </div>
+                <div class="dpk-sl-pane scroll" id="dpkPaneBerkas" hidden><div class="dpk-files" id="dpkBerkasList"></div></div>
+            </div>
+            <div class="dpk-sl-foot">
+                <div class="dpk-dl" id="dpkDl">
+                    <button type="button" class="dpk-btn pri" id="dpkDlBtn" aria-haspopup="true" aria-expanded="false"><i class="bi bi-download"></i><span id="dpkDlLbl">Unduh</span><i class="bi bi-chevron-down dpk-chev"></i><span class="dpk-prog"></span></button>
+                    <div class="dpk-menu" id="dpkMenu" role="menu">
+                        <div class="dpk-paper" id="dpkPaper">
+                            <div class="lb"><i class="bi bi-file-earmark-text"></i>Ukuran kertas (untuk Cetak)</div>
+                            <div class="dpk-seg" role="radiogroup" aria-label="Ukuran kertas cetak">
+                                <button type="button" role="radio" data-kertas="letter">Letter</button>
+                                <button type="button" role="radio" data-kertas="a4">A4</button>
+                                <button type="button" role="radio" data-kertas="legal">Legal</button>
+                                <button type="button" role="radio" data-kertas="f4">F4</button>
+                                <button type="button" role="radio" data-kertas="auto">Bebas</button>
+                            </div>
+                            <div class="ket" id="dpkKertasKet"></div>
+                        </div>
+                        <button type="button" class="dpk-mi" role="menuitem" data-fmt="word"><span class="ic"><i class="bi bi-file-earmark-word"></i></span><span><b>Word (.docx)</b><small>Bisa diedit lagi</small></span></button>
+                        <button type="button" class="dpk-mi" role="menuitem" data-fmt="pdf"><span class="ic"><i class="bi bi-file-earmark-pdf"></i></span><span><b>PDF</b><small>Siap dikirim ke perusahaan</small></span></button>
+                        <button type="button" class="dpk-mi" role="menuitem" data-fmt="print"><span class="ic"><i class="bi bi-printer"></i></span><span><b>Cetak langsung</b><small>Buka dialog printer</small></span></button>
+                    </div>
+                </div>
+            </div>
+            <div class="dpk-fv" id="dpkFv" hidden>
+                <div class="dpk-fv-top">
+                    <button type="button" class="dpk-fv-back" id="dpkFvTutup" title="Kembali ke daftar berkas" aria-label="Kembali ke daftar berkas"><i class="bi bi-arrow-left"></i></button>
+                    <div class="dpk-fv-tt"><b id="dpkFvJudul">Berkas</b><small id="dpkFvSub"></small></div>
+                    <a class="dpk-btn" id="dpkFvUnduh" href="#" download><i class="bi bi-download"></i><span>Unduh</span></a>
+                    <a class="dpk-btn" id="dpkFvTab" href="#" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i><span>Tab Baru</span></a>
+                </div>
+                <div class="dpk-fv-body"><iframe id="dpkFvFrame" title="Pratinjau berkas"></iframe><div class="dpk-fv-doc" id="dpkFvDoc" style="display:none;"></div></div>
+            </div>
+        </aside>
+
+        <div class="dpk-toast" id="dpkToast" role="status"></div>
+</div>
+
+    <script>
+    (function () {
+        var BASE = '{{ @BASE }}';
+        var root = document.getElementById('dpkRoot');
+        if (!root) { return; }
+        /* Slide dipindah ke <body> supaya position:fixed tidak terjebak di dalam panel tab Detail Order */
+        document.body.appendChild(root);
+
+        function $(id) { return document.getElementById(id); }
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+        function rp(n) { return Math.round(n).toLocaleString('id-ID'); }
+        var BULAN_PENDEK = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+        function tglPendek(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? (+m[3]) + ' ' + BULAN_PENDEK[+m[2] - 1] + ' ' + m[1] : '-'; }
+
+        var toastTimer;
+        function toast(text, galat) {
+            var t = $('dpkToast');
+            t.textContent = text;
+            t.classList.toggle('err', !!galat);
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () { t.classList.remove('show'); }, galat ? 7000 : 4200);
+        }
+
+        /* ---------- Unduh Word / PDF dari server ---------- */
+        function unduhBerkas(id, fmt) {
+            var pdf = fmt === 'pdf';
+            return fetch(BASE + '/pks/' + id + '/' + (pdf ? 'pdf' : 'unduh'), { credentials: 'same-origin' }).then(function (r) {
+                if (pdf && r.status === 501) { var e = new Error('PDF otomatis belum tersedia'); e.kode = 'tanpa_pdf'; throw e; }
+                var tipe = r.headers.get('Content-Type') || '';
+                if (!r.ok || tipe.indexOf(pdf ? 'pdf' : 'wordprocessingml') === -1) {
+                    throw new Error('Server membalas ' + r.status + '. ' + (pdf ? 'PDF gagal dibuat: cek LibreOffice dan log server.' : 'Dokumen Word gagal dibuat: cek template di storage/templates, ekstensi zip PHP, dan log server.'));
+                }
+                var cd = r.headers.get('Content-Disposition') || '';
+                var m = /filename="?([^";]+)"?/.exec(cd);
+                var nama = m ? m[1] : (pdf ? 'PKS.pdf' : 'PKS.docx');
+                return r.blob().then(function (blob) {
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url; a.download = nama;
+                    document.body.appendChild(a); a.click(); a.remove();
+                    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+                    toast('Mengunduh ' + nama);
+                });
+            });
+        }
+
+        /* ---------- Slide: Tampilan PKS (iframe form mode lihat) + Berkas ---------- */
+        var cur = null, slId = null, slTab = 'pks', slTimer = null, slWide = false, tunda = null;
+        try { slWide = localStorage.getItem('siloptiPksWide') === '1'; } catch (e) {}
+        function terapkanWide() {
+            var b = $('dpkSlWide');
+            $('dpkSl').classList.toggle('wide', slWide);
+            b.innerHTML = '<i class="bi ' + (slWide ? 'bi-arrows-angle-contract' : 'bi-arrows-angle-expand') + '"></i>';
+            b.title = slWide ? 'Kecilkan panel (tampilkan sidebar)' : 'Lebarkan panel (sembunyikan sidebar)';
+            b.setAttribute('aria-label', b.title); b.setAttribute('aria-pressed', slWide ? 'true' : 'false');
+        }
+        function geserInd(kotak, ind) {
+            var b = kotak.querySelector('[aria-selected="true"]');
+            if (b) { ind.style.left = b.offsetLeft + 'px'; ind.style.width = b.offsetWidth + 'px'; }
+        }
+        function tutupMenu() { $('dpkDl').classList.remove('open'); $('dpkDlBtn').setAttribute('aria-expanded', 'false'); }
+        function setSlTab(t) {
+            slTab = t;
+            Array.prototype.forEach.call($('dpkSlTabs').querySelectorAll('[data-slt]'), function (b) { b.setAttribute('aria-selected', b.getAttribute('data-slt') === t ? 'true' : 'false'); });
+            $('dpkPanePks').hidden = t !== 'pks';
+            $('dpkPaneBerkas').hidden = t !== 'berkas';
+            geserInd($('dpkSlTabs'), $('dpkSlInd'));
+        }
+        function berkasItem(ikon, nama, ket, aksi, jeda) {
+            return '<div class="dpk-file" style="animation-delay:' + jeda + 'ms"><span class="ic"><i class="bi ' + ikon + '"></i></span><div><b>' + esc(nama) + '</b><small>' + ket + '</small></div>' + aksi + '</div>';
+        }
+        var berkasSeq = 0, fvSeq = 0;
+        function aksiBerkas(url, judul, sub) {
+            return '<div class="dpk-bk-aksi"><button type="button" class="dpk-btn pri" data-bk-lihat="' + esc(url) + '" data-judul="' + esc(judul) + '" data-sub="' + esc(sub || '') + '"><i class="bi bi-eye"></i>Lihat</button>' +
+                '<a class="dpk-btn" href="' + esc(url) + '" download title="Unduh"><i class="bi bi-download"></i>Unduh</a></div>';
+        }
+        function renderBerkas(j) {
+            var h = '', n = 0, t = 0;
+            (j.dokumen || []).forEach(function (dk) {
+                var ket = esc(dk.sub || '');
+                if (dk.nomor) { ket += ' &middot; ' + esc(dk.nomor); }
+                if (dk.file_name) { ket += ' &middot; ' + esc(dk.file_name); }
+                var ada = !!(dk.ada && dk.url);
+                if (ada) { n++; }
+                h += berkasItem(dk.ikon || 'bi-file-earmark', dk.label, ket, ada ? aksiBerkas(dk.url, dk.label, dk.nomor || dk.file_name) : '<span class="dpk-bk-no">' + esc(dk.kosong || 'Belum ada') + '</span>', t++ * 50);
+            });
+            var tm = j.termin || [];
+            if (tm.length) { h += '<div class="dpk-bk-sec">Bukti pembayaran</div>'; }
+            tm.forEach(function (x) {
+                var st = x.status_verifikasi === 'terverifikasi' ? 'Terverifikasi' : (x.status_verifikasi === 'ditolak' ? 'Ditolak' : 'Menunggu verifikasi');
+                var ket = 'Rp ' + rp(x.jumlah || 0) + ' &middot; ' + esc(tglPendek(x.tanggal_bayar)) + ' &middot; ' + st;
+                var nama = 'Bukti Pembayaran Termin ke-' + x.termin_ke;
+                if (x.url) { n++; }
+                h += berkasItem('bi-receipt', nama, ket, x.url ? aksiBerkas(x.url, nama, 'Rp ' + rp(x.jumlah || 0)) : '<span class="dpk-bk-no">Tanpa file</span>', t++ * 50);
+            });
+            if (!h) { h = '<div class="dpk-bk-info"><i class="bi bi-folder2-open" style="font-size:26px"></i>Belum ada berkas pada PO ini.</div>'; }
+            $('dpkBerkasList').innerHTML = h;
+            $('dpkNBerkas').textContent = n;
+        }
+        function gambarBerkas(p) {
+            var no = ++berkasSeq;
+            $('dpkNBerkas').textContent = '0';
+            if (p.layanan === 'sertifikasi') {
+                $('dpkBerkasList').innerHTML = '<div class="dpk-bk-info"><i class="bi bi-folder2-open" style="font-size:26px"></i>Berkas order untuk PO Sertifikasi dilihat di modul Sertifikasi.</div>';
+                return;
+            }
+            $('dpkBerkasList').innerHTML = '<div class="dpk-bk-load"><span class="dpk-spin"></span>Memuat berkas PO...</div>';
+            fetch(BASE + '/po-humas/' + p.id + '/berkas', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+                .then(function (x) {
+                    if (no !== berkasSeq) { return; }
+                    if (!x.ok || !x.j || x.j.ok === false) { throw new Error((x.j && x.j.pesan) || 'Berkas PO belum bisa dimuat.'); }
+                    renderBerkas(x.j);
+                })
+                .catch(function (e) {
+                    if (no !== berkasSeq) { return; }
+                    $('dpkBerkasList').innerHTML = '<div class="dpk-bk-err"><i class="bi bi-exclamation-triangle" style="font-size:24px"></i>' + esc(e && e.message ? e.message : 'Berkas PO belum bisa dimuat.') + '</div>';
+                });
+        }
+        function bukaFv(url, judul, sub) {
+            $('dpkFvJudul').textContent = judul; $('dpkFvSub').textContent = sub || '';
+            $('dpkFvUnduh').href = url; $('dpkFvTab').href = url;
+            $('dpkFv').hidden = false;
+            var n = ++fvSeq;
+            var aktif = function () { return n === fvSeq && !$('dpkFv').hidden; };
+            if (window.optiTampilkanBerkas) { window.optiTampilkanBerkas(url, $('dpkFvFrame'), $('dpkFvDoc'), aktif); }
+            else { $('dpkFvFrame').src = url + (url.indexOf('#') === -1 ? '#toolbar=0&navpanes=0' : ''); }
+        }
+        function tutupFv() {
+            fvSeq++;
+            $('dpkFv').hidden = true; $('dpkFvFrame').src = 'about:blank'; $('dpkFvFrame').style.display = '';
+            $('dpkFvDoc').innerHTML = ''; $('dpkFvDoc').style.display = 'none';
+        }
+        /* cfg: { id (id PO), nomor_pks, mitra, layanan, sub } ; aksi: 'word' | 'pdf' | 'print' | 'menu' dijalankan setelah dokumen termuat */
+        function bukaSlide(cfg, aksi) {
+            if (!cfg || !cfg.id) { return; }
+            clearTimeout(slTimer);
+            cur = cfg; slId = cfg.id; tunda = aksi || null;
+            $('dpkSlNo').textContent = cfg.nomor_pks || 'Kontrak (PKS)';
+            $('dpkSlSub').textContent = cfg.sub || cfg.mitra || '';
+            gambarBerkas(cfg);
+            tutupMenu();
+            $('dpkSlLoad').classList.remove('off');
+            $('dpkSlFrame').src = BASE + '/pks/' + cfg.id + '/form?embed=1&lihat=1';
+            $('dpkSl').classList.add('on'); $('dpkSl').setAttribute('aria-hidden', 'false');
+            $('dpkScrim').classList.add('on');
+            document.body.style.overflow = 'hidden';
+            setSlTab('pks');
+            setTimeout(function () { geserInd($('dpkSlTabs'), $('dpkSlInd')); $('dpkSlTutup').focus(); }, 80);
+        }
+        function tutupSlide() {
+            if (slId === null) { return; }
+            slId = null; tunda = null;
+            tutupFv();
+            tutupMenu();
+            $('dpkSl').classList.remove('on'); $('dpkSl').setAttribute('aria-hidden', 'true');
+            $('dpkScrim').classList.remove('on');
+            document.body.style.overflow = '';
+            slTimer = setTimeout(function () { $('dpkSlFrame').src = 'about:blank'; }, 480);
+        }
+        terapkanWide();
+
+        /* Zoom pratinjau: menekan tombol zoom milik halaman PKS di dalam iframe (satu halaman asal), lalu menampilkan angkanya di sini */
+        var ZM_ID = { out: 'dpkZo', 'in': 'dpkZi', fit: 'dpkZf', reset: 'dpkZl' };
+        function labelZoom() {
+            try {
+                var t = $('dpkSlFrame').contentDocument.getElementById('dpkZl').textContent || '100%';
+                var fit = /^Fit/.test(t);
+                $('dpkZmL').textContent = t.replace(/^Fit \(/, '').replace(/\)$/, '');
+                $('dpkZmF').classList.toggle('on', fit);
+            } catch (e) {}
+        }
+        function aksiZoom(a) {
+            try { var b = $('dpkSlFrame').contentDocument.getElementById(ZM_ID[a]); if (b) { b.click(); } } catch (e) {}
+            setTimeout(labelZoom, 40);
+        }
+        function pasangZoomIframe() {
+            try {
+                var d = $('dpkSlFrame').contentDocument, w = $('dpkSlFrame').contentWindow;
+                if (!d || d.__zmOk) { return; }
+                d.__zmOk = true;
+                d.addEventListener('wheel', function (e) { if (e.ctrlKey || e.metaKey) { e.preventDefault(); aksiZoom(e.deltaY < 0 ? 'in' : 'out'); } }, { passive: false });
+                d.addEventListener('keydown', function (e) { if (e.key === 'Escape') { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); } });
+                w.addEventListener('resize', function () { setTimeout(labelZoom, 200); });
+            } catch (e) {}
+        }
+        $('dpkSlFrame').addEventListener('load', function () {
+            if (slId === null) { return; }
+            $('dpkSlLoad').classList.add('off'); pasangZoomIframe(); setTimeout(labelZoom, 350);
+            if (tunda) {
+                var a = tunda; tunda = null;
+                setTimeout(function () {
+                    if (slId === null) { return; }
+                    if (a === 'menu') { $('dpkDl').classList.add('open'); $('dpkDlBtn').setAttribute('aria-expanded', 'true'); }
+                    else { aksiUnduh(a); }
+                }, 700);
+            }
+        });
+
+        function sibuk(nyala, nama) {
+            $('dpkDlBtn').disabled = nyala;
+            $('dpkDlLbl').textContent = nyala ? 'Menyiapkan ' + nama + '...' : 'Unduh';
+            $('dpkDl').classList.toggle('run', nyala);
+        }
+        /* Ukuran kertas cetak: dipasang ke halaman PKS di dalam iframe sebelum dialog cetak dibuka. "Bebas" = ikut pilihan di dialog cetak. */
+        var KERTAS = { letter: ['8.5in 11in', 'Letter 21,6 x 27,9 cm (sama dengan Word)'], a4: ['210mm 297mm', 'A4 21 x 29,7 cm'], legal: ['8.5in 14in', 'Legal 21,6 x 35,6 cm'], f4: ['215mm 330mm', 'F4 / Folio 21,5 x 33 cm'], auto: ['', 'Ukuran kertas dipilih sendiri di dialog cetak'] };
+        var kertas = 'letter';
+        try { var kk = localStorage.getItem('siloptiPksKertas'); if (kk && KERTAS[kk]) { kertas = kk; } } catch (x) {}
+        function terapkanKertas() {
+            Array.prototype.forEach.call($('dpkPaper').querySelectorAll('[data-kertas]'), function (b) { var on = b.getAttribute('data-kertas') === kertas; b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+            $('dpkKertasKet').textContent = KERTAS[kertas][1];
+        }
+        function pasangKertasKeIframe() {
+            var d = $('dpkSlFrame').contentDocument, st = d.getElementById('dpkKertasCss');
+            if (!st) { st = d.createElement('style'); st.id = 'dpkKertasCss'; d.head.appendChild(st); }
+            st.textContent = KERTAS[kertas][0] ? '@page { size: ' + KERTAS[kertas][0] + '; }' : '';
+        }
+        function cetak() {
+            setSlTab('pks');
+            if (!$('dpkSlLoad').classList.contains('off')) { toast('Tunggu dokumen selesai dimuat, lalu coba lagi.', true); return; }
+            setTimeout(function () {
+                try { pasangKertasKeIframe(); var w = $('dpkSlFrame').contentWindow; w.focus(); w.print(); }
+                catch (e) { toast('Dialog cetak tidak bisa dibuka. Coba unduh PDF atau Word.', true); }
+            }, 220);
+        }
+        /* PDF langsung dari tampilan PKS: tiap halaman pratinjau difoto lalu dirangkai jadi PDF Letter (sama dengan Word). Tanpa LibreOffice. */
+        function namaPdf(k) {
+            var no = String((k && k.nomor_pks) || '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            var per = String((k && k.mitra) || '').replace(/^\s*(PT|CV|UD)\.?\s+/i, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            return 'PKS' + (no ? '_' + no : '') + (per ? '_' + per : '') + '.pdf';
+        }
+        function tungguIframe(coba) {
+            return new Promise(function (ok, gagal) {
+                (function cek(n) {
+                    if ($('dpkSlLoad').classList.contains('off')) { ok(); }
+                    else if (n <= 0) { gagal(new Error('Dokumen belum selesai dimuat. Tunggu sebentar lalu coba lagi.')); }
+                    else { setTimeout(function () { cek(n - 1); }, 150); }
+                })(coba);
+            });
+        }
+        function unduhPdfLangsung() {
+            var JsPdf = window.jspdf && window.jspdf.jsPDF, h2c = window.html2canvas;
+            if (!JsPdf || !h2c) { var e0 = new Error('Pembuat PDF belum termuat (butuh koneksi internet).'); e0.kode = 'tanpa_lib'; return Promise.reject(e0); }
+            setSlTab('pks');
+            return tungguIframe(60).then(function () { return new Promise(function (r) { setTimeout(r, 250); }); }).then(function () {
+                var fr = $('dpkSlFrame'), d = fr.contentDocument;
+                var hal = Array.prototype.slice.call(d.querySelectorAll('#dpkPages .dpk-sheet:not(.dpk-printflow):not(.dpk-measure)'));
+                if (!hal.length) { throw new Error('Halaman kontrak belum tampil. Coba lagi sebentar lagi.'); }
+                var pdf = new JsPdf({ unit: 'pt', format: [612, 792], orientation: 'portrait', compress: true });
+                var k = cur;
+                var tunggu = (d.fonts && d.fonts.ready) ? d.fonts.ready : Promise.resolve();
+                return tunggu.then(function () {
+                    var rantai = Promise.resolve();
+                    hal.forEach(function (el, i) {
+                        rantai = rantai.then(function () {
+                            $('dpkDlLbl').textContent = 'Menyiapkan PDF ' + (i + 1) + '/' + hal.length + '...';
+                            return h2c(el, {
+                                scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false,
+                                onclone: function (doc) {
+                                    var pg = doc.getElementById('dpkPages');
+                                    if (pg) { pg.style.setProperty('--dpk-zoom', '1'); pg.classList.remove('dpk-hl'); }
+                                    Array.prototype.forEach.call(doc.querySelectorAll('#dpkPages .dpk-sheet'), function (s) { s.style.boxShadow = 'none'; s.style.margin = '0'; });
+                                    Array.prototype.forEach.call(doc.querySelectorAll('.flash'), function (x) { x.classList.remove('flash'); });
+                                }
+                            }).then(function (cv) {
+                                if (i > 0) { pdf.addPage([612, 792], 'portrait'); }
+                                pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 612, 792, undefined, 'FAST');
+                            });
+                        });
+                    });
+                    return rantai;
+                }).then(function () {
+                    var nama = namaPdf(k);
+                    pdf.save(nama);
+                    toast('Mengunduh ' + nama);
+                });
+            });
+        }
+        function aksiUnduh(fmt) {
+            tutupMenu();
+            if (slId === null) { return; }
+            if (fmt === 'print') { cetak(); return; }
+            var nama = fmt === 'pdf' ? 'PDF' : 'Word';
+            sibuk(true, nama);
+            var proses = fmt === 'pdf'
+                ? unduhPdfLangsung().catch(function (e) {
+                    if (e && e.kode === 'tanpa_lib') { return unduhBerkas(slId, 'pdf'); }
+                    throw e;
+                })
+                : unduhBerkas(slId, fmt);
+            proses.catch(function (e) {
+                if (e.kode === 'tanpa_pdf') {
+                    toast('PDF otomatis belum aktif di server ini. Dialog cetak dibuka: pilih "Simpan sebagai PDF" di pilihan printer.');
+                    cetak();
+                } else { toast(e.message, true); }
+            }).then(function () { sibuk(false); });
+        }
+
+        /* ---------- Kartu Kontrak di Detail Order: pintu masuk ke slide ---------- */
+        function cfgDariKartu() {
+            var k = document.getElementById('ktDoc');
+            if (!k) { return null; }
+            return { id: k.getAttribute('data-po'), nomor_pks: k.getAttribute('data-nomor'), mitra: k.getAttribute('data-mitra'), layanan: k.getAttribute('data-layanan'),
+                sub: (k.getAttribute('data-mitra') || '') + (k.getAttribute('data-at') ? ' · Dibuat ' + k.getAttribute('data-at') : '') };
+        }
+        function tutupMenuKartu() {
+            Array.prototype.forEach.call(document.querySelectorAll('.kt-dd.open'), function (m) { m.classList.remove('open'); var b = m.querySelector('[data-kt-menu]'); if (b) { b.setAttribute('aria-expanded', 'false'); } });
+        }
+        function unduhDariKartu(fmt) {
+            var c = cfgDariKartu();
+            if (!c) { return; }
+            if (fmt === 'word') {
+                toast('Menyiapkan Word...');
+                unduhBerkas(c.id, 'word').catch(function (e) { toast(e.message, true); });
+                return;
+            }
+            bukaSlide(c, fmt);   // PDF dan Cetak butuh tampilan PKS: slide dibuka lalu aksinya jalan sendiri
+        }
+        /* Miniatur halaman 1: form mode lihat dimuat kecil, hanya sheet pertama yang ditampilkan. Bila gagal, kertas tiruan tetap tampil. */
+        function siapkanMiniatur() {
+            var th = document.getElementById('ktTh'), fr = document.getElementById('ktThFrame');
+            if (!th || !fr || fr.getAttribute('data-ok') === '1' || !fr.getAttribute('data-src')) { return; }
+            fr.setAttribute('data-ok', '1');
+            function pasang() {
+                var n = 0;
+                (function coba() {
+                    try {
+                        var d = fr.contentDocument;
+                        var s = d && d.querySelector('#dpkPages .dpk-sheet:not(.dpk-printflow):not(.dpk-measure)');
+                        if (s) {
+                            if (!d.getElementById('ktThCss')) {
+                                var st = d.createElement('style'); st.id = 'ktThCss';
+                                st.textContent = 'html,body{overflow:hidden!important;background:#fff!important}#dpkPages .dpk-sheet{visibility:hidden!important}' +
+                                    '#dpkPages .kt-first{visibility:visible!important;position:fixed!important;left:0!important;top:0!important;margin:0!important;zoom:1!important;box-shadow:none!important;z-index:2147483000!important}';
+                                d.head.appendChild(st);
+                                var pg = d.getElementById('dpkPages'); if (pg) { pg.style.setProperty('--dpk-zoom', '1'); pg.classList.remove('dpk-hl'); }
+                                s.classList.add('kt-first');
+                            }
+                            th.classList.add('ok');
+                            return;
+                        }
+                    } catch (e) { return; }
+                    if (++n < 40) { setTimeout(coba, 150); }
+                })();
+            }
+            fr.addEventListener('load', pasang);
+            fr.src = fr.getAttribute('data-src');
+        }
+        if (document.getElementById('ktThFrame')) {
+            if ('IntersectionObserver' in window) {
+                var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { siapkanMiniatur(); io.disconnect(); } }); });
+                io.observe(document.getElementById('ktTh'));
+            } else { siapkanMiniatur(); }
+        }
+
+        root.addEventListener('click', function (e) {
+            var el;
+            if (!e.target.closest('#dpkDl')) { tutupMenu(); }
+            if ((el = e.target.closest('[data-slt]'))) { setSlTab(el.getAttribute('data-slt')); return; }
+            if ((el = e.target.closest('[data-kertas]'))) { kertas = el.getAttribute('data-kertas'); try { localStorage.setItem('siloptiPksKertas', kertas); } catch (x) {} terapkanKertas(); return; }
+            if ((el = e.target.closest('[data-bk-lihat]'))) { bukaFv(el.getAttribute('data-bk-lihat'), el.getAttribute('data-judul') || 'Berkas', el.getAttribute('data-sub') || ''); return; }
+            if (e.target.closest('#dpkFvTutup')) { tutupFv(); return; }
+            if ((el = e.target.closest('[data-zm]'))) { aksiZoom(el.getAttribute('data-zm')); return; }
+            if ((el = e.target.closest('[data-fmt]'))) { aksiUnduh(el.getAttribute('data-fmt')); return; }
+            if (e.target.closest('#dpkDlBtn')) { var buka = $('dpkDl').classList.toggle('open'); $('dpkDlBtn').setAttribute('aria-expanded', buka ? 'true' : 'false'); return; }
+            if (e.target.closest('#dpkSlWide')) { slWide = !slWide; try { localStorage.setItem('siloptiPksWide', slWide ? '1' : '0'); } catch (x) {} terapkanWide(); return; }
+            if (e.target.closest('#dpkSlTutup') || e.target.closest('#dpkScrim')) { tutupSlide(); }
+        });
+        document.addEventListener('click', function (e) {
+            var el;
+            if (!e.target.closest('.kt-dd')) { tutupMenuKartu(); }
+            if ((el = e.target.closest('[data-kt-lihat]'))) { bukaSlide(cfgDariKartu()); return; }
+            if ((el = e.target.closest('[data-kt-menu]'))) {
+                var dd = el.closest('.kt-dd'), buka2 = !dd.classList.contains('open');
+                tutupMenuKartu();
+                dd.classList.toggle('open', buka2); el.setAttribute('aria-expanded', buka2 ? 'true' : 'false');
+                return;
+            }
+            if ((el = e.target.closest('[data-kt-unduh]'))) { tutupMenuKartu(); var f = el.getAttribute('data-kt-unduh'); if (f === 'cetak') { bukaSlide(cfgDariKartu(), 'menu'); } else { unduhDariKartu(f); } }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') { return; }
+            tutupMenuKartu();
+            if (slId !== null) { if (!$('dpkFv').hidden) { tutupFv(); } else if ($('dpkDl').classList.contains('open')) { tutupMenu(); } else { tutupSlide(); } }
+        });
+        window.addEventListener('resize', function () { if (slId !== null) { geserInd($('dpkSlTabs'), $('dpkSlInd')); } });
+        terapkanKertas();
+    })();
+    </script>

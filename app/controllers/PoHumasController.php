@@ -358,6 +358,15 @@ class PoHumasController extends Controller {
             $riwayat[] = ['pesan' => (string) $m['pesan'], 'waktu' => (string) $m['created_at']];
         }
 
+        // Tanggal Map Kendali + data PO bertanda tangan (kolom yang belum ada di database lama membuat query ini kosong, bukan error)
+        $mi = $this->safeExec(
+            "SELECT p.verifikasi_humas_at, p.tervalidasi_mitra_at, p.validasi_keuangan_at, p.po_ttd_at, p.po_ttd_nama, p.po_ttd_oleh_nama,
+                    o.jenis_layanan_opti, " . $this->kolomProposal() . " AS tgl_proposal
+             FROM po_kegiatan p JOIN order_layanan o ON o.id = p.order_id WHERE p.id = ? LIMIT 1",
+            [1 => (int) $po['id']]
+        );
+        $mi = !empty($mi) ? $mi[0] : [];
+
         $this->keluarkanJson([
             'ok'    => true,
             'po'    => ['id' => (int) $po['id'], 'nomor' => (string) $po['nomor_po']],
@@ -375,6 +384,22 @@ class PoHumasController extends Controller {
             'termin'  => $termin,
             'dokumen' => $this->dokumenOrder($orderId, $kesanggupanAda ? ($f3->get('BASE') . '/penawaran/surat-kesanggupan/' . $orderId) : null),
             'riwayat' => $riwayat,
+            // bahan Map Kendali + PO bertanda tangan (dipakai tab Berkas di slide PKS)
+            'judul'     => (string) (!empty($po['judul_kegiatan']) ? $po['judul_kegiatan'] : (isset($o['judul_kegiatan']) ? $o['judul_kegiatan'] : '')),
+            'disiapkan' => !empty($mi['jenis_layanan_opti']) ? 'Tim Kerja OPTI ' . ucfirst(strtolower((string) $mi['jenis_layanan_opti'])) : 'Tim Kerja OPTI',
+            'map'       => [
+                'proposal' => self::tanggal((string) ($mi['tgl_proposal'] ?? '')),
+                'humas'    => self::tanggal((string) ($mi['verifikasi_humas_at'] ?? '')),
+                'mitra'    => self::tanggal((string) ($mi['tervalidasi_mitra_at'] ?? '')),
+                'keuangan' => self::tanggal((string) ($mi['validasi_keuangan_at'] ?? '')),
+            ],
+            'po_ttd'    => [
+                'ada'  => trim((string) ($mi['po_ttd_at'] ?? '')) !== '',
+                'at'   => self::tanggalJam((string) ($mi['po_ttd_at'] ?? '')),
+                'oleh' => (string) ($mi['po_ttd_oleh_nama'] ?? ''),
+                'nama' => (string) ($mi['po_ttd_nama'] ?? ''),
+                'url'  => trim((string) ($mi['po_ttd_at'] ?? '')) !== '' ? ($f3->get('BASE') . '/po-humas/' . $id . '/po-ttd') : '',
+            ],
         ]);
     }
 
@@ -605,6 +630,8 @@ class PoHumasController extends Controller {
             'kontrak_nomor'  => (string) ($r['kontrak_nomor'] ?? ''),
             'kontrak_oleh'   => (string) ($r['kontrak_dibuat_oleh_nama'] ?? ''),
             'url_ttd'        => trim((string) ($r['po_ttd_at'] ?? '')) !== '' ? ((string) $this->f3->get('BASE') . '/po-humas/' . (int) $r['id'] . '/po-ttd') : '',
+            // Word kontrak (PKS) yang sudah selesai: dipakai kartu Kontrak di tab Berkas (Humas boleh membuka PKS)
+            'kontrak_url'    => trim((string) ($r['kontrak_dibuat_at'] ?? '')) !== '' ? ((string) $this->f3->get('BASE') . '/pks/' . (int) $r['id'] . '/unduh') : '',
             // ---- Map Kendali (hanya tanggal, jam tidak dipakai) ----
             'map' => [
                 'proposal' => self::tanggal((string) ($r['tgl_proposal'] ?? '')),

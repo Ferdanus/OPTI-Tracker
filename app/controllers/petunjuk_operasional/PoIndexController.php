@@ -277,9 +277,20 @@ class PoIndexController extends PoSertifikasiController {
     protected function petakanBarisDaftar(array $rows, $noAwal, array $semuaLayanan, $f3) {
         $daftar = [];
         $no = (int) $noAwal;
+        // PO Kalibrasi: nomor order order kalibrasi disimpan di po_kegiatan.order_nomor (satu query untuk semua baris halaman ini)
+        $nomorOrderKal = [];
+        $idKal = [];
+        foreach ($rows as $r) { if ((string) $r['layanan'] === 'kalibrasi') { $idKal[] = (int) $r['id']; } }
+        if ($idKal) {
+            try {
+                $rk = $this->db->exec('SELECT id, order_nomor FROM po_kegiatan WHERE id IN (' . implode(',', $idKal) . ')');
+                foreach ($rk as $x) { $nomorOrderKal[(int) $x['id']] = trim((string) $x['order_nomor']); }
+            } catch (\Throwable $e) { /* kolom order_nomor belum ada (belum ada PO Kalibrasi tersimpan): dikosongkan */ }
+        }
         foreach ($rows as $r) {
             $slug = (string) $r['layanan'];
             $order = trim((string) ($r['nomor_order'] ?? ''));
+            if ($order === '' && $slug === 'kalibrasi') { $order = isset($nomorOrderKal[(int) $r['id']]) ? $nomorOrderKal[(int) $r['id']] : ''; }
             if ($order === '') { $order = trim((string) ($r['no_id_order'] ?? '')); }
             if ($order === '') { $order = trim((string) ($r['nomor_surat'] ?? '')); } // Pengujian: nomor surat permintaan (order dari tb_arsipsurat)
             // PO Pengujian untuk banyak order: kolom No. Order = jumlah order, Mitra = teks yang diisi di form PO
@@ -333,8 +344,8 @@ class PoIndexController extends PoSertifikasiController {
                                     : (($r['nmcustomer'] ?? '') !== '' || ($r['pt_cv'] ?? '') !== ''
                                     ? \Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nmcustomer'] ?? '') : trim((string) ($r['nama_perusahaan'] ?? ''))),
                 // baru layanan sertifikasi & pengujian yang punya form simpan/edit; layanan lain menyusul
-                'url_edit'      => (!$this->isKetuaSertifikasi() && in_array($slug, [\PoSchema::SERTIFIKASI, \PoPengujian::LAYANAN], true)) ? $f3->get('BASE') . '/petunjuk-operasional/' . $slug . '/' . (int) $r['id'] . '/edit' : '',
-                'url_lihat'     => in_array($slug, [\PoSchema::SERTIFIKASI, \PoPengujian::LAYANAN], true) ? $f3->get('BASE') . '/petunjuk-operasional/' . $slug . '/' . (int) $r['id'] . '/lihat' : '',
+                'url_edit'      => (!$this->isKetuaSertifikasi() && in_array($slug, [\PoSchema::SERTIFIKASI, \PoPengujian::LAYANAN, 'kalibrasi'], true)) ? $f3->get('BASE') . '/petunjuk-operasional/' . $slug . '/' . (int) $r['id'] . '/edit' : '',
+                'url_lihat'     => in_array($slug, [\PoSchema::SERTIFIKASI, \PoPengujian::LAYANAN, 'kalibrasi'], true) ? $f3->get('BASE') . '/petunjuk-operasional/' . $slug . '/' . (int) $r['id'] . '/lihat' : '',
             ];
         }
         return $daftar;

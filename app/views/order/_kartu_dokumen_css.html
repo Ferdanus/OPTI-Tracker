@@ -1,0 +1,55 @@
+<!--
+    app/views/order/_kartu_dokumen_css.html
+    Gaya kartu "Dokumen" (kelas "kt-") yang dipakai bersama oleh kartu PO bertanda tangan (Tahap 8) dan kartu Kontrak (Tahap 9) di Detail Order.
+    Aman di-include lebih dari sekali. JANGAN menulis tag template (include, check, dan sejenisnya) di komentar: Fat-Free ikut memprosesnya.
+-->
+<style>
+    /* ---- Kartu Kontrak di Detail Order (varian Dokumen): miniatur halaman 1 + rincian + tombol ---- */
+    .kt-doc { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 26px; align-items: center; }
+    .kt-th { position: relative; width: 168px; height: 218px; border-radius: 4px; overflow: hidden; background: #fff; padding: 0; border: 0; display: block; transform: rotate(-2.5deg); box-shadow: 0 1px 2px rgba(15,23,42,.2), 0 8px 18px rgba(15,23,42,.16); transition: transform .25s cubic-bezier(.3,.8,.3,1), box-shadow .2s; animation: ktTh .5s cubic-bezier(.3,1.2,.5,1) both; }
+    .kt-th[data-kt-lihat] { cursor: pointer; }
+    .kt-doc:hover .kt-th { transform: rotate(0) translateY(-2px); box-shadow: 0 2px 4px rgba(15,23,42,.2), 0 14px 26px rgba(15,23,42,.2); }
+    .kt-th:focus-visible { outline: 2px solid #334155; outline-offset: 3px; }
+    @keyframes ktTh { from { opacity: 0; transform: rotate(-9deg) translateY(10px) scale(.94); } to { opacity: 1; transform: rotate(-2.5deg); } }
+    .kt-th-mock { position: absolute; inset: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 5px; }
+    .kt-th-mock .lg { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .kt-th-mock .lg i { display: block; width: 34px; height: 12px; border: 1.5px solid #94a3b8; border-radius: 2px; }
+    .kt-th-mock .t { height: 5px; width: 62%; margin: 0 auto 2px; background: #334155; border-radius: 2px; }
+    .kt-th-mock .n { height: 3px; width: 44%; margin: 0 auto 8px; background: #94a3b8; border-radius: 2px; }
+    .kt-th-mock .l { height: 3px; background: #cbd5e1; border-radius: 2px; }
+    .kt-th-mock .l.s { width: 70%; }
+    .kt-th iframe { position: absolute; left: 0; top: 0; width: 816px; height: 1056px; border: 0; background: #fff; transform: scale(.2059); transform-origin: 0 0; opacity: 0; pointer-events: none; transition: opacity .35s; }
+    .kt-th.ok iframe { opacity: 1; }
+    .kt-doc-st { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; font-size: 1.12rem; font-weight: 800; color: #0f172a; }
+    .kt-doc-st .ck { width: 30px; height: 30px; border-radius: 50%; background: #0f172a; color: #fff; display: grid; place-items: center; font-size: .95rem; animation: ktPop .45s cubic-bezier(.3,1.6,.5,1) .15s both; }
+    @keyframes ktPop { from { transform: scale(.3); opacity: 0; } to { transform: none; opacity: 1; } }
+    .kt-doc-no { font-family: 'Courier New', monospace; font-weight: 700; font-size: .92rem; color: #334155; overflow-wrap: anywhere; }
+    .kt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 20px; margin: 16px 0 18px; }
+    .kt-grid small { display: block; font-size: .66rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #64748b; }
+    .kt-grid span { font-size: .88rem; color: #0f172a; overflow-wrap: anywhere; }
+    .kt-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .kt-btn { border: 1.5px solid #cbd5e1; background: #fff; color: #334155; border-radius: 9px; padding: .45rem .95rem; font-size: .84rem; font-weight: 700; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; text-decoration: none; cursor: pointer; font-family: inherit; transition: background .15s, color .15s, border-color .15s, transform .12s, box-shadow .15s; }
+    .kt-btn:hover { border-color: #334155; color: #0f172a; }
+    .kt-btn:active { transform: scale(.97); }
+    .kt-btn.pri { background: #1e293b; border-color: #1e293b; color: #fff; }
+    .kt-btn.pri:hover { background: #0f172a; box-shadow: 0 6px 16px rgba(15,23,42,.28); transform: translateY(-1px); }
+    .kt-btn:focus-visible { outline: 2px solid #334155; outline-offset: 2px; }
+    .kt-dd { position: relative; display: inline-block; }
+    .kt-dd .kt-chev { font-size: .7rem; transition: transform .2s; }
+    .kt-dd.open .kt-chev { transform: rotate(180deg); }
+    .kt-menu { display: none; position: absolute; left: 0; top: calc(100% + 6px); min-width: 250px; max-width: calc(100vw - 32px); background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 18px 44px rgba(15,23,42,.2); padding: 6px; z-index: 30; transform-origin: top left; }
+    .kt-dd.open .kt-menu { display: block; animation: ktMenu .16s ease-out both; }
+    @keyframes ktMenu { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
+    .kt-mi { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: center; width: 100%; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 8px; color: inherit; font-family: inherit; cursor: pointer; }
+    .kt-mi:hover, .kt-mi:focus-visible { background: #f1f5f9; }
+    .kt-mi .ic { width: 32px; height: 32px; border-radius: 8px; background: #f1f5f9; display: grid; place-items: center; transition: background .15s, color .15s; }
+    .kt-mi:hover .ic { background: #1e293b; color: #fff; }
+    .kt-mi b { display: block; font-size: .85rem; }
+    .kt-mi small { color: #64748b; font-size: .75rem; }
+    .kt-menu-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-size: .78rem; color: #64748b; text-decoration: none; }
+    .kt-menu-link:hover { color: #0f172a; text-decoration: underline; }
+    @media (max-width: 575.98px) { .kt-doc { grid-template-columns: 1fr; justify-items: start; } .kt-menu { left: auto; right: 0; transform-origin: top right; } }
+    @media (prefers-reduced-motion: reduce) { .kt-th, .kt-doc-st .ck, .kt-dd.open .kt-menu { animation: none !important; } .kt-th, .kt-btn { transition: none !important; } }
+    a.kt-th { text-decoration: none; }
+    .kt-th-tag { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1e293b; color: #fff; font-size: .7rem; font-weight: 800; letter-spacing: .08em; padding: 3px 11px; border-radius: 6px; }
+</style>

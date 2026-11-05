@@ -1979,12 +1979,12 @@
                 </check>
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
-                <check if="{{ @is_superadmin }}">
+                <check if="{{ @is_superadmin  || @is_admin_kontrak || @is_user_readonly || @is_humas}}">
                     <li class="sidebar-section-label">Perjanjian Kerja Sama</li>
                     
                     <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Superadmin) -->
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Tugas Proposal Teknis">
+                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/pks" title="Perjanjian Kerja Sama">
                             <i class="bi bi-journal-code"></i> <span>Kontrak</span>
                             <check if="{{ @jumlah_notif_kontrak > 0 }}">
                                 <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_proposal }}</span>
@@ -3403,6 +3403,51 @@
         };
         /* Penampil berkas di modal Dokumen (Katim, Pembuat, Humas, Tim Mitra): PDF dan gambar lewat iframe seperti biasa,
            Word (.docx) dirender di dalam modal, .doc lama diberi pesan + tautan unduh. */
+        /* Pratinjau PDF dan gambar dirender sendiri (bukan lewat iframe) supaya latarnya sama dengan pratinjau Word: abu kebiruan, bukan hitam bawaan browser */
+        window.optiMuatPdfJs = function () {
+            if (window.pdfjsLib) { return Promise.resolve(window.pdfjsLib); }
+            if (window.__pdfjsP) { return window.__pdfjsP; }
+            window.__pdfjsP = new Promise(function (resolve, reject) {
+                var sc = document.createElement('script');
+                sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                sc.onload = function () {
+                    try {
+                        var w = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                        window.pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob(['importScripts("' + w + '");'], { type: 'application/javascript' }));
+                        resolve(window.pdfjsLib);
+                    } catch (e) { window.__pdfjsP = null; reject(e); }
+                };
+                sc.onerror = function () { window.__pdfjsP = null; reject(new Error('pdf.js gagal dimuat')); };
+                document.head.appendChild(sc);
+            });
+            return window.__pdfjsP;
+        };
+        window.optiRenderPdf = function (buf, docEl, masihAktif) {
+            return window.optiMuatPdfJs().then(function (lib) { return lib.getDocument({ data: buf }).promise; }).then(function (pdf) {
+                if (!masihAktif()) { return; }
+                docEl.innerHTML = '';
+                var wrap = document.createElement('div');
+                wrap.style.cssText = 'padding:16px;display:grid;justify-items:center;gap:12px;';
+                docEl.appendChild(wrap);
+                var avail = Math.max(280, Math.min(docEl.clientWidth - 32, 900)), dpr = window.devicePixelRatio || 1;
+                var rantai = Promise.resolve();
+                function halaman(i) {
+                    rantai = rantai.then(function () {
+                        if (!masihAktif()) { return; }
+                        return pdf.getPage(i + 1).then(function (pg) {
+                            var sk = avail / pg.getViewport({ scale: 1 }).width, v = pg.getViewport({ scale: sk * dpr });
+                            var c = document.createElement('canvas');
+                            c.width = Math.floor(v.width); c.height = Math.floor(v.height);
+                            c.style.cssText = 'width:' + Math.floor(v.width / dpr) + 'px;height:' + Math.floor(v.height / dpr) + 'px;max-width:100%;background:#fff;box-shadow:0 2px 10px rgba(15,23,42,.18);';
+                            wrap.appendChild(c);
+                            return pg.render({ canvasContext: c.getContext('2d'), viewport: v }).promise;
+                        });
+                    });
+                }
+                for (var i = 0; i < pdf.numPages; i++) { halaman(i); }
+                return rantai;
+            });
+        };
         window.optiTampilkanBerkas = function (url, frame, docEl, masihAktif) {
             masihAktif = masihAktif || function () { return true; };
             var urlFrame = url + (url.indexOf('#') === -1 ? '#toolbar=0&navpanes=0' : '');
@@ -3435,6 +3480,23 @@
                 var mime = (r.headers.get('Content-Type') || '').toLowerCase();
                 var baru = ext === 'docx' || mime.indexOf('wordprocessingml') !== -1;
                 var lama = ext === 'doc' || mime.indexOf('application/msword') !== -1;
+                var pdf = ext === 'pdf' || mime.indexOf('application/pdf') !== -1;
+                var gbr = mime.indexOf('image/') === 0 && mime.indexOf('svg') === -1;
+                if (r.ok && gbr) {
+                    try { r.body.cancel(); } catch (e) {}
+                    frame.style.display = 'none'; frame.src = 'about:blank'; docEl.style.display = 'block';
+                    docEl.innerHTML = '<div style="padding:16px;display:grid;justify-items:center;"><img alt="Pratinjau" style="max-width:100%;height:auto;background:#fff;box-shadow:0 2px 10px rgba(15,23,42,.18);"></div>';
+                    docEl.querySelector('img').src = url;
+                    return;
+                }
+                if (r.ok && pdf) {
+                    frame.style.display = 'none'; frame.src = 'about:blank'; docEl.style.display = 'block';
+                    pesan('Memuat dokumen PDF...');
+                    return r.arrayBuffer().then(function (buf) {
+                        if (!masihAktif()) { return; }
+                        return window.optiRenderPdf(buf, docEl, masihAktif);
+                    }).catch(function () { if (masihAktif()) { tampilFrame(); } });
+                }
                 if (!r.ok || (!baru && !lama)) { try { r.body.cancel(); } catch (e) {} tampilFrame(); return; }
                 modeWord = true;
                 frame.style.display = 'none'; frame.src = 'about:blank';

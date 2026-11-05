@@ -681,6 +681,11 @@ public function index($f3) {
     $exPpkStatusAt = $kolomOpsi('ppk_status_at');
     $exRondePpk = $kolomOpsi('ronde_ppk');
     $exDikirimAt = $kolomOpsi('dikirim_at');
+    // PO bertanda tangan + kontrak (untuk posisi akhir: PO belum di TTD / PO sudah di TTD / PKS telah dibuat)
+    $exPoTtd = $kolomOpsi('po_ttd_file');
+    $exPoTtdAt = $kolomOpsi('po_ttd_at');
+    $exKontrakAt = $kolomOpsi('kontrak_dibuat_at');
+    $exKontrakNo = $kolomOpsi('kontrak_nomor');
     // PO yang sedang dalam putaran revisi (aturan sama dengan Tahap 8 di detail order):
     // Ketua Tim minta revisi, atau PPK BLU minta revisi (minta / dikerjakan Ketua Tim / dikerjakan Pelaksana / review hasil revisi).
     $kondisiRevisi = "(COALESCE(p.status_review, '') = 'perlu_revisi'"
@@ -876,6 +881,7 @@ public function index($f3) {
                    o.id AS order_id, o.nomor_order, {$sqlJudul} AS judul_kegiatan, o.jenis_layanan_opti, o.status_tinjauan,
                    o.ketua_pelaksana_id, o.ketua_pelaksana_at, o.id_surat_masuk, o.status_keuangan,
                    p.status_review, {$exPpkStatus} AS ppk_status, {$exVerifHumas} AS verif_humas_at,
+                   {$exPoTtd} AS po_ttd_file, {$exPoTtdAt} AS po_ttd_at, {$exKontrakAt} AS kontrak_dibuat_at, {$exKontrakNo} AS kontrak_nomor,
                    {$exBacaReview} AS baca_review, {$exBacaMinta} AS baca_minta, {$exBacaRevisi} AS baca_revisi, {$exBacaPpk} AS baca_ppk, {$exBacaHumas} AS baca_humas, {$exBacaMitra} AS baca_mitra, {$exDispHumas} AS disp_humas_at, {$exPpkStatusAt} AS ppk_status_at_x, {$exRondePpk} AS ronde_ppk_x, {$exDikirimAt} AS po_dikirim_at,
                    p.tervalidasi_mitra_at AS verif_mitra_at, p.validasi_keuangan_at AS validasi_ppk_at, u_pic.nama_user AS nama_pembuat,
                    c.nmcustomer AS nama_mitra, c.pt_cv,
@@ -1011,7 +1017,12 @@ $daftarPo = $this->safeQuery($sql, $params);
                 elseif ($ps === 'katim_kerja') { $pos = $set('Revisi PPK BLU dikerjakan', 'Ketua Tim', 'rose', true, 'revisi', 'Buka'); }
                 elseif ($ps === 'ketupel_kerja') { $pos = $set('Revisi PPK BLU dikerjakan', 'Ketua Pelaksana', 'rose', true, 'revisi', 'Buka', 'baca_ppk'); }
                 elseif ($ps === 'katim_review') { $pos = $set('Review hasil revisi PPK BLU', 'Ketua Tim', 'rose', true, 'revisi', 'Review', 'baca_ppk'); }
-                elseif ($adaWaktu($pPos['validasi_ppk_at'] ?? '')) { $pos = $set('PO Aktif', 'Pengerjaan lab dimulai', 'emerald'); }
+                elseif ($adaWaktu($pPos['validasi_ppk_at'] ?? '')) {
+                    // PO sudah aktif: posisi akhir mengikuti TTD dan kontrak (sama dengan Tahap 8 detail order)
+                    if ($adaWaktu($pPos['kontrak_dibuat_at'] ?? '')) { $pos = $set('PO Aktif', 'PKS telah dibuat', 'emerald'); }
+                    elseif (trim((string) ($pPos['po_ttd_file'] ?? '')) !== '' || $adaWaktu($pPos['po_ttd_at'] ?? '')) { $pos = $set('PO Aktif', 'PO sudah di TTD', 'emerald'); }
+                    else { $pos = $set('PO Aktif', 'PO belum di TTD', 'emerald'); }
+                }
                 elseif ($adaWaktu($pPos['verif_mitra_at'] ?? '')) { $pos = $set('Verifikasi PPK BLU', 'PPK BLU', 'blue'); }
                 elseif ($adaWaktu($pPos['verif_humas_at'] ?? '')) { $pos = $set('Verifikasi Tim Mitra', 'Tim Mitra', 'blue'); }
                 else { $pos = $set('Verifikasi Humas', 'Humas', 'blue'); }
@@ -1033,7 +1044,7 @@ $daftarPo = $this->safeQuery($sql, $params);
         }
         // Keterangan "dibuka / belum dibuka" penerima di langkah yang sedang berjalan (aturan sama dengan Tahap 8 detail order)
         $pos['baca_teks'] = ''; $pos['baca_status'] = '';
-        if ($pos['posisi_teks'] !== '' && $pos['posisi_teks'] !== 'PO Aktif') {
+        if ($pos['posisi_teks'] !== '' && !in_array($pos['posisi_teks'], ['PO Aktif'], true)) {
             $sr2 = (string) ($pPos['status_review'] ?? ''); $ps2 = (string) ($pPos['ppk_status'] ?? '');
             $b = null;   // [kolom jejak baca, penerima, kolom waktu masuk (baca sebelum itu tidak dihitung)]
             if ($sr2 === 'disetujui') {
@@ -1242,7 +1253,7 @@ $daftarPo = $this->safeQuery($sql, $params);
     $f3->set('total_berjalan',       $tabGlobal['berjalan']);
     $f3->set('tampil_tab_tindakan',  $katimUi || $isSuperadmin);   // tab Perlu Tindakan hanya untuk Ketua Tim / Superadmin
     $f3->set('tindakan_di_awal',     $katimUi);                    // Ketua Tim: tab pertama; Superadmin: sesudah Revisi
-    $f3->set('tampil_posisi', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan'], true));
+    $f3->set('tampil_posisi', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan', 'disetujui'], true));
     $f3->set('aksi_ringkas', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan', 'disetujui'], true));
     $f3->set('filter_posisi', $posisiFilter);
     $f3->set('filter_jenis', $jenisFilter);

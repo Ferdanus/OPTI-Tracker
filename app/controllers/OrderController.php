@@ -5,7 +5,7 @@
  * Dilengkapi Guard Permission (Order: Admin Order & Superadmin; Approve: Pejabat & Superadmin)
  */
 class OrderController extends Controller {
-    const PO_TTD_MAKS_BYTE = 10485760;   // 10 MB per upload (PDF akhir)
+    const PO_TTD_MAKS_BYTE = 31457280;   // 30 MB per upload (PDF akhir)
     const PO_TTD_MAKS_FOTO = 10;         // jumlah foto maksimal dalam satu kali upload
 
     /**
@@ -771,7 +771,7 @@ class OrderController extends Controller {
             $poKegiatanModel = new PoKegiatan($this->db);
             $poKegiatanModel->load(['order_id = ?' . \PoSchema::bukanSertifikasi(''), $id]);
             if (!$poKegiatanModel->dry()) {
-                $poKegiatan = $poKegiatanModel->cast();
+                $poKegiatan = $this->sinkronKontrakPks($poKegiatanModel->cast());
             }
         } catch (\Exception $e) {}
         $f3->set('po_kegiatan', $poKegiatan);
@@ -1329,6 +1329,26 @@ class OrderController extends Controller {
         $bastTerbuka = (!empty($order['po_id']) || $poKegiatanAktif) && (($poTtdAda && $poKontrakAda) || !$poTtdWajib);
         $f3->set('po_bast_terbuka', $bastTerbuka);
 
+        // Kontrak (PKS) dibuat langsung di Tahap 9, sebelum BAST: muncul setelah PO bertanda tangan di-upload.
+        // Form hanya untuk Humas, Admin PKS, dan Superadmin (sama dengan hak akses modul Kontrak).
+        $kontrakPoId = (!empty($poKegiatan) && !empty($poKegiatan['id'])) ? (int) $poKegiatan['id'] : 0;
+        $kontrakAlur = ($kontrakPoId > 0);                                  // PO versi baru: ada langkah Kontrak di antara PO dan BAST
+        $kontrakAkses = ($kontrakAlur && $poTtdAda && $poKegiatanAktif);   // kartu Kontrak terbuka setelah PO bertanda tangan di-upload
+        $kontrakMenunggu = ($kontrakAkses && !$poKontrakAda && empty($bast) && ($order['status'] ?? '') !== 'selesai');
+        $f3->set('kontrak_panel', array(
+            'alur'      => $kontrakAlur,
+            'akses'     => $kontrakAkses,
+            'menunggu'  => $kontrakMenunggu,
+            'tampil'    => $kontrakAkses,
+            'boleh'     => ($this->isSuperadmin() || in_array((string) $this->getUserRole(), array('humas', 'admin_kontrak'), true)),
+            'ada'       => $poKontrakAda,
+            'nomor'     => $poKontrakAda ? (string) (isset($poKegiatan['kontrak_nomor']) ? $poKegiatan['kontrak_nomor'] : '') : '',
+            'oleh'      => $poKontrakAda ? (string) (isset($poKegiatan['kontrak_dibuat_oleh_nama']) ? $poKegiatan['kontrak_dibuat_oleh_nama'] : '') : '',
+            'at'        => ($poKontrakAda && strtotime((string) $poKegiatan['kontrak_dibuat_at'])) ? date('d M Y, H:i', strtotime((string) $poKegiatan['kontrak_dibuat_at'])) : '',
+            'po_id'     => $kontrakPoId,
+            'embed_url' => $f3->get('BASE') . '/kontrak/' . $kontrakPoId . '/form?embed=1',
+        ));
+
         // Step 9: BAST
         $isBastDone = $isPoDone && !empty($bast) && (
             in_array($bast['status_bast'] ?? '', ['disetujui', 'selesai', 'terbit']) ||
@@ -1371,6 +1391,9 @@ class OrderController extends Controller {
             }
         }
         if ($isSpmDone && !$bayarTuntas) { $stepper[7] = ['state' => 'done']; }   // SPM sudah aktif walau Tahap 6 masih menunggu pelunasan
+        // Langkah Kontrak (nomor internal 10, tampil sebagai Tahap 9 di antara PO dan BAST). BAST tetap nomor internal 9 supaya data audit lama aman.
+        $stepper[10] = array('state' => $poKontrakAda ? 'done' : ($kontrakAkses ? 'current' : 'waiting'));
+        if ($kontrakMenunggu) { $stepper[9] = array('state' => 'waiting'); }
         $f3->set('stepper', $stepper);
         $f3->set('current_step', $currentStep);
 
@@ -1406,10 +1429,12 @@ class OrderController extends Controller {
 
         // Ambil tahap aktif yang diminta via URL query (tahap / tab / stage), jika valid
         $requestedStep = (int)($f3->get('GET.tahap') ?: ($f3->get('GET.tab') ?: ($f3->get('GET.stage') ?: 0)));
-        if ($requestedStep >= 1 && $requestedStep <= $maxAccessibleStep) {
+        if ($requestedStep === 10 && $kontrakAkses) {
+            $activeStep = 10;
+        } elseif ($requestedStep >= 1 && $requestedStep <= $maxAccessibleStep) {
             $activeStep = $requestedStep;
         } else {
-            $activeStep = $currentStep;
+            $activeStep = $kontrakMenunggu ? 10 : $currentStep;
         }
         $f3->set('active_step', $activeStep);
         $f3->set('is_form_pelayanan_done', $isFormPelayananDone);
@@ -1700,7 +1725,7 @@ class OrderController extends Controller {
                     $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI';
                 } elseif ($poTtdAda && $poTtdWajib && empty($poKegiatan['kontrak_dibuat_at'])) {
                     $langkahBerikutnya['judul'] = 'PO Aktif, Menunggu Kontrak';
-                    $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah di-upload dan diteruskan ke Humas. Tahap 9 (BAST) terbuka setelah Humas membuat kontrak.';
+                    $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah di-upload dan diteruskan ke Humas. Humas membuat kontrak di Tahap 9; BAST (Tahap 10) terbuka setelah kontrak selesai.';
                     $langkahBerikutnya['penanggung_jawab'] = 'Humas';
                 }
                 $langkahBerikutnya['role_icon'] = 'bi-gear-wide-connected';
@@ -1722,6 +1747,17 @@ class OrderController extends Controller {
             $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-plus-fill';
             $langkahBerikutnya['tombol_class'] = 'btn-primary';
             $langkahBerikutnya['target_card'] = '#cardBast';
+            if ($kontrakMenunggu) {
+                $langkahBerikutnya['judul'] = 'Menunggu Kontrak (PKS) dari Humas';
+                $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah di-upload. Humas membuat kontrak di Tahap 9; BAST (Tahap 10) terbuka setelah kontrak selesai.';
+                $langkahBerikutnya['penanggung_jawab'] = 'Humas';
+                $langkahBerikutnya['role_icon'] = 'bi-file-earmark-text-fill';
+                $langkahBerikutnya['tombol_teks'] = 'Buka Kontrak';
+                $langkahBerikutnya['tombol_url'] = '#cardKontrak';
+                $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-text';
+                $langkahBerikutnya['tombol_class'] = 'btn-dark';
+                $langkahBerikutnya['target_card'] = '#cardKontrak';
+            }
         }
 
         $langkahBerikutnya['tahap'] = $langkahBerikutnya['step'] ?? $currentStep;
@@ -2971,6 +3007,30 @@ class OrderController extends Controller {
     }
 
     /**
+     * Kontrak (PKS) yang sudah berstatus selesai di modul Kontrak tetapi PO-nya belum ditandai (kontrak dibuat sebelum penandaan otomatis ada):
+     * tandai sekarang supaya Detail Order tidak minta kontrak dibuat lagi dan BAST terbuka. Satu PO = satu kontrak (pks_kontrak.po_id).
+     */
+    protected function sinkronKontrakPks(array $po) {
+        if (empty($po['id']) || !empty($po['kontrak_dibuat_at'])) { return $po; }
+        try {
+            $r = $this->db->exec("SELECT nomor_pks, selesai_at, updated_at FROM pks_kontrak WHERE po_id = ? AND status = 'selesai' LIMIT 1", array(1 => (int) $po['id']));
+            if (empty($r)) { return $po; }
+            $at = !empty($r[0]['selesai_at']) ? (string) $r[0]['selesai_at'] : (!empty($r[0]['updated_at']) ? (string) $r[0]['updated_at'] : date('Y-m-d H:i:s'));
+            $nomor = (string) $r[0]['nomor_pks'];
+            $this->db->exec(
+                "UPDATE po_kegiatan SET kontrak_nomor = ?, kontrak_dibuat_at = ?, kontrak_dibuat_oleh_nama = ? WHERE id = ? AND kontrak_dibuat_at IS NULL",
+                array(1 => $nomor, 2 => $at, 3 => 'Humas', 4 => (int) $po['id'])
+            );
+            $po['kontrak_nomor'] = $nomor;
+            $po['kontrak_dibuat_at'] = $at;
+            $po['kontrak_dibuat_oleh_nama'] = 'Humas';
+        } catch (\Throwable $e) {
+            // tabel kontrak atau kolom penanda belum ada: abaikan
+        }
+        return $po;
+    }
+
+    /**
      * [BARU] Tahap 8 terpadu: posisi PO Kegiatan OPTI di rantai
      * Disusun -> Review Ketua Tim -> Verifikasi Humas -> Verifikasi Tim Mitra -> Verifikasi PPK BLU -> PO Aktif.
      * Hanya MEMBACA status po_kegiatan yang sudah ada (tidak mengubah alur review/verifikasi). Hasilnya dipakai view order/detail.html.
@@ -3273,7 +3333,7 @@ class OrderController extends Controller {
                 break;
             case 'aktif':
                 if ($ttdAda && $kontrakAda) {
-                    $info = $bidang('success', '<b>Kontrak sudah dibuat Humas.</b> Tahap 9 (BAST) sudah terbuka.');
+                    $info = $bidang('info', '');   // kontrak sudah dibuat: tidak perlu banner, statusnya tampil di kartu Kontrak
                 } elseif ($ttdAda) {
                     $info = $bidang('info', '<b>PO sudah aktif penuh.</b> PO bertanda tangan sudah di-upload dan diteruskan ke Humas untuk dibuatkan kontrak. Tahap 9 (BAST) terbuka setelah kontrak dibuat.');
                 } elseif ($isKatim) {
@@ -3364,7 +3424,7 @@ class OrderController extends Controller {
 
     /**
      * Unggah PO yang sudah dicetak dan ditandatangani (Tahap 8). Syarat membuka BAST (Tahap 9).
-     * Boleh satu PDF atau satu/beberapa foto JPG/PNG (maks. 10 foto, maks. 10 MB); foto otomatis digabung menjadi satu PDF bernama "PO <nomor>_<judul>".
+     * Boleh satu PDF atau satu/beberapa foto JPG/PNG (maks. 10 foto, maks. 30 MB); foto otomatis digabung menjadi satu PDF bernama "PO <nomor>_<judul>".
      * Route: POST /order/@id/po-ttd/unggah
      */
     public function unggahPoTtd($f3, $params) {
@@ -3414,7 +3474,7 @@ class OrderController extends Controller {
         foreach ($berkas as $file) {
             if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > self::PO_TTD_MAKS_BYTE) {
                 finfo_close($finfo);
-                return $this->poTtdBalas($f3, false, 'Ukuran file maksimal 10 MB. Pilih file yang lebih kecil.', $back);
+                return $this->poTtdBalas($f3, false, 'Ukuran file maksimal 30 MB. Pilih file yang lebih kecil.', $back);
             }
             if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] <= 0 || !is_uploaded_file($file['tmp_name'])) {
                 finfo_close($finfo);
@@ -3454,7 +3514,7 @@ class OrderController extends Controller {
                     if (strlen($pdf) <= self::PO_TTD_MAKS_BYTE) { break; }
                 }
                 if (strlen($pdf) > self::PO_TTD_MAKS_BYTE) {
-                    return $this->poTtdBalas($f3, false, 'Hasil PDF dari foto melebihi 10 MB. Kurangi jumlah foto lalu coba lagi.', $back);
+                    return $this->poTtdBalas($f3, false, 'Hasil PDF dari foto melebihi 30 MB. Kurangi jumlah foto lalu coba lagi.', $back);
                 }
                 $disimpan = $acak . '.pdf';
                 if (file_put_contents($dir . $disimpan, $pdf) === false) { throw new \RuntimeException('gagal menulis PDF'); }

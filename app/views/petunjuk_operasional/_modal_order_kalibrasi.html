@@ -1,0 +1,268 @@
+<!-- Modal pilih order Kalibrasi: dua panel (daftar order di kiri, rincian order terpilih di kanan).
+     Data: GET /petunjuk-operasional/kalibrasi/order (JSON) dari tb_arsip_kalibrasi + tabel alat per order.
+     Satu order = satu PO: tidak ada centang; order dipilih dengan klik, lalu tombol "Buat PO dari order ini".
+     Dipakai di: halaman pilih jenis PO (/po-kegiatan/pilih), Daftar PO, dan tombol "Ganti order" di form PO Kalibrasi.
+     Membuka modal: window.bukaModalKalibrasi()                                  -> tombol membuka form PO baru
+                    window.bukaModalKalibrasi({onPilih:function(order){...}})   -> dari form, tanpa pindah halaman -->
+<div class="modal fade" id="modalOrderKal" tabindex="-1" aria-labelledby="modalOrderKalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="modalOrderKalLabel">Pilih Order Kalibrasi</h5>
+                    <div class="small text-muted">Satu order untuk satu PO. Klik order di kiri untuk melihat rinciannya.</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="kal-tools">
+                    <input type="search" id="cariOrderKal" class="form-control" placeholder="Cari nomor order / nama mitra / uraian..." autocomplete="off">
+                    <div class="kal-chips" id="lokOrderKal" role="group" aria-label="Lokasi kalibrasi">
+                        <button type="button" class="kal-chip" data-l="" aria-pressed="true">Semua</button>
+                        <button type="button" class="kal-chip" data-l="lab" aria-pressed="false">Di lab</button>
+                        <button type="button" class="kal-chip" data-l="insitu" aria-pressed="false">In-situ</button>
+                    </div>
+                </div>
+                <div id="catatanOrderKal" class="alert alert-warning border-0 small py-2 d-none"></div>
+                <div id="stateOrderKal" class="text-center text-muted small py-4"></div>
+                <div class="kal-two d-none" id="duaOrderKal">
+                    <div class="kal-list" id="listOrderKal"></div>
+                    <div class="kal-det" id="detOrderKal"></div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div class="small text-muted" id="jmlOrderKal"></div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn kal-buat" id="btnBuatOrderKal" disabled><i class="bi bi-file-earmark-plus"></i><span id="txtBuatOrderKal">Buat PO dari order ini</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #modalOrderKal .kal-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+    #modalOrderKal .kal-tools .form-control { flex: 1 1 260px; min-width: 0; }
+    #modalOrderKal .kal-chips { display: flex; gap: 5px; }
+    #modalOrderKal .kal-chip { border: 1px solid #cbd5e1; background: #fff; border-radius: 999px; padding: 5px 13px; font-size: .8rem; font-weight: 600; color: #64748b; transition: background .15s, color .15s, border-color .15s; }
+    #modalOrderKal .kal-chip:hover { border-color: #64748b; color: #0f172a; }
+    #modalOrderKal .kal-chip[aria-pressed="true"] { background: #1e293b; border-color: #1e293b; color: #fff; }
+    #modalOrderKal .kal-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 14px; align-items: start; }
+    #modalOrderKal .kal-list { display: grid; gap: 6px; align-content: start; }
+    #modalOrderKal .kal-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left; width: 100%; border: 1px solid #e2e8f0; background: #fff; border-radius: 10px; padding: 9px 11px; transition: border-color .15s, background .15s; }
+    #modalOrderKal .kal-item:hover { border-color: #94a3b8; }
+    #modalOrderKal .kal-item.cur { border-color: #334155; background: #f1f5f9; box-shadow: inset 3px 0 0 #1e293b; }
+    #modalOrderKal .kal-item:focus-visible { outline: 2px solid #1e293b; outline-offset: 2px; }
+    #modalOrderKal .kal-item .mitra { display: block; font-weight: 700; font-size: .88rem; overflow-wrap: anywhere; }
+    #modalOrderKal .kal-item .no { font-family: ui-monospace, Consolas, monospace; font-size: .76rem; font-weight: 600; color: #475569; }
+    #modalOrderKal .kal-item .ur { display: block; font-size: .8rem; color: #64748b; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    #modalOrderKal .kal-item .meta { text-align: right; font-size: .76rem; color: #64748b; white-space: nowrap; }
+    #modalOrderKal .kal-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+    #modalOrderKal .kal-tags span { font-size: .7rem; padding: 1px 9px; border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; white-space: nowrap; }
+    #modalOrderKal .kal-tags span.dk { background: #1e293b; border-color: #1e293b; color: #fff; }
+    #modalOrderKal .kal-det { position: sticky; top: 0; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; padding: 14px; display: grid; gap: 12px; align-content: start; }
+    #modalOrderKal .kal-det h6 { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+    #modalOrderKal .kal-kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; font-size: .85rem; }
+    #modalOrderKal .kal-kv small { display: block; font-size: .64rem; letter-spacing: .06em; text-transform: uppercase; color: #64748b; font-weight: 700; }
+    #modalOrderKal .kal-kv span { overflow-wrap: anywhere; }
+    #modalOrderKal .kal-alat { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+    #modalOrderKal .kal-alat li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; font-size: .82rem; }
+    #modalOrderKal .kal-alat .n { width: 22px; height: 22px; border-radius: 6px; background: #e2e8f0; display: grid; place-items: center; font-size: .7rem; font-weight: 700; }
+    #modalOrderKal .kal-alat small { display: block; color: #64748b; overflow-wrap: anywhere; }
+    #modalOrderKal .kal-lbl { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 5px; display: block; }
+    #modalOrderKal .kal-biaya { border-top: 1px dashed #cbd5e1; padding-top: 10px; display: grid; gap: 3px; font-size: .82rem; }
+    #modalOrderKal .kal-biaya div { display: flex; justify-content: space-between; gap: 10px; }
+    #modalOrderKal .kal-biaya .tot { font-weight: 700; border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 2px; }
+    #modalOrderKal .kal-buat { display: inline-flex; justify-content: center; align-items: center; gap: 6px; background: #1e293b; border-color: #1e293b; color: #fff; font-weight: 600; }
+    #modalOrderKal .kal-buat:hover:not(:disabled) { background: #0f172a; border-color: #0f172a; color: #fff; }
+    #modalOrderKal .kal-buat:disabled { background: #1e293b; border-color: #1e293b; color: #fff; opacity: .4; }
+    #modalOrderKal #stateOrderKal:empty { display: none; }
+    @media (max-width: 767px) { #modalOrderKal .kal-two { grid-template-columns: 1fr; } #modalOrderKal .kal-det { position: static; } }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modalEl = document.getElementById('modalOrderKal');
+    document.body.appendChild(modalEl);
+    var listEl = document.getElementById('listOrderKal');
+    var detEl = document.getElementById('detOrderKal');
+    var duaEl = document.getElementById('duaOrderKal');
+    var stateEl = document.getElementById('stateOrderKal');
+    var cariEl = document.getElementById('cariOrderKal');
+    var lokEl = document.getElementById('lokOrderKal');
+    var jmlEl = document.getElementById('jmlOrderKal');
+    var catEl = document.getElementById('catatanOrderKal');
+    var buatEl = document.getElementById('btnBuatOrderKal');
+    var buatTxt = document.getElementById('txtBuatOrderKal');
+    var URL_ORDER_KAL = '{{ @BASE }}/petunjuk-operasional/kalibrasi/order';
+    var URL_BUAT_KAL = '{{ @BASE }}/petunjuk-operasional/kalibrasi/create?order=';
+    var BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    var timer = null, reqId = 0;
+    var data = [];           // order hasil pencarian terakhir
+    var cur = 0;             // id order yang rinciannya tampil
+    var lok = '';            // '' | 'lab' | 'insitu'
+    var opsi = { onPilih: null };
+
+    function elKal(tag, cls, txt) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (txt != null) { e.textContent = txt; } return e; }
+    function tgl(iso) { if (!iso) { return '-'; } var p = String(iso).split('-'); return p.length === 3 ? (parseInt(p[2], 10) + ' ' + BLN[parseInt(p[1], 10) - 1] + ' ' + p[0]) : iso; }
+    function rp(n) { n = Math.round(n || 0); return 'Rp ' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+    function labelLok(o) { return o.tipe === 'insitu' ? 'In-situ' : 'Di lab'; }
+    function tampilData() { return data.filter(function (o) { return !lok || o.tipe === lok; }); }
+    function cariOrder(id) { for (var i = 0; i < data.length; i++) { if (data[i].id === id) { return data[i]; } } return null; }
+
+    function gambarDetail() {
+        var o = cariOrder(cur);
+        detEl.innerHTML = '';
+        if (!o) { detEl.appendChild(elKal('div', 'text-muted small', 'Pilih order di kiri.')); return; }
+        var head = elKal('div');
+        head.appendChild(elKal('h6', '', o.mitra || '(mitra tidak ditemukan)'));
+        head.appendChild(elKal('div', 'no text-muted small', o.nomor || '-'));
+        detEl.appendChild(head);
+
+        var kv = elKal('div', 'kal-kv');
+        function sel(label, isi) { var d = elKal('div'); d.appendChild(elKal('small', '', label)); d.appendChild(elKal('span', '', isi)); kv.appendChild(d); }
+        if (o.uraian) { var u = elKal('div'); u.style.gridColumn = '1 / -1'; u.appendChild(elKal('small', '', 'Uraian')); u.appendChild(elKal('span', '', o.uraian)); kv.appendChild(u); }
+        sel('Lokasi', labelLok(o) + ' · ' + o.tempat);
+        sel('Tanggal order', tgl(o.tgl_order));
+        sel('Berangkat - pulang', (o.berangkat && o.berangkat === o.pulang) ? tgl(o.berangkat) : (o.berangkat || o.pulang ? tgl(o.berangkat) + ' - ' + tgl(o.pulang) : '-'));
+        sel('Target selesai', tgl(o.target));
+        var tim = o.teknisi && o.teknisi.length ? o.teknisi.join(', ') : (o.jml_teknisi ? o.jml_teknisi + ' teknisi' : '-');
+        var t = elKal('div'); t.style.gridColumn = '1 / -1'; t.appendChild(elKal('small', '', 'Teknisi')); t.appendChild(elKal('span', '', tim)); kv.appendChild(t);
+        detEl.appendChild(kv);
+
+        var wrap = elKal('div');
+        wrap.appendChild(elKal('span', 'kal-lbl', 'Alat yang dikalibrasi (' + (o.alat ? o.alat.length : 0) + ')'));
+        if (o.alat && o.alat.length) {
+            var ul = elKal('ul', 'kal-alat');
+            o.alat.forEach(function (a, i) {
+                var li = document.createElement('li');
+                li.appendChild(elKal('span', 'n', String(i + 1)));
+                var isi = elKal('span', '', a.nama || a.tipe || '(tanpa nama)');
+                var rinci = [[a.merk, a.nama ? a.tipe : ''].filter(Boolean).join(' '), a.kapasitas, a.sn ? 'SN ' + a.sn : ''].filter(Boolean).join(' · ');
+                if (rinci) { isi.appendChild(elKal('small', '', rinci)); }
+                li.appendChild(isi);
+                ul.appendChild(li);
+            });
+            wrap.appendChild(ul);
+        } else {
+            wrap.appendChild(elKal('div', 'text-muted small', 'Belum ada alat tercatat untuk order ini.'));
+        }
+        detEl.appendChild(wrap);
+
+        var b = o.biaya || {};
+        var bi = elKal('div', 'kal-biaya');
+        function baris(label, nilai, cls) { var d = elKal('div', cls || ''); d.appendChild(elKal('span', '', label)); d.appendChild(elKal('span', '', rp(nilai))); bi.appendChild(d); }
+        baris('Biaya kerja sama', b.kerjasama);
+        if (b.petugas) { baris('Biaya petugas', b.petugas); }
+        if (b.insitu) { baris('In-situ', b.insitu); }
+        if (b.transportasi) { baris('Transportasi', b.transportasi); }
+        if (b.pembulatan) { baris('Pembulatan', b.pembulatan); }
+        baris('Total', b.total, 'tot');
+        detEl.appendChild(bi);
+
+    }
+
+    function gambarList() {
+        var rows = tampilData();
+        listEl.innerHTML = '';
+        rows.forEach(function (o) {
+            var b = elKal('button', 'kal-item' + (o.id === cur ? ' cur' : ''));
+            b.type = 'button';
+            var kiri = elKal('div');
+            kiri.appendChild(elKal('span', 'mitra', o.mitra || '(mitra tidak ditemukan)'));
+            kiri.appendChild(elKal('span', 'no', o.nomor || '-'));
+            if (o.uraian) { kiri.appendChild(elKal('span', 'ur', o.uraian)); }
+            var tags = elKal('div', 'kal-tags');
+            tags.appendChild(elKal('span', 'dk', labelLok(o)));
+            tags.appendChild(elKal('span', '', (o.alat ? o.alat.length : 0) + ' alat'));
+            kiri.appendChild(tags);
+            b.appendChild(kiri);
+            if (o.tgl_order) { b.appendChild(elKal('div', 'meta', 'Order ' + tgl(o.tgl_order))); }
+            b.addEventListener('click', function () { cur = o.id; gambarList(); gambarDetail(); if (window.innerWidth < 768 && detEl.scrollIntoView) { detEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } });
+            listEl.appendChild(b);
+        });
+        if (rows.length && !rows.some(function (o) { return o.id === cur; })) { cur = rows[0].id; gambarList(); gambarDetail(); return; }
+        if (!rows.length) { cur = 0; }
+        duaEl.classList.toggle('d-none', rows.length === 0);
+        buatEl.disabled = rows.length === 0;
+        var q = (cariEl.value || '').trim();
+        stateEl.className = 'text-center text-muted small py-4';
+        if (!data.length) {
+            stateEl.textContent = q ? 'Tidak ada order yang cocok dengan pencarian.' : 'Tidak ada order kalibrasi yang perlu dibuatkan PO.';
+        } else if (!rows.length) {
+            stateEl.textContent = 'Tidak ada order ' + (lok === 'insitu' ? 'in-situ' : 'di lab') + ' pada hasil ini.';
+        } else {
+            stateEl.textContent = '';
+        }
+        jmlEl.textContent = rows.length ? rows.length + ' order' + (data.length >= 100 && !q ? ' terbaru. Ketik di kolom cari untuk menemukan order lain.' : '') : '';
+    }
+
+    function muat() {
+        var mine = ++reqId;
+        stateEl.className = 'text-center text-muted small py-4';
+        stateEl.textContent = 'Memuat daftar order...';
+        var q = (cariEl.value || '').trim();
+        fetch(URL_ORDER_KAL + (q ? '?q=' + encodeURIComponent(q) : ''), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (res) { return res.json(); })
+            .then(function (j) {
+                if (mine !== reqId) { return; }
+                if (!j || !j.ok) { throw new Error((j && j.message) || 'Gagal memuat data.'); }
+                data = j.data || [];
+                var c = j.catatan || [];
+                catEl.classList.toggle('d-none', c.length === 0);
+                catEl.textContent = c.join(' ');
+                gambarList();
+                gambarDetail();
+            })
+            .catch(function (err) {
+                if (mine !== reqId) { return; }
+                data = []; duaEl.classList.add('d-none'); jmlEl.textContent = ''; buatEl.disabled = true;
+                stateEl.className = 'text-center text-danger small py-4';
+                stateEl.textContent = (err && err.message) ? err.message : 'Gagal memuat data order.';
+            });
+    }
+
+    function pilihOrder(o) {
+        var inst = bootstrap.Modal.getInstance(modalEl);
+        if (opsi.onPilih) {
+            if (inst) { inst.hide(); }
+            opsi.onPilih(o);
+            return;
+        }
+        // tutup modal dulu, baru loader halaman menyala (supaya tidak ada bayangan modal di belakang loader)
+        if (inst) { inst.hide(); }
+        if (typeof window.startLoading === 'function') { window.startLoading('Membuka form PO...'); }
+        window.location.href = URL_BUAT_KAL + encodeURIComponent(o.id);
+    }
+
+    window.bukaModalKalibrasi = function (o) {
+        o = o || {};
+        opsi = { onPilih: (typeof o.onPilih === 'function') ? o.onPilih : null };
+        buatTxt.textContent = opsi.onPilih ? 'Pakai order ini' : 'Buat PO dari order ini';
+        buatEl.disabled = true;
+        cariEl.value = '';
+        data = []; cur = 0; lok = '';
+        Array.prototype.forEach.call(lokEl.children, function (c) { c.setAttribute('aria-pressed', c.getAttribute('data-l') === '' ? 'true' : 'false'); });
+        listEl.innerHTML = ''; detEl.innerHTML = '';
+        duaEl.classList.add('d-none'); catEl.classList.add('d-none'); jmlEl.textContent = '';
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        muat();
+    };
+
+    buatEl.addEventListener('click', function () { var o = cariOrder(cur); if (o) { pilihOrder(o); } });
+    lokEl.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-l]');
+        if (!b) { return; }
+        lok = b.getAttribute('data-l');
+        Array.prototype.forEach.call(lokEl.children, function (c) { c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); });
+        gambarList();
+        gambarDetail();
+    });
+    cariEl.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(muat, 300);
+    });
+    modalEl.addEventListener('hidden.bs.modal', function () { clearTimeout(timer); });
+});
+</script>

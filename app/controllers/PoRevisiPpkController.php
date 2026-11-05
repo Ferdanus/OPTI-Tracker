@@ -188,6 +188,12 @@ class PoRevisiPpkController extends Controller {
         $this->keluarkanJson($this->bangunBerkasPpk($po));
     }
 
+    /** GET /po-ppk/@id/po-ttd[?unduh=1] -- PO bertanda tangan untuk tab PO TTD di slide PPK BLU */
+    public function lihatPoTtdPpk($f3, $params) {
+        $po = $this->aksesPpk((int) $params['id']);
+        \PoSchema::kirimPoTtd($f3, $this->db, (int) $po['id']);
+    }
+
     /** GET /po-ppk/@id/berkas-bukti/@pid[?unduh=1] -- file bukti pembayaran satu termin (harus milik order PO ini) */
     public function berkasBuktiPpk($f3, $params) {
         $po = $this->aksesPpk((int) $params['id']);
@@ -1167,6 +1173,8 @@ class PoRevisiPpkController extends Controller {
         $ktMax = "x.putaran = (SELECT MAX(y.putaran) FROM po_revisi_catatan y WHERE y.po_id = p.id AND y.tahap = 'ppk' AND y.asal = 'katim' AND y.ronde = p.ronde_ppk AND y.state <> 'draf')";
         $sql = "SELECT p.id, p.nomor_po, p.ppk_status, p.ronde_ppk, p.ppk_dibaca_at, p.ppk_minta_at, p.ppk_status_at, p.ppk_alasan, p.validasi_keuangan_at,
                        p.created_at AS dibuat_at, COALESCE(p.dikirim_at, p.updated_at, p.created_at) AS dikirim_at, p.disetujui_at,
+                       " . $ex('po_ttd_at') . " AS po_ttd_at, " . $ex('kontrak_dibuat_at') . " AS kontrak_dibuat_at, " . $ex('kontrak_nomor') . " AS kontrak_nomor,
+                       " . $ex('po_ttd_nama') . " AS po_ttd_nama, " . $ex('po_ttd_oleh_nama') . " AS po_ttd_oleh_nama, " . $ex('kontrak_dibuat_oleh_nama') . " AS kontrak_dibuat_oleh_nama,
                        " . $ex('verifikasi_humas_at') . " AS humas_ver_at, " . $ex('catatan_tim_mitra') . " AS catatan_tim_mitra, " . $ex('catatan_ppk') . " AS catatan_ppk, " . $ex('catatan_humas') . " AS catatan_humas,
                        " . ($mitraKol !== '' ? 'p.' . $mitraKol : 'NULL') . " AS mitra_valid_at,
                        COALESCE(NULLIF(p.judul_kegiatan, ''), o.judul_kegiatan) AS judul,
@@ -1250,6 +1258,15 @@ class PoRevisiPpkController extends Controller {
                 // catatan PPK BLU (opsional, diisi di dock seperti catatan Tim Mitra, tersimpan otomatis); tampil di bawah dokumen PO (biru)
                 'catatan_ppk' => isset($r['catatan_ppk']) ? trim((string) $r['catatan_ppk']) : '',
                 'ppk_valid_at' => $r['validasi_keuangan_at'],
+                // posisi akhir di kolom Status PO: PO belum / sudah di TTD, PKS telah dibuat
+                'ttd_at'      => trim((string) ($r['po_ttd_at'] ?? '')),
+                'kontrak_at'  => trim((string) ($r['kontrak_dibuat_at'] ?? '')),
+                'kontrak_nomor' => (string) ($r['kontrak_nomor'] ?? ''),
+                'kontrak_oleh' => (string) ($r['kontrak_dibuat_oleh_nama'] ?? ''),
+                'ttd_nama'    => (string) ($r['po_ttd_nama'] ?? ''),
+                'ttd_oleh'    => (string) ($r['po_ttd_oleh_nama'] ?? ''),
+                'url_ttd'     => trim((string) ($r['po_ttd_at'] ?? '')) !== '' ? (\Base::instance()->get('BASE') . '/po-ppk/' . (int) $r['id'] . '/po-ttd') : '',
+                'kontrak_url' => (trim((string) ($r['kontrak_dibuat_at'] ?? '')) !== '' && $this->isSuperadmin()) ? (\Base::instance()->get('BASE') . '/pks/' . (int) $r['id'] . '/unduh') : '',
                 // ---- Map Kendali F.PJT-12-03/1 (kartu di tab Berkas; hanya tanggal, jam tidak dipakai) ----
                 'disiapkan'   => $div !== '' ? 'Tim Kerja OPTI ' . ucfirst(strtolower($div)) : 'Tim Kerja OPTI',
                 'map'         => [

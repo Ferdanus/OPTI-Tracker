@@ -18,7 +18,7 @@
     .rvw-sheet.rvw-menunggu [data-act] .rvw-spin { width: 13px; height: 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; display: inline-block; animation: rvwSpin .7s linear infinite; }
     @keyframes rvwSpin { to { transform: rotate(360deg); } }
 </style>
-<script>(function () { try { var q = window.location.search; if (window.self !== window.top && /[?&]embed=1(&|$)/.test(q) && /[?&]buka=\d+/.test(q)) { document.documentElement.classList.add('rvw-solo'); if (/[?&]sc=1(&|$)/.test(q)) { document.body.classList.add('sidebar-collapsed'); } } } catch (e) {} })();</script>
+<script>(function () { try { var q = window.location.search; if (window.self !== window.top && /[?&]embed=1(&|$)/.test(q) && /[?&]buka=\d+/.test(q)) { document.documentElement.classList.add('rvw-solo'); if (/[?&]ph=1(&|$)/.test(q)) { document.documentElement.classList.add('rvw-ph'); } if (/[?&]sc=1(&|$)/.test(q)) { document.body.classList.add('sidebar-collapsed'); } } } catch (e) {} })();</script>
 <style>
     .rvw-root {
         --rvw-primary: var(--color-primary, #334155);
@@ -359,7 +359,7 @@
     .rvw-fv-top b { flex: 1; min-width: 0; font-family: var(--rvw-display); font-size: .95rem; font-weight: 800; }
     .rvw-fv-x { border: 1px solid var(--rvw-border); background: #fff; width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: var(--rvw-muted); font-size: 16px; flex-shrink: 0; }
     .rvw-fv-x:hover { color: var(--rvw-primary); border-color: var(--rvw-primary); }
-    .rvw-fv-body { flex: 1; background: #2b2e31; position: relative; }
+    .rvw-fv-body { flex: 1; background: #e2e8f0; position: relative; }
     .rvw-fv-ic { width: 36px; height: 36px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: grid; place-items: center; font-size: 1.1rem; flex-shrink: 0; }
     .rvw-fv-tt { flex: 1; min-width: 0; }
     .rvw-fv-tt b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -460,6 +460,63 @@
         .rvw-bub { max-width: 92%; }
     }
     @media (prefers-reduced-motion: reduce) { .rvw-root * { transition: none !important; } }
+        .rvw-shtools .rvw-ibtn { width: 34px; height: 34px; border-radius: 50%; border: 0; background: #f1f5f9; color: #0f172a; font-size: 15px; }
+    .rvw-shtools .rvw-ibtn:hover { background: #e2e8f0; color: #0f172a; border-color: transparent; }
+    .rvw-loading { display: grid; justify-items: center; gap: 10px; padding: 56px 16px; }
+    .rvw-loading:not(.err)::before { content: ''; width: 22px; height: 22px; border: 2.5px solid #94a3b8; border-right-color: transparent; border-radius: 50%; animation: rvwRot .7s linear infinite; }
+    .rvw-loading > i.bi-hourglass-split { display: none; }
+    @keyframes rvwRot { to { transform: rotate(1turn); } }
+    html.rvw-ph .rvw-sheet, html.rvw-ph .rvw-scrim, html.rvw-ph .rvw-fv { visibility: hidden !important; transition: none !important; animation: none !important; }
+    html.rvw-phgo .rvw-sheet, html.rvw-phgo .rvw-sheet.open, html.rvw-phgo .rvw-scrim, html.rvw-phgo .rvw-fv { transition: none !important; animation: none !important; }
+    /* ===== Gaya slide disamakan dengan slide Kontrak (PKS): animasi masuk, tab, zoom + unduh melayang, pratinjau berkas ===== */
+    .rvw-scrim { transition: opacity .3s; }
+    .rvw-sheet { transform: translateX(104%); transition: transform .42s cubic-bezier(.22,.9,.25,1), width .24s ease, visibility 0s .42s; }
+    .rvw-sheet.open { transform: none; transition: transform .42s cubic-bezier(.22,.9,.25,1), width .24s ease, visibility 0s; }
+    #rvwShClose, #rvwShWide, #rvwShInfo { transition: transform .3s cubic-bezier(.3,.8,.3,1), background .2s, color .2s, border-color .2s; }
+    #rvwShClose:hover { transform: rotate(90deg); }
+    #rvwShClose:active { transform: rotate(90deg) scale(.92); }
+    #rvwShWide:hover { transform: scale(1.1); }
+    #rvwShWide:active, #rvwShInfo:active { transform: scale(.92); }
+    .rvw-shtabs { position: relative; gap: 4px; padding: 0 12px; }
+    .rvw-shtab { border-bottom: 0 !important; padding: 10px 14px; font-weight: 600; font-size: .85rem; transition: color .2s; }
+    .rvw-shtab.on { color: #0f172a; }
+    .rvw-ind { position: absolute; bottom: 0; left: 0; height: 2px; width: 0; background: #334155; transition: left .3s cubic-bezier(.3,.8,.3,1), width .3s cubic-bezier(.3,.8,.3,1); pointer-events: none; }
+    @keyframes rvwRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    #rvwDokPane, #rvwBerkasPane, #rvwAlurPane { animation: rvwRise .35s ease-out both; }
+    @keyframes rvwZmIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .rvw-float { position: sticky; bottom: 0; height: 0; z-index: 6; pointer-events: none; }
+    .rvw-float > * { position: absolute; bottom: 22px; pointer-events: auto; }
+    .rvw-float .rvw-fzm { left: 12px; display: flex; align-items: center; gap: 2px; background: #0f172a; color: #fff; border-radius: 999px; padding: 4px; box-shadow: 0 8px 22px rgba(15,23,42,.35); animation: rvwZmIn .35s ease both; }
+    .rvw-float .rvw-fzm.on { display: flex; }
+    
+    .rvw-fzm button { border: 0; background: transparent; color: #fff; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; font-size: .95rem; padding: 0; transition: background .15s, transform .15s; }
+    .rvw-fzm button:hover:not(:disabled) { background: rgba(255,255,255,.16); }
+    .rvw-fzm button:active:not(:disabled) { transform: scale(.9); }
+    .rvw-fzm button:disabled { opacity: .4; cursor: default; }
+    .rvw-fzm button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+    .rvw-fzm .zl { width: auto; min-width: 56px; padding: 0 8px; border-radius: 999px; font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .rvw-fzm .sep { width: 1px; height: 18px; background: rgba(255,255,255,.22); margin: 0 3px; }
+    .rvw-float .rvw-pobar { right: 12px; display: flex; margin: 0; max-width: none; animation: rvwZmIn .35s ease both; }
+    .rvw-float .rvw-pobar .sp { display: none; }
+    .rvw-float .rvw-pobar button { box-shadow: 0 8px 22px rgba(15,23,42,.35); padding: .5rem .95rem; font-size: .82rem; transition: transform .15s, background .2s, box-shadow .2s; }
+    .rvw-float .rvw-pobar button:hover { transform: translateY(-2px); }
+    .rvw-float .rvw-pobar button:active { transform: scale(.97); }
+    @media (max-width: 575.98px) { .rvw-float > * { bottom: 14px; } .rvw-float .rvw-fzm { left: 4px; } .rvw-float .rvw-pobar { right: 4px; } }
+    /* pratinjau berkas: dibuka di dalam slide, seperti slide Kontrak */
+    .rvw-fv { top: 0; right: 0; bottom: 0; left: auto; width: calc(100vw - var(--sidebar-expanded-width, 264px)); padding: 0; background: #fff; align-items: stretch; justify-content: stretch; animation: rvwFvIn .25s ease both; }
+    body.sidebar-collapsed .rvw-fv { width: calc(100vw - var(--sidebar-mini-width, 74px)); }
+    @media (max-width: 991.98px) { .rvw-fv, body.sidebar-collapsed .rvw-fv { width: 100vw; } }
+    .rvw-sheet.wide ~ .rvw-fv, body.sidebar-collapsed .rvw-sheet.wide ~ .rvw-fv { width: 100vw; }
+    .rvw-fv[hidden] { display: none; }
+    @keyframes rvwFvIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .rvw-fv-box { max-width: none; width: 100%; height: 100%; border-radius: 0; box-shadow: none; }
+    .rvw-fv-top { padding: 12px 16px; }
+    .rvw-fv-top [hidden] { display: none !important; }
+    .rvw-fv-top .rvw-btn { text-decoration: none; padding: .4rem .8rem; font-size: .8rem; }
+    .rvw-fv-back { width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 0; background: #f1f5f9; color: #0f172a; display: grid; place-items: center; transition: background .15s, transform .2s; }
+    .rvw-fv-back:hover { background: #e2e8f0; transform: translateX(-2px); }
+    .rvw-fv-foot { display: none; }
+    @media (max-width: 575.98px) { .rvw-fv-top .rvw-btn span { display: none; } }
     </style>
 <include href="petunjuk_operasional/_tema_catatan.html" />
     
@@ -564,10 +621,19 @@
             <div class="rvw-shbody" id="rvwShBody">
                 <div id="rvwDokPane">
                     <div id="rvwBanner"></div>
-                    <div class="rvw-pobar"><span class="sp"></span><button type="button" class="rvw-btn pri sm" id="rvwUnduhPo" data-unduh-po><i class="bi bi-download"></i>Unduh PO</button></div>
                     <div class="rvw-paper"><div id="rvwDocHost"><div class="rvw-loading">Memuat dokumen PO...</div></div></div>
                     <div id="rvwCatBawah"></div>
                     <section class="rvw-umum" id="rvwUmum" data-sec="umum"></section>
+                    <div class="rvw-float">
+                <div class="rvw-fzm on" id="rvwFitBar" role="group" aria-label="Zoom dokumen PO">
+                    <button type="button" id="rvwZoomOut" title="Perkecil" aria-label="Perkecil"><i class="bi bi-zoom-out"></i></button>
+                    <button type="button" class="zl" id="rvwZoomLbl" title="Kembali ke 100%">100%</button>
+                    <button type="button" id="rvwZoomIn" title="Perbesar" aria-label="Perbesar"><i class="bi bi-zoom-in"></i></button>
+                    <span class="sep"></span>
+                    <button type="button" id="rvwZoomFit" title="Pas lebar layar" aria-label="Pas lebar layar"><i class="bi bi-arrows-angle-expand"></i></button>
+                </div>
+                <div class="rvw-pobar"><span class="sp"></span><button type="button" class="rvw-btn pri sm" id="rvwUnduhPo" data-unduh-po><i class="bi bi-download"></i>Unduh PO</button></div>
+            </div>
                 </div>
                 <div id="rvwBerkasPane" hidden></div>
                 <div id="rvwAlurPane" hidden></div>
@@ -586,16 +652,83 @@
         <div class="rvw-fv" id="rvwFv" hidden>
             <div class="rvw-fv-box" role="dialog" aria-modal="true" aria-labelledby="rvwFvJudul">
                 <div class="rvw-fv-top">
-                    <span class="rvw-fv-ic"><i class="bi bi-file-earmark-pdf-fill"></i></span><div class="rvw-fv-tt"><b id="rvwFvJudul">File</b><small id="rvwFvSub"></small></div>
-                <a class="rvw-btn sm rvw-fv-dl" id="rvwFvUnduh" href="#" download title="Unduh berkas"><i class="bi bi-download"></i>Unduh</a>
-                    <a class="rvw-btn sm" id="rvwFvTab" href="#" target="_blank" rel="noopener" title="Buka di tab baru"><i class="bi bi-box-arrow-up-right"></i></a>
-                    <button type="button" class="rvw-btn sm pri" id="rvwFvCetak" data-mk-cetak hidden title="Cetak Map Kendali"><i class="bi bi-printer"></i>Cetak</button>
-                    <button type="button" class="rvw-fv-x" id="rvwFvTutup" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+                    <button type="button" class="rvw-fv-back" id="rvwFvTutup" title="Kembali" aria-label="Kembali"><i class="bi bi-arrow-left"></i></button><div class="rvw-fv-tt"><b id="rvwFvJudul">File</b><small id="rvwFvSub"></small></div>
+                    <button type="button" class="rvw-btn sm pri" id="rvwFvCetak" data-mk-cetak hidden title="Cetak Map Kendali"><i class="bi bi-printer"></i><span>Cetak</span></button>
+                    <a class="rvw-btn sm" id="rvwFvUnduh" href="#" download title="Unduh berkas"><i class="bi bi-download"></i><span>Unduh</span></a>
+                    <a class="rvw-btn sm" id="rvwFvTab" href="#" target="_blank" rel="noopener" title="Buka di tab baru"><i class="bi bi-box-arrow-up-right"></i><span>Tab Baru</span></a>
                 </div>
                 <div class="rvw-fv-body"><iframe id="rvwFvFrame" title="Pratinjau file"></iframe><div class="rvw-fv-doc" id="rvwFvDoc" style="display:none;"></div></div>
-            <div class="rvw-fv-foot"><small><i class="bi bi-shield-check"></i> Pratinjau dokumen resmi OPTI BBSPJIS.</small><button type="button" class="rvw-btn" id="rvwFvTutup2">Tutup</button></div>
+            <div class="rvw-fv-foot" hidden style="display:none;"><small><i class="bi bi-shield-check"></i> Pratinjau dokumen resmi OPTI BBSPJIS.</small><button type="button" class="rvw-btn" id="rvwFvTutup2">Tutup</button></div>
             </div>
         </div>
+<script>
+(function () {
+    var P = 'rvw', LEGACY = false, PAPER = '#rvwDokPane .rvw-paper';
+    var $ = function (i) { return document.getElementById(i); };
+    /* slide yang dibuka dari halaman lain (iframe): tetap tersembunyi sampai dokumen PO selesai dimuat, supaya loading hanya SATU kali (di panel placeholder induk) */
+    (function () {
+        var h = document.documentElement, o = { tunda: h.classList.contains(P + '-ph'), sudah: false, kirim: null };
+        window.__poPh = o;
+        window.__poDokSiap = function () {
+            if (!o.tunda || o.sudah) { return; }
+            o.sudah = true;
+            h.classList.add(P + '-phgo'); h.classList.remove(P + '-ph');
+            setTimeout(function () { h.classList.remove(P + '-phgo'); }, 900);
+            if (o.kirim) { o.kirim(); }
+        };
+    })();
+    /* garis penanda tab yang bergeser mulus (seperti slide Kontrak) */
+    (function () {
+        var box = $(P + 'ShTabs'); if (!box || !window.MutationObserver) { return; }
+        var last = null, busy = false;
+        function pasang() {
+            if (busy) { return; }
+            var on = box.querySelector('.' + P + '-shtab.on'); if (!on) { return; }
+            busy = true;
+            var ind = box.querySelector('.' + P + '-ind'), baru = false;
+            if (!ind) { ind = document.createElement('span'); ind.className = P + '-ind'; box.appendChild(ind); baru = true; }
+            if (baru && last) { ind.style.left = last.l + 'px'; ind.style.width = last.w + 'px'; void ind.offsetWidth; }
+            var l = on.offsetLeft, w = on.offsetWidth;
+            ind.style.left = l + 'px'; ind.style.width = w + 'px';
+            last = { l: l, w: w };
+            setTimeout(function () { busy = false; }, 0);
+        }
+        new MutationObserver(pasang).observe(box, { childList: true });
+        window.addEventListener('resize', function () { last = null; var i = box.querySelector('.' + P + '-ind'); if (i) { i.parentNode.removeChild(i); } pasang(); });
+        pasang();
+    })();
+    /* zoom dokumen PO (perkecil / perbesar / pas lebar) */
+    (function () {
+        var sheet = $(P + 'Sheet'), bar = $(P + 'FitBar'), body = $(P + 'ShBody');
+        if (!sheet || !bar) { return; }
+        var out = $(P + 'ZoomOut'), lbl = $(P + 'ZoomLbl'), inn = $(P + 'ZoomIn'), fit = $(P + 'ZoomFit');
+        var MIN = 0.5, MAX = 2, sk = 1;
+        function desk() { return !(window.matchMedia && window.matchMedia('(max-width: 767.98px)').matches); }
+        function aktif() { return !LEGACY || desk(); }
+        function terap() {
+            var pp = document.querySelector(PAPER);
+            if (pp) { pp.style.zoom = (!aktif() || Math.abs(sk - 1) < 0.001) ? '' : String(sk); }
+            if (!aktif()) { return; }
+            lbl.textContent = Math.round(sk * 100) + '%';
+            out.disabled = sk <= MIN + 0.001; inn.disabled = sk >= MAX - 0.001;
+        }
+        function set(s) { sk = Math.max(MIN, Math.min(MAX, s)); terap(); }
+        function pas() { var av = (body ? body.clientWidth : 0) - 36; return av <= 0 ? 1 : Math.max(MIN, Math.min(MAX, av / Math.min(794, av))); }
+        function klik(fn) { return function (e) { if (!aktif()) { return; } e.stopImmediatePropagation(); fn(); }; }
+        out.addEventListener('click', klik(function () { set(sk * 0.8); }));
+        inn.addEventListener('click', klik(function () { set(sk * 1.25); }));
+        lbl.addEventListener('click', klik(function () { set(1); }));
+        fit.addEventListener('click', klik(function () { set(pas()); }));
+        var dibuka = sheet.classList.contains('open');
+        new MutationObserver(function () {
+            var s = sheet.classList.contains('open');
+            if (s !== dibuka) { dibuka = s; sk = 1; terap(); }
+        }).observe(sheet, { attributes: true, attributeFilter: ['class'] });
+        window.addEventListener('resize', terap);
+        terap();
+    })();
+})();
+</script>
         <div class="rvw-toast" id="rvwToast" role="status"></div>
     </div>
     <div id="mkPrintArea"></div>
@@ -1117,7 +1250,7 @@
             var nn = notes().length;
             $('rvwShTabs').innerHTML =
                 '<button type="button" class="rvw-shtab' + (shTab === 'dok' ? ' on' : '') + '" data-shtab="dok">' + (LIHAT === 1 ? 'Dokumen PO' : 'Dokumen dan catatan') + (nn ? ' <span class="rvw-cnt">' + nn + '</span>' : '') + '</button>' +
-                '<button type="button" class="rvw-shtab' + (shTab === 'berkas' ? ' on' : '') + '" data-shtab="berkas">Dokumen</button>' +
+                '<button type="button" class="rvw-shtab' + (shTab === 'berkas' ? ' on' : '') + '" data-shtab="berkas">Berkas</button>' +
                 ((SOLO || ROLE === 'pembuat') ? '' : '<button type="button" class="rvw-shtab' + (shTab === 'alur' ? ' on' : '') + '" data-shtab="alur">Alur</button>');   // di detail order (SOLO) riwayat alur sudah ada di halaman detail
         }
         function renderBanner(p) {
@@ -1303,10 +1436,10 @@
                 return r.text();
             }).then(function (html) {
                 if (tiket !== openTicket) { return; }
-                bangunDokumen(html); renderNotes();
+                bangunDokumen(html); renderNotes(); if (window.__poDokSiap) { setTimeout(window.__poDokSiap, 0); }
             }).catch(function (e) {
                 if (tiket !== openTicket) { return; }
-                $('rvwDocHost').innerHTML = '<div class="rvw-loading err">' + esc(e.message) + '</div>';
+                $('rvwDocHost').innerHTML = '<div class="rvw-loading err">' + esc(e.message) + '</div>'; if (window.__poDokSiap) { setTimeout(window.__poDokSiap, 0); }
             });
         }
         function closeSheet() {
@@ -1439,7 +1572,7 @@
                 '<div class="rvw-sum"><div class="l">Nilai kontrak</div><div class="v">' + rp(j.nilai) + '</div></div>' +
                 '<div class="rvw-sum"><div class="l">Total terbayar</div><div class="v ' + (j.lunas ? 'ok' : 'warn') + '">' + rp(j.total_terbayar) + '</div></div>' +
                 '<div class="rvw-sum"><div class="l">Sisa pembayaran</div><div class="v">' + rp(sisa) + '</div></div></div>';
-            h += dokKartus(j, mapKartu(curPo()));
+            h += dokKartus(j, mapKartu(curPo()) + ttdKontrakKartus(curPo()));
             var ada = buktiAda(), nFile = ada.length, nPilih = buktiDipilih().length;
             var tBukti = j.termin.length ? j.termin.map(function (t, i) { return dokTermin(t, i, buktiMode); }).join('') : '<div class="rvw-tkosong">Belum ada bukti pembayaran yang diunggah untuk order ini.</div>';
             h += dokKartu({ kunci: 'bukti', ikon: 'bi-receipt', warna: 'success', label: 'Bukti Pembayaran / Transfer', sub: 'Bukti transfer pembayaran PNBP per termin', ada: j.termin.length > 0,
@@ -1633,8 +1766,29 @@
                 '</tbody></table>' +
             '</div>';
         }
+        // Kartu PO Bertanda Tangan + Kontrak (PKS) di tab Berkas: HANYA tampil setelah PO disetujui PPK BLU
+        function ttdKontrakKartus(p) {
+            if (!p || !p.ppk_valid_at || /^0000/.test(String(p.ppk_valid_at))) { return ''; }
+            var f = function (x) { return (typeof fmt === 'function') ? fmt(x) : x; };
+            var adaTtd = !!(p.ttd_at && !/^0000/.test(String(p.ttd_at)));
+            var adaKon = !!(p.kontrak_at && !/^0000/.test(String(p.kontrak_at)));
+            var mt = [], mk = [];
+            if (p.ttd_oleh) { mt.push(['Diunggah oleh', p.ttd_oleh, 'n']); }
+            if (p.ttd_at) { mt.push(['Tanggal unggah', f(p.ttd_at), 'n']); }
+            if (p.ttd_nama) { mt.push(['Berkas Fisik', p.ttd_nama, 'fl', 1]); }
+            if (p.kontrak_nomor) { mk.push(['Nomor Kontrak', p.kontrak_nomor, 'mono']); }
+            mk.push(['Status', 'Selesai', 'n']);
+            if (p.kontrak_oleh) { mk.push(['Dibuat oleh', p.kontrak_oleh, 'n']); }
+            if (p.kontrak_at) { mk.push(['Tanggal selesai', f(p.kontrak_at), 'n']); }
+            return dokKartu({ kunci: 'po_ttd', ikon: 'bi-pen-fill', warna: 'success', label: 'PO Bertanda Tangan', sub: 'PO yang sudah ditandatangani Ketua Tim, diunggah dari Tahap 8 detail order',
+                    ada: adaTtd, badge: 'Sudah di TTD', kosong: 'Belum di TTD', bukaAwal: true, url: adaTtd ? (p.url_ttd || '') : '',
+                    ket: adaTtd ? '' : 'Menunggu Ketua Tim meng-upload PO yang sudah ditandatangani (Tahap 8 detail order). Setelah itu PO diteruskan ke Humas untuk dibuatkan kontrak.', meta: mt }) +
+                dokKartu({ kunci: 'pks', ikon: 'bi-journal-text', warna: 'primary', label: 'Kontrak (PKS)', sub: 'Perjanjian Kerja Sama yang dibuat Humas dari PO ini',
+                    ada: adaKon, badge: 'PKS Telah Dibuat', kosong: 'Belum Dibuat', bukaAwal: true, url: adaKon ? (p.kontrak_url || '') : '',
+                    ket: adaKon ? '' : (adaTtd ? 'PO sudah di-TTD. Menunggu Humas membuat kontrak (PKS).' : 'Kontrak baru bisa dibuat Humas setelah PO bertanda tangan diunggah.'), meta: adaKon ? mk : [] });
+        }
         function mapKartu(p) {
-            if (!p || ROLE !== 'pembuat') { return ''; }   // kartu Map Kendali hanya untuk Ketua Pelaksana
+            if (!p) { return ''; }   // kartu Map Kendali tampil untuk semua peran (Ketua Pelaksana, Superadmin, dst.)
             return dokKartu({ kunci: 'mapkendali', ikon: 'bi-diagram-3-fill', warna: 'indigo', label: 'Map Kendali', sub: 'Form F.PJT-12-03/1: lembar kendali tahap proses (verifikasi dan validasi) untuk PO ini',
                 ada: true, badge: 'Terisi Otomatis',
                 aksi: '<button type="button" class="rvw-btn pri" data-mk-lihat><i class="bi bi-eye"></i>Lihat Pratinjau</button><button type="button" class="rvw-btn" data-mk-cetak><i class="bi bi-printer"></i>Cetak</button>',
@@ -1864,7 +2018,7 @@
                 var a = e.target.closest ? e.target.closest('a[href]') : null;
                 if (a && a.getAttribute('href').indexOf('/po-revisi-ppk') !== -1) { e.preventDefault(); window.top.location.href = a.href; }
             });
-            if (SOLO_ID && rowOf(SOLO_ID)) { openSheet(SOLO_ID); kabariInduk('siap'); }
+            if (SOLO_ID && rowOf(SOLO_ID)) { openSheet(SOLO_ID); (function () { var o = window.__poPh; if (o && o.tunda) { o.kirim = function () { kabariInduk('siap'); }; if (o.sudah) { o.kirim(); } else { setTimeout(window.__poDokSiap, 10000); } } else { kabariInduk('siap'); } })(); }
             else { kabariInduk('tutup'); }
         }
     })();

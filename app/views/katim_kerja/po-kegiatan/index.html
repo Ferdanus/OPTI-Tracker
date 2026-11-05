@@ -7,7 +7,7 @@
         </div>
         <div class="d-flex gap-2">
             <check if="{{ @bisa_tambah_po && @tombol_tambah_atas }}">
-                <a href="{{ @BASE }}/po-kegiatan/pilih{{ !@bisa_pilih_divisi ? '?jenis=opti' : (@divisi == 'sertifikasi' || @divisi == 'pengujian' ? '?jenis=' . @divisi : (@divisi ? '?jenis=opti&divisi=' . @divisi : '')) }}" class="btn btn-primary shadow-sm">
+                <a href="{{ @BASE }}/po-kegiatan/pilih{{ !@bisa_pilih_divisi ? '?jenis=opti' : (@divisi == 'sertifikasi' || @divisi == 'pengujian' || @divisi == 'kalibrasi' ? '?jenis=' . @divisi : (@divisi ? '?jenis=opti&divisi=' . @divisi : '')) }}" class="btn btn-primary shadow-sm">
                     <i class="bi bi-plus-lg me-1"></i> Tambah PO Baru
                 </a>
             </check>
@@ -197,7 +197,6 @@
                     <div class="col-auto">
                         <button type="button" id="btnResetFilter" class="btn-reset-filter d-none" title="Reset filter" aria-label="Reset filter"><i class="bi bi-arrow-counterclockwise"></i></button>
                     </div>
-                    <div class="col-12"><div class="small text-muted" id="poInfoPeriode">{{ @info_periode }}</div></div>
                 </div>
             </form>
         </div>
@@ -541,7 +540,7 @@
 <script>
 (function () {
     var CSRF = '{{ @csrf_token }}', BASE = '{{ @BASE }}';
-    var MAKS_BYTE = 10 * 1024 * 1024, MAKS_FOTO = 10, MAKS_ASLI = 25 * 1024 * 1024, SISI = 2000;
+    var MAKS_BYTE = 30 * 1024 * 1024, MAKS_FOTO = 10, MAKS_ASLI = 30 * 1024 * 1024, SISI = 2000;
     var orderId = 0, nomorPo = '', daftar = [], sedang = false, sibuk = false, tambah = false, blobUrl = '';
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function mb(n) { return (n / 1048576).toLocaleString('id-ID', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' MB'; }
@@ -583,14 +582,14 @@
         }
         if (pdfBaru) {
             if (arr.length > 1 || (tambahan && daftar.length)) { return { t: 'PDF tidak bisa dicampur dengan foto.', s: 'Upload satu file PDF saja, atau pilih satu atau beberapa foto saja.' }; }
-            if (arr[0].size > MAKS_BYTE) { return { t: 'Ukuran file terlalu besar (' + mb(arr[0].size) + ').', s: 'File belum bisa di-upload. Batas maksimal 10 MB. Kompres PDF atau pindai ulang dengan resolusi lebih rendah.' }; }
+            if (arr[0].size > MAKS_BYTE) { return { t: 'Ukuran file terlalu besar (' + mb(arr[0].size) + ').', s: 'File belum bisa di-upload. Batas maksimal 30 MB. Kompres PDF atau pindai ulang dengan resolusi lebih rendah.' }; }
             return null;
         }
         if (tambahan && adaPdf()) { return { t: 'PDF tidak bisa dicampur dengan foto.', s: 'Upload satu file PDF saja, atau pilih satu atau beberapa foto saja.' }; }
         var jml = (tambahan ? daftar.length : 0) + arr.length;
         if (jml > MAKS_FOTO) { return { t: 'Terlalu banyak foto (' + jml + ').', s: 'Maksimal ' + MAKS_FOTO + ' foto dalam satu kali upload.' }; }
         for (i = 0; i < arr.length; i++) {
-            if (arr[i].size > MAKS_ASLI) { return { t: 'Ukuran foto terlalu besar (' + mb(arr[i].size) + ').', s: 'Satu foto maksimal 25 MB.' }; }
+            if (arr[i].size > MAKS_ASLI) { return { t: 'Ukuran foto terlalu besar (' + mb(arr[i].size) + ').', s: 'Satu foto maksimal 30 MB.' }; }
         }
         return null;
     }
@@ -617,7 +616,7 @@
     function tahapPilih(warn) {
         var o = buka('<div class="ut-big"><i class="bi bi-cloud-arrow-up"></i></div><h5>Upload PO bertanda tangan</h5>' +
             '<p>PO ' + esc(nomorPo || '-') + '. Setelah di-upload, PO Aktif penuh dan otomatis diteruskan ke Humas untuk dibuatkan kontrak.</p>' +
-            '<div class="ut-drop' + (warn ? ' ut-bad' : '') + '" id="utDrop"><i class="bi bi-file-earmark-arrow-up ut-ico"></i><div class="flex-grow-1" style="min-width:180px;"><div class="fw-semibold">Upload PO yang sudah ditandatangani.</div><div class="small text-secondary">PDF, atau foto JPG/PNG (bisa pilih beberapa foto sekaligus, maks. ' + MAKS_FOTO + '). Foto otomatis digabung jadi satu PDF. Maks. 10 MB. Tarik file ke sini atau pilih dari komputer.</div></div>' +
+            '<div class="ut-drop' + (warn ? ' ut-bad' : '') + '" id="utDrop"><i class="bi bi-file-earmark-arrow-up ut-ico"></i><div class="flex-grow-1" style="min-width:180px;"><div class="fw-semibold">Upload PO yang sudah ditandatangani.</div><div class="small text-secondary">PDF, atau foto JPG/PNG (bisa pilih beberapa foto sekaligus, maks. ' + MAKS_FOTO + '). Foto otomatis digabung jadi satu PDF. Maks. 30 MB. Tarik file ke sini atau pilih dari komputer.</div></div>' +
             '<button type="button" class="btn btn-dark btn-sm px-3" data-ut="pilih"><i class="bi bi-upload me-1"></i> Pilih file</button></div>' +
             (warn ? '<div class="ut-warn" role="alert"><b>' + esc(warn.t) + '</b><br>' + esc(warn.s) + '</div>' : '') +
             '<div class="ut-foot"><button type="button" class="btn btn-outline-dark fw-semibold" data-ut="batal">Batal</button></div>');
@@ -641,8 +640,8 @@
             hasil.forEach(function (d) { t += d.f.size; });
             if (t > MAKS_BYTE) {
                 hasil.forEach(function (d) { URL.revokeObjectURL(d.thumb); });
-                var pesan = 'Total ukuran foto ' + mb(t) + ' melebihi 10 MB. Kurangi jumlah foto lalu coba lagi.';
-                if (daftar.length) { tahapSiap(pesan); } else { tahapPilih({ t: 'Total ukuran foto ' + mb(t) + ' melebihi 10 MB.', s: 'Kurangi jumlah foto lalu coba lagi.' }); }
+                var pesan = 'Total ukuran foto ' + mb(t) + ' melebihi 30 MB. Kurangi jumlah foto lalu coba lagi.';
+                if (daftar.length) { tahapSiap(pesan); } else { tahapPilih({ t: 'Total ukuran foto ' + mb(t) + ' melebihi 30 MB.', s: 'Kurangi jumlah foto lalu coba lagi.' }); }
                 return;
             }
             if (!tambahan) { lepasThumb(); }
@@ -1329,6 +1328,27 @@ function pilihKartuTab(tab) {
 // Panel review / revisi PO (slide) dibuka langsung di atas halaman ini, sama seperti di Tahap 8 detail order:
 // halaman Daftar Review PO / Revisi PPK BLU dimuat di iframe layar penuh transparan (?embed=1&buka=ID) yang hanya menampilkan panel slide-nya.
 // Menutup panel melepas iframe; kalau ada tindakan yang mengubah status PO, halaman dimuat ulang.
+// Penanda memuat berbentuk slide (muncul dari kanan, spinner di DALAM slide), bukan lapisan gelap dengan spinner di luar slide
+function poBuatMuat() {
+    if (document.getElementById('poPanelMuat')) { return; }
+    if (!document.getElementById('poMuatCss')) {
+        var st = document.createElement('style'); st.id = 'poMuatCss';
+        st.textContent = '#poPanelMuat { position: fixed; inset: 0; z-index: 1079; background: rgba(15,23,42,.45); animation: poMuatBg .3s ease both; }' +
+            '#poPanelMuat .pm-sl { position: absolute; top: 0; right: 0; bottom: 0; width: calc(100vw - var(--sidebar-expanded-width, 264px)); background: #e2e8f0; display: grid; place-content: center; justify-items: center; gap: 10px; color: #64748b; font-size: .85rem; box-shadow: -12px 0 40px rgba(15,23,42,.22); animation: poMuatSl .42s cubic-bezier(.22,.9,.25,1) both; }' +
+            'body.sidebar-collapsed #poPanelMuat .pm-sl { width: calc(100vw - var(--sidebar-mini-width, 74px)); }' +
+            '@media (max-width: 991.98px) { #poPanelMuat .pm-sl, body.sidebar-collapsed #poPanelMuat .pm-sl { width: 100vw; } }' +
+            '#poPanelMuat .pm-sp { width: 22px; height: 22px; border: 2.5px solid #94a3b8; border-right-color: transparent; border-radius: 50%; animation: poMuatRot .7s linear infinite; }' +
+            '@keyframes poMuatBg { from { opacity: 0; } to { opacity: 1; } }' +
+            '@keyframes poMuatSl { from { transform: translateX(104%); } to { transform: none; } }' +
+            '@keyframes poMuatRot { to { transform: rotate(1turn); } }';
+        document.head.appendChild(st);
+    }
+    var muat = document.createElement('div');
+    muat.id = 'poPanelMuat';
+    muat.setAttribute('role', 'status');
+    muat.innerHTML = '<div class="pm-sl"><span class="pm-sp"></span>Memuat dokumen PO...</div>';
+    document.body.appendChild(muat);
+}
 function bukaPanelReviewPo(poId, jenis, orderId, tombol) {
     if (document.getElementById('poPanelFr')) { return; }
     // penanda "belum dibuka" di baris ini hilang begitu panelnya dibuka (status baca dicatat oleh halaman panel)
@@ -1337,11 +1357,7 @@ function bukaPanelReviewPo(poId, jenis, orderId, tombol) {
         if (br) { br.classList.remove('po-unread'); var dt = br.querySelector('.po-dot'); if (dt) { dt.remove(); } }
     } catch (e) {}
     var sc = document.body.classList.contains('sidebar-collapsed') ? '&sc=1' : '';
-    var muat = document.createElement('div');
-    muat.id = 'poPanelMuat';
-    muat.style.cssText = 'position:fixed;inset:0;z-index:1079;background:rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;';
-    muat.innerHTML = '<div class="spinner-border text-light" role="status" aria-label="Memuat panel"></div>';
-    document.body.appendChild(muat);
+    poBuatMuat();
     var f = document.createElement('iframe');
     f.id = 'poPanelFr';
     f.title = 'Panel review PO';
@@ -1349,7 +1365,7 @@ function bukaPanelReviewPo(poId, jenis, orderId, tombol) {
     f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:1080;background:transparent;color-scheme:normal;';
     var draftJ = /^draft(e)?$/.exec(jenis);   // PO draft: slide Daftar PO dalam mode lihat + tombol Edit PO (drafte = boleh edit)
     var lihat = /^lihat([12])(ro)?$/.exec(jenis);   // lihat1 = tanpa catatan revisi, lihat2 = dengan catatan revisi; keduanya tanpa tombol tindakan
-    f.src = (jenis === 'revisi' ? '{{ @BASE }}/po-revisi-ppk?embed=1&buka=' : (jenis === 'sert' ? '{{ @BASE }}/petunjuk-operasional/sertifikasi/review?embed=1&buka=' : '{{ @BASE }}/po-kegiatan/daftar?embed=1&buka=')) + encodeURIComponent(poId) + (lihat ? '&lihat=' + lihat[1] + (lihat[2] ? '&ro=1' : '') : '') + (draftJ ? '&lihat=1&draft=1' + (draftJ[1] ? '&edit=1' : '') : '') + sc;
+    f.src = (jenis === 'revisi' ? '{{ @BASE }}/po-revisi-ppk?embed=1&buka=' : (jenis === 'sert' ? '{{ @BASE }}/petunjuk-operasional/sertifikasi/review?embed=1&buka=' : '{{ @BASE }}/po-kegiatan/daftar?embed=1&buka=')) + encodeURIComponent(poId) + (lihat ? '&lihat=' + lihat[1] + (lihat[2] ? '&ro=1' : '') : '') + (draftJ ? '&lihat=1&draft=1' + (draftJ[1] ? '&edit=1' : '') : '') + ((jenis === 'revisi' || jenis === 'sert') ? '' : '&ph=1') + sc;   // ph=1: slide langsung tampil tanpa animasi masuk ulang (penanda memuat sudah berbentuk slide)
     document.body.appendChild(f);
     window.__poPanelOrder = orderId;
     window.__poPanelId = poId;

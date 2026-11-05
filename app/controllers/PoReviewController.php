@@ -696,6 +696,12 @@ class PoReviewController extends Controller {
         ]);
     }
 
+    /** GET /po-kegiatan/@id/po-ttd[?unduh=1] -- PO bertanda tangan untuk tab PO TTD di slide (hak akses sama dengan tab Berkas) */
+    public function lihatPoTtd($f3, $params) {
+        list($po, $sisi) = $this->aksesBaca((int) $params['id']);
+        \PoSchema::kirimPoTtd($f3, $this->db, (int) $po['id']);
+    }
+
     /** GET /po-kegiatan/@id/berkas/kesanggupan[?unduh=1] -- file Surat Kesanggupan Bayar order dari PO ini */
     public function berkasKesanggupan($f3, $params) {
         list($po, $sisi) = $this->aksesBaca((int) $params['id']);
@@ -1310,6 +1316,15 @@ class PoReviewController extends Controller {
                 'humas_ver_at'     => isset($r['humas_ver_at']) ? $r['humas_ver_at'] : null,
                 'mitra_valid_at'   => isset($r['mitra_valid_at']) ? $r['mitra_valid_at'] : null,
                 'ppk_valid_at'     => isset($r['ppk_valid_at']) ? $r['ppk_valid_at'] : null,
+                // PO bertanda tangan + kontrak (kartu di tab Dokumen, tampil setelah PPK BLU menyetujui)
+                'ttd_at'           => isset($r['po_ttd_at']) ? $r['po_ttd_at'] : null,
+                'ttd_nama'         => (string) ($r['po_ttd_nama'] ?? ''),
+                'ttd_oleh'         => (string) ($r['po_ttd_oleh_nama'] ?? ''),
+                'kontrak_at'       => isset($r['kontrak_dibuat_at']) ? $r['kontrak_dibuat_at'] : null,
+                'kontrak_nomor'    => (string) ($r['kontrak_nomor'] ?? ''),
+                'kontrak_oleh'     => (string) ($r['kontrak_dibuat_oleh_nama'] ?? ''),
+                'url_ttd'          => !empty($r['po_ttd_at']) ? (\Base::instance()->get('BASE') . '/po-kegiatan/' . (int) $r['id'] . '/po-ttd') : '',
+                'kontrak_url'      => (!empty($r['kontrak_dibuat_at']) && $this->isSuperadmin()) ? (\Base::instance()->get('BASE') . '/pks/' . (int) $r['id'] . '/unduh') : '',
                 // catatan Humas ikut tampil setelah Humas memverifikasi PO
                 'catatan_humas'    => (!empty($r['humas_ver_at']) && isset($r['catatan_humas'])) ? trim((string) $r['catatan_humas']) : '',
                 // catatan Tim Mitra baru ditampilkan setelah Tim Mitra memvalidasi PO
@@ -1368,6 +1383,12 @@ class PoReviewController extends Controller {
              . $ex('humas_dibaca_at') . ' AS humas_baca_at, '
              . $ex('tervalidasi_mitra_at') . ' AS mitra_valid_at, '
              . $ex('validasi_keuangan_at') . ' AS ppk_valid_at, '
+             . $ex('po_ttd_at') . ' AS po_ttd_at, '
+             . $ex('po_ttd_nama') . ' AS po_ttd_nama, '
+             . $ex('po_ttd_oleh_nama') . ' AS po_ttd_oleh_nama, '
+             . $ex('kontrak_dibuat_at') . ' AS kontrak_dibuat_at, '
+             . $ex('kontrak_nomor') . ' AS kontrak_nomor, '
+             . $ex('kontrak_dibuat_oleh_nama') . ' AS kontrak_dibuat_oleh_nama, '
              . $ex('catatan_tim_mitra') . ' AS catatan_tim_mitra, '
              . $ex('catatan_humas') . ' AS catatan_humas, '
              . $ex('catatan_ppk') . ' AS catatan_ppk, '

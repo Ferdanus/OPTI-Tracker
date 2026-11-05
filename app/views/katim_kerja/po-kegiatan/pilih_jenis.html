@@ -49,6 +49,8 @@
 <include href="petunjuk_operasional/_modal_order_sertifikasi.html" />
 <!-- Modal pilih order Pengujian: lihat petunjuk_operasional/_modal_order_pengujian.html -->
 <include href="petunjuk_operasional/_modal_order_pengujian.html" />
+<!-- Modal pilih order Kalibrasi: lihat petunjuk_operasional/_modal_order_kalibrasi.html -->
+<include href="petunjuk_operasional/_modal_order_kalibrasi.html" />
 
 <style>
     .jenis-po-card {
@@ -85,6 +87,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 cardPilihOrder.classList.add('d-none');
                 boxJenisLain.classList.add('d-none');
                 bukaModalSertifikasi();
+            } else if (card.dataset.slug === 'kalibrasi') {
+                cardPilihOrder.classList.add('d-none');
+                boxJenisLain.classList.add('d-none');
+                bukaModalKalibrasi();
             } else {
                 cardPilihOrder.classList.add('d-none');
                 boxJenisLain.classList.remove('d-none');
@@ -92,10 +98,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Dari Daftar PO dengan filter Sertifikasi (?jenis=sertifikasi): langsung buka pilihan order layanan itu.
+    // Dari Daftar PO dengan filter Sertifikasi / Kalibrasi (?jenis=sertifikasi atau ?jenis=kalibrasi): langsung buka pilihan order layanan itu.
     // Pengujian sengaja TIDAK dibuka otomatis: kartu Pengujian ditekan dulu, baru muncul pilihan jenis (air, kertas, udara, dst).
     var jenisAwal = new URLSearchParams(window.location.search).get('jenis');
-    if (jenisAwal === 'sertifikasi') {
+    if (jenisAwal === 'sertifikasi' || jenisAwal === 'kalibrasi') {
         var kartuAwal = document.querySelector('.jenis-po-card[data-slug="' + jenisAwal + '"]');
         if (kartuAwal) { kartuAwal.click(); }
     }

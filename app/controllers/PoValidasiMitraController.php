@@ -98,6 +98,12 @@ class PoValidasiMitraController extends Controller {
                         " . $this->kolom('p', 'ppk_status') . " AS ppk_status,
                         " . $this->kolom('p', 'ppk_dibaca_at') . " AS ppk_dibaca_at,
                         " . $this->kolom('p', 'validasi_keuangan_at') . " AS validasi_keuangan_at,
+                        " . $this->kolom('p', 'po_ttd_at') . " AS po_ttd_at,
+                        " . $this->kolom('p', 'kontrak_dibuat_at') . " AS kontrak_dibuat_at,
+                        " . $this->kolom('p', 'kontrak_nomor') . " AS kontrak_nomor,
+                        " . $this->kolom('p', 'po_ttd_nama') . " AS po_ttd_nama,
+                        " . $this->kolom('p', 'po_ttd_oleh_nama') . " AS po_ttd_oleh_nama,
+                        " . $this->kolom('p', 'kontrak_dibuat_oleh_nama') . " AS kontrak_dibuat_oleh_nama,
                         " . $this->kolom('p', 'dikirim_at') . " AS kirim_at,
                         " . $this->kolom('p', 'reviewed_at') . " AS katim_baca_at,
                         " . $this->kolom('p', 'disetujui_at') . " AS disetujui_at,
@@ -180,6 +186,15 @@ class PoValidasiMitraController extends Controller {
             'catatan_humas'      => (string) ($r['catatan_humas'] ?? ''),
             'mitra_valid_at'     => $tglValidasi,
             'ppk_valid_at'       => self::tanggalJam((string) ($r['validasi_keuangan_at'] ?? '')),
+            // untuk posisi akhir di kolom Status PO: PO belum / sudah di TTD, PKS telah dibuat
+            'ttd_at'             => self::tanggalJam((string) ($r['po_ttd_at'] ?? '')),
+            'kontrak_at'         => self::tanggalJam((string) ($r['kontrak_dibuat_at'] ?? '')),
+            'kontrak_nomor'      => (string) ($r['kontrak_nomor'] ?? ''),
+            'kontrak_oleh'       => (string) ($r['kontrak_dibuat_oleh_nama'] ?? ''),
+            'ttd_nama'           => (string) ($r['po_ttd_nama'] ?? ''),
+            'ttd_oleh'           => (string) ($r['po_ttd_oleh_nama'] ?? ''),
+            'url_ttd'            => trim((string) ($r['po_ttd_at'] ?? '')) !== '' ? (\Base::instance()->get('BASE') . '/po-kegiatan/' . (int) $r['id'] . '/po-ttd-mitra') : '',
+            'kontrak_url'        => (trim((string) ($r['kontrak_dibuat_at'] ?? '')) !== '' && $this->isSuperadmin()) ? (\Base::instance()->get('BASE') . '/pks/' . (int) $r['id'] . '/unduh') : '',
             // untuk kolom Status PO: revisi PPK BLU dan sudah dibuka PPK BLU atau belum (penanda di-reset tiap perpindahan tahap)
             'ppk_status'         => (string) ($r['ppk_status'] ?? ''),
             // ---- Map Kendali F.PJT-12-03/1 (kartu di tab Berkas; hanya tanggal, jam tidak dipakai) ----
@@ -581,6 +596,12 @@ class PoValidasiMitraController extends Controller {
         $order = $this->ambilOrder($po['order_id']);
         if (!$order) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Order terkait tidak ditemukan.'], 404); }
         return [$po, $order];
+    }
+
+    /** GET /po-kegiatan/@id/po-ttd-mitra[?unduh=1] -- PO bertanda tangan untuk tab PO TTD di slide Tim Mitra */
+    public function lihatPoTtd($f3, $params) {
+        $this->izinkan();
+        \PoSchema::kirimPoTtd($f3, $this->db, (int) $params['id']);
     }
 
     protected function izinkan($json = false) {

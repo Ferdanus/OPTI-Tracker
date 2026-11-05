@@ -327,7 +327,8 @@ class PoSchema
             return '';
         }
         $kol = ($alias === '' || $alias === null) ? 'layanan' : $alias . '.layanan';
-        return " AND ({$kol} IS NULL OR {$kol} <> '" . self::SERTIFIKASI . "')";
+        // PO layanan lain yang ikut tabel po_kegiatan (Sertifikasi, Kalibrasi) bukan PO OPTI
+        return " AND ({$kol} IS NULL OR {$kol} NOT IN ('" . self::SERTIFIKASI . "', 'kalibrasi'))";
     }
 
     /** 'lingkungan' / 'selulosa' -> 'opti-lingkungan' / 'opti-selulosa' (selain itu null). */
@@ -978,5 +979,35 @@ class PoSchema
             array(1 => (int) $id, 2 => self::SERTIFIKASI)
         );
         return empty($r) ? null : $r[0];
+    }
+
+    /**
+     * Kirim file PO bertanda tangan (po_kegiatan.po_ttd_file) ke browser: inline untuk pratinjau, ?unduh=1 untuk mengunduh.
+     * Hak akses diperiksa oleh pemanggil (tiap halaman slide punya aturan aksesnya sendiri). File ada di storage/po_ttd.
+     */
+    public static function kirimPoTtd($f3, $db, $poId)
+    {
+        $r = $db->exec(
+            'SELECT po_ttd_file, po_ttd_nama FROM po_kegiatan p WHERE p.id = ?' . self::bukanSertifikasi('p') . ' LIMIT 1',
+            array(1 => (int) $poId)
+        );
+        $nama = !empty($r) ? (string) $r[0]['po_ttd_file'] : '';
+        $path = dirname(__DIR__, 2) . '/storage/po_ttd/' . $nama;
+        if ($nama === '' || basename($nama) !== $nama || !is_file($path)) {
+            $f3->error(404, 'File PO bertanda tangan tidak ditemukan.');
+            return;
+        }
+        $ext = strtolower(pathinfo($nama, PATHINFO_EXTENSION));
+        $tipe = ($ext === 'pdf') ? 'application/pdf' : (($ext === 'png') ? 'image/png' : 'image/jpeg');
+        $tampil = str_replace('/', '-', trim((string) $r[0]['po_ttd_nama']) !== '' ? (string) $r[0]['po_ttd_nama'] : $nama);
+        $ascii = preg_replace('/[^A-Za-z0-9._ -]+/', '_', $tampil);
+        $unduh = (string) $f3->get('GET.unduh') === '1';
+        while (ob_get_level() > 0) { ob_end_clean(); }
+        header('Content-Type: ' . $tipe);
+        header('Content-Length: ' . filesize($path));
+        header('Content-Disposition: ' . ($unduh ? 'attachment' : 'inline') . '; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($tampil));
+        header('X-Content-Type-Options: nosniff');
+        readfile($path);
+        exit;
     }
 }
