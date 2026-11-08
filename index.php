@@ -33,13 +33,13 @@ $f3->config('config.ini');
 // Set timezone
 date_default_timezone_set('Asia/Jakarta');
 
-// Penanganan URL dan BASE Path untuk folder dengan spasi di Apache (misal: 'Mini OPTI Tracker')
+// Penanganan URL dan BASE Path dinamis (mendukung subfolder seperti /silopti maupun root domain)
 if (PHP_SAPI !== 'cli' && isset($_SERVER['REQUEST_URI'])) {
     $rawUri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
     $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
     if (!empty($scriptDir) && strpos($rawUri, $scriptDir) === 0) {
         $realPath = substr($rawUri, strlen($scriptDir)) ?: '/';
-        $f3->set('BASE', '/Mini%20OPTI%20Tracker');
+        $f3->set('BASE', $scriptDir);
         $f3->set('PATH', $realPath);
     }
 }
@@ -203,6 +203,7 @@ $f3->route('POST /order/@id/proposal/save-editor-content', 'OrderController->sav
 $f3->route('POST /order/@id/respon-klien', 'OrderController->responKlien');
 $f3->route('POST /order/@id/terima-sampel', 'OrderController->simpanTerimaSampel');
 $f3->route('POST /order/@id/konfirmasi-pembayaran', 'OrderController->konfirmasiPembayaran');
+$f3->route('GET /order/@id/hapus-draf-pembayaran/@pay_id', 'OrderController->hapusDrafPembayaran');
 $f3->route('POST /order/@id/toggle-unlock', 'OrderController->toggleUnlockOrder');
 $f3->route('POST /pembayaran/@id/disposisi-katim', 'PembayaranOptiController->disposisiKatim');
 

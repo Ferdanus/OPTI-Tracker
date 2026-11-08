@@ -275,6 +275,93 @@ class PenggunaController extends Controller {
     }
 
     /**
+     * Ambil daftar role tunggal (Superadmin & Ketua Tim) yang saat ini aktif menjabat.
+     * Cerdas membaca dari opti_user_map, master struktural tb_arsipuser (id_struktural_tim),
+     * maupun tb_arsipuser.si_opti jika mentor mengubah langsung dari database.
+     */
+    public static function getOccupiedKetuaList($db): array {
+        $occupied = array();
+
+        // 1. Ambil dari opti_user_map yang berstatus show & aktif
+        try {
+            $mapRows = $db->exec("
+                SELECT m.id_user, u.nama_user, m.role, m.jenis_layanan
+                FROM opti_user_map m
+                JOIN tb_arsipuser u ON m.id_user = u.id_user
+                WHERE m.status_tampil = 'show' 
+                  AND m.is_active = 1
+                  AND (m.role = 'ketua_tim' OR m.role LIKE 'ketua_tim_%' OR m.role = 'superadmin')
+            ");
+            if (is_array($mapRows)) {
+                foreach ($mapRows as $r) {
+                    $roleKey = self::mapEntryToRoleKey($r['role'], $r['jenis_layanan'] ?? '');
+                    if ($roleKey && !isset($occupied[$roleKey])) {
+                        $occupied[$roleKey] = array(
+                            'id_user'   => (int)$r['id_user'],
+                            'nama_user' => $r['nama_user']
+                        );
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        // 2. Sinkronisasi cerdas dari master struktural tb_arsipuser (170=Selulosa, 190=Lingkungan)
+        try {
+            $strukturalRows = $db->exec("
+                SELECT id_user, nama_user, id_struktural_tim 
+                FROM tb_arsipuser 
+                WHERE id_struktural_tim IN (170, 190) AND status = 1
+            ");
+            if (is_array($strukturalRows)) {
+                foreach ($strukturalRows as $sr) {
+                    $rKey = ((int)$sr['id_struktural_tim'] === 170) ? 'ketua_tim_selulosa' : 'ketua_tim_lingkungan';
+                    if (!isset($occupied[$rKey])) {
+                        $occupied[$rKey] = array(
+                            'id_user'   => (int)$sr['id_user'],
+                            'nama_user' => $sr['nama_user']
+                        );
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        // 3. Fallback backward compatibility dari tb_arsipuser.si_opti
+        try {
+            $legacyKetua = $db->exec("
+                SELECT id_user, nama_user, si_opti 
+                FROM tb_arsipuser 
+                WHERE si_opti IN ('superadmin', 'ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'ketua_tim_keuangan', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'katim_keuangan', 'ketua_tim_mitra_industri')
+            ");
+            if (is_array($legacyKetua)) {
+                foreach ($legacyKetua as $lk) {
+                    $norm = self::normalizeRoleKey($lk['si_opti']);
+                    if (!isset($occupied[$norm])) {
+                        $occupied[$norm] = array(
+                            'id_user'   => (int)$lk['id_user'],
+                            'nama_user' => $lk['nama_user']
+                        );
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        // 4. Superadmin permanen (id 9006 Fajriasa Erdanus)
+        if (!isset($occupied['superadmin'])) {
+            try {
+                $sa = $db->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user = 9006 LIMIT 1");
+                if (!empty($sa)) {
+                    $occupied['superadmin'] = array(
+                        'id_user'   => (int)$sa[0]['id_user'],
+                        'nama_user' => $sa[0]['nama_user']
+                    );
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        return $occupied;
+    }
+
+    /**
      * Helper normalisasi alias role key
      */
     public static function normalizeRoleKey(string $roleKey): string {
@@ -345,7 +432,7 @@ class PenggunaController extends Controller {
 
         $searchQ = trim($f3->get('GET.q') ?? '');
         $filterRole = trim($f3->get('GET.role') ?? '');
-        $filterTab = trim($f3->get('GET.tab') ?? 'semua');
+        $filterTab = trim($f3->get('GET.tab') ?? 'opti');
 
         // Query data pengguna yang aktif ber-role di SILOPTI / PO
         $sql = "SELECT u.id_user AS id, 
@@ -487,9 +574,29 @@ class PenggunaController extends Controller {
 
             foreach ($userRoleKeys as $rk) {
                 $rMeta = self::resolveRoleMeta($uid, $rk);
+                $labelOpti = $rMeta['label'];
+                $labelPo = $rMeta['label'];
+
+                // Disesuaikan: Tim Kerja Selulosa / Lingkungan untuk OPTI, sedangkan untuk PO adalah PO Selulosa / PO Lingkungan
+                if ($rk === 'tim_kerja_selulosa') {
+                    $labelOpti = 'Tim Kerja Selulosa';
+                    $labelPo = 'PO Selulosa';
+                } elseif ($rk === 'tim_kerja_lingkungan') {
+                    $labelOpti = 'Tim Kerja Lingkungan';
+                    $labelPo = 'PO Lingkungan';
+                } elseif ($rk === 'pic_po_selulosa') {
+                    $labelOpti = 'Tim Kerja Selulosa';
+                    $labelPo = 'PO Selulosa';
+                } elseif ($rk === 'pic_po_lingkungan') {
+                    $labelOpti = 'Tim Kerja Lingkungan';
+                    $labelPo = 'PO Lingkungan';
+                }
+
                 $p['roles_list'][] = array(
                     'key' => $rk,
                     'label' => $rMeta['label'],
+                    'label_opti' => $labelOpti,
+                    'label_po' => $labelPo,
                     'badge_class' => $rMeta['badge_class']
                 );
                 $labelsArr[] = $rMeta['label'];
@@ -550,37 +657,45 @@ class PenggunaController extends Controller {
         $totalDbPegawai = $this->db->exec("SELECT COUNT(*) AS cnt FROM tb_arsipuser");
         $countDbTotal = (int)($totalDbPegawai[0]['cnt'] ?? 0);
 
-        // Hitung statistik untuk 5 kartu ringkasan: Tim Mitra, Tim Keuangan, Ka Tim OPTI, PIC Pelaksana, User Non-Role
-        $statsRaw = $this->db->exec("
-            SELECT 
-                SUM(CASE WHEN si_opti IN ('tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra', 'katim_mitra', 'ketua_tim_mitra_industri') THEN 1 ELSE 0 END) AS cnt_mitra,
-                SUM(CASE WHEN si_opti IN ('keuangan', 'ketua_tim_keuangan', 'katim_keuangan') THEN 1 ELSE 0 END) AS cnt_keuangan,
-                SUM(CASE WHEN si_opti IN ('ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'ketua_tim_keuangan', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'katim_keuangan', 'ketua_tim_mitra_industri') THEN 1 ELSE 0 END) AS cnt_katim,
-                SUM(CASE WHEN si_opti IN ('tim_kerja_selulosa', 'tim_kerja_lingkungan', 'tk_selulosa', 'tk_lingkungan') THEN 1 ELSE 0 END) AS cnt_pelaksana,
-                SUM(CASE WHEN si_opti IS NULL OR si_opti = '' OR si_opti = 'user' THEN 1 ELSE 0 END) AS cnt_non_role
-            FROM tb_arsipuser
-        ");
+        // Hitung statistik untuk 5 kartu ringkasan operasional: Total Akun Aktif, Ketua Tim & Pimpinan, Tim Kerja dan Pelaksana, Pelayanan & Keuangan, Belum Diberi Role
+        $cntTotalAktif = count($daftarPengguna);
+        $cntKatimPimpinan = 0;
+        $cntTimKerjaPelaksana = 0;
+        $cntLayananKeuangan = 0;
 
-        $cntMitra = (int)($statsRaw[0]['cnt_mitra'] ?? 0);
-        $cntKeuangan = (int)($statsRaw[0]['cnt_keuangan'] ?? 0);
-        $cntKatim = (int)($statsRaw[0]['cnt_katim'] ?? 0);
-        $cntPelaksana = (int)($statsRaw[0]['cnt_pelaksana'] ?? 0);
-        $cntNonRole = (int)($statsRaw[0]['cnt_non_role'] ?? 0);
+        foreach ($daftarPengguna as $dp) {
+            $rKeys = !empty($dp['roles_list']) ? array_column($dp['roles_list'], 'key') : array($dp['role_sistem']);
+            $isKatim = false;
+            $isTimKerja = false;
+            $isLayananKeu = false;
+
+            foreach ($rKeys as $rk) {
+                if ($rk === 'superadmin' || strpos($rk, 'ketua_tim') === 0 || strpos($rk, 'katim') === 0 || $rk === 'ppk') {
+                    $isKatim = true;
+                }
+                if (strpos($rk, 'tim_kerja') === 0 || strpos($rk, 'tk_') === 0 || strpos($rk, 'pic_po') === 0 || strpos($rk, 'pic_proposal') === 0) {
+                    $isTimKerja = true;
+                }
+                if ($rk === 'tim_mitra_industri' || $rk === 'admin_order' || $rk === 'tim_mitra' || $rk === 'keuangan' || $rk === 'humas') {
+                    $isLayananKeu = true;
+                }
+            }
+
+            if ($isKatim) $cntKatimPimpinan++;
+            if ($isTimKerja) $cntTimKerjaPelaksana++;
+            if ($isLayananKeu) $cntLayananKeuangan++;
+        }
+
+        $cntNonRole = count($unassignedUsers);
+
+        // Alias untuk backward compatibility
+        $cntMitra = $cntLayananKeuangan;
+        $cntKeuangan = $cntLayananKeuangan;
+        $cntKatim = $cntKatimPimpinan;
+        $cntPelaksana = $cntTimKerjaPelaksana;
 
         // Ambil daftar role tunggal (Superadmin & Ketua Tim) yang saat ini sedang aktif menjabat (untuk validasi & info UI)
-        $currentKetuaList = $this->db->exec("
-            SELECT id_user, nama_user, si_opti 
-            FROM tb_arsipuser 
-            WHERE si_opti IN ('superadmin', 'ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'ketua_tim_keuangan', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'katim_keuangan', 'ketua_tim_mitra_industri')
-        ");
-        $occupiedKetua = array();
-        foreach ($currentKetuaList as $k) {
-            $norm = self::normalizeRoleKey($k['si_opti']);
-            $occupiedKetua[$norm] = array(
-                'id_user' => (int)$k['id_user'],
-                'nama_user' => $k['nama_user']
-            );
-        }
+        $occupiedKetua = self::getOccupiedKetuaList($this->db);
 
         // Susun pengelompokan hierarki Pengguna per Divisi Layanan (Ketua Tim / Pejabat Utama sebagai baris induk, Sub Tim / Tim Kerja / PO sebagai sub-baris yang dapat dibuka ketika diklik)
         $divisiSchema = array(
@@ -750,11 +865,15 @@ class PenggunaController extends Controller {
         $f3->set('count_total', $countTotal);
         $f3->set('count_db_total', $countDbTotal);
         $f3->set('count_unassigned', count($unassignedUsers));
+        $f3->set('cnt_total_aktif', $cntTotalAktif);
+        $f3->set('cnt_katim_pimpinan', $cntKatimPimpinan);
+        $f3->set('cnt_tim_kerja_pelaksana', $cntTimKerjaPelaksana);
+        $f3->set('cnt_layanan_keuangan', $cntLayananKeuangan);
+        $f3->set('cnt_non_role', $cntNonRole);
         $f3->set('cnt_mitra', $cntMitra);
         $f3->set('cnt_keuangan', $cntKeuangan);
         $f3->set('cnt_katim', $cntKatim);
         $f3->set('cnt_pelaksana', $cntPelaksana);
-        $f3->set('cnt_non_role', $cntNonRole);
         $f3->set('count_teknis', $countTeknis);
         $f3->set('count_manajemen', $countManajemen);
         $f3->set('count_admin', $countAdmin);
@@ -815,27 +934,17 @@ class PenggunaController extends Controller {
             }
             $normRole = self::normalizeRoleKey($rs);
             if (isset($ketuaRoles[$normRole])) {
-                $aliasList = array($normRole);
-                if ($normRole === 'ketua_tim_selulosa') $aliasList[] = 'katim_selulosa';
-                elseif ($normRole === 'ketua_tim_lingkungan') $aliasList[] = 'katim_lingkungan';
-                elseif ($normRole === 'ketua_tim_mitra') { $aliasList[] = 'katim_mitra'; $aliasList[] = 'ketua_tim_mitra_industri'; }
-                elseif ($normRole === 'ketua_tim_keuangan') $aliasList[] = 'katim_keuangan';
-
-                $placeholders = implode(',', array_fill(0, count($aliasList), '?'));
-                $sqlCheck = "SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti IN ({$placeholders}) AND id_user != ?";
-                $checkParams = array();
-                $pIdx = 1;
-                foreach ($aliasList as $al) { $checkParams[$pIdx++] = $al; }
-                $checkParams[$pIdx] = $idUser;
-
-                $existingKetua = $this->db->exec($sqlCheck, $checkParams);
-                if (!empty($existingKetua)) {
-                    $currKetuaName = $existingKetua[0]['nama_user'];
-                    $currKetuaId = $existingKetua[0]['id_user'];
-                    $roleTitle = $ketuaRoles[$normRole];
-                    $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Sesuai aturan sistem, posisi {$roleTitle} hanya dapat diisi oleh maksimal 1 orang.");
-                    $f3->reroute('/pengguna');
-                    return;
+                $occupiedList = self::getOccupiedKetuaList($this->db);
+                if (isset($occupiedList[$normRole])) {
+                    $occ = $occupiedList[$normRole];
+                    if ((int)$occ['id_user'] !== $idUser) {
+                        $roleTitle = $ketuaRoles[$normRole];
+                        $currKetuaName = $occ['nama_user'];
+                        $currKetuaId = $occ['id_user'];
+                        $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Posisi {$roleTitle} hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>{$currKetuaName}</strong> terlebih dahulu.");
+                        $f3->reroute('/pengguna');
+                        return;
+                    }
                 }
             }
             $validRoles[] = $rs;
@@ -926,27 +1035,17 @@ class PenggunaController extends Controller {
             }
             $normRole = self::normalizeRoleKey($rs);
             if (isset($ketuaRoles[$normRole])) {
-                $aliasList = array($normRole);
-                if ($normRole === 'ketua_tim_selulosa') $aliasList[] = 'katim_selulosa';
-                elseif ($normRole === 'ketua_tim_lingkungan') $aliasList[] = 'katim_lingkungan';
-                elseif ($normRole === 'ketua_tim_mitra') { $aliasList[] = 'katim_mitra'; $aliasList[] = 'ketua_tim_mitra_industri'; }
-                elseif ($normRole === 'ketua_tim_keuangan') $aliasList[] = 'katim_keuangan';
-
-                $placeholders = implode(',', array_fill(0, count($aliasList), '?'));
-                $sqlCheck = "SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti IN ({$placeholders}) AND id_user != ?";
-                $checkParams = array();
-                $pIdx = 1;
-                foreach ($aliasList as $al) { $checkParams[$pIdx++] = $al; }
-                $checkParams[$pIdx] = $idUser;
-
-                $existingKetua = $this->db->exec($sqlCheck, $checkParams);
-                if (!empty($existingKetua)) {
-                    $currKetuaName = $existingKetua[0]['nama_user'];
-                    $currKetuaId = $existingKetua[0]['id_user'];
-                    $roleTitle = $ketuaRoles[$normRole];
-                    $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Sesuai aturan sistem, posisi {$roleTitle} hanya dapat diisi oleh maksimal 1 orang.");
-                    $f3->reroute('/pengguna');
-                    return;
+                $occupiedList = self::getOccupiedKetuaList($this->db);
+                if (isset($occupiedList[$normRole])) {
+                    $occ = $occupiedList[$normRole];
+                    if ((int)$occ['id_user'] !== $idUser) {
+                        $roleTitle = $ketuaRoles[$normRole];
+                        $currKetuaName = $occ['nama_user'];
+                        $currKetuaId = $occ['id_user'];
+                        $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Posisi {$roleTitle} hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>{$currKetuaName}</strong> terlebih dahulu.");
+                        $f3->reroute('/pengguna');
+                        return;
+                    }
                 }
             }
             $validRoles[] = $rs;
@@ -1087,6 +1186,10 @@ class PenggunaController extends Controller {
             $aksesPo = 1;
         }
 
+        // Ambil nama_user dari tb_arsipuser untuk disimpan ke opti_user_map
+        $uRow = $this->db->exec("SELECT nama_user FROM tb_arsipuser WHERE id_user = ? LIMIT 1", array(1 => $idUser));
+        $namaUser = $uRow[0]['nama_user'] ?? null;
+
         $exist = $this->db->exec(
             "SELECT id FROM opti_user_map WHERE id_user = ? AND jenis_layanan = ? AND role = ? LIMIT 1",
             array(1 => $idUser, 2 => $layanan, 3 => $roleOpti)
@@ -1094,16 +1197,16 @@ class PenggunaController extends Controller {
         if (!empty($exist)) {
             $this->db->exec(
                 "UPDATE opti_user_map
-                 SET role = ?, jenis_layanan = ?,
+                 SET role = ?, jenis_layanan = ?, nama_user = COALESCE(?, nama_user),
                      akses_opti = ?, akses_po = ?, is_active = 1, status_tampil = 'show'
                  WHERE id = ?",
-                array(1 => $roleOpti, 2 => $layanan, 3 => $aksesOpti, 4 => $aksesPo, 5 => (int)$exist[0]['id'])
+                array(1 => $roleOpti, 2 => $layanan, 3 => $namaUser, 4 => $aksesOpti, 5 => $aksesPo, 6 => (int)$exist[0]['id'])
             );
         } else {
             $this->db->exec(
-                "INSERT INTO opti_user_map (id_user, jenis_layanan, role, akses_opti, akses_po, is_active, status_tampil, created_at)
-                 VALUES (?, ?, ?, ?, ?, 1, 'show', NOW())",
-                array(1 => $idUser, 2 => $layanan, 3 => $roleOpti, 4 => $aksesOpti, 5 => $aksesPo)
+                "INSERT INTO opti_user_map (id_user, nama_user, jenis_layanan, role, akses_opti, akses_po, is_active, status_tampil, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, 1, 'show', NOW())",
+                array(1 => $idUser, 2 => $namaUser, 3 => $layanan, 4 => $roleOpti, 5 => $aksesOpti, 6 => $aksesPo)
             );
         }
     }
@@ -1176,6 +1279,10 @@ class PenggunaController extends Controller {
             array(1 => $idUser, 2 => $layanan, 3 => $roleOpti)
         );
 
+        // Ambil nama_user dari tb_arsipuser untuk disimpan ke opti_user_map
+        $uRow = $this->db->exec("SELECT nama_user FROM tb_arsipuser WHERE id_user = ? LIMIT 1", array(1 => $idUser));
+        $namaUser = $uRow[0]['nama_user'] ?? null;
+
         $exist = $this->db->exec(
             "SELECT id FROM opti_user_map WHERE id_user = ? AND jenis_layanan = ? AND role = ? LIMIT 1",
             array(1 => $idUser, 2 => $layanan, 3 => $roleOpti)
@@ -1183,16 +1290,16 @@ class PenggunaController extends Controller {
         if (!empty($exist)) {
             $this->db->exec(
                 "UPDATE opti_user_map
-                 SET role = ?, jenis_layanan = ?,
+                 SET role = ?, jenis_layanan = ?, nama_user = COALESCE(?, nama_user),
                      akses_opti = ?, akses_po = ?, is_active = 1, status_tampil = 'show'
                  WHERE id = ?",
-                array(1 => $roleOpti, 2 => $layanan, 3 => $aksesOpti, 4 => $aksesPo, 5 => (int)$exist[0]['id'])
+                array(1 => $roleOpti, 2 => $layanan, 3 => $namaUser, 4 => $aksesOpti, 5 => $aksesPo, 6 => (int)$exist[0]['id'])
             );
         } else {
             $this->db->exec(
-                "INSERT INTO opti_user_map (id_user, jenis_layanan, role, akses_opti, akses_po, is_active, status_tampil, created_at)
-                 VALUES (?, ?, ?, ?, ?, 1, 'show', NOW())",
-                array(1 => $idUser, 2 => $layanan, 3 => $roleOpti, 4 => $aksesOpti, 5 => $aksesPo)
+                "INSERT INTO opti_user_map (id_user, nama_user, jenis_layanan, role, akses_opti, akses_po, is_active, status_tampil, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, 1, 'show', NOW())",
+                array(1 => $idUser, 2 => $namaUser, 3 => $layanan, 4 => $roleOpti, 5 => $aksesOpti, 6 => $aksesPo)
             );
         }
     }

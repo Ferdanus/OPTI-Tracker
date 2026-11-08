@@ -1966,7 +1966,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
     /**
      * Simpan Kalkulasi Pengujian Multi-Metode (Divisi Lingkungan)
      */
-    public function simpanKalkulasiLingkungan(int $orderId, array $items, float $diskon, ?string $tglSampel, int $userId, ?string $spmLayanan = null, ?int $spmDurasiNilai = null, ?string $spmDurasiSatuan = null, ?string $spmTriggerTipe = null, string $statusProposalBiaya = 'siap_penawaran'): array {
+    public function simpanKalkulasiLingkungan(int $orderId, array $items, float $diskon, ?string $tglSampel, int $userId, ?string $spmLayanan = null, ?int $spmDurasiNilai = null, ?string $spmDurasiSatuan = null, ?string $spmTriggerTipe = null, string $statusProposalBiaya = 'siap_penawaran', ?string $judulKegiatan = null): array {
         $this->load(array('id = ?', $orderId));
         if ($this->dry()) {
             throw new \Exception("Order Layanan #{$orderId} tidak ditemukan.");
@@ -2044,6 +2044,9 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
         if (!empty($spmTriggerTipe)) {
             $this->spm_trigger_tipe = $spmTriggerTipe;
+        }
+        if ($judulKegiatan !== null && trim($judulKegiatan) !== '') {
+            $this->judul_kegiatan = trim($judulKegiatan);
         }
         $this->status_proposal_biaya = $statusProposalBiaya;
         $this->save();
@@ -2202,6 +2205,221 @@ class OrderLayanan extends \DB\SQL\Mapper {
             'unlocked_until' => $this->unlocked_until,
             'unlocked_days' => $this->unlocked_days,
             'action_label' => ($newStatus === 1) ? 'dibuka' : 'dikunci'
+        ];
+    }
+
+    /**
+     * Tandai baris order yang butuh aksi / tugas dari pengguna berdasarkan role, id, dan unit layanan
+     */
+    public static function markRowsUserTasks(array &$rows, string $userRole, ?int $userId, string $userLayanan): int {
+        // Superadmin mengawasi seluruh order (tidak ditandai sebagai tugas operasional pribadi)
+        if ($userRole === 'superadmin') {
+            foreach ($rows as &$r) {
+                $r['is_user_task'] = false;
+                $r['user_task_reason'] = '';
+                $r['user_task_badge'] = '';
+            }
+            unset($r);
+            return 0;
+        }
+
+        $count = 0;
+        foreach ($rows as &$r) {
+            $isTask = false;
+            $reason = '';
+            $badge = '';
+
+            if ($userRole === 'tim_kerja') {
+                if (!empty($userId) && (int)($r['ketua_pelaksana_id'] ?? 0) === (int)$userId) {
+                    $pmPo = (string) ($r['po_pemegang'] ?? '');
+                    if (($pmPo === '' || $pmPo === 'pic') && (string) ($r['keterangan_aksi'] ?? '') !== 'PO Aktif' && ($r['status'] ?? '') !== 'selesai' && ($r['status'] ?? '') !== 'ditolak') {
+                        $isTask = true;
+                        $reason = 'Anda adalah Ketua Pelaksana kegiatan ini';
+                        $badge = 'Ketua Pelaksana';
+                    }
+                } elseif (!empty($userId) && (int)($r['pic_proposal_id'] ?? 0) === (int)$userId) {
+                    $proposalSelesai = in_array($r['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
+                        || in_array($r['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])
+                        || in_array($r['status'] ?? '', ['penawaran_deal', 'disetujui'])
+                        || ($r['status_penawaran'] ?? '') === 'deal';
+                    if (!$proposalSelesai && ($r['status'] ?? '') !== 'selesai' && ($r['status'] ?? '') !== 'ditolak') {
+                        $isTask = true;
+                        $reason = 'Anda ditugaskan sebagai PIC Proposal / Perhitungan Biaya';
+                        $badge = 'PIC Proposal';
+                    }
+                }
+            } elseif ($userRole === 'ketua_tim') {
+                $divMatch = in_array($userLayanan, ['selulosa', 'lingkungan']) ? (($r['jenis_layanan_opti'] ?? '') === $userLayanan) : true;
+                if ($divMatch) {
+                    // 1. Kaji Kelayakan
+                    $perluKajiKelayakan = !in_array($r['status'] ?? '', ['permintaan_masuk', 'draft', 'draft_disimpan'])
+                        && !empty($r['jenis_layanan_opti'])
+                        && ($r['jenis_layanan_opti'] ?? '') !== 'belum_ditentukan'
+                        && (empty($r['status_tinjauan']) || in_array($r['status_tinjauan'] ?? '', ['belum_ditinjau', 'menunggu', 'draft']))
+                        && ($r['status_tinjauan'] ?? '') !== 'layak'
+                        && ($r['status_tinjauan'] ?? '') !== 'tidak_layak'
+                        && ($r['status'] ?? '') !== 'ditolak';
+
+                    // 2. Approval Proposal Biaya
+                    $perluApprovalBiaya = (($r['status_proposal_biaya'] ?? '') === 'menunggu_approval')
+                        || (($r['status_proposal'] ?? '') === 'diajukan')
+                        || (($r['stage_label'] ?? '') === 'Review Proposal');
+
+                    // 3. Tunjuk PIC Proposal (khusus Selulosa)
+                    $perluTunjukPic = (($r['jenis_layanan_opti'] ?? '') === 'selulosa')
+                        && (($r['status_tinjauan'] ?? '') === 'layak')
+                        && empty($r['pic_proposal_id'])
+                        && empty($r['surat_penawaran_id'])
+                        && ($r['status_penawaran'] ?? '') !== 'deal'
+                        && ($r['status'] ?? '') !== 'ditolak';
+
+                    // 4. Penunjukan Pelaksana setelah DEAL & PEMBAYARAN DIKONFIRMASI / LUNAS
+                    $isDeal = in_array($r['status'] ?? '', ['disetujui', 'penawaran_deal'])
+                        || ($r['status_penawaran'] ?? '') === 'deal'
+                        || ($r['status_respon_klien'] ?? '') === 'deal'
+                        || ($r['stage_label'] ?? '') === 'Penunjukan Pelaksana';
+                    
+                    $isBayarConfirmed = (($r['status_keuangan'] ?? '') === 'lunas' 
+                        || !empty($r['disposisi_katim_at']) 
+                        || ($r['stage_label'] ?? '') === 'Penunjukan Pelaksana');
+
+                    $perluTunjukPelaksana = $isDeal && $isBayarConfirmed 
+                        && empty($r['ketua_pelaksana_id']) 
+                        && ($r['status'] ?? '') !== 'selesai' 
+                        && ($r['status'] ?? '') !== 'ditolak';
+
+                    // 5. PO Kegiatan sedang di meja Ketua Tim
+                    $perluPoKatim = ((string) ($r['po_pemegang'] ?? '') === 'katim');
+
+                    if ($perluKajiKelayakan) {
+                        $isTask = true;
+                        $reason = 'Perlu Tinjauan Kelayakan 4 Pilar oleh Ketua Tim';
+                        $badge = 'Kaji Kelayakan';
+                    } elseif ($perluApprovalBiaya) {
+                        $isTask = true;
+                        $reason = 'Proposal & Rincian Biaya menunggu persetujuan Anda';
+                        $badge = 'Approval Biaya';
+                    } elseif ($perluTunjukPic) {
+                        $isTask = true;
+                        $reason = 'Perlu penunjukan PIC Proposal Riset';
+                        $badge = 'Tunjuk PIC';
+                    } elseif ($perluTunjukPelaksana) {
+                        $isTask = true;
+                        $reason = 'Order sudah deal & pembayaran terkonfirmasi, perlu penunjukan Ketua Pelaksana';
+                        $badge = 'Tunjuk Pelaksana';
+                    } elseif ($perluPoKatim) {
+                        $isTask = true;
+                        $reason = 'PO Kegiatan menunggu tindakan Anda (review atau revisi)';
+                        $badge = 'Review PO';
+                    }
+                }
+            } elseif (in_array($userRole, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra'])) {
+                $isPermohonanBaru = in_array($r['status'] ?? '', ['permintaan_masuk', 'draft', 'draft_disimpan'])
+                    || empty($r['jenis_layanan_opti'])
+                    || (($r['jenis_layanan_opti'] ?? '') === 'belum_ditentukan');
+
+                $isSiapPenawaran = (
+                    (($r['status_proposal_biaya'] ?? '') === 'siap_penawaran')
+                    || in_array($r['stage_label'] ?? '', ['Proposal Disetujui', 'Siap Penawaran'])
+                ) && (($r['status_penawaran'] ?? '') !== 'deal')
+                  && (empty($r['surat_penawaran_id']) && empty($r['nomor_penawaran']) || ($r['status_penawaran'] ?? '') === 'draft');
+
+                $isDeal = in_array($r['status'] ?? '', ['disetujui', 'penawaran_deal'])
+                    || ($r['status_penawaran'] ?? '') === 'deal'
+                    || ($r['status_respon_klien'] ?? '') === 'deal';
+                $berkasDealBelumLengkap = $isDeal && (empty($r['file_penawaran_ttd']) || empty($r['file_bukti_persetujuan'])) && (($r['stage_label'] ?? '') === 'Lengkapi Berkas Deal');
+
+                $isPoMitra = ((string) ($r['po_pemegang'] ?? '') === 'mitra');
+
+                if ($isPermohonanBaru) {
+                    $isTask = true;
+                    if (in_array($r['status'] ?? '', ['draft', 'draft_disimpan'])) {
+                        $reason = 'Draf formulir pelayanan disimpan, belum diteruskan ke Ketua Tim';
+                        $badge = 'Draf Disimpan';
+                    } else {
+                        $reason = 'Permohonan baru masuk, perlu penentuan jenis layanan & disposisi';
+                        $badge = 'Disposisi Masuk';
+                    }
+                } elseif ($isSiapPenawaran) {
+                    $isTask = true;
+                    $reason = 'Proposal biaya disetujui, siap diterbitkan surat penawaran';
+                    $badge = 'Siap Penawaran';
+                } elseif ($berkasDealBelumLengkap) {
+                    $isTask = true;
+                    $reason = 'Penawaran deal, perlu lengkapi berkas persetujuan/TTD klien';
+                    $badge = 'Lengkapi Berkas';
+                } elseif ($isPoMitra) {
+                    $isTask = true;
+                    $reason = 'PO Kegiatan menunggu verifikasi Tim Mitra';
+                    $badge = 'Verifikasi PO';
+                }
+            } elseif (in_array($userRole, ['keuangan', 'ketua_tim_keuangan'])) {
+                $isDeal = in_array($r['status'] ?? '', ['disetujui', 'penawaran_deal'])
+                    || ($r['status_penawaran'] ?? '') === 'deal'
+                    || ($r['status_respon_klien'] ?? '') === 'deal'
+                    || in_array($r['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian']);
+                $belumLunas = ($r['status_keuangan'] ?? '') !== 'lunas' && empty($r['disposisi_katim_at']);
+                if ($isDeal && $belumLunas && ($r['status'] ?? '') !== 'selesai' && ($r['status'] ?? '') !== 'ditolak') {
+                    $isTask = true;
+                    $reason = 'Menunggu pencatatan / verifikasi pelunasan pembayaran';
+                    $badge = 'Perlu Pembayaran';
+                }
+            } elseif ($userRole === 'humas') {
+                if ((string) ($r['po_pemegang'] ?? '') === 'humas') {
+                    $isTask = true;
+                    $reason = 'PO Kegiatan menunggu verifikasi Humas';
+                    $badge = 'Verifikasi PO';
+                }
+            } elseif (in_array($userRole, ['ppk', 'ppk_blu', 'pejabat'], true)) {
+                if ((string) ($r['po_pemegang'] ?? '') === 'ppk') {
+                    $isTask = true;
+                    $reason = 'PO Kegiatan menunggu verifikasi PPK BLU';
+                    $badge = 'Verifikasi PO';
+                }
+            }
+
+            $r['is_user_task'] = $isTask;
+            $r['user_task_reason'] = $reason;
+            $r['user_task_badge'] = $badge;
+            if ($isTask) {
+                $count++;
+            }
+        }
+        unset($r);
+        return $count;
+    }
+
+    /**
+     * Hitung ringkasan tugas aktif pengguna (Order Masuk & Order Berjalan)
+     */
+    public function countUserTasks(string $userRole, ?int $userId, string $userLayanan): array {
+        if ($userRole === 'superadmin') {
+            return [
+                'masuk' => 0,
+                'berlangsung' => 0,
+                'selesai' => 0,
+                'ditolak' => 0,
+                'total' => 0
+            ];
+        }
+
+        $filterJenis = ($userRole === 'ketua_tim' && in_array($userLayanan, ['selulosa', 'lingkungan'])) ? $userLayanan : '';
+        if ($userRole === 'humas') {
+            $this->batasiUntukHumas(true);
+        }
+
+        $allMasuk = $this->allWithRelasi($filterJenis, '', '', '', 'masuk', '');
+        $userTasksMasuk = self::markRowsUserTasks($allMasuk, $userRole, $userId, $userLayanan);
+
+        $allBerlangsung = $this->allWithRelasi($filterJenis, '', '', '', 'berlangsung', '');
+        $userTasksBerlangsung = self::markRowsUserTasks($allBerlangsung, $userRole, $userId, $userLayanan);
+
+        return [
+            'masuk' => $userTasksMasuk,
+            'berlangsung' => $userTasksBerlangsung,
+            'selesai' => 0,
+            'ditolak' => 0,
+            'total' => $userTasksMasuk + $userTasksBerlangsung
         ];
     }
 }

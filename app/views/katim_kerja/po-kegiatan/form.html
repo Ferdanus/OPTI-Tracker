@@ -1021,9 +1021,8 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 <div class="po-info-judul">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" style="min-height: 32px;">
                         <label class="po-label mb-0">Judul Kegiatan <span class="text-danger">*</span></label>
-                        <check if="{{ @proposal_terkait }}">
-                            <div class="d-flex align-items-center gap-2">
-                                <span id="badgeJudulSuratMasuk" class="badge rounded-pill d-none" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;"></span>
+                        <div class="d-flex align-items-center gap-2">
+                            <check if="{{ @proposal_terkait }}">
                                 <button type="button"
                                     class="btn btn-outline-primary btn-sm text-nowrap px-2.5 py-1 rounded-pill shadow-xs d-inline-flex align-items-center gap-1.5 btn-preview-pdf"
                                     style="font-size: 0.75rem; font-weight: 600;"
@@ -1033,10 +1032,8 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                                     title="Buka Proposal">
                                     <i class="bi bi-file-earmark-pdf text-danger"></i> <span>Lihat Proposal</span>
                                 </button>
-                            </div>
-                        </check>
-                        <check if="{{ !@proposal_terkait && @surat_masuk_terkait }}">
-                            <div class="d-flex align-items-center gap-2">
+                            </check>
+                            <check if="{{ @surat_masuk_terkait }}">
                                 <span id="badgeJudulSuratMasuk" class="badge rounded-pill d-none" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;"></span>
                                 <button type="button"
                                     class="btn btn-outline-primary btn-sm text-nowrap px-2.5 py-1 rounded-pill shadow-xs d-inline-flex align-items-center gap-1.5 btn-preview-pdf"
@@ -1047,8 +1044,8 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                                     title="Buka PDF Asli Surat Masuk">
                                     <i class="bi bi-file-earmark-pdf text-danger"></i> <span>Lihat Surat Masuk</span>
                                 </button>
-                            </div>
-                        </check>
+                            </check>
+                        </div>
                     </div>
                     <input type="text" name="judul_kegiatan" id="inputJudulKegiatan" class="form-control po-control" value="{{ @judul_form_awal }}" data-judul-asli-surat="{{ @judul_asli_form }}" data-sumber-judul="{{ @sumber_judul_form }}" required data-wajib="1" placeholder="Masukkan judul kegiatan operasional">
                 </div>

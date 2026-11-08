@@ -29,16 +29,16 @@
                             </div>
                         </check>
                         <div class="row g-2 mb-2 pb-2 border-bottom">
-                            <div class="col-4 text-muted">Bidang</div>
+                            <div class="col-4 text-muted">Tim Layanan</div>
                             <div class="col-8">
                                 <span class="badge {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-danger text-white' : 'bg-success text-white' }} text-uppercase fw-semibold px-2 py-0.5" style="font-size: 0.72rem;">
-                                    OPTI {{ @order.jenis_layanan_opti }}
+                                    Tim OPTI {{ ucfirst(@order.jenis_layanan_opti) }}
                                 </span>
                             </div>
                         </div>
                         <div class="row g-2 mb-2 pb-2 border-bottom">
                             <div class="col-4 text-muted">Perusahaan</div>
-                            <div class="col-8 fw-semibold text-dark">{{ @order.nama_perusahaan }}</div>
+                            <div class="col-8 fw-semibold text-dark">{{ @surat_masuk && !empty(@surat_masuk.pengirim) && @surat_masuk.pengirim != 'Instansi / Perusahaan' ? @surat_masuk.pengirim : @order.nama_perusahaan }}</div>
                         </div>
                         <check if="{{ @order.pic && @order.pic != '-' }}">
                             <div class="row g-2 mb-2 pb-2 border-bottom">
@@ -64,8 +64,15 @@
 
                     <check if="{{ @surat_masuk && @surat_masuk.file_path }}">
                         <div class="pt-3 mt-3 border-top">
-                            <button type="button" class="btn btn-outline-secondary btn-sm w-100 fw-medium d-flex align-items-center justify-content-center gap-1.5" data-bs-toggle="modal" data-bs-target="#modalPreviewSuratMasukTinjauan">
+                            <button type="button" class="btn btn-outline-secondary btn-sm w-100 fw-medium d-flex align-items-center justify-content-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/surat-masuk/{{ @order.id_surat_masuk ?: @surat_masuk.id }}/pdf" data-title="Berkas Surat Masuk" data-subtitle="{{ @order.nomor_order }}" title="Lihat Berkas Fisik Surat Masuk">
                                 <i class="bi bi-file-earmark-text text-danger"></i> Pratinjau Surat Permohonan
+                            </button>
+                        </div>
+                    </check>
+                    <check if="{{ !@surat_masuk && @order.file_bukti_permohonan }}">
+                        <div class="pt-3 mt-3 border-top">
+                            <button type="button" class="btn btn-outline-secondary btn-sm w-100 fw-medium d-flex align-items-center justify-content-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @order.file_bukti_permohonan }}" data-title="Berkas Bukti Permohonan Langsung" data-subtitle="{{ @order.nomor_permintaan ?: @order.nomor_order }}" title="Pratinjau Berkas Bukti Permohonan">
+                                <i class="bi bi-file-earmark-text text-danger"></i> Pratinjau Bukti Permohonan
                             </button>
                         </div>
                     </check>
@@ -102,7 +109,7 @@
                             </a>
                             <check if="{{ @can_edit }}">
                                 <check if="{{ !@tinjauan || !empty(@tinjauan.is_draft) || empty(@tinjauan.keputusan) }}">
-                                    <button type="submit" name="action_btn" value="draft" class="btn btn-draft-theme">
+                                    <button type="submit" name="action_btn" value="draft" formnovalidate class="btn btn-draft-theme">
                                         <i class="bi bi-bookmark-fill"></i>
                                         <span>Simpan Draf</span>
                                     </button>
@@ -247,11 +254,12 @@ function updatePilarCard(boxId, checkId, statusSpanId, btnNoteId, wrapNoteId, in
     return isReady;
 }
 
-function handleKlikLayak(evt) {
-    var checkSdm = document.getElementById('check_sdm');
-    var checkAlat = document.getElementById('check_alat');
-    var checkBahan = document.getElementById('check_bahan');
-    var checkMetode = document.getElementById('check_metode');
+function handleKlikLayak(evt, prefix) {
+    prefix = prefix || '';
+    var checkSdm = document.getElementById(prefix + 'check_sdm');
+    var checkAlat = document.getElementById(prefix + 'check_alat');
+    var checkBahan = document.getElementById(prefix + 'check_bahan');
+    var checkMetode = document.getElementById(prefix + 'check_metode');
 
     var sdmOk = checkSdm ? checkSdm.checked : true;
     var alatOk = checkAlat ? checkAlat.checked : true;
@@ -265,11 +273,11 @@ function handleKlikLayak(evt) {
             evt.preventDefault();
             evt.stopPropagation();
         }
-        var radioLayak = document.getElementById('kep_layak');
-        var radioTidak = document.getElementById('kep_tidak_layak');
+        var radioLayak = document.getElementById(prefix + 'kep_layak');
+        var radioTidak = document.getElementById(prefix + 'kep_tidak_layak');
         if (radioLayak) radioLayak.checked = false;
         if (radioTidak) radioTidak.checked = true;
-        toggleAlasanPenolakan();
+        toggleAlasanPenolakan(prefix);
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -290,32 +298,6 @@ function handleKlikLayak(evt) {
             alert('Untuk memilih Dapat Dilaksanakan, seluruh 4 opsi kesiapan harus dicentang siap terlebih dahulu.');
         }
         return false;
-    }
-}
-
-function updateTetapkanButtonState() {
-    var btn = document.getElementById('btnTetapkanKeputusan');
-    if (!btn) return;
-
-    var isSelulosa = '{{ @order.jenis_layanan_opti }}' === 'selulosa';
-    var radioTidak = document.getElementById('kep_tidak_layak');
-    var isTidakLayak = radioTidak && radioTidak.checked;
-    var selectPic = document.getElementById('selectPicProposal');
-    var picVal = selectPic ? selectPic.value.trim() : '';
-
-    // Khusus OPTI Selulosa: jika keputusan bukan Tidak Layak, tombol Tetapkan Keputusan disabled jika PIC belum dipilih
-    if (isSelulosa && !isTidakLayak && picVal === '') {
-        btn.disabled = true;
-        btn.classList.add('disabled');
-        btn.style.opacity = '0.55';
-        btn.style.cursor = 'not-allowed';
-        btn.setAttribute('title', 'Pilih PIC Proposal / Peneliti Pelaksana terlebih dahulu untuk OPTI Selulosa');
-    } else {
-        btn.disabled = false;
-        btn.classList.remove('disabled');
-        btn.style.opacity = '1';
-        btn.style.cursor = 'pointer';
-        btn.removeAttribute('title');
     }
 }
 
@@ -352,8 +334,8 @@ function cekStatusPilar() {
     var radioTidak = document.getElementById('kep_tidak_layak');
     var labelLayak = document.getElementById('label_card_layak');
     var subLayak = document.getElementById('sub_card_layak');
+    var canEdit = labelLayak && labelLayak.getAttribute('data-can-edit') !== '0';
     if (!allChecked) {
-        // Jika ada pilar yang tidak tercentang, "Dapat Dilaksanakan" terkunci
         if (radioLayak) {
             radioLayak.disabled = true;
             if (radioLayak.checked) {
@@ -370,9 +352,7 @@ function cekStatusPilar() {
         if (subLayak) {
             subLayak.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-lock-fill me-1"></i>Terkunci (Syarat 4 pilar belum terpenuhi)</span>';
         }
-        } else {
-        // Jika semua 4 pilar tercentang, "Dapat Dilaksanakan" terbuka
-        var canEdit = labelLayak && labelLayak.getAttribute('data-can-edit') !== '0';
+    } else {
         if (radioLayak && canEdit) {
             radioLayak.disabled = false;
         }
@@ -384,7 +364,7 @@ function cekStatusPilar() {
         if (subLayak) {
             subLayak.innerHTML = 'Sanggup dikerjakan &bull; Syarat 4 pilar terpenuhi';
         }
-        }
+    }
 
     updateTetapkanButtonState();
 }
@@ -471,10 +451,9 @@ function confirmTetapkanKeputusan() {
             return;
         }
     } else {
-        // Validasi Penunjukan PIC Proposal khusus OPTI Selulosa
-        var isSelulosa = '{{ @order.jenis_layanan_opti }}' === 'selulosa';
+        // Validasi Penunjukan PIC Proposal
         var selectPic = form.querySelector('select[name="pic_proposal_id"]');
-        if (isSelulosa && selectPic && (!selectPic.value || selectPic.value.trim() === '')) {
+        if (selectPic && (!selectPic.value || selectPic.value.trim() === '')) {
             selectPic.focus();
             selectPic.classList.add('is-invalid');
             var feedbackPic = document.getElementById('feedbackPicProposal');

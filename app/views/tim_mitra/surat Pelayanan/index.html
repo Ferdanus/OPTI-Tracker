@@ -6,13 +6,16 @@
 
 .kb-badge-none {
     display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8;
-    border: 1px dashed #cbd5e1; border-radius: 20px; padding: 3px 8px; white-space: nowrap;
+    background: transparent; border: 1px dashed #cbd5e1; border-radius: 20px; padding: 3px 9px; white-space: nowrap;
 }
 .kb-badge-ada {
-    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #92400e;
-    background: #fef3c7; border-radius: 20px; padding: 3px 8px; white-space: nowrap; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #334155;
+    background: #ffffff; border: 1px solid #cbd5e1; border-radius: 20px; padding: 3px 9px; white-space: nowrap; text-decoration: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    transition: all 0.15s ease-in-out;
 }
-.kb-badge-ada:hover { background: #fde68a; color: #78350f; }
+.kb-badge-ada:hover { background: #f8fafc; color: #0f172a; border-color: #94a3b8; transform: translateY(-1px); }
+.kb-badge-ada i { color: #dc2626; font-size: 0.8rem; }
 
 .filter-tabs-wrapper {
     background: #ffffff;
@@ -317,19 +320,10 @@
                                             </td>
                                             <td>
                                                 <check if="{{ !empty(@sp.nomor_permintaan) }}">
-                                                    <span class="badge bg-secondary-subtle text-secondary font-monospace d-inline-block mb-1" style="font-size: 0.72rem;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
+                                                    <span class="badge bg-light text-secondary border font-monospace d-inline-block mb-1" style="font-size: 0.72rem;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
                                                 </check>
                                                 <div class="fw-bold text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</div>
-                                                <check if="{{ !empty(@sp.has_kendala_tinjauan) }}">
-                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center gap-1 mt-1" style="font-size: 0.68rem;" title="Ada kendala pada kesiapan 4 pilar teknis">
-                                                        <i class="bi bi-exclamation-triangle-fill"></i> Kendala 4 Pilar
-                                                    </span>
-                                                </check>
-                                                <check if="{{ empty(@sp.has_kendala_tinjauan) && !empty(@sp.has_catatan_tinjauan) }}">
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1 mt-1" style="font-size: 0.68rem;" title="{{ implode(' | ', @sp.catatan_pilar_list) }}">
-                                                        <i class="bi bi-sticky-fill text-warning"></i> Catatan 4 Pilar
-                                                    </span>
-                                                </check>
+                                                
                                                 <check if="{{ !empty(@sp.sub_info) }}">
                                                     <small class="text-muted d-block mt-0.5" style="font-size: 0.75rem;">
                                                         <check if="{{ strpos(@sp.sub_info, 'PIC:') === 0 }}"><i class="bi bi-person me-1"></i></check>
@@ -483,24 +477,15 @@
                                             </td>
                                             <td>
                                                 <check if="{{ !empty(@sp.nomor_permintaan) }}">
-                                                    <span class="badge bg-secondary-subtle text-secondary font-monospace d-inline-block mb-1" style="font-size: 0.72rem;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
+                                                    <span class="badge bg-light text-secondary border font-monospace d-inline-block mb-1" style="font-size: 0.72rem;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
                                                 </check>
                                                 <div class="fw-bold text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</div>
-                                                <check if="{{ !empty(@sp.has_kendala_tinjauan) }}">
-                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center gap-1 mt-1" style="font-size: 0.68rem;" title="Ada kendala pada kesiapan 4 pilar teknis">
-                                                        <i class="bi bi-exclamation-triangle-fill"></i> Kendala 4 Pilar
-                                                    </span>
-                                                </check>
-                                                <check if="{{ empty(@sp.has_kendala_tinjauan) && !empty(@sp.has_catatan_tinjauan) }}">
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1 mt-1" style="font-size: 0.68rem;" title="{{ implode(' | ', @sp.catatan_pilar_list) }}">
-                                                        <i class="bi bi-sticky-fill text-warning"></i> Catatan 4 Pilar
-                                                    </span>
-                                                </check>
+                                                
                                             </td>
                                             <td class="text-nowrap small text-muted text-center">{{ date('d M Y', strtotime(@sp.tanggal_surat)) }}</td>
                                             <td>
-                                                <div class="small p-2 rounded bg-warning-subtle text-dark border border-warning-subtle">
-                                                    <i class="bi bi-chat-dots-fill text-warning me-1"></i>
+                                                <div class="small p-2 rounded bg-light text-dark border" style="border-color: #e2e8f0 !important; font-size: 0.78rem; line-height: 1.45;">
+                                                    <i class="bi bi-chat-dots text-secondary me-1"></i>
                                                     {{ @sp.catatan_nego ?: 'Menunggu kesepakatan harga / klarifikasi teknis.' }}
                                                 </div>
                                             </td>
@@ -609,30 +594,17 @@
                                             <td class="text-muted small text-center">{{ @i + 1 }}</td>
                                             <td>
                                                 <div class="fw-bold font-monospace text-dark">{{ @sp.nomor_surat }}</div>
-                                                <span class="badge bg-success-subtle text-success border border-success-subtle mt-1" style="font-size: 0.7rem;">
-                                                    <i class="bi bi-check2-circle me-1"></i> DEAL
-                                                </span>
                                             </td>
                                             <td>
                                                 <check if="{{ !empty(@sp.nomor_permintaan) }}">
-                                                    <span class="badge bg-secondary-subtle text-secondary font-monospace d-inline-block mb-1" style="font-size: 0.72rem;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
+                                                    <span class="badge bg-light text-secondary border font-monospace d-inline-block mb-1" style="font-size: 0.72rem;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
                                                 </check>
                                                 <div class="fw-bold text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</div>
-                                                <check if="{{ !empty(@sp.has_kendala_tinjauan) }}">
-                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center gap-1 mt-1" style="font-size: 0.68rem;" title="Ada kendala pada kesiapan 4 pilar teknis">
-                                                        <i class="bi bi-exclamation-triangle-fill"></i> Kendala 4 Pilar
-                                                    </span>
-                                                </check>
-                                                <check if="{{ empty(@sp.has_kendala_tinjauan) && !empty(@sp.has_catatan_tinjauan) }}">
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1 mt-1" style="font-size: 0.68rem;" title="{{ implode(' | ', @sp.catatan_pilar_list) }}">
-                                                        <i class="bi bi-sticky-fill text-warning"></i> Catatan 4 Pilar
-                                                    </span>
-                                                </check>
                                             </td>
                                             <td class="text-nowrap small text-muted text-center">{{ date('d M Y', strtotime(@sp.tanggal_surat)) }}</td>
                                             <td class="text-center">
                                                 <check if="{{ !empty(@sp.surat_kesanggupan_bayar) }}">
-                                                    <button type="button" class="kb-badge-ada btn-preview-pdf border-0"
+                                                    <button type="button" class="kb-badge-ada btn-preview-pdf"
                                                         data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/surat-kesanggupan/preview"
                                                         data-title="Surat Kesanggupan Bayar" data-subtitle="{{ @sp.nomor_surat }}">
                                                         <i class="bi bi-file-earmark-pdf-fill"></i> PDF Kesanggupan
@@ -642,7 +614,7 @@
                                                     <span class="kb-badge-none"><i class="bi bi-dash-circle"></i> Belum ada</span>
                                                 </check>
                                             </td>
-                                            <td class="text-end fw-bold font-monospace text-success">
+                                            <td class="text-end fw-bold font-monospace text-dark">
                                                 Rp {{ number_format(@sp.nominal_penawaran ?: 0, 0, ',', '.') }}
                                             </td>
                                             <td class="text-center text-nowrap">
@@ -746,10 +718,7 @@
                                         <tr class="table-light">
                                             <td class="text-muted small text-center">{{ @i + 1 }}</td>
                                             <td>
-                                                <div class="fw-bold font-monospace text-danger">{{ @sp.nomor_surat }}</div>
-                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle mt-1" style="font-size: 0.68rem;">
-                                                    <i class="bi bi-x-circle me-1"></i> Batal / Revisi
-                                                </span>
+                                                <div class="fw-bold font-monospace text-dark">{{ @sp.nomor_surat }}</div>
                                             </td>
                                             <td>
                                                 <check if="{{ !empty(@sp.nomor_permintaan) }}">
@@ -852,19 +821,10 @@
                                             </td>
                                             <td>
                                                 <check if="{{ !empty(@sp.nomor_permintaan) }}">
-                                                    <span class="badge bg-secondary-subtle text-secondary font-monospace d-inline-block mb-1" style="font-size: 0.72rem;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
+                                                    <span class="badge bg-light text-secondary border font-monospace d-inline-block mb-1" style="font-size: 0.72rem;" title="Nomor Permintaan">#{{ @sp.nomor_permintaan }}</span>
                                                 </check>
                                                 <div class="fw-bold text-dark">{{ @sp.display_perusahaan ?: @sp.nmcustomer }}</div>
-                                                <check if="{{ !empty(@sp.has_kendala_tinjauan) }}">
-                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center gap-1 mt-1" style="font-size: 0.68rem;" title="Ada kendala pada kesiapan 4 pilar teknis">
-                                                        <i class="bi bi-exclamation-triangle-fill"></i> Kendala 4 Pilar
-                                                    </span>
-                                                </check>
-                                                <check if="{{ empty(@sp.has_kendala_tinjauan) && !empty(@sp.has_catatan_tinjauan) }}">
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1 mt-1" style="font-size: 0.68rem;" title="{{ implode(' | ', @sp.catatan_pilar_list) }}">
-                                                        <i class="bi bi-sticky-fill text-warning"></i> Catatan 4 Pilar
-                                                    </span>
-                                                </check>
+                                                
                                             </td>
                                             <td class="text-nowrap small text-muted text-center">{{ date('d M Y', strtotime(@sp.tanggal_surat)) }}</td>
                                             <td>
@@ -885,17 +845,17 @@
                                             <td class="text-center">
                                                 <div class="d-flex flex-column align-items-center gap-1">
                                                     <check if="{{ @sp.status_badge_type == 'batal' || @sp.is_old_replaced || @sp.status_respon_klien == 'batal' || @sp.status_respon_klien == 'tolak' || @sp.status == 'batal' || @sp.status == 'nonaktif' }}">
-                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Batal / Revisi</span>
+                                                        <span class="badge rounded-pill border px-2 py-1" style="background-color: #f8fafc; color: #475569; border-color: #cbd5e1 !important; font-size: 0.72rem; font-weight: 600;">Batal / Revisi</span>
                                                     </check>
                                                     <check if="{{ !@sp.is_old_replaced && @sp.status_badge_type != 'batal' && @sp.status_respon_klien != 'batal' && @sp.status_respon_klien != 'tolak' && @sp.status != 'batal' && @sp.status != 'nonaktif' }}">
                                                         <check if="{{ @sp.status_respon_klien == 'deal' || @sp.status == 'disetujui' }}">
-                                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">DEAL</span>
+                                                            <span class="badge rounded-pill border px-2 py-1" style="background-color: #f8fafc; color: #334155; border-color: #cbd5e1 !important; font-size: 0.72rem; font-weight: 600;">DEAL</span>
                                                         </check>
                                                         <check if="{{ @sp.status_respon_klien == 'nego' }}">
-                                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">Negosiasi</span>
+                                                            <span class="badge rounded-pill border px-2 py-1" style="background-color: #f8fafc; color: #334155; border-color: #cbd5e1 !important; font-size: 0.72rem; font-weight: 600;">Negosiasi</span>
                                                         </check>
                                                         <check if="{{ @sp.status_respon_klien != 'deal' && @sp.status_respon_klien != 'nego' && @sp.status != 'disetujui' }}">
-                                                            <span class="badge bg-light text-secondary border px-2 py-1">{{ @sp.status_respon_klien ?: (@sp.status ?: 'Draft') }}</span>
+                                                            <span class="badge rounded-pill bg-light text-secondary border px-2 py-1" style="font-size: 0.72rem;">{{ @sp.status_respon_klien ?: (@sp.status ?: 'Draft') }}</span>
                                                         </check>
                                                     </check>
                                                 </div>

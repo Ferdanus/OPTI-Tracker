@@ -1241,7 +1241,7 @@
                     <div class="flex-grow-1">
                         <div class="section-header-text">Dasar Perhitungan Anggaran Layanan</div>
                         </div>
-                    <span class="badge {{ @order.jenis_layanan_opti == 'selulosa' ? 'bg-danger' : 'bg-success' }} text-uppercase px-2 py-1" style="font-size: 0.7rem;">
+                    <span class="badge rounded-pill bg-light text-dark border text-uppercase px-2.5 py-1 fw-semibold" style="font-size: 0.72rem;">
                         OPTI {{ @order.jenis_layanan_opti }}
                     </span>
                 </div>
@@ -1595,7 +1595,7 @@
                                 <a href="{{ @BASE }}/order/{{ @order.id }}/form-pelayanan" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.72rem;">
                                     <i class="bi bi-file-text me-1"></i> Form Pelayanan
                                 </a>
-                                <a href="{{ @BASE }}/order/{{ @order.id }}/tinjauan" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.72rem;">
+                                <a href="{{ @BASE }}/order/{{ @order.id }}?tahap=3" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.72rem;">
                                     <i class="bi bi-shield-check me-1"></i> Kaji Kelayakan Teknis
                                 </a>
                             </div>
@@ -1780,9 +1780,10 @@
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-clock-history"></i></span>
-                                <input type="number" name="durasi_hari" id="inputDurasiHari" class="form-control fw-bold fs-6 font-monospace text-dark bg-light" min="1" max="365" step="1" value="{{ @durasi_hari ?: 20 }}" placeholder="20" required readonly>
-                                <span class="input-group-text bg-light text-secondary fw-semibold">Hari Kerja</span>
-                                <input type="hidden" name="spm_layanan" id="inputSpmLayanan" value="{{ (@durasi_hari ?: 20) . ' Hari Kerja' }}">
+                                <input type="number" name="durasi_hari" id="inputDurasiHari" class="form-control fw-bold fs-6 font-monospace text-dark bg-light" min="1" max="365" step="1" value="{{ @durasi_nilai ?: (@durasi_hari ?: (@order.durasi_total_nilai ?: (@order.spm_durasi_nilai ?: (@order.durasi_hari_kerja ?: 20)))) }}" placeholder="20" required readonly>
+                                <span class="input-group-text bg-light text-secondary fw-semibold" id="labelDurasiSatuan">{{ @durasi_satuan ?: (@order.durasi_satuan_efektif ?: (@order.spm_durasi_satuan ?: 'Hari Kerja')) }}</span>
+                                <input type="hidden" name="durasi_satuan" id="inputDurasiSatuan" value="{{ @durasi_satuan ?: (@order.durasi_satuan_efektif ?: (@order.spm_durasi_satuan ?: 'Hari Kerja')) }}">
+                                <input type="hidden" name="spm_layanan" id="inputSpmLayanan" value="{{ @spm_layanan_val ?: ((@durasi_nilai ?: (@durasi_hari ?: 20)) . ' ' . (@durasi_satuan ?: (@order.durasi_satuan_efektif ?: 'Hari Kerja'))) }}">
                             </div>
                         </div>
 
@@ -1949,7 +1950,7 @@
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <check if="{{ @is_locked_deal || (@sp_existing && @sp_existing.status_respon_klien == 'deal') || (@order.status_penawaran == 'deal') }}">
                             <input type="hidden" name="action_status" id="inputActionStatus" value="deal">
-                            <button type="submit" name="action_status" value="draft" class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft';">
+                            <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft'; var sr = document.getElementById('select_status_respon_klien'); if (sr) sr.value='draft';">
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
                             <button type="submit" name="action_status" value="deal" class="btn btn-primary fw-semibold px-4 py-2 d-inline-flex align-items-center gap-1.5 shadow-xs">
@@ -1958,7 +1959,7 @@
                         </check>
                         <check if="{{ !@is_locked_deal && (!@sp_existing || @sp_existing.status_respon_klien != 'deal') && (@order.status_penawaran != 'deal') }}">
                             <input type="hidden" name="action_status" id="inputActionStatus" value="nego">
-                            <button type="submit" name="action_status" value="draft" class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft';">
+                            <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft'; var sr = document.getElementById('select_status_respon_klien'); if (sr) sr.value='draft';">
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
                             <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();">
@@ -2135,9 +2136,9 @@
                             </div>
 
                             <!-- Penerima (Yth. Pimpinan) -->
-                            <div style="font-size: 10.5px; line-height: 1.4; margin-bottom: 12px; word-break: break-word; overflow-wrap: anywhere;">
+                            <div style="font-size: 10.5px; line-height: 1.4; margin-bottom: 12px; word-break: break-word; overflow-wrap: anywhere; max-width: 60%;">
                                 <div>Yth. <span id="d_sel_perusahaan">{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}</span></div>
-                                <div id="d_sel_kota">di Tempat</div>
+                                <div id="d_sel_alamat" style="white-space: pre-line; word-break: break-word; overflow-wrap: anywhere;">{{ @sp_existing.alamat ?: (@order.alamat ?: 'di Tempat') }}</div>
                                 <div id="d_sel_pic_wrap" style="{{ (!@sp_existing.nama && !@order.pic) ? 'display: none;' : '' }}">
                                     u.p. <span id="d_sel_pic">{{ @sp_existing.nama ?: @order.pic }}</span>
                                 </div>
@@ -2317,7 +2318,7 @@
                                 <div style="font-size: 10.5px; text-align: right; width: 135px; flex-shrink: 0; white-space: nowrap;" id="d_tanggal_l">Bandung, -</div>
                             </div>
 
-                            <div style="font-size: 10.5px; line-height: 1.4; margin-bottom: 12px; word-break: break-word; overflow-wrap: anywhere;">
+                            <div style="font-size: 10.5px; line-height: 1.4; margin-bottom: 12px; word-break: break-word; overflow-wrap: anywhere; max-width: 60%;">
                                 <div>Yth. <span id="d_perusahaan_l">{{ @sp_existing.perusahaan ?: @order.nama_perusahaan }}</span></div>
                                 <div id="d_alamat_l" style="white-space: pre-line; word-break: break-word; overflow-wrap: anywhere;">{{ @sp_existing.alamat ?: (@order.alamat ?: 'di Tempat') }}</div>
                             </div>
@@ -2701,9 +2702,11 @@ function updateDurasiHari(el) {
     var raw = el.value.replace(/[^0-9]/g, '');
     var val = parseInt(raw, 10) || 0;
     if (val < 1) val = 1;
+    var satuanEl = document.getElementById('inputDurasiSatuan');
+    var satuan = (satuanEl && satuanEl.value) ? satuanEl.value : 'Hari Kerja';
     var target = document.getElementById('inputSpmLayanan');
     if (target) {
-        target.value = val + ' Hari Kerja';
+        target.value = val + ' ' + satuan;
     }
     syncLivePreview();
 }
@@ -3050,12 +3053,15 @@ function applyStandardDraft() {
     
     var elDurasi = document.getElementById('inputDurasiHari');
     var durasiVal = (elDurasi && elDurasi.value) ? elDurasi.value : '30';
+    var elSatuan = document.getElementById('inputDurasiSatuan');
+    var durasiSatuan = (elSatuan && elSatuan.value) ? elSatuan.value : 'Hari Kerja';
+    var satuanLower = durasiSatuan.toLowerCase();
     
     var isLingkungan = '{{ @order.jenis_layanan_opti }}' === 'lingkungan';
     if (isLingkungan) {
         ta.value = "1. Pelaksanaan pekerjaan mengacu pada metode OECD 301D: Closed Bottle Test.\n" +
             "2. Biaya pekerjaan tersebut adalah sebesar " + textRupiah + ",- (" + textTerbilang + ") untuk 1 sampel\n" +
-            "3. Waktu pelaksanaan selama 4 bulan dengan jadwal pelaksanaan seperti dalam lampiran.";
+            "3. Waktu pelaksanaan selama " + durasiVal + " " + satuanLower + " dengan jadwal pelaksanaan seperti dalam lampiran.";
     } else {
         ta.value = "1. Biaya layanan adalah sebesar " + textRupiah + " (" + textTerbilang + "), dengan ruang lingkup pekerjaan sebagai berikut:\n" +
             "   1) Persiapan peralatan, bahan, dan pengkondisian sampel uji.\n" +
@@ -3063,7 +3069,7 @@ function applyStandardDraft() {
             "   3) Pengolahan data hasil analisis pengujian.\n" +
             "   4) Evaluasi teknis dan penyusunan laporan hasil pelaksanaan pekerjaan.\n" +
             "2. Pelaksanaan kegiatan pengujian / layanan akan dilaksanakan mulai tanggal " + tglFormatted + ".\n" +
-            "3. Total waktu pelaksanaan pekerjaan selama " + durasiVal + " hari kerja.\n" +
+            "3. Total waktu pelaksanaan pekerjaan selama " + durasiVal + " " + satuanLower + ".\n" +
             "4. Sampel dan bahan pendukung disediakan oleh pihak " + perName + " sesuai spesifikasi pengujian.";
     }
         
@@ -3240,10 +3246,12 @@ function syncLivePreview() {
         if (el) el.textContent = kotaTeks;
     });
 
-    // 7. Durasi Hari
+    // 7. Durasi Hari & Satuan
     var valDurasi = (elDurasi && elDurasi.value) ? parseInt(elDurasi.value, 10) : 20;
+    var elSatuan = document.getElementById('inputDurasiSatuan');
+    var satuanPreview = (elSatuan && elSatuan.value) ? elSatuan.value : 'Hari Kerja';
     var dDurasiL = document.getElementById('d_durasi_l');
-    if (dDurasiL) dDurasiL.textContent = valDurasi + ' Hari Kerja';
+    if (dDurasiL) dDurasiL.textContent = valDurasi + ' ' + satuanPreview;
 
     // 8. Nominal & Terbilang
     var valNominal = (elNominalReal && elNominalReal.value) ? parseInt(elNominalReal.value, 10) : 0;
@@ -4155,7 +4163,7 @@ async function unduhSpPdf(withKop) {
 
     var fieldNames = [
         'nomor_surat', 'tanggal_surat', 'perusahaan', 'nama', 'alamat',
-        'hal', 'lampiran_teks', 'nominal_penawaran', 'durasi_hari',
+        'hal', 'lampiran_teks', 'nominal_penawaran', 'durasi_hari', 'durasi_satuan',
         'ruang_lingkup', 'jadwal_pelaksanaan', 'catatan_sampel',
         'jabatan_pejabat', 'pejabat_nama', 'spm_layanan', 'permintaan_melalui'
     ];
@@ -4251,7 +4259,7 @@ function unduhSpWord() {
 
     var fieldNames = [
         'nomor_surat', 'tanggal_surat', 'perusahaan', 'nama', 'alamat',
-        'hal', 'lampiran_teks', 'nominal_penawaran', 'durasi_hari',
+        'hal', 'lampiran_teks', 'nominal_penawaran', 'durasi_hari', 'durasi_satuan',
         'ruang_lingkup', 'jadwal_pelaksanaan', 'catatan_sampel',
         'jabatan_pejabat', 'pejabat_nama', 'spm_layanan', 'permintaan_melalui'
     ];
@@ -4346,7 +4354,7 @@ async function eksekusiCetakSp(withKop) {
 
     var fieldNames = [
         'nomor_surat', 'tanggal_surat', 'perusahaan', 'nama', 'alamat',
-        'hal', 'lampiran_teks', 'nominal_penawaran', 'durasi_hari',
+        'hal', 'lampiran_teks', 'nominal_penawaran', 'durasi_hari', 'durasi_satuan',
         'ruang_lingkup', 'jadwal_pelaksanaan', 'catatan_sampel',
         'jabatan_pejabat', 'pejabat_nama', 'spm_layanan', 'permintaan_melalui'
     ];
@@ -4886,4 +4894,4 @@ window.addEventListener("resize", function() {
     var panel = document.getElementById("previewStickyWrapper");
     if (panel) clampPanelInViewport(panel);
 });
-</script>
+</script>

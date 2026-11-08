@@ -386,8 +386,8 @@
                             </div>
 
                             <div class="d-flex align-items-center justify-content-between mb-1 mt-2">
-                                <label class="form-label small fw-semibold text-secondary mb-0" style="font-size: 0.78rem;">
-                                    <i class="bi bi-person-gear text-primary me-1"></i> METODOLOGI &amp; RUANG LINGKUP DARI PIC PROPOSAL:
+                                <label class="form-label small fw-semibold text-dark mb-0" style="font-size: 0.78rem;">
+                                    METODOLOGI &amp; RUANG LINGKUP DARI PIC PROPOSAL:
                                 </label>
                             </div>
                             <textarea name="ruang_lingkup" id="inputRuangLingkup" class="form-control form-control-sm p-2" rows="4" 
@@ -401,8 +401,8 @@
                                     Durasi Pelaksanaan <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group input-group-sm">
-                                    <input type="number" min="1" max="365" name="durasi_hari" class="form-control fw-semibold font-monospace" 
-                                           value="{{ @durasi_hari }}" placeholder="Isi jumlah hari" required {{ !@can_edit ? 'disabled' : '' }}>
+                                    <input type="number" min="1" max="365" name="durasi_hari" id="inputDurasiHari" class="form-control fw-semibold font-monospace" 
+                                           value="{{ @durasi_hari }}" placeholder="Isi jumlah hari" oninput="checkKirimButtonState()" required {{ !@can_edit ? 'disabled' : '' }}>
                                     <span class="input-group-text bg-light text-secondary">Hari Kerja</span>
                                 </div>
                             </div>
@@ -515,8 +515,9 @@
                         <!-- 5. Tombol Aksi Proposal -->
                         <check if="{{ @can_edit }}">
                             <div class="pt-3 mt-3 border-top">
-                                <!-- Petunjuk Kunci Tombol Kirim -->
-                                <div class="mb-3 {{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) ? 'd-none' : '' }}" id="hintKirimProposal">
+                                <!-- Petunjuk Kunci Tombol Kirim (Khusus PIC) -->
+                                <check if="{{ !@is_ketua_selulosa }}">
+                                <div class="mb-3 {{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) && !empty(@durasi_hari) && ((int)@durasi_hari > 0) ? 'd-none' : '' }}" id="hintKirimProposal">
                                     <div class="small text-muted d-flex align-items-center" style="font-size: 0.8rem; gap: 5px;">
                                         <i class="bi bi-info-circle text-primary flex-shrink-0"></i>
                                         <span id="hintKirimProposalText">
@@ -532,6 +533,7 @@
                                         </span>
                                     </div>
                                 </div>
+                                </check>
 
                                 <!-- Baris Tombol Aksi Sejajar -->
                                 <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
@@ -548,21 +550,15 @@
                                             </div>
                                         </true>
                                         <false>
-                                            <button type="submit" name="action_type" value="{{ @is_ketua_selulosa ? 'simpan_katim' : 'draft' }}" class="btn-draft-theme">
+                                            <button type="submit" name="action_type" value="draft" formnovalidate class="btn-draft-theme">
                                                 <i class="bi bi-bookmark-fill"></i>
                                                 <span>{{ @is_ketua_selulosa ? 'Simpan Draf Perubahan' : 'Simpan Draf' }}</span>
                                             </button>
 
                                             <check if="{{ !@is_ketua_selulosa }}">
-                                                <button type="button" id="btnKirimProposal" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalAction()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
+                                                <button type="button" id="btnKirimProposal" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmKirimProposalAction()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) || empty(@durasi_hari) || ((int)@durasi_hari <= 0) ? 'disabled' : '' }}>
                                                     <i class="bi bi-send-fill"></i>
                                                     <span>Kirim ke Ka. Tim</span>
-                                                </button>
-                                            </check>
-                                            <check if="{{ @is_ketua_selulosa }}">
-                                                <button type="button" id="btnSimpanApproveStandalone" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmSimpanDanApproveStandalone()" {{ empty(@proposal.file_proposal) || ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) ? 'disabled' : '' }}>
-                                                    <i class="bi bi-check2-circle"></i>
-                                                    <span>Setujui</span>
                                                 </button>
                                             </check>
                                         </false>
@@ -1381,7 +1377,11 @@ function checkKirimButtonState() {
     const biayaVal = hiddenBiaya ? (parseFloat(hiddenBiaya.value) || 0) : 0;
     const hasCost = biayaVal > 0;
 
-    if (hasFile && hasCost) {
+    const durasiInput = document.getElementById('inputDurasiHari') || document.querySelector('input[name="durasi_hari"]');
+    const durasiVal = durasiInput ? (parseInt(durasiInput.value, 10) || 0) : 0;
+    const hasDurasi = durasiVal > 0;
+
+    if (hasFile && hasCost && hasDurasi) {
         if (btnKirim) {
             btnKirim.disabled = false;
             btnKirim.title = 'Kirim proposal ke Ketua Tim OPTI';
@@ -1396,14 +1396,12 @@ function checkKirimButtonState() {
     } else {
         if (btnKirim) btnKirim.disabled = true;
         if (btnApprove) btnApprove.disabled = true;
-        let hintMsg = '';
-        if (!hasFile && !hasCost) {
-            hintMsg = 'Isi estimasi total biaya (> Rp 0) dan unggah berkas proposal untuk mengaktifkan tombol.';
-        } else if (!hasFile) {
-            hintMsg = 'Unggah berkas dokumen proposal untuk mengaktifkan tombol.';
-        } else {
-            hintMsg = 'Isi estimasi total biaya / RAB (> Rp 0) untuk mengaktifkan tombol.';
-        }
+        let missing = [];
+        if (!hasDurasi) missing.push('durasi pelaksanaan / estimasi kerja');
+        if (!hasCost) missing.push('estimasi biaya / RAB');
+        if (!hasFile) missing.push('berkas proposal Word (.doc/.docx)');
+
+        let hintMsg = 'Lengkapi ' + missing.join(', ') + ' untuk mengaktifkan tombol.';
         if (btnKirim) btnKirim.title = hintMsg;
         if (btnApprove) btnApprove.title = hintMsg;
         const hintTextEl = document.getElementById('hintKirimProposalText');
@@ -1469,21 +1467,29 @@ function confirmKirimProposalAction() {
     const biayaVal = hiddenBiaya ? (parseFloat(hiddenBiaya.value) || 0) : 0;
     const hasCost = biayaVal > 0;
 
-    if (!hasFile || !hasCost) {
-        if (!hasFile) {
-            const dropzone = document.getElementById('dropzoneContainer');
-            if (dropzone) {
-                dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                dropzone.style.borderColor = '#dc3545';
-                setTimeout(() => { dropzone.style.borderColor = ''; }, 3000);
-            }
+    const durasiInput = document.getElementById('inputDurasiHari') || document.querySelector('input[name="durasi_hari"]');
+    const durasiVal = durasiInput ? (parseInt(durasiInput.value, 10) || 0) : 0;
+    const hasDurasi = durasiVal > 0;
+
+    if (!hasFile || !hasCost || !hasDurasi) {
+        if (!hasDurasi && durasiInput) {
+            durasiInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            durasiInput.focus();
         } else if (!hasCost) {
             const inputBiaya = document.getElementById('inputBiayaDisplay');
             if (inputBiaya) {
                 inputBiaya.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 inputBiaya.focus();
             }
+        } else if (!hasFile) {
+            const dropzone = document.getElementById('dropzoneContainer');
+            if (dropzone) {
+                dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                dropzone.style.borderColor = '#dc3545';
+                setTimeout(() => { dropzone.style.borderColor = ''; }, 3000);
+            }
         }
+        checkKirimButtonState();
         return false;
     }
 

@@ -155,7 +155,7 @@ class SuratPenawaranController extends Controller
                         SELECT MAX(id) AS max_id FROM opti_tinjauan_kelayakan GROUP BY order_id
                     ) tk_max ON tk_sub.id = tk_max.max_id
                 ) tk ON tk.order_id = sp.order_id
-                WHERE 1=1";
+                WHERE (sp.order_id IS NULL OR o.status_penawaran != 'belum_ada' OR sp.nomor_surat IS NOT NULL)";
         $params = [];
 
         // Filter Tahun (sama seperti di daftar order)
@@ -768,21 +768,42 @@ $daftarPegawai = $arsipUser->find(
         $proposal = ($order['jenis_layanan_opti'] === 'selulosa') ? $orderModel->getProposalRiset($orderId) : null;
         $kalkulasi = ($order['jenis_layanan_opti'] === 'lingkungan') ? $orderModel->getKalkulasiLingkungan($orderId) : [];
 
-        $durasiHari = 30;
-        $spmVal = trim($order['spm_layanan'] ?? '');
-        if (preg_match('/^(\d+)/', $spmVal, $m)) {
-            $durasiHari = (int)$m[1];
-        } elseif (strpos(strtolower($spmVal), 'bulan') !== false) {
-            if (preg_match('/(\d+)\s*bulan/i', $spmVal, $mb)) {
-                $durasiHari = (int)$mb[1] * 20;
+        $durasiNilai = !empty($order['durasi_total_nilai']) ? (int)$order['durasi_total_nilai'] : (!empty($order['spm_durasi_nilai']) ? (int)$order['spm_durasi_nilai'] : (!empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 0));
+        $durasiSatuan = !empty($order['durasi_satuan_efektif']) ? $order['durasi_satuan_efektif'] : (!empty($order['spm_durasi_satuan']) ? $order['spm_durasi_satuan'] : (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Bulan' : 'Hari Kerja'));
+
+        if (!empty($proposal['durasi_kegiatan']) && preg_match('/(\d+)/', $proposal['durasi_kegiatan'], $mp)) {
+            $durasiNilai = (int)$mp[1];
+            if (stripos($proposal['durasi_kegiatan'], 'bulan') !== false) {
+                $durasiSatuan = 'Bulan';
             }
-        } elseif (isset(\OrderLayanan::$SPM_LIST[$spmVal])) {
-            $durasiStandar = \OrderLayanan::$SPM_LIST[$spmVal];
-            if (preg_match('/(\d+)\s*bulan/i', $durasiStandar, $mb)) {
-                $durasiHari = (int)$mb[1] * 20;
+        } elseif (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' && !empty($kalkulasi)) {
+            $maxBulan = 0;
+            foreach ($kalkulasi as $kIt) {
+                $b = (int)($kIt['durasi_bulan'] ?? ($kIt['durasi_nilai'] ?? 0));
+                if ($b > $maxBulan) $maxBulan = $b;
+            }
+            if ($maxBulan > 0) {
+                $durasiNilai = $maxBulan;
+                $durasiSatuan = 'Bulan';
             }
         }
+
+        if ($durasiNilai <= 0 && !empty($order['spm_layanan'])) {
+            if (preg_match('/(\d+)\s*(bulan|hari)/i', $order['spm_layanan'], $m)) {
+                $durasiNilai = (int)$m[1];
+                $durasiSatuan = (stripos($m[2], 'bulan') !== false) ? 'Bulan' : 'Hari Kerja';
+            }
+        }
+
+        if ($durasiNilai <= 0) {
+            $durasiNilai = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 1 : 20;
+        }
+
+        $durasiHari = $durasiNilai;
+        $f3->set('durasi_nilai', $durasiNilai);
+        $f3->set('durasi_satuan', $durasiSatuan);
         $f3->set('durasi_hari', $durasiHari);
+        $f3->set('spm_layanan_val', "{$durasiNilai} {$durasiSatuan}");
 
         $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder());
 
@@ -847,12 +868,6 @@ $daftarPegawai = $arsipUser->find(
         $lampiranUserExisting = !empty($spExisting['file_lampiran_user'])
             ? str_replace('\\', '/', (string)$spExisting['file_lampiran_user'])
             : str_replace('\\', '/', (string)($_SESSION['pending_lampiran_sp_' . $orderId] ?? ''));
-        // Khusus OPTI Selulosa: lampiran hal. 3 langsung menyesuaikan dokumen yang diunggah PIC di Tahap 4
-        if (($order['jenis_layanan_opti'] ?? '') === 'selulosa' && !empty($proposal['file_proposal'])) {
-            if (empty($_SESSION['pending_lampiran_sp_' . $orderId])) {
-                $lampiranUserExisting = str_replace('\\', '/', (string)$proposal['file_proposal']);
-            }
-        }
         $f3->set('lampiran_user_existing', $lampiranUserExisting);
         $f3->set('all_sp', $allSp);
         $f3->set('is_revisi_baru', $isRevisiBaru);
@@ -1004,35 +1019,49 @@ $daftarPegawai = $arsipUser->find(
             }
         }
 
-        $actionStatus = $post['action_status'] ?? '';
-        $isDeal = $orderHasDeal || (($post['status_respon_klien'] ?? '') === 'deal');
+        $isSpSubmitted = !empty($spExisting) && ($spExisting['status_respon_klien'] ?? '') !== 'draft';
+        if ($isSpSubmitted && !$this->canEditSubmittedData(true, $orderId)) {
+            $this->setFlashError("Akses Ditolak: Surat Penawaran telah diterbitkan dan dikunci. Hubungi Superadmin untuk membuka izin edit.");
+            $f3->reroute("/order/{$orderId}#pane-stage-5");
+            return;
+        }
 
-        if ($isDeal) {
-            $post['status_respon_klien'] = 'deal';
-            if (!empty($spExisting)) {
-                $post['is_revisi_baru'] = 0;
-                $post['mode'] = 'edit';
-            }
-            if ($isLockedDeal) {
-                $post['action_status'] = 'deal';
-            }
+        $actionStatus = $post['action_status'] ?? '';
+
+        // Simpan Draf murni: jika tombol draf diklik dan alur belum terkunci permanen (belum bayar/PO), simpan sebagai draft
+        if ($actionStatus === 'draft' && !$isLockedDeal) {
+            $post['status_respon_klien'] = 'draft';
+            $post['action_status'] = 'draft';
+            $isDeal = false;
         } else {
-            if ($actionStatus === 'draft') {
-                if (empty($post['status_respon_klien'])) {
-                    $post['status_respon_klien'] = 'draft';
+            $isDeal = $orderHasDeal || (($post['status_respon_klien'] ?? '') === 'deal');
+            if ($isDeal) {
+                $post['status_respon_klien'] = 'deal';
+                if (!empty($spExisting)) {
+                    $post['is_revisi_baru'] = 0;
+                    $post['mode'] = 'edit';
                 }
-            } elseif ($actionStatus === 'nego' || $actionStatus === 'terkirim') {
-                if (empty($post['status_respon_klien']) || $post['status_respon_klien'] === 'draft') {
-                    $post['status_respon_klien'] = 'nego';
+                if ($isLockedDeal) {
+                    $post['action_status'] = 'deal';
+                }
+            } else {
+                if ($actionStatus === 'nego' || $actionStatus === 'terkirim') {
+                    if (empty($post['status_respon_klien']) || $post['status_respon_klien'] === 'draft') {
+                        $post['status_respon_klien'] = 'nego';
+                    }
                 }
             }
         }
 
-        $durasiAngka = (int)($post['durasi_hari'] ?? 0);
+        $durasiAngka = (int)($post['durasi_hari'] ?? ($post['durasi_nilai'] ?? 0));
+        $durasiSatuan = trim((string)($post['durasi_satuan'] ?? ''));
+        if (empty($durasiSatuan)) {
+            $durasiSatuan = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 'Bulan' : 'Hari Kerja';
+        }
         if ($durasiAngka > 0) {
-            $post['spm_layanan'] = $durasiAngka . ' Hari Kerja';
+            $post['spm_layanan'] = "{$durasiAngka} {$durasiSatuan}";
         } elseif (empty($post['spm_layanan']) || $post['spm_layanan'] === 'Lainnya') {
-            $post['spm_layanan'] = '30 Hari Kerja';
+            $post['spm_layanan'] = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? '1 Bulan' : '30 Hari Kerja';
         }
 
         if (!empty($post['nomor_surat']) && preg_match('/^\d+\/BBSPJIS\/MS\//i', $post['nomor_surat'])) {
@@ -1067,14 +1096,6 @@ $daftarPegawai = $arsipUser->find(
                 unset($_SESSION['pending_lampiran_sp_' . $orderId]);
             }
 
-            // Khusus OPTI Selulosa: jika belum ada upload berkas lampiran baru di sesi ini,
-            // sesuaikan langsung dengan dokumen proposal yang diunggah PIC pada Tahap 4
-            if (empty($post['file_lampiran_user']) && ($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
-                $prop = $orderModel->getProposalRiset($orderId);
-                if (!empty($prop['file_proposal'])) {
-                    $post['file_lampiran_user'] = str_replace('\\', '/', (string)$prop['file_proposal']);
-                }
-            }
 
             // Otomatis generate dan simpan berkas PDF resmi (termasuk lampiran hal 3+) ke folder uploads/penawaran
             $uploadDir = 'uploads/penawaran/';
@@ -1689,12 +1710,6 @@ $daftarPegawai = $arsipUser->find(
             $sp['file_lampiran_user'] = $_SESSION['pending_lampiran_sp_' . $orderIdActual];
         }
 
-        if ($sp && ($order['jenis_layanan_opti'] ?? '') === 'selulosa' && empty($_SESSION['pending_lampiran_sp_' . $orderIdActual])) {
-            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderIdActual]);
-            if (!empty($propRows[0]['file_proposal'])) {
-                $sp['file_lampiran_user'] = trim((string)$propRows[0]['file_proposal']);
-            }
-        }
 
         if (!$order && $sp) {
             // Fallback order info dari data surat penawaran
@@ -1898,10 +1913,12 @@ $daftarPegawai = $arsipUser->find(
         $nominalRaw    = $f3->get('POST.nominal_penawaran') ?? $f3->get('GET.nominal_penawaran');
         $nominal       = ($nominalRaw !== null && $nominalRaw !== '') ? (float)str_replace(['.', ','], '', (string)$nominalRaw) : (float)($sp['nominal_penawaran'] ?? ($order['estimasi_biaya'] ?? 0));
 
-        $durasiHari    = (int)($f3->get('POST.durasi_hari') ?? $f3->get('GET.durasi_hari') ?? ($sp['durasi_hari'] ?? 30));
-        if ($durasiHari > 0) {
-            $order['spm_layanan'] = "{$durasiHari} Hari Kerja";
+        $durasiNilai   = (int)($f3->get('POST.durasi_hari') ?? $f3->get('GET.durasi_hari') ?? ($order['spm_durasi_nilai'] ?? ($sp['durasi_hari'] ?? 30)));
+        $durasiSatuan  = trim((string)($f3->get('POST.durasi_satuan') ?? $f3->get('GET.durasi_satuan') ?? ($order['spm_durasi_satuan'] ?? (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Bulan' : 'Hari Kerja'))));
+        if ($durasiNilai > 0) {
+            $order['spm_layanan'] = "{$durasiNilai} {$durasiSatuan}";
         }
+        $durasiHari = $durasiNilai;
 
         $judulKegiatan = !empty($order['judul_kegiatan']) ? $order['judul_kegiatan'] : (!empty($sp['perihal']) ? $sp['perihal'] : 'Layanan Jasa Optimalisasi Teknologi Industri (OPTI)');
         $mediaRaw      = !empty($sp['permintaan_melalui']) ? $sp['permintaan_melalui'] : (!empty($order['permintaan_melalui']) ? $order['permintaan_melalui'] : 'email');
@@ -1922,7 +1939,7 @@ $daftarPegawai = $arsipUser->find(
                 "   5) Pengujian handsheet meliputi: massa handsheet, gramatur, uji brightness, % retensi.\n" .
                 "   6) Evaluasi dan penyusunan laporan teknis.\n" .
                 "2. Pelaksanaan kegiatan untuk ruang lingkup 1) sampai dengan 4) akan dilakukan pada tanggal " . $tglFormatted . ".\n" .
-                "3. Total waktu pelaksanaan pekerjaan selama " . $durasiHari . " hari kerja.\n" .
+                "3. Total waktu pelaksanaan pekerjaan selama " . $durasiNilai . " " . strtolower($durasiSatuan) . ".\n" .
                 "4. Contoh aditif yang perlu disediakan sebanyak 50 ml.";
         }
 
@@ -1934,12 +1951,6 @@ $daftarPegawai = $arsipUser->find(
         $lampiranDocExt = null;
 
         $relLampiran = $sp['file_lampiran_user'] ?? ($_SESSION['pending_lampiran_sp_' . $orderIdActual] ?? '');
-        if (empty($relLampiran) && ($order['jenis_layanan_opti'] ?? '') === 'selulosa' && $orderIdActual > 0) {
-            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderIdActual]);
-            if (!empty($propRows[0]['file_proposal'])) {
-                $relLampiran = trim((string)$propRows[0]['file_proposal']);
-            }
-        }
         if (!empty($relLampiran)) {
             $rootDir = dirname(__DIR__, 2);
             $fullLampiran = $rootDir . '/' . ltrim($relLampiran, '/\\');
@@ -2161,8 +2172,10 @@ $daftarPegawai = $arsipUser->find(
         $nominalRaw   = $f3->get('POST.nominal_penawaran') ?? $f3->get('GET.nominal_penawaran');
         $nominal      = ($nominalRaw !== null && $nominalRaw !== '') ? (float)str_replace(['.', ','], '', (string)$nominalRaw) : (float)($existingSp['nominal_penawaran'] ?? $order['estimasi_biaya']);
 
-        $durasiHari   = (int)($f3->get('POST.durasi_hari') ?? $f3->get('GET.durasi_hari') ?? 30);
-        $spmLayanan   = trim((string)($f3->get('POST.spm_layanan') ?? $f3->get('GET.spm_layanan') ?? ($durasiHari > 0 ? "{$durasiHari} Hari Kerja" : ($order['spm_layanan'] ?? '30 Hari Kerja'))));
+        $durasiNilai  = (int)($f3->get('POST.durasi_hari') ?? $f3->get('GET.durasi_hari') ?? ($order['spm_durasi_nilai'] ?? ($existingSp['durasi_hari'] ?? 30)));
+        $durasiSatuan = trim((string)($f3->get('POST.durasi_satuan') ?? $f3->get('GET.durasi_satuan') ?? ($order['spm_durasi_satuan'] ?? (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Bulan' : 'Hari Kerja'))));
+        $spmLayanan   = trim((string)($f3->get('POST.spm_layanan') ?? $f3->get('GET.spm_layanan') ?? ($durasiNilai > 0 ? "{$durasiNilai} {$durasiSatuan}" : ($order['spm_layanan'] ?? '30 Hari Kerja'))));
+        $durasiHari   = $durasiNilai;
 
         $spPreview = [
             'id'                 => (int)($existingSp['id'] ?? 0),
@@ -2301,13 +2314,6 @@ $daftarPegawai = $arsipUser->find(
             }
         }
 
-        // Khusus OPTI Selulosa: lampiran Halaman 3+ langsung menyesuaikan dokumen yang diunggah PIC di Tahap 4
-        if (($relPath === '' || ($order['jenis_layanan_opti'] ?? '') === 'selulosa') && $orderId > 0) {
-            $propRows = $this->db->exec('SELECT file_proposal FROM opti_proposal_riset WHERE order_id = ? AND file_proposal IS NOT NULL AND file_proposal <> \'\' ORDER BY id DESC LIMIT 1', [1 => $orderId]);
-            if (!empty($propRows[0]['file_proposal']) && empty($_SESSION['pending_lampiran_sp_' . $orderId])) {
-                $relPath = trim((string)$propRows[0]['file_proposal']);
-            }
-        }
 
         if ($relPath === '') {
             return;
@@ -2528,21 +2534,22 @@ $daftarPegawai = $arsipUser->find(
         $alamat = !empty($sp['alamat']) ? trim($sp['alamat']) : (!empty($order['alamat_lengkap']) ? trim($order['alamat_lengkap']) : (!empty($order['alamatcustomer']) ? trim($order['alamatcustomer']) : (!empty($order['alamat']) && $order['alamat'] !== '-' ? trim($order['alamat']) : '')));
         $picSurat = !empty($sp['nama']) ? trim($sp['nama']) : (!empty($order['pic']) ? trim($order['pic']) : '');
 
+        $widthTujuan = 95.0; // Batasi lebar tujuan & alamat maks 95 mm agar tidak melebar melewati bawah kolom tanggal surat (X=132.5 mm)
         $pdf->SetX(30.0);
-        $pdf->MultiCell(160.0, $lineH, 'Yth. ' . $ythTitle, 0, 'L');
+        $pdf->MultiCell($widthTujuan, $lineH, 'Yth. ' . $ythTitle, 0, 'L');
         if (!empty($alamat)) {
             $alamatLines = array_filter(array_map('trim', explode("\n", str_replace(["\r\n", "\r"], "\n", $alamat))));
             foreach ($alamatLines as $alLine) {
                 $pdf->SetX(30.0);
-                $pdf->MultiCell(160.0, $lineH, $alLine, 0, 'L');
+                $pdf->MultiCell($widthTujuan, $lineH, $alLine, 0, 'L');
             }
         } else {
             $pdf->SetX(30.0);
-            $pdf->MultiCell(160.0, $lineH, 'di Tempat', 0, 'L');
+            $pdf->MultiCell($widthTujuan, $lineH, 'di Tempat', 0, 'L');
         }
         if (!empty($picSurat) && $picSurat !== '-' && stripos($ythTitle, $picSurat) === false) {
             $pdf->SetX(30.0);
-            $pdf->MultiCell(160.0, $lineH, 'u.p. ' . $picSurat, 0, 'L');
+            $pdf->MultiCell($widthTujuan, $lineH, 'u.p. ' . $picSurat, 0, 'L');
         }
 
         // 4. PARAGRAF PEMBUKA (Spacing setelah alamat: 2 enter sebelum pembuka, Indent 1.27 cm, Align Left)
@@ -2559,8 +2566,9 @@ $daftarPegawai = $arsipUser->find(
         if (empty($rawNaskah)) {
             $nominal = (float)($sp['nominal_penawaran'] ?? ($order['estimasi_biaya'] ?? 0));
             $terbilangStr = strtolower(self::terbilang($nominal));
-            $durasiAngka = (int)($sp['durasi_hari'] ?? (preg_match('/(\d+)/', (string)($order['spm_layanan'] ?? ''), $dm) ? (int)$dm[1] : 20));
-            if ($durasiAngka <= 0) $durasiAngka = 20;
+            $durasiAngka = (int)($sp['durasi_hari'] ?? ($order['spm_durasi_nilai'] ?? ($order['durasi_hari_kerja'] ?? (preg_match('/(\d+)/', (string)($order['spm_layanan'] ?? ''), $dm) ? (int)$dm[1] : 23))));
+            if ($durasiAngka <= 0) $durasiAngka = 23;
+            $durasiSatuanTeks = strtolower($order['spm_durasi_satuan'] ?? 'hari kerja');
 
             $rawNaskah = "1. Biaya layanan adalah sebesar Rp " . number_format($nominal, 0, ',', '.') . " (" . $terbilangStr . " rupiah), dengan ruang lingkup pekerjaan sebagai berikut:\n" .
                 "   1) Beating LBKP hingga 300 mL CSF\n" .
@@ -2570,7 +2578,7 @@ $daftarPegawai = $arsipUser->find(
                 "   5) Pengujian handsheet meliputi: massa handsheet, gramatur, uji brightness, % retensi.\n" .
                 "   6) Evaluasi dan penyusunan laporan teknis.\n" .
                 "2. Pelaksanaan kegiatan untuk ruang lingkup 1) sampai dengan 4) akan dilakukan pada tanggal " . $tglFormatted . ".\n" .
-                "3. Total waktu pelaksanaan pekerjaan selama " . $durasiAngka . " hari kerja.\n" .
+                "3. Total waktu pelaksanaan pekerjaan selama " . $durasiAngka . " " . $durasiSatuanTeks . ".\n" .
                 "4. Contoh aditif yang perlu disediakan sebanyak 50 ml.";
         }
 
@@ -2861,21 +2869,22 @@ $daftarPegawai = $arsipUser->find(
         $pdf->Ln($lineH * 3);
 
         // 3. Alamat Tujuan (Berjarak 3 enter di bawah Hal)
+        $widthTujuan = 95.0; // Batasi lebar tujuan & alamat maks 95 mm agar tidak melebar melewati bawah kolom tanggal surat (X=132.5 mm)
         $pdf->SetX(30.0);
-        $pdf->MultiCell(160.0, $lineH, 'Yth. ' . $ythTitle, 0, 'L');
+        $pdf->MultiCell($widthTujuan, $lineH, 'Yth. ' . $ythTitle, 0, 'L');
         $alamatLines = array_filter(array_map('trim', explode("\n", str_replace(["\r\n", "\r"], "\n", $alamat))));
         if (!empty($alamatLines)) {
             foreach ($alamatLines as $alLine) {
                 $pdf->SetX(30.0);
-                $pdf->MultiCell(160.0, $lineH, $alLine, 0, 'L');
+                $pdf->MultiCell($widthTujuan, $lineH, $alLine, 0, 'L');
             }
         } else {
             $pdf->SetX(30.0);
-            $pdf->MultiCell(160.0, $lineH, 'di Tempat', 0, 'L');
+            $pdf->MultiCell($widthTujuan, $lineH, 'di Tempat', 0, 'L');
         }
         if (!empty($picSurat) && $picSurat !== '-' && stripos($ythTitle, $picSurat) === false) {
             $pdf->SetX(30.0);
-            $pdf->MultiCell(160.0, $lineH, 'u.p. ' . $picSurat, 0, 'L');
+            $pdf->MultiCell($widthTujuan, $lineH, 'u.p. ' . $picSurat, 0, 'L');
         }
 
         // 4. Paragraf Pembuka (Spacing setelah alamat: 2 enter sebelum pembuka)

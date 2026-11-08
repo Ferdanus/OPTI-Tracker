@@ -324,6 +324,10 @@ class Controller {
                                     AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
                 $resOrderSuper = $this->db->exec($sqlOrderSuper);
                 $notifOrderCount = (int)($resOrderSuper[0]['c'] ?? 0);
+            } else {
+                $orderModel = new \OrderLayanan($this->db);
+                $taskCounts = $orderModel->countUserTasks($role, $userId, $layanan);
+                $notifOrderCount = (int)($taskCounts['total'] ?? 0);
             }
         } catch (\Exception $eOrder) {
             $notifOrderCount = 0;
@@ -479,6 +483,23 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         }
         $this->f3->set('jumlah_notif_keuangan', $notifKeuanganCount);
 
+        // Hitung total notifikasi Berkas Layanan yang sesuai hak akses menu yang ditampilkan ke user
+        $notifBerkasCount = 0;
+        if ($role === 'superadmin') {
+            $notifBerkasCount = $notifPenawaranCount + $notifKeuanganCount + $notifProposalCount;
+        } else {
+            if ($isKeuangan) {
+                $notifBerkasCount += $notifKeuanganCount;
+            }
+            if ($isTimMitra) {
+                $notifBerkasCount += $notifPenawaranCount;
+            }
+            if ($role === 'tim_kerja' || ($role === 'ketua_tim' && !$this->isKetuaSertifikasi())) {
+                $notifBerkasCount += $notifProposalCount;
+            }
+        }
+        $this->f3->set('jumlah_notif_berkas', $notifBerkasCount);
+
         // [BARU] Badge "Penunjukan Pelaksana" (Ka Tim OPTI & Superadmin) -- order yang udah
         // didisposisi + lunas + sampel diterima, tapi Ketua Pelaksana belum ditunjuk.
         $notifPenunjukanPelaksana = 0;
@@ -561,46 +582,124 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         // Daftar Pengguna Aktif untuk Fitur Pop-Up "Ganti User"
         $switchUsers = array();
         try {
+            $strukturalRoleMap = array(
+                170 => 'ketua_tim_selulosa',
+                180 => 'tim_kerja_selulosa',
+                190 => 'ketua_tim_lingkungan',
+                140 => 'ketua_tim_pengujian',
+                150 => 'ketua_tim_kalibrasi',
+                100 => 'ketua_tim_sertifikasi',
+                210 => 'ketua_tim_pendampingan',
+                160 => 'ketua_tim_inspeksi',
+                240 => 'ketua_tim_mitra',
+                30  => 'ketua_tim_keuangan',
+                31  => 'ppk'
+            );
+
+            // Ambil seluruh pemetaan role aktif dari opti_user_map
+            $allMapRows = $this->db->exec(
+                "SELECT id_user, role, jenis_layanan
+                 FROM opti_user_map
+                 WHERE status_tampil = 'show' AND (is_active = 1 OR is_active = '1')
+                 ORDER BY id ASC"
+            );
+            $userMultiRolesMap = array();
+            if (!empty($allMapRows)) {
+                foreach ($allMapRows as $mr) {
+                    $uId = (int)$mr['id_user'];
+                    $userMultiRolesMap[$uId][] = $mr;
+                }
+            }
+
             $switchUsersRaw = $this->db->exec(
                 "SELECT u.id_user AS id, 
                         u.nama_user AS nama_lengkap, 
-                        COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) AS role_sistem, 
+                        u.si_opti,
                         u.login, 
                         u.bidang, 
                         u.nama_avatar,
                         u.id_struktural_tim
                  FROM tb_arsipuser u
-                 LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show' AND (m.is_active = 1 OR m.is_active = '1')
                  WHERE (
                      (u.si_opti IS NOT NULL AND u.si_opti != '' AND u.si_opti != 'user')
-                     OR (m.role IS NOT NULL AND m.role != '' AND m.role != 'user')
                      OR u.id_struktural_tim IN (170, 180, 190, 140, 150, 100, 210, 160, 240, 30, 31)
+                     OR u.id_user IN (SELECT id_user FROM opti_user_map WHERE status_tampil = 'show' AND (is_active = 1 OR is_active = '1'))
                  )
                  AND (u.status = 1 OR u.status = '1' OR u.status = 'aktif')
                  GROUP BY u.id_user
-                 ORDER BY 
-                    CASE 
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) = 'superadmin' THEN 1
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) LIKE 'ketua_tim%' OR COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) LIKE 'katim%' OR u.id_struktural_tim IN (170, 190, 140, 150, 100, 210, 160, 240, 30) THEN 2
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) = 'tim_mitra_industri' OR COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) = 'admin_order' OR COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) = 'tim_mitra' THEN 3
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) = 'keuangan' THEN 4
-                        WHEN COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) LIKE 'tim_kerja%' OR COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) LIKE 'tk_%' OR COALESCE(NULLIF(u.si_opti, ''), MIN(m.role)) LIKE 'pic_%' THEN 5
-                        ELSE 6
-                    END ASC,
-                    u.nama_user ASC"
+                 ORDER BY u.nama_user ASC"
             );
 
             if (!empty($switchUsersRaw)) {
                 foreach ($switchUsersRaw as $u) {
-                    $roleMeta = class_exists('\PenggunaController') 
-                        ? \PenggunaController::resolveRoleMeta((int)$u['id'], trim($u['role_sistem'] ?? '')) 
-                        : array('label' => ucwords(str_replace('_', ' ', $u['role_sistem'])), 'badge_class' => 'role-badge role-badge-default', 'icon' => 'bi-person');
-                    
-                    $u['role_label'] = $roleMeta['label'] ?? ucwords(str_replace('_', ' ', $u['role_sistem']));
-                    $u['role_badge_class'] = $roleMeta['badge_class'] ?? 'role-badge role-badge-default';
-                    $u['role_icon'] = $roleMeta['icon'] ?? 'bi-person';
-                    $u['role_category'] = $roleMeta['category'] ?? 'manajemen';
-                    
+                    $uid = (int)$u['id'];
+                    $rawRole = trim($u['si_opti'] ?? '');
+                    $idStruktural = (int)($u['id_struktural_tim'] ?? 0);
+
+                    $userRoleKeys = array();
+
+                    // 1. Dari si_opti jika bukan 'user' atau kosong
+                    if (!empty($rawRole) && $rawRole !== 'user') {
+                        $normRole = class_exists('\PenggunaController') ? \PenggunaController::normalizeRoleKey($rawRole) : $rawRole;
+                        $userRoleKeys[] = $normRole;
+                    } elseif (isset($strukturalRoleMap[$idStruktural])) {
+                        // 2. Dari jabatan struktural sekretariat
+                        $userRoleKeys[] = $strukturalRoleMap[$idStruktural];
+                    }
+
+                    // 3. Gabungkan dengan role aktif di opti_user_map
+                    if (!empty($userMultiRolesMap[$uid])) {
+                        foreach ($userMultiRolesMap[$uid] as $mr) {
+                            $rKey = class_exists('\PenggunaController') 
+                                ? \PenggunaController::mapEntryToRoleKey($mr['role'] ?? '', $mr['jenis_layanan'] ?? '') 
+                                : trim($mr['role'] ?? '');
+                            if ($rKey !== '' && !in_array($rKey, $userRoleKeys, true)) {
+                                $userRoleKeys[] = $rKey;
+                            }
+                        }
+                    }
+
+                    // 4. Fallback jika masih kosong
+                    if (empty($userRoleKeys)) {
+                        if (isset($strukturalRoleMap[$idStruktural])) {
+                            $userRoleKeys[] = $strukturalRoleMap[$idStruktural];
+                        } else {
+                            $userRoleKeys[] = 'user';
+                        }
+                    }
+
+                    // Resolusi badge, label, dan ikon per role
+                    $rolesList = array();
+                    $labelsArr = array();
+                    foreach ($userRoleKeys as $rk) {
+                        $roleMeta = class_exists('\PenggunaController') 
+                            ? \PenggunaController::resolveRoleMeta($uid, $rk) 
+                            : array('label' => ucwords(str_replace('_', ' ', $rk)), 'badge_class' => 'role-badge role-badge-default', 'icon' => 'bi-person', 'category' => 'manajemen');
+                        
+                        $rolesList[] = array(
+                            'key' => $rk,
+                            'label' => $roleMeta['label'] ?? ucwords(str_replace('_', ' ', $rk)),
+                            'badge_class' => $roleMeta['badge_class'] ?? 'role-badge role-badge-default',
+                            'icon' => $roleMeta['icon'] ?? 'bi-person',
+                            'category' => $roleMeta['category'] ?? 'manajemen'
+                        );
+                        $labelsArr[] = $roleMeta['label'] ?? ucwords(str_replace('_', ' ', $rk));
+                    }
+
+                    $primaryRoleKey = $userRoleKeys[0];
+                    $primaryMeta = $rolesList[0];
+
+                    $u['role_sistem'] = $primaryRoleKey;
+                    $u['roles_list'] = $rolesList;
+                    $u['role_label'] = implode(', ', $labelsArr);
+                    $u['role_badge_class'] = $primaryMeta['badge_class'];
+                    $u['role_icon'] = $primaryMeta['icon'];
+                    $u['role_category'] = $primaryMeta['category'] ?? 'manajemen';
+
+                    // Bersihkan bidang dari string 'NULL'
+                    $cleanBidang = trim((string)($u['bidang'] ?? ''));
+                    $u['bidang'] = (strtoupper($cleanBidang) === 'NULL' || $cleanBidang === '') ? '' : $cleanBidang;
+
                     $initials = '';
                     $words = explode(' ', trim($u['nama_lengkap'] ?? 'User'));
                     foreach ($words as $w) {
@@ -612,6 +711,25 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                     $u['is_current'] = ((int)$u['id'] === (int)$userId);
                     $switchUsers[] = $u;
                 }
+
+                // Urutkan hierarki: Superadmin -> Ketua Tim -> Tim Mitra -> Keuangan -> Tim Kerja / PO -> PPK -> Lainnya, lalu alfabet nama
+                usort($switchUsers, function($a, $b) {
+                    $getRank = function($role) {
+                        if ($role === 'superadmin') return 1;
+                        if (strpos($role, 'ketua_tim') === 0 || strpos($role, 'katim') === 0) return 2;
+                        if ($role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra') return 3;
+                        if ($role === 'keuangan') return 4;
+                        if (strpos($role, 'tim_kerja') === 0 || strpos($role, 'pic_po') === 0) return 5;
+                        if ($role === 'ppk') return 6;
+                        return 7;
+                    };
+                    $rankA = $getRank($a['role_sistem']);
+                    $rankB = $getRank($b['role_sistem']);
+                    if ($rankA !== $rankB) {
+                        return $rankA <=> $rankB;
+                    }
+                    return strcasecmp($a['nama_lengkap'], $b['nama_lengkap']);
+                });
             }
         } catch (\Exception $eSwitch) {
             $switchUsers = array();

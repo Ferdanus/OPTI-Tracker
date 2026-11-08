@@ -213,11 +213,15 @@ p {
         $tujuanLines[] = 'u.p. ' . $picSurat;
     }
     ?>
-    <div style="margin-top: 33pt; font-family: Arial, sans-serif; font-size: 11pt; line-height: normal; text-align: left;">
+    <table class="MsoNormalTable" border="0" cellspacing="0" cellpadding="0" style="border-collapse: collapse; margin-top: 33pt; margin-bottom: 0; width: 60%; max-width: 9.5cm;">
+        <tr>
+            <td style="padding: 0; border: none; font-family: Arial, sans-serif; font-size: 11pt; line-height: normal; text-align: left;">
         <?php foreach ($tujuanLines as $tl): ?>
-            <p class="MsoNormal" style="text-align: left;"><?= htmlspecialchars($tl) ?></p>
-        <?php endforeach; ?>
-    </div>
+                    <p class="MsoNormal" style="text-align: left; margin: 0;"><?= htmlspecialchars($tl) ?></p>
+                <?php endforeach; ?>
+            </td>
+        </tr>
+    </table>
 
     <!-- ======================================================== -->
     <!-- 3.c. PARAGRAF PEMBUKA                                     -->

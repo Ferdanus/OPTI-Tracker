@@ -432,17 +432,27 @@ class SuratPenawaran extends \DB\SQL\Mapper
         }
 
         $spmLayanan = trim($data['spm_layanan'] ?? '');
+        $durasiNilai = (int)($data['durasi_hari'] ?? ($data['durasi_nilai'] ?? 0));
+        $durasiSatuan = trim((string)($data['durasi_satuan'] ?? ''));
+        if ($durasiNilai > 0 && empty($spmLayanan)) {
+            $spmLayanan = "{$durasiNilai} " . (!empty($durasiSatuan) ? $durasiSatuan : (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Bulan' : 'Hari Kerja'));
+        }
+
         $updateOrderSql = "UPDATE order_layanan SET status_penawaran = ?, surat_penawaran_id = ?, estimasi_biaya = ?, status_proposal_biaya = IF(status_proposal_biaya = 'disetujui', 'disetujui', 'siap_penawaran'), media_permohonan = ?";
         $orderParams = [1 => $statusPenawaranOrder, 2 => $penawaranId, 3 => $nominal, 4 => $permintaanMelalui];
+        $paramIdx = 5;
         if (!empty($spmLayanan)) {
             $updateOrderSql .= ", spm_layanan = ?";
-            $orderParams[5] = $spmLayanan;
-            $orderParams[6] = $orderId;
-            $updateOrderSql .= " WHERE id = ?";
-        } else {
-            $orderParams[5] = $orderId;
-            $updateOrderSql .= " WHERE id = ?";
+            $orderParams[$paramIdx++] = $spmLayanan;
+            if ($durasiNilai > 0) {
+                $satuanFinal = !empty($durasiSatuan) ? $durasiSatuan : (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Bulan' : 'Hari Kerja');
+                $updateOrderSql .= ", spm_durasi_nilai = ?, spm_durasi_satuan = ?";
+                $orderParams[$paramIdx++] = $durasiNilai;
+                $orderParams[$paramIdx++] = $satuanFinal;
+            }
         }
+        $updateOrderSql .= " WHERE id = ?";
+        $orderParams[$paramIdx] = $orderId;
         $this->db->exec($updateOrderSql, $orderParams);
 
         // Sinkronisasi ke tb_surat_keluar

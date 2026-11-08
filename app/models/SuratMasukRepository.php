@@ -73,11 +73,11 @@ class SuratMasukRepository {
 
     /**
      * Ambil daftar surat masuk OPTI yang belum diklaim
-     * Urutan: tanggal_surat ASC, id ASC (FIFO)
+     * Urutan: tanggal_surat DESC, id DESC (Terbaru di atas)
      */
     /**
      * Ambil daftar surat masuk OPTI yang belum diklaim
-     * Urutan: tanggal_surat ASC, id ASC (FIFO)
+     * Urutan: tanggal_surat DESC, id DESC (Terbaru di atas)
      */
     public function getDaftarSuratOpti(?string $filterTahun = null, ?string $filterBulan = null): array {
         if (!$this->isConnected()) {
@@ -116,7 +116,7 @@ class SuratMasukRepository {
                 $sql .= " AND MONTH(a.tanggal_surat) = ?";
                 $params[$idx++] = (int)$filterBulan;
             }
-            $sql .= " ORDER BY a.tanggal_surat ASC, a.id_arsip ASC";
+            $sql .= " ORDER BY a.tanggal_surat DESC, a.id_arsip DESC";
     
             $rows = $this->dbSekretariat->exec($sql, $params);
             foreach ($rows as &$r) {
@@ -143,7 +143,7 @@ class SuratMasukRepository {
             $params[$idx++] = (int)$filterBulan;
         }
     
-        $sql .= " ORDER BY `tanggal_surat` ASC, `id` ASC";
+        $sql .= " ORDER BY `tanggal_surat` DESC, `id` DESC";
     
         return $this->dbSekretariat->exec($sql, $params);
     }

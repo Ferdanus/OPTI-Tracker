@@ -568,6 +568,93 @@
             font-size: 0.65rem;
         }
 
+        /* ============ SIDEBAR DROPDOWN / COLLAPSIBLE ACCORDION ============ */
+        .sidebar-dropdown-toggle {
+            cursor: pointer;
+            width: 100%;
+            border: none;
+            background: transparent;
+            text-align: left;
+            position: relative;
+        }
+
+        .sidebar-dropdown-toggle .sidebar-dropdown-arrow {
+            margin-left: auto;
+            margin-right: 0;
+            width: auto;
+            min-width: auto;
+            font-size: 0.72rem;
+            color: #94a3b8;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+        }
+
+        .sidebar-dropdown-toggle:not(.collapsed) .sidebar-dropdown-arrow {
+            transform: rotate(180deg);
+            color: #ffffff;
+        }
+
+        .sidebar-dropdown-toggle.active {
+            background-color: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+        }
+
+        .sidebar-submenu {
+            list-style: none;
+            margin: 0;
+            padding: 2px 0 6px 10px;
+            position: relative;
+        }
+
+        .sidebar-submenu::before {
+            content: "";
+            position: absolute;
+            top: 2px;
+            bottom: 8px;
+            left: 26px;
+            width: 1.5px;
+            background-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .sidebar-submenu .sidebar-link {
+            height: 38px;
+            padding: 0 12px 0 26px;
+            font-size: 0.8125rem;
+            margin-bottom: 2px;
+            color: #94a3b8;
+        }
+
+        .sidebar-submenu .sidebar-link i {
+            font-size: 1rem;
+            width: 20px;
+            min-width: 20px;
+            margin-right: 10px;
+            color: #64748b;
+        }
+
+        .sidebar-submenu .sidebar-link:hover {
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-submenu .sidebar-link:hover i {
+            color: #ffffff;
+        }
+
+        .sidebar-submenu .sidebar-link.active {
+            background-color: #334155;
+            color: #ffffff;
+            box-shadow: inset 3px 0 0 #cbd5e1;
+        }
+
+        .sidebar-submenu .sidebar-link.active i {
+            color: #ffffff;
+        }
+
+        body.sidebar-collapsed .sidebar .sidebar-dropdown-arrow,
+        body.sidebar-collapsed .sidebar .sidebar-submenu {
+            display: none !important;
+        }
+
         /* ============ SELECT FILTER GAYA "IKON DI DEPAN" (dipakai baris filter Daftar PO) ============ */
         .sel-a { display: inline-flex; align-items: stretch; height: 38px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; overflow: hidden; transition: border-color .15s, box-shadow .15s; vertical-align: middle; }
         .sel-a:hover { border-color: #cbd5e1; }
@@ -1799,15 +1886,72 @@
                     </li>
                 </check>
 
-                <!-- Surat Penawaran (Admin Order, Tim Mitra, Ketua Tim, Superadmin) -->
-                <check if="{{ @is_superadmin || @is_tim_mitra }}">
+                <!-- Menu Dropdown: Berkas Layanan (Surat Penawaran, Pembayaran, Tugas Proposal, Kontrak) -->
+                <check if="{{ @is_superadmin || @is_tim_mitra || @is_keuangan || @is_tim_kerja || @is_ketua_tim || @is_admin_kontrak }}">
+                    <set is_active_berkas="{{ in_array(@active_menu, ['surat-penawaran', 'pembayaran', 'proposal', 'kontrak']) }}" />
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Penawaran">
-                            <i class="bi bi-file-earmark-text"></i> <span>Surat Penawaran</span>
-                            <check if="{{ @jumlah_notif_penawaran > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_penawaran }}</span>
+                        <button class="sidebar-link sidebar-dropdown-toggle {{ @is_active_berkas ? 'active' : 'collapsed' }}" 
+                                type="button" 
+                                data-bs-toggle="collapse" 
+                                data-bs-target="#berkasLayananCollapse" 
+                                aria-expanded="{{ @is_active_berkas ? 'true' : 'false' }}" 
+                                aria-controls="berkasLayananCollapse" 
+                                title="Berkas Layanan">
+                            <i class="bi bi-folder2-open"></i>
+                            <span>Berkas Layanan</span>
+                            <check if="{{ @jumlah_notif_berkas > 0 }}">
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_berkas }}</span>
                             </check>
-                        </a>
+                            <i class="bi bi-chevron-down sidebar-dropdown-arrow"></i>
+                        </button>
+                        <div class="collapse {{ @is_active_berkas ? 'show' : '' }}" id="berkasLayananCollapse">
+                            <ul class="sidebar-submenu">
+                                <!-- 1. Pembayaran -->
+                                <check if="{{ @is_superadmin || @is_keuangan }}">
+                                    <li>
+                                        <a class="sidebar-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran & Keuangan">
+                                            <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
+                                            <check if="{{ @jumlah_notif_keuangan > 0 }}">
+                                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_keuangan }}</span>
+                                            </check>
+                                        </a>
+                                    </li>
+                                </check>
+
+                                <!-- 2. Surat Penawaran -->
+                                <check if="{{ @is_superadmin || @is_tim_mitra }}">
+                                    <li>
+                                        <a class="sidebar-link {{ @active_menu == 'surat-penawaran' ? 'active' : '' }}" href="{{ @BASE }}/surat-penawaran" title="Surat Penawaran">
+                                            <i class="bi bi-file-earmark-text"></i> <span>Surat Penawaran</span>
+                                            <check if="{{ @jumlah_notif_penawaran > 0 }}">
+                                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_penawaran }}</span>
+                                            </check>
+                                        </a>
+                                    </li>
+                                </check>
+
+                                <!-- 3. Tugas Proposal -->
+                                <check if="{{ @is_superadmin || @is_tim_kerja || @is_ketua_tim }}">
+                                    <li>
+                                        <a class="sidebar-link {{ @active_menu == 'proposal' ? 'active' : '' }}" href="{{ @BASE }}/proposal" title="Tugas Tim Kerja">
+                                            <i class="bi bi-journal-code"></i> <span>Tugas Tim Kerja</span>
+                                            <check if="{{ @jumlah_notif_proposal > 0 }}">
+                                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_proposal }}</span>
+                                            </check>
+                                        </a>
+                                    </li>
+                                </check>
+
+                                <!-- 4. Kontrak -->
+                                <check if="{{ @is_superadmin || @is_admin_kontrak }}">
+                                    <li>
+                                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Kontrak (Perjanjian Kerja Sama)">
+                                            <i class="bi bi-file-earmark-ruled"></i> <span>Kontrak</span>
+                                        </a>
+                                    </li>
+                                </check>
+                            </ul>
+                        </div>
                     </li>
                 </check>
 
@@ -1832,18 +1976,7 @@
                     </li>
                 </check>
 
-                <!-- Rekapitulasi Pembayaran & Keuangan (Khusus Tim Keuangan & Superadmin) -->
 
-                <check if="{{ @is_superadmin || @is_keuangan }}">
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'pembayaran' ? 'active' : '' }}" href="{{ @BASE }}/pembayaran" title="Pembayaran & Keuangan">
-                            <i class="bi bi-cash-stack"></i> <span>Pembayaran</span>
-                            <check if="{{ @jumlah_notif_keuangan > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_keuangan }}</span>
-                            </check>
-                        </a>
-                    </li>
-                </check>
 
               
 
@@ -1851,17 +1984,7 @@
                 <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan || @is_tim_pengujian || @is_role_sertifikasi }}">
                     <li class="sidebar-section-label">Pelaksanaan Teknis</li>
                     
-                    <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Superadmin) -->
-                    <check if="{{ @is_superadmin || @is_tim_kerja }}">
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'proposal' ? 'active' : '' }}" href="{{ @BASE }}/proposal" title="Tugas Proposal Teknis">
-                            <i class="bi bi-journal-code"></i> <span>Tugas Proposal</span>
-                            <check if="{{ @jumlah_notif_proposal > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_proposal }}</span>
-                            </check>
-                        </a>
-                    </li>
-                    </check>
+
                     <!-- Petunjuk Operasional (PO) Kegiatan -->
                     <!-- Superadmin: satu menu "Daftar PO" (semua divisi dan layanan, dipilih lewat filter Divisi di halamannya) -->
                     <check if="{{ @is_superadmin || (@is_tim_kerja && @divisi_tim_kerja == 'pengujian') || (@is_ketua_tim && @user_layanan != 'lingkungan' && @user_layanan != 'selulosa') }}">
@@ -4058,6 +4181,656 @@
         });
     </script>
     </check>
+
+    <!-- ============================================================
+
+         SISTEM PAGINATION UNIVERSAL INSTAN (MAKSIMAL 10 DATA PER HALAMAN)
+
+         Diimplementasikan di SELURUH tabel data di semua halaman tanpa delay.
+
+         Secara otomatis membagi data menjadi maks 10 per halaman,
+
+         lengkap dengan kontrol navigasi Atas & Bawah yang konsisten.
+
+         ============================================================ -->
+
+    <style>
+
+        tr[data-page-hidden="true"] {
+
+            display: none !important;
+
+        }
+
+        .table-pagination-nav {
+
+            background: #ffffff;
+
+            padding: 10px 18px;
+
+        }
+
+        .table-pagination-nav-top {
+
+            border-bottom: 1px solid #e2e8f0;
+
+            border-top-left-radius: var(--radius-md, 10px);
+
+            border-top-right-radius: var(--radius-md, 10px);
+
+            margin-bottom: 0;
+
+        }
+
+        .table-pagination-nav-bottom {
+
+            border-top: 1px solid #e2e8f0;
+
+            border-bottom-left-radius: var(--radius-md, 10px);
+
+            border-bottom-right-radius: var(--radius-md, 10px);
+
+            margin-top: 0;
+
+        }
+
+        .table-pagination-nav .pagination-sm .page-link {
+
+            font-size: 0.8rem;
+
+            font-weight: 600;
+
+            padding: 0.35rem 0.65rem;
+
+            color: #475569;
+
+            border-color: #e2e8f0;
+
+            border-radius: 6px;
+
+            margin: 0 2px;
+
+            transition: all 0.15s ease;
+
+        }
+
+        .table-pagination-nav .pagination-sm .page-link:hover {
+
+            color: #0f172a;
+
+            background-color: #f1f5f9;
+
+            border-color: #cbd5e1;
+
+        }
+
+        .table-pagination-nav .pagination-sm .page-item.active .page-link {
+
+            background-color: var(--color-primary, #334155);
+
+            border-color: var(--color-primary, #334155);
+
+            color: #ffffff;
+
+            box-shadow: 0 2px 4px rgba(51, 65, 85, 0.25);
+
+        }
+
+        .table-pagination-nav .pagination-sm .page-item.disabled .page-link {
+
+            color: #94a3b8;
+
+            background-color: #f8fafc;
+
+            border-color: #e2e8f0;
+
+            opacity: 0.7;
+
+        }
+
+    </style>
+
+
+
+    <script>
+
+    (function () {
+
+        var PER_PAGE = 10;
+
+        var TABLE_SELECTOR = 'table.table, table.table-hover, table.rvw-desk, table.dpk-table, table.dpo-table, table.dash-table, table.mtp-tbl';
+
+
+
+        function paginateTable(table) {
+
+            if (!table || table.dataset.noPaginate === 'true' || table.classList.contains('no-pagination')) return;
+
+            // Hindari tabel modal kecil (bukan modal-xl), form input rincian, atau cetak PDF
+
+            if (table.closest('.modal:not(.modal-xl)') || table.closest('.dpo-paper') || table.id === 'poTable' || table.closest('.no-pagination')) return;
+
+            // Hindari tabel formulir internal/rincian perhitungan biaya & metadata surat
+
+            if (table.classList.contains('table-borderless') || table.classList.contains('table-kalkulasi') || table.classList.contains('rab-table') || table.classList.contains('po-table') || table.classList.contains('mk-table') || table.classList.contains('doc-meta') || table.classList.contains('doc-table-meta') || table.classList.contains('doc-table-box') || table.classList.contains('smp-tb') || table.classList.contains('trip-ln') || table.classList.contains('info') || table.classList.contains('k')) return;
+
+            if (table.closest('.ts-dropdown') || table.closest('.flatpickr-calendar') || table.closest('.datepicker')) return;
+
+
+
+            var tbody = table.querySelector('tbody');
+
+            if (!tbody) return;
+
+
+
+            // Cari semua baris data riil (bukan row colspan alert / empty state)
+
+            var allRows = Array.from(tbody.querySelectorAll(':scope > tr'));
+
+            var dataRows = allRows.filter(function (tr) {
+
+                var tds = tr.querySelectorAll(':scope > td');
+
+                if (tds.length === 1 && tds[0].hasAttribute('colspan')) return false;
+
+                // juga abaikan jika baris disembunyikan oleh filter pencarian eksternal selain sistem pagination
+
+                if (tr.classList.contains('d-none') || (tr.style.display === 'none' && !tr.hasAttribute('data-page-hidden'))) return false;
+
+                return true;
+
+            });
+
+
+
+            var wrapper = table.closest('.table-responsive') || table;
+
+
+
+            // Dapatkan / tetapkan ID unik untuk tabel ini agar pembersihan kontrol lama akurat
+
+            var tableId = table.dataset.pageTableId;
+
+            if (!tableId) {
+
+                tableId = 'pt_' + Math.random().toString(36).substr(2, 9);
+
+                table.dataset.pageTableId = tableId;
+
+            }
+
+
+
+            // Bersihkan bar navigasi lama milik tabel ini
+
+            if (wrapper.parentNode) {
+
+                var oldBars = wrapper.parentNode.querySelectorAll('.table-pagination-nav[data-for-table="' + tableId + '"]');
+
+                oldBars.forEach(function (el) { el.remove(); });
+
+            }
+
+
+
+            // Jika tabel kosong (0 baris data), tidak perlu tampilkan bar pagination
+
+            var totalRows = dataRows.length;
+
+            if (totalRows === 0) {
+
+                dataRows.forEach(function (tr) { tr.removeAttribute('data-page-hidden'); });
+
+                return;
+
+            }
+
+
+
+            var totalPages = Math.ceil(totalRows / PER_PAGE);
+
+            if (totalPages < 1) totalPages = 1;
+
+            var currentPage = table._currentPage && table._currentPage <= totalPages ? table._currentPage : 1;
+
+
+
+            // Helper untuk membuat elemen bar pagination (atas & bawah)
+
+            function createPaginationBar(isTop) {
+
+                var container = document.createElement('div');
+
+                container.className = 'd-flex flex-wrap justify-content-between align-items-center gap-2 table-pagination-nav ' +
+
+                    (isTop ? 'table-pagination-nav-top' : 'table-pagination-nav-bottom');
+
+                container.setAttribute('data-for-table', tableId);
+
+
+
+                var infoSpan = document.createElement('span');
+
+                infoSpan.className = 'small text-muted fw-medium';
+
+
+
+                var navEl = document.createElement('nav');
+
+                navEl.setAttribute('aria-label', 'Navigasi Halaman Tabel ' + (isTop ? 'Atas' : 'Bawah'));
+
+                var ul = document.createElement('ul');
+
+                ul.className = 'pagination pagination-sm mb-0';
+
+                navEl.appendChild(ul);
+
+
+
+                container.appendChild(infoSpan);
+
+                container.appendChild(navEl);
+
+                return { container: container, infoSpan: infoSpan, ul: ul, isTop: isTop };
+
+            }
+
+
+
+            var barTop = createPaginationBar(true);
+
+            var barBottom = createPaginationBar(false);
+
+
+
+            if (wrapper.parentNode) {
+
+                wrapper.parentNode.insertBefore(barTop.container, wrapper);
+
+                wrapper.parentNode.insertBefore(barBottom.container, wrapper.nextSibling);
+
+            }
+
+
+
+            function showPage(page, fromBottom) {
+
+                if (page < 1) page = 1;
+
+                if (page > totalPages) page = totalPages;
+
+                currentPage = page;
+
+                table._currentPage = page;
+
+
+
+                var startIdx = (currentPage - 1) * PER_PAGE;
+
+                var endIdx = startIdx + PER_PAGE;
+
+
+
+                dataRows.forEach(function (tr, idx) {
+
+                    if (idx >= startIdx && idx < endIdx) {
+
+                        tr.removeAttribute('data-page-hidden');
+
+                    } else {
+
+                        tr.setAttribute('data-page-hidden', 'true');
+
+                    }
+
+                });
+
+
+
+                var displayStart = startIdx + 1;
+
+                var displayEnd = Math.min(endIdx, totalRows);
+
+                var infoText = '<span class="d-inline-flex align-items-center"><i class="bi bi-list-check text-primary me-2" style="font-size: 1.05rem; margin-right: 8px !important;"></i><span>Menampilkan <strong>' + displayStart + '&ndash;' + displayEnd + '</strong> dari <strong>' + totalRows + '</strong> data</span></span>';
+
+
+
+                barTop.infoSpan.innerHTML = infoText;
+
+                barBottom.infoSpan.innerHTML = infoText;
+
+
+
+                renderButtons(barTop.ul, false);
+
+                renderButtons(barBottom.ul, true);
+
+
+
+                if (fromBottom) {
+
+                    wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                }
+
+            }
+
+
+
+            function renderButtons(ul, isBottom) {
+
+                ul.innerHTML = '';
+
+
+
+                // Tombol Sebelumnya
+
+                var prevLi = document.createElement('li');
+
+                prevLi.className = 'page-item' + (currentPage === 1 ? ' disabled' : '');
+
+                var prevLink = document.createElement('a');
+
+                prevLink.className = 'page-link';
+
+                prevLink.href = '#';
+
+                prevLink.innerHTML = '&laquo; Sebelumnya';
+
+                prevLink.addEventListener('click', function (e) {
+
+                    e.preventDefault();
+
+                    if (currentPage > 1) {
+
+                        showPage(currentPage - 1, isBottom);
+
+                    }
+
+                });
+
+                prevLi.appendChild(prevLink);
+
+                ul.appendChild(prevLi);
+
+
+
+                // Nomor-nomor halaman
+
+                var maxVisible = 5;
+
+                var startPage = Math.max(1, currentPage - 2);
+
+                var endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+                if (endPage - startPage < maxVisible - 1) {
+
+                    startPage = Math.max(1, endPage - maxVisible + 1);
+
+                }
+
+
+
+                if (startPage > 1) {
+
+                    addBtn(ul, 1, isBottom);
+
+                    if (startPage > 2) {
+
+                        var elip = document.createElement('li');
+
+                        elip.className = 'page-item disabled';
+
+                        elip.innerHTML = '<span class="page-link">&hellip;</span>';
+
+                        ul.appendChild(elip);
+
+                    }
+
+                }
+
+
+
+                for (var p = startPage; p <= endPage; p++) {
+
+                    addBtn(ul, p, isBottom);
+
+                }
+
+
+
+                if (endPage < totalPages) {
+
+                    if (endPage < totalPages - 1) {
+
+                        var elip2 = document.createElement('li');
+
+                        elip2.className = 'page-item disabled';
+
+                        elip2.innerHTML = '<span class="page-link">&hellip;</span>';
+
+                        ul.appendChild(elip2);
+
+                    }
+
+                    addBtn(totalPages, isBottom);
+
+                }
+
+
+
+                // Tombol Berikutnya
+
+                var nextLi = document.createElement('li');
+
+                nextLi.className = 'page-item' + (currentPage === totalPages ? ' disabled' : '');
+
+                var nextLink = document.createElement('a');
+
+                nextLink.className = 'page-link';
+
+                nextLink.href = '#';
+
+                nextLink.innerHTML = 'Berikutnya &raquo;';
+
+                nextLink.addEventListener('click', function (e) {
+
+                    e.preventDefault();
+
+                    if (currentPage < totalPages) {
+
+                        showPage(currentPage + 1, isBottom);
+
+                    }
+
+                });
+
+                nextLi.appendChild(nextLink);
+
+                ul.appendChild(nextLi);
+
+            }
+
+
+
+            function addBtn(ul, p, isBottom) {
+
+                var li = document.createElement('li');
+
+                li.className = 'page-item' + (p === currentPage ? ' active' : '');
+
+                var a = document.createElement('a');
+
+                a.className = 'page-link';
+
+                a.href = '#';
+
+                a.textContent = p;
+
+                a.addEventListener('click', function (e) {
+
+                    e.preventDefault();
+
+                    showPage(p, isBottom);
+
+                });
+
+                li.appendChild(a);
+
+                ul.appendChild(li);
+
+            }
+
+
+
+            showPage(currentPage, false);
+
+        }
+
+
+
+        function scanTables() {
+
+            var tables = document.querySelectorAll(TABLE_SELECTOR);
+
+            for (var i = 0; i < tables.length; i++) {
+
+                paginateTable(tables[i]);
+
+            }
+
+        }
+
+
+
+        // 1. EKSEKUSI INSTAN (0 delay / tanpa jeda waktu sebelum first paint)
+
+        scanTables();
+
+
+
+        // 2. Jalankan saat dokumen siap & setelah load penuh
+
+        if (document.readyState === 'loading') {
+
+            document.addEventListener('DOMContentLoaded', scanTables);
+
+        }
+
+        window.addEventListener('load', scanTables);
+
+
+
+        // 3. Tangani pergantian tab Bootstrap secara instan
+
+        document.addEventListener('shown.bs.tab', scanTables);
+
+
+
+        // 4. Tangani input pencarian atau filter select secara langsung
+
+        document.addEventListener('input', function (e) {
+
+            if (e.target && (e.target.matches('input[type="search"]') || (e.target.id && e.target.id.toLowerCase().indexOf('search') !== -1) || (e.target.className && e.target.className.toLowerCase().indexOf('search') !== -1))) {
+
+                scanTables();
+
+            }
+
+        });
+
+
+
+        // 5. Pantau pembaruan konten dinamis tabel via AJAX / manipulasi DOM (0 delay)
+
+        if (typeof MutationObserver !== 'undefined') {
+
+            var isScanning = false;
+
+            var observer = new MutationObserver(function (mutations) {
+
+                if (isScanning) return;
+
+                var shouldRescan = false;
+
+                for (var i = 0; i < mutations.length; i++) {
+
+                    var m = mutations[i];
+
+                    if (m.addedNodes && m.addedNodes.length > 0) {
+
+                        for (var j = 0; j < m.addedNodes.length; j++) {
+
+                            var n = m.addedNodes[j];
+
+                            if (n.nodeType === 1) {
+
+                                if (n.classList && (n.classList.contains('table-pagination-nav') || n.classList.contains('table-pagination-nav-top') || n.classList.contains('table-pagination-nav-bottom'))) {
+
+                                    continue;
+
+                                }
+
+                                if ((n.matches && n.matches(TABLE_SELECTOR + ', tbody, tr')) || 
+
+                                    (n.querySelector && n.querySelector(TABLE_SELECTOR))) {
+
+                                    shouldRescan = true;
+
+                                    break;
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                    if (shouldRescan) break;
+
+                }
+
+                if (shouldRescan) {
+
+                    isScanning = true;
+
+                    scanTables();
+
+                    isScanning = false;
+
+                }
+
+            });
+
+            if (document.body) {
+
+                observer.observe(document.body, { childList: true, subtree: true });
+
+            } else {
+
+                document.addEventListener('DOMContentLoaded', function () {
+
+                    observer.observe(document.body, { childList: true, subtree: true });
+
+                });
+
+            }
+
+        }
+
+
+
+        window.initTablePagination = scanTables;
+
+    })();
+
+    </script>
+
+
+
+
 
     <style>
         /* Modern Role Badge System for Global Use */

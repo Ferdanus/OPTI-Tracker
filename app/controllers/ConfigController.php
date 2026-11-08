@@ -23,6 +23,11 @@ class ConfigController extends Controller {
             return;
         }
 
+        // Halaman pengaturan sistem dinonaktifkan / disembunyikan sementara
+        $this->setFlashWarning('Halaman Pengaturan Sistem sedang disembunyikan sementara.');
+        $f3->reroute('/dashboard');
+        return;
+
         $fieldConfigModel = new OptiFieldConfig($this->db);
         $allConfigs = $fieldConfigModel->getAll() ?: array();
 

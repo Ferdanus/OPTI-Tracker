@@ -244,9 +244,6 @@ tr.row-user-task > td {
 tr.row-user-task:hover > td {
     background-color: #e2ecf5 !important;
 }
-tr.row-user-task > td:first-child {
-    border-left: 4.5px solid #1e293b !important;
-}
 .task-chip-indicator {
     background-color: #1e293b;
     color: #ffffff;
@@ -551,9 +548,9 @@ tr.row-user-task > td:first-child {
                                                         </span>
                                                     </check>
                                                     <check if="{{ !empty(@ord.file_bukti_permohonan) }}">
-                                                        <a href="{{ @BASE }}/{{ @ord.file_bukti_permohonan }}" target="_blank" class="badge bg-light text-dark border text-decoration-none px-1.5 py-0.5 rounded-pill" style="font-size: 0.68rem;" title="Lihat Berkas Bukti Permohonan">
+                                                        <button type="button" class="badge bg-light text-dark border text-decoration-none px-1.5 py-0.5 rounded-pill btn-preview-pdf" style="font-size: 0.68rem; cursor: pointer;" data-preview-pdf="{{ @BASE }}/{{ @ord.file_bukti_permohonan }}" data-title="Berkas Bukti Permohonan Langsung" data-subtitle="{{ @ord.nomor_permintaan ?: @ord.nomor_order }}" title="Pratinjau Berkas Bukti Permohonan">
                                                             <i class="bi bi-paperclip me-0.5 text-primary"></i>Bukti
-                                                        </a>
+                                                        </button>
                                                     </check>
                                                 </div>
                                                 <div class="fw-semibold text-dark mb-1" title="{{ @ord.judul_kegiatan }}">
@@ -736,9 +733,9 @@ tr.row-user-task > td:first-child {
                                                         </span>
                                                     </check>
                                                     <check if="{{ !empty(@ord.file_bukti_permohonan) }}">
-                                                        <a href="{{ @BASE }}/{{ @ord.file_bukti_permohonan }}" target="_blank" class="badge bg-light text-dark border text-decoration-none px-1.5 py-0.5 rounded-pill" style="font-size: 0.68rem;" title="Lihat Berkas Bukti Permohonan">
+                                                        <button type="button" class="badge bg-light text-dark border text-decoration-none px-1.5 py-0.5 rounded-pill btn-preview-pdf" style="font-size: 0.68rem; cursor: pointer;" data-preview-pdf="{{ @BASE }}/{{ @ord.file_bukti_permohonan }}" data-title="Berkas Bukti Permohonan Langsung" data-subtitle="{{ @ord.nomor_permintaan ?: @ord.nomor_order }}" title="Pratinjau Berkas Bukti Permohonan">
                                                             <i class="bi bi-paperclip me-0.5 text-primary"></i>Bukti
-                                                        </a>
+                                                        </button>
                                                     </check>
                                                 </div>
                                                 <div class="fw-semibold text-dark mb-1" title="{{ @ord.judul_kegiatan }}">
@@ -1263,12 +1260,19 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (match) {
-                row.style.display = '';
+                row.classList.remove('search-hidden');
                 visibleCount++;
             } else {
+                row.classList.add('search-hidden');
                 row.style.display = 'none';
             }
         });
+
+        // Sinkronisasi otomatis dengan UniversalTablePagination
+        if (window.UniversalTablePagination && table) {
+            table.setAttribute('data-current-page', '1');
+            window.UniversalTablePagination.setup(table);
+        }
 
         if (totalCountEl && rows.length > 0) {
             totalCountEl.textContent = visibleCount;
@@ -1814,8 +1818,12 @@ document.addEventListener('DOMContentLoaded', function () {
         var btn = document.getElementById('btnFilterTugasSaya');
         if (!btn) return;
         var isFiltered = btn.classList.toggle('is-filtering');
+        var icon = btn.querySelector('i');
+        if (icon) {
+            icon.className = isFiltered ? 'bi bi-funnel-fill' : 'bi bi-funnel';
+        }
         
-        var rows = document.querySelectorAll('tbody tr');
+        var rows = document.querySelectorAll('.table-responsive tbody tr');
         var visibleCount = 0;
         rows.forEach(function(row) {
             if (isFiltered) {
