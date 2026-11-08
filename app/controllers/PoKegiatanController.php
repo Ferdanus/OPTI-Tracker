@@ -1471,6 +1471,16 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                 return;
             }
         }
+        // Ketua Pelaksana membuka form revisi: permintaan revisi dicatat "sudah dibuka" (sekali saja; sama dengan saat dia membukanya dari Daftar Review PO)
+        if ($konteksRevisi === 'review' && $po->exists('status_review') && (string) $po->status_review === 'perlu_revisi') {
+            try {
+                $this->db->exec(
+                    "UPDATE po_kegiatan p JOIN order_layanan o ON o.id = p.order_id SET p.minta_dibaca_at = NOW()
+                      WHERE p.id = ? AND p.status_review = 'perlu_revisi' AND p.minta_dibaca_at IS NULL AND o.ketua_pelaksana_id = ?",
+                    [1 => (int) $po->id, 2 => (int) $this->getUserId()]
+                );
+            } catch (\Throwable $eBaca) { /* kolom jejak baca belum ada: abaikan */ }
+        }
         $f3->set('revisi_konteks', $konteksRevisi);
         // Ketua Tim mengedit saat mereview hasil revisi PPK BLU (bukan review PO biasa): tombol "Simpan dan setujui" tidak berlaku
         $f3->set('revisi_ppk_katim', $konteksRevisi === 'katim' && $po->exists('ppk_status') && (string) $po->ppk_status === 'katim_review');

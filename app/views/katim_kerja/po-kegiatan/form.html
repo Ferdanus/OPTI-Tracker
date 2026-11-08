@@ -844,6 +844,65 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
     padding: 24px 16px;
     text-align: center;
 }
+
+/* Toolbar pratinjau: satu baris, aksi jarang dipakai masuk menu titik tiga */
+.po-live-card { container-type: inline-size; }
+.po-live-toolbar.po-tb { flex-wrap: nowrap; gap: 6px; padding: 9px 12px; }
+.po-tb-sp { flex: 1; min-width: 0; }
+.po-tb-st { display: inline-flex; align-items: center; gap: 7px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 99px; padding: 4px 11px 4px 9px; font-size: 12px; font-weight: 600; color: #0f172a; white-space: nowrap; min-width: 0; }
+.po-tb-st .live-pulse-dot { background: #0f172a; box-shadow: 0 0 0 0 rgba(15,23,42,.35); animation: poTbPulse 2.4s infinite; flex: none; }
+.po-tb-st .live-pulse-dot.syncing { background: #94a3b8; animation: poTbBlink .7s infinite; }
+@keyframes poTbPulse { 0% { box-shadow: 0 0 0 0 rgba(15,23,42,.35); } 70% { box-shadow: 0 0 0 6px rgba(15,23,42,0); } 100% { box-shadow: 0 0 0 0 rgba(15,23,42,0); } }
+@keyframes poTbBlink { 50% { opacity: .25; } }
+.po-tb-ib { width: 30px; height: 30px; border-radius: 50%; border: 0; background: transparent; color: #334155; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; font-size: 15px; padding: 0; transition: background .15s, transform .15s; }
+.po-tb-ib:hover { background: #f1f5f9; }
+.po-tb-ib:active { transform: scale(.92); }
+.po-tb-more { border: 1px solid #e2e8f0; background: #fff; }
+.po-tb-zg { display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 99px; padding: 2px; flex: none; }
+.po-tb-zg .po-tb-ib { width: 26px; height: 26px; font-size: 14px; }
+.po-tb-zl { border: 0; background: transparent; font: 600 12px SFMono-Regular, Consolas, monospace; color: #0f172a; min-width: 44px; height: 26px; padding: 0 6px; cursor: pointer; border-radius: 99px; white-space: nowrap; }
+.po-tb-zl:hover { background: #f1f5f9; }
+.po-tb-pdf { display: inline-flex; align-items: center; gap: 6px; border-radius: 99px; border: 1px solid #0f172a; background: #0f172a; color: #fff; font-size: 12.5px; font-weight: 600; padding: 0 12px; height: 30px; cursor: pointer; flex: none; transition: background .15s; }
+.po-tb-pdf:hover { background: #1e293b; }
+.po-tb-menu { position: absolute; right: 10px; top: 50px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 28px rgba(15,23,42,.18); padding: 5px; min-width: 176px; z-index: 5; display: none; flex-direction: column; }
+.po-tb-menu.open { display: flex; animation: poTbMenu .15s ease; }
+@keyframes poTbMenu { from { opacity: 0; transform: translateY(-4px); } }
+.po-tb-menu button { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; font-size: 13px; font-weight: 500; padding: 8px 10px; border-radius: 8px; cursor: pointer; color: #0f172a; text-align: left; }
+.po-tb-menu button:hover { background: #f1f5f9; }
+.po-tb-menu hr { border: 0; border-top: 1px solid #e2e8f0; margin: 4px 2px; }
+#iconRefreshLive.spin { display: inline-block; animation: poTbSpin .8s linear infinite; }
+@keyframes poTbSpin { to { transform: rotate(360deg); } }
+@container (max-width: 470px) {
+    .po-tb-st .po-tb-tx { display: none; }
+    .po-tb-st { padding: 6px; }
+    .po-tb-pdf .po-tb-tx { display: none; }
+    .po-tb-pdf { padding: 0 9px; }
+}
+
+/* Indikator kelengkapan form. Di samping pratinjau: menempel di toolbar pratinjau (sebelah badge sinkron). Mode Form saja / layar sempit: melayang di kanan bawah dalam kotak putih. */
+.po-kl { width: 268px; display: flex; flex-direction: column; gap: 8px; background: transparent; border: 1px solid transparent; border-radius: 0; padding: 0; overflow: hidden;
+    transition: width .5s cubic-bezier(.3,1,.3,1), padding .4s, border-color .3s, background .3s, box-shadow .3s; }
+.po-kl.inbar { width: 232px; max-width: 100%; margin-left: auto; }
+.po-kl.float { position: fixed; right: 20px; bottom: 12px; z-index: 1000; width: 248px; max-width: calc(100vw - 40px); gap: 5px; background: #fff; border-color: #cbd5e1; border-radius: 12px; padding: 6px 12px 8px; box-shadow: 0 6px 18px rgba(15,23,42,.12); animation: poKlMasuk .45s cubic-bezier(.2,1.2,.4,1); }
+@keyframes poKlMasuk { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.po-kl-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; color: #64748b; font-weight: 600; min-height: 18px; }
+.po-kl-lk { display: grid; overflow: hidden; white-space: nowrap; flex: none; }
+.po-kl-lk > span { grid-area: 1 / 1; transition: transform .5s cubic-bezier(.3,1,.3,1), opacity .35s; }
+.po-kl-l1 b { color: #0f172a; }
+.po-kl-warn { color: #b91c1c; }
+.po-kl-l2 { transform: translateX(130%); opacity: 0; display: inline-flex; align-items: center; gap: 7px; color: #0f172a; font-weight: 800; }
+.po-kl-go { flex: none; border: 0; background: transparent; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 6px; color: #0f172a; white-space: nowrap; cursor: pointer; transition: opacity .3s; }
+.po-kl-go i { transition: transform .2s; }
+.po-kl-go:hover i { transform: translateX(3px); }
+.po-kl-bar { height: 5px; max-height: 5px; border-radius: 99px; background: #e2e8f0; overflow: hidden; transition: max-height .4s, opacity .3s, margin .4s; }
+.po-kl-bar i { display: block; height: 100%; width: 0; background: #0f172a; border-radius: 99px; transition: width .6s cubic-bezier(.3,1,.3,1); }
+.po-kl.done .po-kl-l1 { transform: translateX(-130%); opacity: 0; }
+.po-kl.done .po-kl-l2 { transform: none; opacity: 1; }
+.po-kl.done .po-kl-go { opacity: 0; pointer-events: none; }   /* ukuran tetap sama dengan saat masih progres, tombolnya cuma memudar */
+.po-kl-pop { animation: poKlPop .5s cubic-bezier(.2,1.4,.4,1); }
+@keyframes poKlPop { 0% { transform: scale(.94); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+.po-kl-bump { display: inline-block; animation: poKlBump .4s; }
+@keyframes poKlBump { 0% { transform: translateY(0); } 30% { transform: translateY(-6px); opacity: .3; } 60% { transform: translateY(4px); } 100% { transform: none; opacity: 1; } }
 .po-live-scale-wrapper {
     display: inline-block;
     margin: 0 auto;
@@ -1864,35 +1923,31 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
 <div class="col-12 col-xl-5 transition-all" id="poPreviewCol">
     <div class="po-live-card">
         <!-- Live Toolbar -->
-        <div class="po-live-toolbar">
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 d-inline-flex align-items-center gap-1.5 py-1 px-2.5 rounded-pill" id="liveSyncStatus">
-                    <span class="live-pulse-dot" id="livePulseDot"></span>
-                    <span id="liveSyncText" class="fw-semibold" style="font-size: 0.76rem;">Live Sync</span>
-                </span>
-            </div>
-            <div class="d-flex align-items-center gap-1.5">
-                <!-- Zoom Controls -->
-                <div class="btn-group btn-group-sm rounded-pill border bg-white shadow-xs p-0.5" role="group">
-                    <button type="button" class="btn btn-light btn-sm rounded-pill px-2 py-0.5 text-secondary" onclick="adjustLiveZoom(-0.1)" title="Perkecil (-)"><i class="bi bi-zoom-out"></i></button>
-                    <button type="button" class="btn btn-light btn-sm px-2 py-0.5 fw-bold text-dark font-monospace" id="liveZoomLabel" onclick="resetLiveZoom()" title="Klik untuk Reset Zoom (100%)" style="font-size: 0.72rem; min-width: 44px;">Auto</button>
-                    <button type="button" class="btn btn-light btn-sm rounded-pill px-2 py-0.5 text-secondary" onclick="adjustLiveZoom(0.1)" title="Perbesar (+)"><i class="bi bi-zoom-in"></i></button>
-                    <button type="button" class="btn btn-light btn-sm rounded-pill px-2 py-0.5 text-primary fw-semibold" onclick="autoFitZoom()" title="Pas Lebar Layar" style="font-size: 0.72rem;"><i class="bi bi-arrows-angle-expand"></i> Fit</button>
-                </div>
-
-                <!-- Manual Refresh -->
-                <button type="button" class="btn btn-sm btn-light border rounded-circle shadow-xs p-0 d-flex align-items-center justify-content-center" onclick="triggerLivePreviewRefresh(true)" title="Segarkan Pratinjau Manual" style="width: 28px; height: 28px;">
-                    <i class="bi bi-arrow-clockwise text-secondary" id="iconRefreshLive"></i>
-                </button>
-
-                <!-- Unduh PDF & Cetak -->
-                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-xs" onclick="unduhLivePdf()" title="Unduh Dokumen PDF dari Form Saat Ini" style="font-size: 0.75rem;">
-                    <i class="bi bi-file-earmark-pdf-fill text-danger"></i> <span>PDF</span>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1 fw-semibold d-inline-flex align-items-center shadow-xs" onclick="cetakLivePreviewFrame()" title="Cetak Dokumen" style="font-size: 0.75rem;">
-                    <i class="bi bi-printer"></i>
-                </button>
-            </div>
+        <div class="po-live-toolbar po-tb">
+            <span class="po-tb-st" id="liveSyncStatus">
+                <span class="live-pulse-dot" id="livePulseDot"></span>
+                <span id="liveSyncText" class="po-tb-tx">Live Sync</span>
+            </span>
+            <span class="po-tb-sp"></span>
+            <!-- Zoom -->
+            <span class="po-tb-zg">
+                <button type="button" class="po-tb-ib" onclick="adjustLiveZoom(-0.1)" title="Perkecil (-)"><i class="bi bi-zoom-out"></i></button>
+                <button type="button" class="po-tb-zl" id="liveZoomLabel" onclick="resetLiveZoom()" title="Klik untuk Reset Zoom (100%)">Auto</button>
+                <button type="button" class="po-tb-ib" onclick="adjustLiveZoom(0.1)" title="Perbesar (+)"><i class="bi bi-zoom-in"></i></button>
+            </span>
+            <!-- Unduh PDF -->
+            <button type="button" class="po-tb-pdf" onclick="unduhLivePdf()" title="Unduh Dokumen PDF dari Form Saat Ini">
+                <i class="bi bi-file-earmark-pdf"></i><span class="po-tb-tx">PDF</span>
+            </button>
+            <!-- Menu lainnya -->
+            <button type="button" class="po-tb-ib po-tb-more" id="poTbMenuBtn" title="Lainnya" aria-haspopup="true" aria-expanded="false"><i class="bi bi-three-dots-vertical"></i></button>
+        </div>
+        <div class="po-tb-menu" id="poTbMenu" role="menu">
+            <button type="button" role="menuitem" onclick="autoFitZoom()"><i class="bi bi-arrows-angle-expand"></i>Pas layar</button>
+            <button type="button" role="menuitem" onclick="resetLiveZoom()"><i class="bi bi-aspect-ratio"></i>Zoom 100%</button>
+            <button type="button" role="menuitem" onclick="triggerLivePreviewRefresh(true)"><i class="bi bi-arrow-clockwise" id="iconRefreshLive"></i>Segarkan pratinjau</button>
+            <hr>
+            <button type="button" role="menuitem" onclick="cetakLivePreviewFrame()"><i class="bi bi-printer"></i>Cetak dokumen</button>
         </div>
 
         <!-- Viewport Container -->
@@ -6317,6 +6372,10 @@ function jadwalHapusDariBagian(gIdx, kIdx, cIdx, chunks) {
 function renderJadwal() {
     var container = document.getElementById('jadwalContainer');
     if (!container) return;
+    // Ingat posisi geser samping tiap tabel (dan tinggi area) supaya tabel yang digambar ulang tidak loncat ke awal / halaman tidak bergeser
+    var posGeser = {};
+    container.querySelectorAll('.jadwal-table-responsive').forEach(function (w) { if (w.dataset.skey) posGeser[w.dataset.skey] = w.scrollLeft; });
+    container.style.minHeight = container.offsetHeight + 'px';
     container.innerHTML = '';
     jadwalSegarkanTombolTahap();
 
@@ -6409,6 +6468,7 @@ function renderJadwal() {
 
                 var tableWrap = document.createElement('div');
                 tableWrap.className = 'jadwal-table-responsive mb-2';
+                tableWrap.dataset.skey = gIdx + '-' + cIdx;
 
                 var table = document.createElement('table');
                 table.className = 'jadwal-modern-table align-middle';
@@ -6611,6 +6671,11 @@ function renderJadwal() {
 
         container.appendChild(block);
     });
+
+    container.querySelectorAll('.jadwal-table-responsive').forEach(function (w) {
+        if (posGeser[w.dataset.skey] != null) w.scrollLeft = posGeser[w.dataset.skey];
+    });
+    container.style.minHeight = '';
 }
 
 function centangSemuaJadwal() {
@@ -7046,43 +7111,71 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ---- Tombol Kirim nonaktif sampai semua kolom wajib terisi ----
+    // ---- Tombol Kirim nonaktif sampai semua kolom wajib terisi + indikator kelengkapan (kanan bawah) ----
     (function () {
         var btn = document.getElementById('btnKirim');
         if (!btn) { return; }
-        var hint = document.createElement('span');
-        hint.id = 'poKirimHint';
-        hint.className = 'small fw-semibold text-danger d-none';
-        hint.style.whiteSpace = 'nowrap';
-        hint.innerHTML = '<span id="poKirimHintTx"></span> <a href="#" id="poKirimHintLink" class="text-danger">Tunjukkan</a>';
-        btn.insertAdjacentElement('beforebegin', hint);
-        var tx = hint.querySelector('#poKirimHintTx'), lastN = -1, lastRab = null, tm = null;
+        var kl = document.createElement('div');
+        kl.id = 'poKl';
+        kl.className = 'po-kl';
+        kl.innerHTML = '<div class="po-kl-row"><span class="po-kl-lk"><span class="po-kl-l1"></span><span class="po-kl-l2"><i class="bi bi-check-lg"></i>Lengkap</span></span><button type="button" class="po-kl-go">Tunjukkan <i class="bi bi-arrow-right"></i></button></div><div class="po-kl-bar"><i></i></div>';
+        // Mode revisi (catatan Ketua Tim / revisi PPK BLU): penandanya sudah ada di pita catatan di atas, jadi "Lengkap" disembunyikan agar tidak menyesatkan
+        if ('{{ @revisi_konteks }}' !== '') { kl.style.setProperty('display', 'none', 'important'); }
+        document.body.appendChild(kl);
+        var l1 = kl.querySelector('.po-kl-l1'), fill = kl.querySelector('.po-kl-bar i'), goBtn = kl.querySelector('.po-kl-go');
+        var lastN = -1, lastKey = '', tm = null;
         function hitung() {
             window.POSENYAP = (window.POSENYAP || 0) + 1;       // senyap: tidak mengubah tampilan form sama sekali
             try { return validasiFieldWajib().concat(validasiTtd()).length; } catch (e) { return -1; } finally { window.POSENYAP--; }
+        }
+        function totalKolom() {   // jumlah kolom wajib yang sedang tampil (+1 untuk penandatangan)
+            var t = 0;
+            document.querySelectorAll('[data-wajib="1"]').forEach(function (el) {
+                var wrap = el.closest('.po-editor-wrap');
+                if ((wrap || el).offsetParent !== null) { t++; }
+            });
+            return t + 1;
+        }
+        function atur() {   // selalu melayang di kanan bawah dalam kotak putih (split view maupun Form saja)
+            if (kl.parentNode !== document.body) { document.body.appendChild(kl); }
+            kl.classList.remove('inbar');
+            kl.classList.add('float');
         }
         function perbarui() {
             var n = hitung();
             if (n < 0) { return; }   // state form belum siap, coba lagi nanti
             // Di mode revisi tombol ini hanya "Simpan draft/perubahan", jadi aturan RAB seimbang tidak dipakai di sini
             var rab = btn.getAttribute('data-simpan') ? { ok: true, selisih: 0 } : rabStatus();
-            var teks = n > 0 ? n + ' kolom wajib belum terisi' : (rab.ok ? '' : teksRabBelumSesuai());
+            var total = Math.max(totalKolom(), n);
             btn.disabled = n > 0 || !rab.ok;
             btn.title = n > 0 ? 'Lengkapi dulu ' + n + ' kolom wajib sebelum mengirim' : (rab.ok ? '' : 'RAB belum seimbang: total penerimaan harus sama dengan total pengeluaran');
-            if (n !== lastN || teks !== lastRab) {
-                lastN = n; lastRab = teks;
-                hint.classList.toggle('d-none', teks === '');
-                tx.textContent = teks;
+            var key = n + '/' + total + '/' + (rab.ok ? 'ok' : rab.selisih);
+            if (key !== lastKey) {
+                if (n === 0 && !rab.ok) {
+                    l1.innerHTML = '<span class="po-kl-warn">' + escHtmlRab(teksRabBelumSesuai()) + '</span>';
+                } else {
+                    l1.innerHTML = 'Kelengkapan <b>' + (total - n) + '/' + total + '</b>';
+                    if (lastN !== -1 && n !== lastN) { var bt = l1.querySelector('b'); if (bt) { bt.classList.add('po-kl-bump'); } }
+                }
+                fill.style.width = (total ? ((total - n) / total * 100) : 100) + '%';
+                var sudahLengkap = n === 0 && rab.ok;
+                var tadiLengkap = kl.classList.contains('done');
+                kl.classList.toggle('done', sudahLengkap);
+                if (sudahLengkap && !tadiLengkap && lastN !== -1) { btn.classList.remove('po-kl-pop'); void btn.offsetWidth; btn.classList.add('po-kl-pop'); }
+                lastN = n; lastKey = key;
             }
+            atur();
         }
         function jadwal() { clearTimeout(tm); tm = setTimeout(perbarui, 250); }
         var f = document.getElementById('formPo') || document;
         f.addEventListener('input', jadwal, true);
         f.addEventListener('change', jadwal, true);
         f.addEventListener('click', jadwal, true);
+        document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.po-mode-btn')) { setTimeout(atur, 80); } }, true);
+        window.addEventListener('resize', atur);
         if (window.MutationObserver && f.nodeType === 1) { new MutationObserver(jadwal).observe(f, { childList: true, subtree: true }); }
         setInterval(perbarui, 1200);
-        hint.querySelector('#poKirimHintLink').addEventListener('click', function (e) {
+        goBtn.addEventListener('click', function (e) {
             e.preventDefault();
             var bad = validasiFieldWajib().concat(validasiTtd());
             if (bad.length) {
@@ -7343,7 +7436,7 @@ window.applyLiveZoom = function(scale, isAuto) {
         wrapper.style.height = Math.round(baseH * scale) + 'px';
     }
     if (label) {
-        label.textContent = isAuto ? 'Fit (' + Math.round(scale * 100) + '%)' : Math.round(scale * 100) + '%';
+        label.textContent = isAuto ? 'Fit ' + Math.round(scale * 100) + '%' : Math.round(scale * 100) + '%';
     }
 };
 
@@ -7573,6 +7666,22 @@ window.performLivePreviewFetch = function() {
         window.isLivePreviewFetching = false;
     });
 };
+
+// Menu titik tiga di toolbar pratinjau
+(function () {
+    var btn = document.getElementById('poTbMenuBtn'), menu = document.getElementById('poTbMenu');
+    if (!btn || !menu) return;
+    function tutup() { menu.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); }
+    btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var buka = !menu.classList.contains('open');
+        menu.classList.toggle('open', buka);
+        btn.setAttribute('aria-expanded', buka ? 'true' : 'false');
+    });
+    menu.addEventListener('click', tutup);
+    document.addEventListener('click', function (e) { if (!e.target.closest('#poTbMenu')) tutup(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') tutup(); });
+})();
 
 window.unduhLivePdf = function() {
     window.serializeFormForLivePreview();

@@ -6173,6 +6173,89 @@
                                 .pa-tg { font-size:.68rem; color:#475569; margin-top:2px; }
                                 .pa-st.cur .pa-tg { color:#1e293b; font-weight:600; }
                                 .pa-st.rev .pa-tg { color:#dc2626; font-weight:600; }
+                                /* Kartu status PO (ilustrasi amplop) */
+                                .pa-po .pa-no { display:flex; align-items:center; gap:10px; min-width:0; }
+                                .pa-po .pa-ic { width:36px; height:36px; border-radius:10px; background:#fff; border:1px solid #e2e8f0; display:grid; place-items:center; flex:none; color:#1e293b; font-size:1.05rem; }
+                                .pa-po .pa-l1 { font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#64748b; }
+                                .pa-po .pa-l2 { font-family:SFMono-Regular,Consolas,monospace; font-weight:700; font-size:.95rem; color:#0f172a; word-break:break-all; }
+                                .pa-po .pa-l3 { font-size:.78rem; color:#64748b; }
+                                .pa-st.cur::before { background:repeating-linear-gradient(90deg,#1e293b 0 8px,#cbd5e1 8px 16px); background-size:32px 3px; animation:paMarch 1s linear infinite; }
+                                @keyframes paMarch { to { background-position:32px 0; } }
+                                .pa-st.cur .pa-dot::after, .pa-st.rev .pa-dot::after { content:""; position:absolute; inset:-6px; border-radius:50%; border:2px solid #1e293b; opacity:0; animation:paRing 1.8s ease-out infinite; }
+                                .pa-st.rev .pa-dot::after { border-color:#dc2626; }
+                                @keyframes paRing { 0% { transform:scale(.7); opacity:.7; } 100% { transform:scale(1.25); opacity:0; } }
+                                .pa-stat { display:grid; grid-template-columns:230px 1fr; gap:20px; align-items:center; border:1px solid #e2e8f0; border-radius:14px; padding:14px 18px 14px 14px; background:linear-gradient(180deg,#fff,#f8fafc); animation:paRise .4s ease both; }
+                                @keyframes paRise { from { opacity:0; transform:translateY(8px); } }
+                                .pa-art { background:#f1f5f9; border-radius:12px; padding:6px 4px; overflow:hidden; --pe-ink:#0f172a; --pe-bg:#fff; --pe-soft:#e2e8f0; }
+                                .pa-eyebrow { display:inline-flex; font-size:.68rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#64748b; }
+                                .pa-jdl { font-size:1.1rem; font-weight:800; margin:4px 0 6px; line-height:1.3; color:#0f172a; }
+                                .pa-tx { margin:0; color:#475569; font-size:.9rem; max-width:60ch; }
+                                .pa-metas { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+                                .pa-meta { display:inline-flex; align-items:center; gap:7px; background:#fff; border:1px solid #e2e8f0; border-radius:99px; padding:4px 12px 4px 10px; font-size:.74rem; font-weight:600; color:#0f172a; }
+                                .pa-meta .pa-pd { width:8px; height:8px; border-radius:50%; background:#1e293b; animation:paPd 1.6s infinite; }
+                                .pa-meta-red { color:#dc2626; border-color:#fecaca; background:#fef2f2; }
+                                .pa-meta-red .pa-pd { background:#dc2626; }
+                                @keyframes paPd { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+                                .pa-dots { display:inline-flex; gap:3px; margin-left:6px; vertical-align:middle; }
+                                .pa-dots i { width:5px; height:5px; border-radius:50%; background:currentColor; animation:paDt 1.2s infinite; }
+                                .pa-dots i:nth-child(2) { animation-delay:.2s; } .pa-dots i:nth-child(3) { animation-delay:.4s; }
+                                @keyframes paDt { 0%,60%,100% { transform:translateY(0); opacity:.35; } 30% { transform:translateY(-4px); opacity:1; } }
+                                @media (max-width:700px) { .pa-stat { grid-template-columns:1fr; } .pa-art { max-width:260px; margin:0 auto; } }
+                                .pe-sc{width:100%;height:auto;display:block;overflow:visible}
+                                .pe-sc *{fill:none;stroke:none;stroke-linecap:round;stroke-linejoin:round;transform-box:fill-box}
+                                .pe-sc .pe-f-ink{fill:var(--pe-ink)}
+                                .pe-sc .pe-f-bg{fill:var(--pe-bg)}
+                                .pe-sc .pe-f-soft{fill:var(--pe-soft)}
+                                .pe-sc .pe-s-ink{stroke:var(--pe-ink);stroke-width:3}
+                                .pe-sc .pe-sw2{stroke-width:2.4}
+                                .pe-sc .pe-s-bg{stroke:var(--pe-bg);stroke-width:4}
+                                .pe-sc .pe-eyes{transform-origin:center;animation:pek-blink 4.2s infinite}
+                                .pe-sc .pe-bubble{transform-origin:center;animation:pek-pop 1.4s ease-in-out infinite}
+                                .pe-sc .pe-mag{animation:pek-scan 3.2s ease-in-out infinite}
+                                .pe-sc .pe-pen{animation:pek-write .7s ease-in-out infinite}
+                                .pe-sc .pe-stamp{transform-origin:center;animation:pek-stamp 2.8s cubic-bezier(.2,1.4,.4,1) infinite}
+                                .pe-sc .pe-spark{transform-origin:center;animation:pek-twinkle 1.6s ease-in-out infinite}
+                                .pe-sc .pe-spark.pe-b{animation-delay:.5s}
+                                .pe-sc .pe-spark.pe-c{animation-delay:1s}
+                                .pe-sc .pe-fly{animation:pek-fly 2.4s ease-in-out infinite}
+                                .pe-sc .pe-fly.pe-slow{animation-duration:3.6s}
+                                .pe-sc .pe-bounce{animation:pek-bounce .9s ease-in-out infinite}
+                                .pe-sc .pe-rest{animation:pek-restb 3s ease-in-out infinite}
+                                .pe-sc .pe-wl{transform-box:view-box;transform-origin:96px 80px;animation:pek-wl .5s ease-in-out infinite alternate}
+                                .pe-sc .pe-wr{transform-box:view-box;transform-origin:144px 80px;animation:pek-wr .5s ease-in-out infinite alternate}
+                                .pe-sc .pe-wl.pe-fast,.pe-sc .pe-wr.pe-fast{animation-duration:.28s}
+                                .pe-sc .pe-wl.pe-slow,.pe-sc .pe-wr.pe-slow{animation-duration:.9s}
+                                .pe-sc .pe-wl.pe-up{animation:pek-wlu .45s ease-in-out infinite alternate}
+                                .pe-sc .pe-wr.pe-up{animation:pek-wru .45s ease-in-out infinite alternate}
+                                .pe-sc .pe-cloud{animation:pek-drift 9s linear infinite}
+                                .pe-sc .pe-cloud.pe-c2{animation-duration:13s;animation-delay:-5s}
+                                .pe-sc .pe-cloud.pe-c3{animation-duration:11s;animation-delay:-8s}
+                                .pe-sc .pe-speed{stroke-dasharray:10 8;animation:pek-speedl .6s linear infinite}
+                                .pe-sc .pe-scan{animation:pek-scanl 3s ease-in-out infinite}
+                                .pe-sc .pe-cf{animation:pek-cf 2.6s linear infinite}
+                                .pe-sc .pe-cf.pe-c2{animation-delay:-.7s;animation-duration:3s}
+                                .pe-sc .pe-cf.pe-c3{animation-delay:-1.4s}
+                                .pe-sc .pe-cf.pe-c4{animation-delay:-2s;animation-duration:3.2s}
+                                .pe-sc .pe-arc{transform-origin:120px 40px;transform-box:view-box;animation:pek-arc 2.4s ease-in-out infinite}
+                                @keyframes pek-arc{0%,100%{opacity:.35}50%{opacity:1}}
+                                @keyframes pek-blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+                                @keyframes pek-bounce{0%,100%{transform:translateY(0)}40%{transform:translateY(-14px)}}
+                                @keyframes pek-cf{from{transform:translateY(0) rotate(0)}to{transform:translateY(172px) rotate(300deg)}}
+                                @keyframes pek-drift{from{transform:translateX(150px)}to{transform:translateX(-170px)}}
+                                @keyframes pek-fly{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-9px) rotate(3deg)}}
+                                @keyframes pek-pop{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+                                @keyframes pek-restb{50%{transform:translateY(-1.5px)}}
+                                @keyframes pek-scan{0%,100%{transform:translate(0,0)}35%{transform:translate(22px,-2px)}70%{transform:translate(8px,5px)}}
+                                @keyframes pek-scanl{0%,100%{transform:translateX(-3px)}50%{transform:translateX(3px)}}
+                                @keyframes pek-speedl{to{stroke-dashoffset:-18}}
+                                @keyframes pek-stamp{0%{transform:scale(0) rotate(-30deg)}20%,90%{transform:scale(1) rotate(0)}100%{transform:scale(1)}}
+                                @keyframes pek-twinkle{0%,100%{transform:scale(.2);opacity:0}50%{transform:scale(1);opacity:1}}
+                                @keyframes pek-wl{from{transform:rotate(14deg)}to{transform:rotate(-18deg)}}
+                                @keyframes pek-wlu{from{transform:rotate(30deg)}to{transform:rotate(50deg)}}
+                                @keyframes pek-wr{from{transform:rotate(-14deg)}to{transform:rotate(18deg)}}
+                                @keyframes pek-write{0%,100%{transform:translateX(-4px) rotate(0)}50%{transform:translateX(6px) rotate(-6deg)}}
+                                @keyframes pek-wru{from{transform:rotate(-30deg)}to{transform:rotate(-50deg)}}
+                                @media (prefers-reduced-motion:reduce) { .pa-stat, .pa-stat *, .pa-st::before, .pa-dot::after { animation:none !important; } }
                                 #paAlurBox .alert-success, #paAlurBox .alert-info { background:#f1f5f9; color:#0f172a; border-left:5px solid #1e293b !important; }   /* pesan di bawah alur: warna sidebar */
                                 .pa-frame { margin:0 -1.5rem; background:#fff; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; }
                                 .system-section-card:has(#paFrameWrap) { overflow:clip; }   /* overflow:hidden bawaan kartu mematikan sticky */
@@ -6244,9 +6327,13 @@
                                 <check if="{{ !@po_alur.form_revisi }}">
                                 <div id="paAlurBox">
                                 <div class="pa-po">
-                                    <div>
-                                        <div class="fw-bold text-dark"><i class="bi bi-file-earmark-check text-primary me-1"></i> Nomor PO: <span class="font-monospace text-primary">{{ @po_alur.nomor_po }}</span></div>
-                                        <div class="small text-muted">Dikirim {{ @po_alur.dikirim_at }}</div>
+                                    <div class="pa-no">
+                                        <span class="pa-ic"><i class="bi bi-file-earmark-check"></i></span>
+                                        <div>
+                                            <div class="pa-l1">Nomor PO</div>
+                                            <div class="pa-l2">{{ @po_alur.nomor_po }}</div>
+                                            <div class="pa-l3">Dikirim pada {{ @po_alur.dikirim_at }}</div>
+                                        </div>
                                     </div>
                                     <div class="d-flex gap-2 flex-wrap">
                                         <check if="{{ !@po_alur.aksi.panel_lihat }}">
@@ -6279,7 +6366,25 @@
                                         </div>
                                     </repeat>
                                 </div>
-                                <check if="{{ @po_alur.info.html }}"><div class="alert alert-{{ @po_alur.info.tipe }} po-alert-{{ @po_alur.info.tipe }} border-0 shadow-xs small mb-0">{{ @po_alur.info.html | raw }}</div></check>
+                                <check if="{{ @po_alur.info.html }}">
+                                <div class="pa-stat">
+                                    <div class="pa-art" aria-hidden="true">
+                                        <check if="{{ @po_alur.info.scene == 'tunggu' }}"><svg class="pe-sc" viewBox="0 0 240 158"><g transform="translate(0 30)"><g class="pe-cloud"><path class="pe-f-soft" d="M70 0h40a8 8 0 0 0 0-16 12 12 0 0 0-22-4 10 10 0 0 0-18 6 7 7 0 0 0 0 14z"></path></g></g><g transform="translate(70 124)"><g class="pe-cloud pe-c2"><path class="pe-f-soft" d="M70 0h40a8 8 0 0 0 0-16 12 12 0 0 0-22-4 10 10 0 0 0-18 6 7 7 0 0 0 0 14z"></path></g></g><g transform="translate(-20 150)"><g class="pe-cloud pe-c3"><path class="pe-f-soft" d="M70 0h40a8 8 0 0 0 0-16 12 12 0 0 0-22-4 10 10 0 0 0-18 6 7 7 0 0 0 0 14z"></path></g></g><path class="pe-speed pe-s-ink pe-sw2" d="M34 70h24M24 84h32M40 98h20"></path><g class="pe-fly"><g class="pe-wl"><path class="pe-f-bg pe-s-ink pe-sw2" d="M96 78q-24-14-34-2 8 12 34 9z"></path></g><g class="pe-wr"><path class="pe-f-bg pe-s-ink pe-sw2" d="M144 78q24-14 34-2-8 12-34 9z"></path></g><rect class="pe-f-bg pe-s-ink" x="96" y="62" width="48" height="36" rx="5"></rect><path class="pe-s-ink pe-sw2" d="M98 65l22 16 22-16"></path><g class="pe-eyes"><circle class="pe-f-ink" cx="110" cy="89" r="2.5"></circle><circle class="pe-f-ink" cx="130" cy="89" r="2.5"></circle></g><path class="pe-s-ink pe-sw2" d="M115 93.5q5 4 10 0"></path></g></svg></check>
+                                        <check if="{{ @po_alur.info.scene == 'giliran' }}"><svg class="pe-sc" viewBox="0 0 240 158"><g transform="translate(0 40)"><g class="pe-cloud pe-c2" style="animation-duration:20s"><path class="pe-f-soft" d="M70 0h40a8 8 0 0 0 0-16 12 12 0 0 0-22-4 10 10 0 0 0-18 6 7 7 0 0 0 0 14z"></path></g></g><g class="pe-bounce"><g class="pe-wl pe-fast"><path class="pe-f-bg pe-s-ink pe-sw2" d="M96 78q-24-14-34-2 8 12 34 9z"></path></g><g class="pe-wr pe-fast"><path class="pe-f-bg pe-s-ink pe-sw2" d="M144 78q24-14 34-2-8 12-34 9z"></path></g><rect class="pe-f-bg pe-s-ink" x="96" y="62" width="48" height="36" rx="5"></rect><path class="pe-s-ink pe-sw2" d="M98 65l22 16 22-16"></path><g class="pe-eyes"><circle class="pe-f-ink" cx="110" cy="89" r="2.5"></circle><circle class="pe-f-ink" cx="130" cy="89" r="2.5"></circle></g><circle class="pe-s-ink pe-sw2" cx="120" cy="95" r="2.6"></circle></g><g class="pe-bubble"><rect class="pe-f-bg pe-s-ink" x="156" y="12" width="46" height="32" rx="14"></rect><path class="pe-f-bg pe-s-ink" d="M164 44l-4 11 14-11"></path><text class="pe-f-ink" x="179" y="35" text-anchor="middle" font-size="22" font-weight="800">!</text></g><path class="pe-spark pe-f-ink" d="M58 44l2.4 5.6 5.6 2.4-5.6 2.4-2.4 5.6-2.4-5.6-5.6-2.4 5.6-2.4z"></path><path class="pe-spark pe-b pe-f-ink" d="M190 92l2.4 5.6 5.6 2.4-5.6 2.4-2.4 5.6-2.4-5.6-5.6-2.4 5.6-2.4z"></path></svg></check>
+                                        <check if="{{ @po_alur.info.scene == 'revisi' }}"><svg class="pe-sc" viewBox="0 0 240 158"><g class="pe-arc"><path class="pe-s-ink pe-sw2" d="M92 52a30 30 0 0 1 56 0" stroke-dasharray="5 6"></path><path class="pe-s-ink pe-sw2" d="M92 52l-1-9M92 52l9-2"></path></g><g class="pe-fly pe-slow"><g class="pe-wl pe-slow"><path class="pe-f-bg pe-s-ink pe-sw2" d="M96 78q-24-14-34-2 8 12 34 9z"></path></g><g class="pe-wr pe-slow"><path class="pe-f-bg pe-s-ink pe-sw2" d="M144 78q24-14 34-2-8 12-34 9z"></path></g><rect class="pe-f-bg pe-s-ink" x="96" y="62" width="48" height="36" rx="5"></rect><path class="pe-s-ink pe-sw2" d="M98 65l22 16 22-16"></path><g class="pe-eyes pe-scan"><circle class="pe-f-ink" cx="110" cy="89" r="2.5"></circle><circle class="pe-f-ink" cx="130" cy="89" r="2.5"></circle></g><path class="pe-s-ink pe-sw2" d="M115 96q5-3.5 10 0"></path><g class="pe-pen"><path class="pe-f-bg pe-s-ink pe-sw2" d="M140 106l14-22 5 3-14 22z"></path><path class="pe-f-ink" d="M140 106l-1.6 6 6-2.6z"></path></g></g><path class="pe-speed pe-s-ink pe-sw2" d="M30 76h26M22 90h32"></path></svg></check>
+                                        <check if="{{ @po_alur.info.scene == 'periksa' }}"><svg class="pe-sc" viewBox="0 0 240 158"><rect class="pe-f-ink" x="50" y="118" width="140" height="8" rx="4"></rect><ellipse class="pe-f-soft" cx="120" cy="136" rx="60" ry="4"></ellipse><g transform="translate(0 20)"><g class="pe-rest"><rect class="pe-f-bg pe-s-ink" x="96" y="62" width="48" height="36" rx="5"></rect><path class="pe-s-ink pe-sw2" d="M98 65l22 16 22-16"></path><g class="pe-eyes pe-scan"><circle class="pe-f-ink" cx="110" cy="89" r="2.5"></circle><circle class="pe-f-ink" cx="130" cy="89" r="2.5"></circle></g><path class="pe-s-ink pe-sw2" d="M116 95h8"></path></g></g><g class="pe-mag"><circle class="pe-f-bg pe-s-ink" cx="104" cy="96" r="14"></circle><path class="pe-s-ink pe-sw5" d="M114 106l16 14"></path></g><path class="pe-s-ink pe-sw2" d="M54 64h26M168 70h22M60 92h14" stroke-dasharray="2 7"></path></svg></check>
+                                        <check if="{{ @po_alur.info.scene == 'selesai' }}"><svg class="pe-sc" viewBox="0 0 240 158"><rect class="pe-cf pe-c1 pe-f-ink" x="46" y="-10" width="6" height="9" rx="1.5"></rect><rect class="pe-cf pe-c2 pe-f-soft" x="86" y="-10" width="6" height="9" rx="1.5"></rect><rect class="pe-cf pe-c3 pe-f-ink" x="150" y="-10" width="6" height="9" rx="1.5"></rect><rect class="pe-cf pe-c4 pe-f-soft" x="196" y="-10" width="6" height="9" rx="1.5"></rect><g class="pe-bounce"><g class="pe-wl pe-up"><path class="pe-f-bg pe-s-ink pe-sw2" d="M96 78q-24-14-34-2 8 12 34 9z"></path></g><g class="pe-wr pe-up"><path class="pe-f-bg pe-s-ink pe-sw2" d="M144 78q24-14 34-2-8 12-34 9z"></path></g><rect class="pe-f-bg pe-s-ink" x="96" y="62" width="48" height="36" rx="5"></rect><path class="pe-s-ink pe-sw2" d="M98 65l22 16 22-16"></path><g class="pe-eyes"><circle class="pe-f-ink" cx="110" cy="89" r="2.5"></circle><circle class="pe-f-ink" cx="130" cy="89" r="2.5"></circle></g><path class="pe-s-ink pe-sw2" d="M115 93.5q5 4 10 0"></path><g class="pe-stamp"><circle class="pe-f-ink" cx="146" cy="64" r="14"></circle><path class="pe-s-bg" d="M139 64l5 5 9-10"></path></g></g><path class="pe-spark pe-f-ink" d="M52 40l2.4 5.6 5.6 2.4-5.6 2.4-2.4 5.6-2.4-5.6-5.6-2.4 5.6-2.4z"></path><path class="pe-spark pe-b pe-f-ink" d="M188 34l2.4 5.6 5.6 2.4-5.6 2.4-2.4 5.6-2.4-5.6-5.6-2.4 5.6-2.4z"></path><path class="pe-spark pe-c pe-f-ink" d="M70 108l2.4 5.6 5.6 2.4-5.6 2.4-2.4 5.6-2.4-5.6-5.6-2.4 5.6-2.4z"></path></svg></check>
+                                    </div>
+                                    <div>
+                                        <span class="pa-eyebrow">{{ @po_alur.info.eyebrow }}</span>
+                                        <h3 class="pa-jdl">{{ @po_alur.info.judul }}<check if="{{ @po_alur.info.menunggu }}"><span class="pa-dots"><i></i><i></i><i></i></span></check></h3>
+                                        <p class="pa-tx">{{ @po_alur.info.html | raw }}</p>
+                                        <div class="pa-metas">
+                                            <span class="pa-meta"><span class="pa-pd"></span>{{ @po_alur.info.pihak }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                </check>
                                 </div>
                                 </check>
                             </check>
@@ -7476,6 +7581,8 @@ window.addEventListener('message', function (e) {
         });
         return;
     }
+    // Slide baru saja dibuka penerima: perbarui kartu status di belakangnya (waktu dibuka tercatat), slide tetap terbuka
+    if (d.jenis === 'dibaca') { poSegarkanTahap8().catch(function () {}); return; }
     if (d.jenis === 'keluar-selesai') { poSelesaiKeluar(); return; }
     if (d.jenis === 'siap') {
         var fs = document.getElementById('poPanelFr');
@@ -7490,14 +7597,18 @@ window.addEventListener('message', function (e) {
     if (d.jenis === 'tutup') {
         var f = document.getElementById('poPanelFr');
         if (muat) { muat.remove(); }
-        if (f) { f.remove(); }
-        if (d.berubah) {
-            // Tahap 8 diperbarui di tempat (tanpa memuat ulang halaman). "Kerjakan sendiri" di slide revisi PPK BLU: form revisi langsung tampil dan digulir ke sana.
-            poSegarkanTahap8({ editPo: d.buka === 'form', gulir: d.buka === 'form' }).catch(function () {
-                if (d.buka === 'form') { window.location.href = window.location.pathname + '?edit_po=1#cardPo'; } else { window.location.reload(); }
-            });
+        // Slide tertutup lewat tombol X: beri waktu animasi geser keluar (~0,42 dtk) sebelum iframe dilepas, supaya slide tidak lenyap seketika
+        function poSelesaiTutup() {
+            var f2 = document.getElementById('poPanelFr'); if (f2) { f2.remove(); }
+            if (d.berubah) {
+                // Tahap 8 diperbarui di tempat (tanpa memuat ulang halaman). "Kerjakan sendiri" di slide revisi PPK BLU: form revisi langsung tampil dan digulir ke sana.
+                poSegarkanTahap8({ editPo: d.buka === 'form', gulir: d.buka === 'form' }).catch(function () {
+                    if (d.buka === 'form') { window.location.href = window.location.pathname + '?edit_po=1#cardPo'; } else { window.location.reload(); }
+                });
+            }
+            else if (window.__poPraArgs) { setTimeout(function () { poPraMuat(window.__poPraArgs[0], window.__poPraArgs[1]); }, 400); }   // siapkan lagi supaya klik berikutnya juga langsung tampil
         }
-        else if (window.__poPraArgs) { setTimeout(function () { poPraMuat(window.__poPraArgs[0], window.__poPraArgs[1]); }, 400); }   // siapkan lagi supaya klik berikutnya juga langsung tampil
+        if (f) { f.style.pointerEvents = 'none'; setTimeout(poSelesaiTutup, 460); } else { poSelesaiTutup(); }
     }
 });
 </script>

@@ -3056,8 +3056,8 @@ class OrderController extends Controller {
             'url_cetak' => $base . '/po-kegiatan/' . $poId . '/cetak',
         );
 
-        $namaLangkah = array('Disusun', 'Review Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU', 'PO Aktif', 'PO Bertanda Tangan');
-        $aktorLangkah = array('Ketua Pelaksana', 'Ketua Tim OPTI', 'Humas', 'Tim Mitra', 'PPK BLU', 'Pengerjaan lab dimulai', 'Ketua Tim OPTI');
+        $namaLangkah = array('Penyusunan', 'Peninjauan Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU', 'PO Aktif', 'Penandatanganan PO');
+        $aktorLangkah = array('Ketua Pelaksana', 'Ketua Tim OPTI', 'Humas', 'Tim Mitra', 'PPK BLU', 'Pelaksanaan pengujian di laboratorium dimulai', 'Ketua Tim OPTI');
         $waktu = array(
             $po ? $fmt(!empty($po['dikirim_at']) ? $po['dikirim_at'] : ($po['created_at'] ?? null)) : '',
             $po ? $fmt($po['disetujui_at'] ?? null) : '',
@@ -3103,11 +3103,11 @@ class OrderController extends Controller {
             if ($n === 6) { $cls = $ttdAda ? 'done' : ($state === 'aktif' ? 'cur' : ''); }
             $tg = '';
             if ($cls === 'done') { $tg = $waktu[$n]; }
-            elseif ($cls === 'cur') { $tg = ($n === 6) ? 'Menunggu unggahan' : 'Sedang di sini'; }
+            elseif ($cls === 'cur') { $tg = ($n === 6) ? 'Menunggu unggahan' : 'Sedang berlangsung'; }
             elseif ($cls === 'rev') { $tg = isset($tagRev[$state]) ? $tagRev[$state] : 'Perlu revisi'; }
             $tg2 = ''; $tg2c = '';
             if ($baca && $n === $cur && ($cls === 'cur' || $cls === 'rev')) {
-                $tg2 = $baca['belum'] ? 'Belum dibuka ' . $baca['penerima'] : 'Dibuka ' . $baca['waktu'];
+                $tg2 = $baca['belum'] ? 'Belum dibuka oleh ' . $baca['penerima'] : 'Dibuka pada ' . $baca['waktu'];
                 if ($state === 'verif_ppk' && $rondePpk > 0) { $tg2 = 'Revisi ronde ' . $rondePpk . ' · ' . $tg2; }
                 $tg2c = $baca['belum'] ? 'u' : 'd';
                 if ($cls === 'cur') { $tg = ''; }   // "Sedang di sini" digantikan status dibaca
@@ -3218,64 +3218,98 @@ class OrderController extends Controller {
         $bidang = function ($t, $h) { return array('tipe' => $t, 'html' => $h); };
         switch ($state) {
             case 'menunggu_review':
-                $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> Buka Review PO: setujui, atau minta revisi dengan catatan.')
-                    : ($isKetupel ? $bidang('info', 'PO sudah terkirim dan tidak bisa diubah. Kalau Ketua Tim meminta revisi, tombol revisi muncul di sini.') : $bidang('info', 'Menunggu review Ketua Tim OPTI.'));
+                $info = $isKatim ? $bidang('warning', 'Silakan buka Review PO, kemudian setujui dokumen atau ajukan revisi disertai catatan.')
+                    : ($isKetupel ? $bidang('info', 'PO telah berhasil dikirim dan saat ini tidak dapat diubah. Apabila Ketua Tim OPTI meminta revisi, tombol revisi akan tersedia pada halaman ini.') : $bidang('info', 'PO telah dikirim dan sedang menunggu peninjauan oleh Ketua Tim OPTI.'));
                 break;
             case 'direvisi':
-                $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> Ketua Pelaksana sudah mengirim revisi. Review ulang PO ini.') : $bidang('info', 'Revisi sudah dikirim. Menunggu review ulang Ketua Tim OPTI.');
+                $info = $isKatim ? $bidang('warning', 'Ketua Pelaksana telah mengirimkan revisi. Silakan tinjau kembali PO ini.') : $bidang('info', 'Revisi telah dikirim dan sedang menunggu peninjauan ulang oleh Ketua Tim OPTI.');
                 break;
             case 'perlu_revisi':
-                $info = ($isKetupel || $isSuper) ? $bidang('warning', '<b>Giliran Anda.</b> Ketua Tim meminta revisi. Buka Revisi untuk melihat catatan, mengedit PO, dan mengirim revisi.') : $bidang('info', 'Menunggu <b>' . $nk . '</b> memperbaiki PO sesuai catatan Ketua Tim.');
+                $info = ($isKetupel || $isSuper) ? $bidang('warning', 'Ketua Tim OPTI meminta perbaikan. Silakan buka revisi untuk membaca catatan, menyunting PO, dan mengirimkannya kembali.') : $bidang('info', 'Menunggu <b>' . $nk . '</b> memperbaiki PO sesuai catatan Ketua Tim OPTI.');
                 break;
             case 'ppk_minta':
-                $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> PPK BLU meminta revisi. Putuskan: kerjakan sendiri atau disposisikan ke ' . $nk . '.') : $bidang('info', 'PPK BLU meminta revisi. Menunggu keputusan Ketua Tim OPTI: kerjakan sendiri atau disposisi ke Ketua Pelaksana.');
+                $info = $isKatim ? $bidang('warning', 'PPK BLU meminta revisi. Silakan tentukan apakah revisi dikerjakan sendiri atau didisposisikan kepada ' . $nk . '.') : $bidang('info', 'PPK BLU meminta revisi. Menunggu keputusan Ketua Tim OPTI: dikerjakan sendiri atau didisposisikan kepada Ketua Pelaksana.');
                 break;
             case 'ppk_katim_kerja':
-                $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> Revisi PPK BLU Anda kerjakan sendiri. Anda masih bisa mendisposisikannya ke ' . $nk . ' sebelum dikirim.') : $bidang('info', 'Revisi PPK BLU sedang dikerjakan Ketua Tim OPTI.');
+                $info = $isKatim ? $bidang('warning', 'Revisi PPK BLU Anda kerjakan sendiri. Anda masih dapat mendisposisikannya kepada ' . $nk . ' sebelum dikirim.') : $bidang('info', 'Revisi PPK BLU sedang dikerjakan oleh Ketua Tim OPTI.');
                 break;
             case 'ppk_ketupel_kerja':
                 if ($putKatim > 0) {
-                    $info = ($isKetupel || $isSuper) ? $bidang('warning', '<b>Giliran Anda.</b> Ketua Tim meminta perbaikan lagi (perbaikan ke-' . $putKatim . '). Ini catatan dari Ketua Tim, bukan dari PPK BLU.') : $bidang('info', 'Catatan perbaikan Ketua Tim (ke-' . $putKatim . ') sedang dikerjakan <b>' . $nk . '</b>.');
+                    $info = ($isKetupel || $isSuper) ? $bidang('warning', 'Ketua Tim OPTI meminta perbaikan kembali (perbaikan ke-' . $putKatim . '). Catatan ini berasal dari Ketua Tim OPTI, bukan dari PPK BLU.') : $bidang('info', 'Catatan perbaikan Ketua Tim OPTI (ke-' . $putKatim . ') sedang dikerjakan oleh <b>' . $nk . '</b>.');
                 } else {
-                    $info = ($isKetupel || $isSuper) ? $bidang('warning', '<b>Giliran Anda.</b> Ketua Tim mendisposisikan revisi PPK BLU kepada Anda.') : $bidang('info', 'Revisi PPK BLU didisposisikan ke <b>' . $nk . '</b>.');
+                    $info = ($isKetupel || $isSuper) ? $bidang('warning', 'Ketua Tim OPTI mendisposisikan revisi PPK BLU kepada Anda.') : $bidang('info', 'Revisi PPK BLU didisposisikan kepada <b>' . $nk . '</b>.');
                 }
                 break;
             case 'ppk_katim_review':
                 if ($putKatim > 0) {
-                    $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> Review hasil perbaikan ke-' . $putKatim . ' dari ' . $nk . ', lalu kirim ke PPK BLU atau tambahkan catatan perbaikan lagi.') : $bidang('info', 'Hasil perbaikan Ketua Tim (ke-' . $putKatim . ') menunggu review ulang Ketua Tim OPTI.');
+                    $info = $isKatim ? $bidang('warning', 'Silakan tinjau hasil perbaikan ke-' . $putKatim . ' dari ' . $nk . ', kemudian kirim ke PPK BLU atau tambahkan catatan perbaikan kembali.') : $bidang('info', 'Hasil perbaikan Ketua Tim OPTI (ke-' . $putKatim . ') menunggu peninjauan ulang.');
                 } else {
-                    $info = $isKatim ? $bidang('warning', '<b>Giliran Anda.</b> Review hasil revisi dari ' . $nk . ', lalu kirim ke PPK BLU atau tambahkan catatan perbaikan lalu kembalikan.') : $bidang('info', 'Hasil revisi PPK BLU menunggu review Ketua Tim OPTI.');
+                    $info = $isKatim ? $bidang('warning', 'Silakan tinjau hasil revisi dari ' . $nk . ', kemudian kirim ke PPK BLU atau tambahkan catatan perbaikan kembali.') : $bidang('info', 'Hasil revisi PPK BLU menunggu peninjauan Ketua Tim OPTI.');
                 }
                 break;
             case 'aktif':
                 if ($ttdAda && $kontrakAda) {
                     $info = $bidang('info', '');   // kontrak sudah dibuat: tidak perlu banner, statusnya tampil di kartu Kontrak
                 } elseif ($ttdAda) {
-                    $info = $bidang('info', '<b>PO sudah aktif penuh.</b> PO bertanda tangan sudah di-upload dan diteruskan ke Humas untuk dibuatkan kontrak. Tahap 9 (BAST) terbuka setelah kontrak dibuat.');
+                    $info = $bidang('info', 'PO bertanda tangan telah diunggah dan diteruskan kepada Humas untuk pembuatan kontrak. Tahap 9 (BAST) terbuka setelah kontrak dibuat.');
                 } elseif ($isKatim) {
-                    $info = $bidang('warning', '<b>PO sudah aktif, menunggu TTD.</b> Cetak PO, tanda tangani, lalu upload PO yang sudah ditandatangani.');
+                    $info = $bidang('warning', 'Silakan cetak PO, tandatangani, kemudian unggah PO yang telah ditandatangani.');
                 } else {
-                    $info = $bidang('info', '<b>PO sudah aktif, menunggu TTD.</b> Menunggu Ketua Tim meng-upload PO yang sudah ditandatangani.');
+                    $info = $bidang('info', 'Menunggu Ketua Tim OPTI mengunggah PO yang telah ditandatangani.');
                 }
                 break;
             case 'verif_humas':
-                $info = $isHumas ? $bidang('warning', '<b>Giliran Anda.</b> Buka Verifikasi PO untuk memeriksa PO, Map Kendali, dan berkas, lalu verifikasi.')
-                    : $bidang('info', 'Saat ini di meja <b>Humas</b>. Tahap 8 hanya menampilkan posisinya.');
+                $info = $isHumas ? $bidang('warning', 'Silakan buka Verifikasi PO untuk memeriksa PO, Map Kendali, dan berkas, kemudian lakukan verifikasi.')
+                    : $bidang('info', 'PO disetujui Ketua Tim OPTI dan saat ini berada pada <b>Humas</b>. Tahap 8 hanya menampilkan posisi PO.');
                 break;
             case 'verif_mitra':
-                $info = ($isMitra && !$isSuper) ? $bidang('warning', '<b>Giliran Anda.</b> Buka Verifikasi PO untuk memeriksa PO dan berkas, lalu verifikasi.')
-                    : $bidang('info', 'Saat ini di meja <b>Tim Mitra</b>. Tahap 8 hanya menampilkan posisinya.');
+                $info = ($isMitra && !$isSuper) ? $bidang('warning', 'Silakan buka Verifikasi PO untuk memeriksa PO dan berkas, kemudian lakukan verifikasi.')
+                    : $bidang('info', 'PO telah diverifikasi Humas dan saat ini berada pada <b>Tim Mitra</b>. Tahap 8 hanya menampilkan posisi PO.');
                 break;
             case 'verif_ppk':
-                $info = ($isPpk && !$isSuper) ? $bidang('warning', '<b>Giliran Anda.</b> Buka Verifikasi PO untuk memeriksa PO: verifikasi, atau minta revisi dengan catatan.')
-                    : $bidang('info', ($rondePpk > 0 ? 'Hasil revisi (ronde ' . $rondePpk . ') sudah dikirim kembali ke meja <b>PPK BLU</b>.' : 'Saat ini di meja <b>PPK BLU</b>. Tahap 8 hanya menampilkan posisinya.'));
+                $info = ($isPpk && !$isSuper) ? $bidang('warning', 'Silakan buka Verifikasi PO untuk memeriksa PO, kemudian lakukan verifikasi atau ajukan revisi disertai catatan.')
+                    : $bidang('info', ($rondePpk > 0 ? 'Hasil revisi (ronde ' . $rondePpk . ') telah dikirim kembali kepada <b>PPK BLU</b>.' : 'PO telah diverifikasi Tim Mitra dan saat ini berada pada <b>PPK BLU</b>. Tahap 8 hanya menampilkan posisi PO.'));
                 break;
         }
 
-        // pihak yang bukan pemegang (pesan tipe info) ikut melihat apakah penerimanya sudah membuka PO
+        // keterangan dibuka / belum dibuka ditampilkan sebagai keterangan tersendiri di kartu status
+        $info['baca'] = ''; $info['baca_belum'] = false;
         if ($baca && $info['tipe'] === 'info' && $info['html'] !== '') {
-            $info['html'] .= ' ' . ($baca['belum'] ? 'Belum dibuka ' . $baca['penerima'] . '.' : 'Sudah dibuka ' . $baca['penerima'] . ' pada ' . $baca['waktu'] . '.');
+            $info['baca'] = $baca['belum'] ? 'Belum dibuka oleh ' . $baca['penerima'] : 'Telah dibuka oleh ' . $baca['penerima'] . ' pada ' . $baca['waktu'];
+            $info['baca_belum'] = (bool) $baca['belum'];
         }
+
+        // kartu status (tampilan): judul, ilustrasi amplop, dan keterangan pihak yang ditunggu
+        $judulKartu = array(
+            'menunggu_review' => array('Giliran Anda untuk Meninjau PO', 'Menunggu Peninjauan Ketua Tim OPTI'),
+            'direvisi' => array('Giliran Anda untuk Meninjau Ulang PO', 'Menunggu Peninjauan Ulang Ketua Tim OPTI'),
+            'perlu_revisi' => array('PO Memerlukan Perbaikan', 'Menunggu Perbaikan oleh Ketua Pelaksana'),
+            'ppk_minta' => array('Revisi PPK BLU Menunggu Keputusan Anda', 'Menunggu Keputusan Ketua Tim OPTI'),
+            'ppk_katim_kerja' => array('Kerjakan Revisi PPK BLU', 'Revisi PPK BLU Sedang Dikerjakan'),
+            'ppk_ketupel_kerja' => array('Revisi PPK BLU Didisposisikan kepada Anda', 'Revisi PPK BLU Sedang Dikerjakan'),
+            'ppk_katim_review' => array('Giliran Anda untuk Meninjau Hasil Revisi', 'Menunggu Peninjauan Hasil Revisi'),
+            'verif_humas' => array('Giliran Anda untuk Memverifikasi PO', 'Sedang Diverifikasi oleh Humas'),
+            'verif_mitra' => array('Giliran Anda untuk Memverifikasi PO', 'Sedang Diverifikasi oleh Tim Mitra'),
+            'verif_ppk' => array('Giliran Anda untuk Memverifikasi PO', 'Sedang Diverifikasi oleh PPK BLU'),
+            'aktif' => array('PO Aktif, Menunggu Penandatanganan', 'PO Telah Aktif'),
+        );
+        if ($putKatim > 0) {
+            $judulKartu['ppk_ketupel_kerja'] = array('Perbaikan Ketua Tim Menunggu Anda', 'Perbaikan Ketua Tim Sedang Dikerjakan');
+            $judulKartu['ppk_katim_review'] = array('Giliran Anda untuk Meninjau Hasil Perbaikan', 'Menunggu Peninjauan Hasil Perbaikan');
+        }
+        $adaGiliran = ($info['tipe'] === 'warning');
+        if ($state === 'aktif') { $idxJudul = ($ttdAda && !$adaGiliran) ? 1 : 0; }
+        else { $idxJudul = $adaGiliran ? 0 : 1; }
+        $info['judul'] = isset($judulKartu[$state]) ? $judulKartu[$state][$idxJudul] : '';
+        $info['eyebrow'] = $adaGiliran ? 'Perlu tindakan' : 'Status PO';
+        if ($state === 'aktif') { $info['scene'] = 'selesai'; }
+        elseif (in_array($state, array('verif_humas', 'verif_mitra', 'verif_ppk'), true)) { $info['scene'] = $adaGiliran ? 'giliran' : 'periksa'; }
+        elseif (in_array($state, array('perlu_revisi', 'ppk_katim_kerja', 'ppk_ketupel_kerja'), true)) { $info['scene'] = 'revisi'; }
+        else { $info['scene'] = $adaGiliran ? 'giliran' : 'tunggu'; }
+        if ($state === 'aktif') { $info['pihak'] = $ttdAda ? 'Berikutnya: Humas (pembuatan kontrak)' : 'Menunggu: Ketua Tim OPTI'; }
+        else { $info['pihak'] = $adaGiliran ? 'Tindakan oleh: Anda' : 'Menunggu: ' . $pj; }
+        $info['langkah'] = 'Langkah ' . ($state === 'aktif' ? 7 : ($cur + 1)) . ' dari 7';
+        $info['menunggu'] = in_array($info['scene'], array('tunggu', 'periksa'), true);
 
         // badge kepala kartu + label tab tahap 8: array(kelas bootstrap, teks panjang, teks pendek)
         $lab = array(

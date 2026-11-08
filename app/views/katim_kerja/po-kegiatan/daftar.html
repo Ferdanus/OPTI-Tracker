@@ -480,6 +480,12 @@
     .rvw-shtabs { position: relative; gap: 4px; padding: 0 12px; }
     .rvw-shtab { border-bottom: 0 !important; padding: 10px 14px; font-weight: 600; font-size: .85rem; transition: color .2s; }
     .rvw-shtab.on { color: #0f172a; }
+    .rvw-shtabs .rvw-shtab { flex: none; white-space: nowrap; }
+    .rvw-shtabs .rvw-tabdl { margin-left: auto; align-self: center; flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #cbd5e1; background: #fff; color: #0f172a; border-radius: 8px; padding: 6px 12px; font-size: .8rem; font-weight: 600; font-family: var(--rvw-display); cursor: pointer; transition: background .15s, border-color .15s, transform .15s; }
+    .rvw-shtabs .rvw-tabdl:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .rvw-shtabs .rvw-tabdl:active { transform: scale(.97); }
+    .rvw-shtabs .rvw-tabdl:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
+    @media (max-width: 575.98px) { .rvw-shtabs .rvw-tabdl { padding: 7px 9px; } .rvw-shtabs .rvw-tabdl .tx { display: none; } }
     .rvw-ind { position: absolute; bottom: 0; left: 0; height: 2px; width: 0; background: #334155; transition: left .3s cubic-bezier(.3,.8,.3,1), width .3s cubic-bezier(.3,.8,.3,1); pointer-events: none; }
     @keyframes rvwRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     #rvwDokPane, #rvwBerkasPane, #rvwAlurPane { animation: rvwRise .35s ease-out both; }
@@ -496,12 +502,7 @@
     .rvw-fzm button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
     .rvw-fzm .zl { width: auto; min-width: 56px; padding: 0 8px; border-radius: 999px; font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
     .rvw-fzm .sep { width: 1px; height: 18px; background: rgba(255,255,255,.22); margin: 0 3px; }
-    .rvw-float .rvw-pobar { right: 12px; display: flex; margin: 0; max-width: none; animation: rvwZmIn .35s ease both; }
-    .rvw-float .rvw-pobar .sp { display: none; }
-    .rvw-float .rvw-pobar button { box-shadow: 0 8px 22px rgba(15,23,42,.35); padding: .5rem .95rem; font-size: .82rem; transition: transform .15s, background .2s, box-shadow .2s; }
-    .rvw-float .rvw-pobar button:hover { transform: translateY(-2px); }
-    .rvw-float .rvw-pobar button:active { transform: scale(.97); }
-    @media (max-width: 575.98px) { .rvw-float > * { bottom: 14px; } .rvw-float .rvw-fzm { left: 4px; } .rvw-float .rvw-pobar { right: 4px; } }
+    @media (max-width: 575.98px) { .rvw-float > * { bottom: 14px; } .rvw-float .rvw-fzm { left: 4px; } }
     /* pratinjau berkas: dibuka di dalam slide, seperti slide Kontrak */
     .rvw-fv { top: 0; right: 0; bottom: 0; left: auto; width: calc(100vw - var(--sidebar-expanded-width, 264px)); padding: 0; background: #fff; align-items: stretch; justify-content: stretch; animation: rvwFvIn .25s ease both; }
     body.sidebar-collapsed .rvw-fv { width: calc(100vw - var(--sidebar-mini-width, 74px)); }
@@ -632,7 +633,6 @@
                     <span class="sep"></span>
                     <button type="button" id="rvwZoomFit" title="Pas lebar layar" aria-label="Pas lebar layar"><i class="bi bi-arrows-angle-expand"></i></button>
                 </div>
-                <div class="rvw-pobar"><span class="sp"></span><button type="button" class="rvw-btn pri sm" id="rvwUnduhPo" data-unduh-po><i class="bi bi-download"></i>Unduh PO</button></div>
             </div>
                 </div>
                 <div id="rvwBerkasPane" hidden></div>
@@ -742,6 +742,8 @@
         // Mode panel tunggal (dari detail order): panel dibuka langsung, tanpa pindah halaman. Tutup panel = kembali ke detail order.
         var SOLO = document.documentElement.classList.contains('rvw-solo');
         var SOLO_ID = (function () { var m = /[?&]buka=(\d+)/.exec(window.location.search); return m ? parseInt(m[1], 10) : 0; })();
+        // pra=1: slide dimuat lebih dulu dalam keadaan tersembunyi (detail order), baru tampil (dengan animasi geser masuk) saat induk mengirim 'po-panel-tampil'
+        var PRA = SOLO && /[?&]pra=1(&|$)/.test(window.location.search), praTampil = !PRA;
         // Mode "lihat saja" (?lihat=1 / ?lihat=2, hanya di panel tunggal): tanpa tombol tindakan dan tanpa menandai PO sudah dibaca.
         // 1 = tanpa catatan revisi (hanya catatan Humas, Tim Mitra, PPK BLU); 2 = dengan catatan revisi.
         var LIHAT = (function () { var m = /[?&]lihat=([12])(&|$)/.exec(window.location.search); return (SOLO && m) ? parseInt(m[1], 10) : 0; })();
@@ -1251,7 +1253,8 @@
             $('rvwShTabs').innerHTML =
                 '<button type="button" class="rvw-shtab' + (shTab === 'dok' ? ' on' : '') + '" data-shtab="dok">' + (LIHAT === 1 ? 'Dokumen PO' : 'Dokumen dan catatan') + (nn ? ' <span class="rvw-cnt">' + nn + '</span>' : '') + '</button>' +
                 '<button type="button" class="rvw-shtab' + (shTab === 'berkas' ? ' on' : '') + '" data-shtab="berkas">Berkas</button>' +
-                ((SOLO || ROLE === 'pembuat') ? '' : '<button type="button" class="rvw-shtab' + (shTab === 'alur' ? ' on' : '') + '" data-shtab="alur">Alur</button>');   // di detail order (SOLO) riwayat alur sudah ada di halaman detail
+                ((SOLO || ROLE === 'pembuat') ? '' : '<button type="button" class="rvw-shtab' + (shTab === 'alur' ? ' on' : '') + '" data-shtab="alur">Alur</button>') +   // di detail order (SOLO) riwayat alur sudah ada di halaman detail
+                (shTab === 'dok' ? '<button type="button" class="rvw-tabdl" id="rvwUnduhPo" data-unduh-po title="Unduh PO (PDF)" aria-label="Unduh PO"><i class="bi bi-download"></i><span class="tx">Unduh PO</span></button>' : '');
         }
         function renderBanner(p) {
             var op = cnt('terbuka'), pm = namaRingkas(p.pembuat), km = namaRingkas(p.katim), h;
@@ -1397,6 +1400,16 @@
             Array.prototype.forEach.call(document.querySelectorAll('[data-asli]'), function (el) { el.innerHTML = el.getAttribute('data-asli'); el.removeAttribute('data-asli'); el.disabled = false; });
             Array.prototype.forEach.call(document.querySelectorAll('.rvw-busy'), function (el) { el.classList.remove('rvw-busy'); });
         });
+        function tampilkanSheet() {
+            $('rvwScrim').classList.add('open'); $('rvwSheet').classList.add('open'); $('rvwSheet').setAttribute('aria-hidden', 'false');
+            setTimeout(function () { $('rvwShClose').focus(); }, 60);
+        }
+        window.addEventListener('message', function (e) {
+            if (e.origin !== window.location.origin) { return; }
+            var d = e.data;
+            if (d && d.silopti === 'po-panel-tampil' && d.ph) { document.documentElement.classList.add('rvw-phgo'); setTimeout(function () { document.documentElement.classList.remove('rvw-phgo'); }, 900); }
+            if (d && d.silopti === 'po-panel-tampil' && PRA && !praTampil) { praTampil = true; if (current) { tampilkanSheet(); catatBaca(current); } }
+        });
         function openSheet(id) {
             // revisi PPK BLU (Ketua Tim) dikerjakan di panel revisi PPK BLU yang sudah ada; setelah ditutup kembali ke daftar ini
             var pp = rowOf(id);
@@ -1421,12 +1434,14 @@
             $('rvwUmum').innerHTML = ''; $('rvwUmum').hidden = true; $('rvwBanner').innerHTML = ''; $('rvwCatBawah').innerHTML = '';
             $('rvwDokPane').hidden = false; $('rvwBerkasPane').hidden = true; $('rvwAlurPane').hidden = true;
             renderChrome();
-            $('rvwScrim').classList.add('open'); $('rvwSheet').classList.add('open'); $('rvwSheet').setAttribute('aria-hidden', 'false');
-            setTimeout(function () { $('rvwShClose').focus(); }, 60);
+            if (praTampil) { tampilkanSheet(); }   // dimuat lebih dulu (pra): panel baru tampil saat induk meminta
     
-            (LIHAT ? api(URL_PO(id) + '/review' + (RO ? '?lihat=1' : '')) : post(URL_PO(id) + '/baca', {})).then(function (j) {
+            // Dimuat lebih dulu (pra, belum tampil): cukup ambil data tanpa menandai dibaca. Ditandai dibaca baru saat panel benar-benar dibuka (catatBaca).
+            var tunda = PRA && !praTampil, baruDibaca = !LIHAT && SOLO && isUnread(p);
+            (LIHAT ? api(URL_PO(id) + '/review' + (RO ? '?lihat=1' : '')) : (tunda ? api(URL_PO(id) + '/review') : post(URL_PO(id) + '/baca', {}))).then(function (j) {
                 if (tiket !== openTicket) { return; }
                 terapkanDetail(j);
+                if (baruDibaca && !tunda) { kabariInduk('dibaca'); }   // kartu status di detail order ikut menampilkan "Telah dibuka oleh ..."
             }).catch(function (e) {
                 if (tiket !== openTicket) { return; }
                 $('rvwBanner').innerHTML = '<div class="rvw-bn warn"><i class="bi bi-exclamation-triangle"></i><div>' + esc(e.message) + '</div></div>';
@@ -1442,8 +1457,17 @@
                 $('rvwDocHost').innerHTML = '<div class="rvw-loading err">' + esc(e.message) + '</div>'; if (window.__poDokSiap) { setTimeout(window.__poDokSiap, 0); }
             });
         }
-        function closeSheet() {
-            openTicket++; current = null; detail = null; composer = null; secs = {};
+        // Tandai PO dibaca saat panel pra-muat benar-benar ditampilkan (sekali per kiriman; server yang menjaga "first time only")
+        function catatBaca(id) {
+            var p = rowOf(id), baru = p && isUnread(p);
+            if (LIHAT || !SOLO) { return; }
+            post(URL_PO(id) + '/baca', {}).then(function (j) {
+                if (current !== id) { return; }
+                terapkanDetail(j);
+                if (baru) { kabariInduk('dibaca'); }
+            }).catch(function () {});
+        }
+        function closeSheet() {            openTicket++; current = null; detail = null; composer = null; secs = {};
             tutupFv();
             $('rvwScrim').classList.remove('open'); $('rvwSheet').classList.remove('open'); $('rvwSheet').setAttribute('aria-hidden', 'true');
             if (SOLO) { kabariInduk('tutup'); }
