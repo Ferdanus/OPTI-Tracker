@@ -164,7 +164,10 @@
                                 <tr>
                                     <td class="text-center text-muted small fw-semibold">{{ @p.no_urut }}</td>
                                     <td>
-                                        <check if="{{ @p.url_lihat }}">
+                                        <check if="{{ @p.url_lihat && @p.layanan == 'kalibrasi' }}">
+                                            <a href="{{ @p.url_lihat }}" data-po-sertifikasi="{{ @p.po_id }}" data-lihat="{{ @p.url_lihat }}" class="fw-bold text-primary text-decoration-none d-block text-truncate" style="max-width: 200px;" title="{{ @p.nomor_po }}">{{ @p.nomor_po ?: '(belum bernomor)' }}</a>
+                                        </check>
+                                        <check if="{{ @p.url_lihat && @p.layanan != 'kalibrasi' }}">
                                             <a href="{{ @p.url_lihat }}" class="fw-bold text-primary text-decoration-none d-block text-truncate" style="max-width: 200px;" title="{{ @p.nomor_po }}">{{ @p.nomor_po ?: '(belum bernomor)' }}</a>
                                         </check>
                                         <check if="{{ !@p.url_lihat }}">
@@ -196,10 +199,10 @@
                                             <check if="{{ @p.url_lihat && @p.layanan == 'pengujian' }}">
                                                 <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" title="Lihat Pratinjau PO" data-po-pengujian="{{ @p.po_id }}" data-status="{{ @p.status }}" data-edit="{{ @p.url_edit }}"><i class="bi bi-eye"></i></button>
                                             </check>
-                                            <check if="{{ @p.url_lihat && @p.layanan == 'sertifikasi' }}">
+                                            <check if="{{ @p.url_lihat && (@p.layanan == 'sertifikasi' || @p.layanan == 'kalibrasi') }}">
                                                 <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" title="Lihat Pratinjau PO" data-po-sertifikasi="{{ @p.po_id }}" data-lihat="{{ @p.url_lihat }}"><i class="bi bi-eye"></i></button>
                                             </check>
-                                            <check if="{{ @p.url_lihat && @p.layanan != 'pengujian' && @p.layanan != 'sertifikasi' }}">
+                                            <check if="{{ @p.url_lihat && @p.layanan != 'pengujian' && @p.layanan != 'sertifikasi' && @p.layanan != 'kalibrasi' }}">
                                                 <a href="{{ @p.url_lihat }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="Lihat Pratinjau PO"><i class="bi bi-eye"></i></a>
                                             </check>
                                             <check if="{{ @p.url_edit && @p.status == 'draft' }}">
@@ -301,7 +304,7 @@
 })();
 </script>
 
-<!-- Modal pratinjau PO Sertifikasi (ikon mata di Daftar PO): memuat halaman "lihat" di dalam modal, tanpa pindah halaman -->
+<!-- Modal pratinjau PO Sertifikasi dan Kalibrasi (ikon mata di Daftar PO): memuat halaman "lihat" di dalam modal, tanpa pindah halaman -->
 <div class="modal fade" id="modalPreviewPoSertifikasi" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="overflow:hidden;">
@@ -314,7 +317,7 @@
                     <div class="spinner-border text-primary" role="status"></div>
                     <p class="small text-muted mt-2 mb-0">Memuat PO...</p>
                 </div>
-                <iframe id="modalPoSertifikasiFrame" title="Preview PO Sertifikasi" style="width:100%;height:100%;border:0;visibility:hidden;"></iframe>
+                <iframe id="modalPoSertifikasiFrame" title="Preview PO" style="width:100%;height:100%;border:0;visibility:hidden;"></iframe>
             </div>
         </div>
     </div>
@@ -332,6 +335,7 @@
         if (!b) { return; }
         var u = b.getAttribute('data-lihat') || '';
         if (!u) { return; }
+        e.preventDefault();   // nomor PO (tautan) ikut membuka modal ini, bukan pindah halaman
         frame.style.visibility = 'hidden';
         muat.style.display = '';
         clearTimeout(timer);

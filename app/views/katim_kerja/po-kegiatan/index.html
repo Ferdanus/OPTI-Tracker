@@ -256,7 +256,10 @@
                                     <td class="text-center text-muted small fw-semibold">{{ @p.no_urut }}</td>
                                     <td>
                                         <check if="{{ @p.belum_dibaca && @tab_aktif != 'berjalan' }}"><span class="po-dot" title="Belum Anda buka"></span></check>
-                                        <check if="{{ @p.url_lihat }}">
+                                        <check if="{{ @p.url_lihat && @p.layanan == 'kalibrasi' }}">
+                                            <a href="{{ @p.url_lihat }}" data-po-kal="{{ @p.po_id }}" data-lihat="{{ @p.url_lihat }}" data-nomor="{{ @p.nomor_po }}" data-order="{{ @p.nomor_order }}" data-mitra="{{ @p.nama_mitra }}" data-status="{{ @p.po_status }}" data-edit="{{ @p.hanya_lihat ? '' : @p.url_edit }}" class="fw-bold text-primary text-decoration-none d-block" style="word-break: break-all;" title="{{ @p.nomor_po }}">{{ @p.nomor_po ?: '(belum bernomor)' }}</a>
+                                        </check>
+                                        <check if="{{ @p.url_lihat && @p.layanan != 'kalibrasi' }}">
                                             <a href="{{ @p.url_lihat }}" class="fw-bold text-primary text-decoration-none d-block" style="word-break: break-all;" title="{{ @p.nomor_po }}">{{ @p.nomor_po ?: '(belum bernomor)' }}</a>
                                         </check>
                                         <check if="{{ !@p.url_lihat }}">
@@ -317,7 +320,10 @@
                                             <check if="{{ @p.url_lihat && @p.layanan == 'sertifikasi' && (@p.hanya_lihat || (@p.aksi_mode != 'review' && @p.aksi_mode != 'lihat')) }}">
                                                 <button type="button" class="btn btn-sm btn-primary py-1 px-2" title="Lihat Pratinjau PO" data-po-sertifikasi="{{ @p.po_id }}" data-lihat="{{ @p.url_lihat }}"><i class="bi bi-eye me-1"></i>Lihat</button>
                                             </check>
-                                            <check if="{{ @p.url_lihat && @p.layanan != 'pengujian' && @p.layanan != 'sertifikasi' }}">
+                                            <check if="{{ @p.url_lihat && @p.layanan == 'kalibrasi' }}">
+                                                <button type="button" class="btn btn-sm btn-primary py-1 px-2" title="Lihat PO (buka panel)" data-po-kal="{{ @p.po_id }}" data-lihat="{{ @p.url_lihat }}" data-nomor="{{ @p.nomor_po }}" data-order="{{ @p.nomor_order }}" data-mitra="{{ @p.nama_mitra }}" data-status="{{ @p.po_status }}" data-edit="{{ @p.hanya_lihat ? '' : @p.url_edit }}"><i class="bi bi-eye me-1"></i>Lihat</button>
+                                            </check>
+                                            <check if="{{ @p.url_lihat && @p.layanan != 'pengujian' && @p.layanan != 'sertifikasi' && @p.layanan != 'kalibrasi' }}">
                                                 <a href="{{ @p.url_lihat }}" class="btn btn-sm btn-primary py-1 px-2" title="Lihat Pratinjau PO"><i class="bi bi-eye me-1"></i>Lihat</a>
                                             </check>
                                             <check if="{{ !@p.hanya_lihat && @p.url_edit && @p.po_status == 'draft' }}">
@@ -892,6 +898,317 @@
 </check>
 
 <!-- ============================================================ -->
+<!-- SLIDE PO KALIBRASI (tombol Lihat / nomor PO): panel geser dari kanan, isinya halaman lihat PO (?embed=1) -->
+<!-- ============================================================ -->
+<style>
+    /* Gaya slide disamakan dengan slide Review PO (class rvw- di Daftar Review PO) */
+    #kalScrim { position: fixed; inset: 0; background: rgba(15,23,42,.45); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 1050; }
+    #kalScrim.open { opacity: 1; pointer-events: auto; }
+    #kalSheet { position: fixed; top: 0; right: 0; bottom: 0; width: calc(100vw - var(--sidebar-expanded-width, 264px)); background: #f1f5f9; z-index: 1055; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .42s cubic-bezier(.22,.9,.25,1), width .24s ease, visibility 0s .42s; box-shadow: -12px 0 40px rgba(15,23,42,.18); color: #0f172a; }
+    #kalSheet.open { transform: none; visibility: visible; transition: transform .42s cubic-bezier(.22,.9,.25,1), width .24s ease, visibility 0s; }
+    body.sidebar-collapsed #kalSheet { width: calc(100vw - var(--sidebar-mini-width, 74px)); }
+    @media (max-width: 991.98px) { #kalSheet, body.sidebar-collapsed #kalSheet { width: 100vw; } }
+    #kalSheet.wide, body.sidebar-collapsed #kalSheet.wide { width: 100vw; }
+    @media (max-width: 1300px) { #kalWide { display: none; } }
+    #kalSheet *, #kalSheet *::before, #kalSheet *::after { box-sizing: border-box; }
+    #kalSheet [hidden] { display: none !important; }
+    #kalSheet button { font-family: inherit; cursor: pointer; }
+    #kalSheet .kal-shh { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 14px 18px; display: flex; gap: 12px; align-items: center; }
+    #kalSheet .kal-shh .grow { flex: 1; min-width: 0; }
+    #kalSheet .kal-shh .t1 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    #kalSheet .kal-shh h2 { font-family: 'Courier New', monospace; font-size: 1rem; font-weight: 800; margin: 0; }
+    #kalSheet .kal-sub { font-size: .75rem; color: #64748b; margin-top: 3px; }
+    #kalSheet .kal-pill { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; border: 1px solid transparent; }
+    #kalSheet .kal-pill.draft { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+    #kalSheet .kal-pill.terkirim { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    #kalSheet .kal-pill.disetujui { background: #1e293b; color: #fff; border-color: #1e293b; }
+    #kalSheet .kal-tools { display: flex; gap: 8px; flex-shrink: 0; }
+    #kalSheet .kal-ibtn { border: 1px solid #e2e8f0; background: #fff; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: #64748b; font-size: 16px; flex-shrink: 0; }
+    #kalSheet .kal-ibtn:hover { color: #334155; border-color: #334155; }
+    #kalSheet .kal-tabs { display: flex; gap: 4px; background: #fff; padding: 0 12px; border-bottom: 1px solid #e2e8f0; }
+    #kalSheet .kal-tab { border: 0; background: transparent; padding: 10px 14px; font-weight: 600; font-size: .85rem; color: #64748b; border-bottom: 2px solid transparent; transition: color .2s, border-color .2s; }
+    #kalSheet .kal-tab:hover { color: #0f172a; }
+    #kalSheet .kal-tab.on { color: #0f172a; border-bottom-color: #0f172a; }
+    #kalSheet .kal-body { flex: 1; min-height: 0; position: relative; }
+    #kalSheet .kal-pane { position: absolute; inset: 0; }
+    #kalSheet .kal-pane.scroll { overflow: auto; padding: 16px 18px; }
+    #kalSheet iframe { width: 100%; height: 100%; border: 0; background: #f1f5f9; visibility: hidden; }
+    #kalSheet .kal-loading { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; color: #94a3b8; font-size: .85rem; pointer-events: none; }
+    #kalSheet .kal-loading::before { content: ''; width: 22px; height: 22px; border: 2.5px solid #94a3b8; border-right-color: transparent; border-radius: 50%; animation: kalRot .7s linear infinite; }
+    @keyframes kalRot { to { transform: rotate(1turn); } }
+    #kalSheet .kal-float { position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 6; pointer-events: none; }
+    #kalSheet .kal-float > * { position: absolute; bottom: 22px; pointer-events: auto; }
+    #kalSheet .kal-fzm { left: 12px; display: flex; align-items: center; gap: 2px; background: #0f172a; color: #fff; border-radius: 999px; padding: 4px; box-shadow: 0 8px 22px rgba(15,23,42,.35); }
+    #kalSheet .kal-fzm button { border: 0; background: transparent; color: #fff; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: .95rem; padding: 0; transition: background .15s, transform .15s; }
+    #kalSheet .kal-fzm button:hover { background: rgba(255,255,255,.16); }
+    #kalSheet .kal-fzm button:active { transform: scale(.9); }
+    #kalSheet .kal-fzm .zl { width: auto; min-width: 56px; padding: 0 8px; border-radius: 999px; font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    #kalSheet .kal-fzm .sep { width: 1px; height: 18px; background: rgba(255,255,255,.22); margin: 0 3px; }
+    #kalSheet .kal-btn { border: 1.5px solid #e2e8f0; background: #fff; color: #334155; border-radius: 9px; padding: 8px 15px; font-size: .82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; text-decoration: none; }
+    #kalSheet .kal-btn:hover { border-color: #334155; color: #334155; }
+    #kalSheet .kal-btn.pri { background: #334155; border-color: #334155; color: #fff; }
+    #kalSheet .kal-btn.pri:hover { background: #1e293b; color: #fff; }
+    #kalSheet .kal-float .kal-btn { right: 12px; box-shadow: 0 8px 22px rgba(15,23,42,.35); padding: .5rem .95rem; transition: transform .15s; }
+    #kalSheet .kal-float .kal-btn:hover { transform: translateY(-2px); }
+    #kalSheet .kal-dock { background: #fff; border-top: 1px solid #e2e8f0; padding: 12px 18px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    #kalSheet .kal-dock .hintline { font-size: .8rem; color: #64748b; flex: 1 1 200px; }
+    #kalSheet .kal-sumgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 2px; }
+    #kalSheet .kal-sum { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; min-width: 0; }
+    #kalSheet .kal-sum .l { font-size: .72rem; font-weight: 600; color: #64748b; margin-bottom: 2px; }
+    #kalSheet .kal-sum .v { font-weight: 800; font-size: 1.1rem; font-variant-numeric: tabular-nums; word-break: break-word; }
+    #kalSheet .kal-sum .v.warn { color: #b45309; }
+    @media (max-width: 767.98px) { #kalSheet .kal-sumgrid { grid-template-columns: 1fr; } }
+    #kalSheet .kal-dtop { text-align: right; font-size: .76rem; color: #94a3b8; margin-top: 10px; }
+    #kalSheet .kal-tl { background: none; border: 0; padding: 0; color: #1e293b; font-weight: 600; font-size: .76rem; }
+    #kalSheet .kal-tl:hover { text-decoration: underline; }
+    #kalSheet .kal-dc { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.08); padding: 16px; margin-top: 12px; display: flex; gap: 14px; }
+    #kalSheet .kal-dc.kosong { border-color: #e2e8f0; }
+    #kalSheet .kal-dic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 1.25rem; flex-shrink: 0; background: #f1f5f9; color: #1e293b; }
+    #kalSheet .kal-dbody { flex: 1; min-width: 0; }
+    #kalSheet .kal-dh { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+    #kalSheet .kal-dh h6 { margin: 0; font-size: .95rem; font-weight: 700; }
+    #kalSheet .kal-bd { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: 3px 11px; border-radius: 99px; border: 1px solid; }
+    #kalSheet .kal-bd.ok { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+    #kalSheet .kal-bd.no { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+    #kalSheet .kal-dsub { font-size: .82rem; color: #64748b; margin: 0; word-break: break-word; }
+    #kalSheet .kal-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+    #kalSheet .kal-acts .sp { flex: 1; }
+    #kalSheet .kal-bdt { background: #fff; border: 1px solid #cbd5e1; color: #475569; border-radius: 8px; padding: 7px 12px; font-size: .78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+    #kalSheet .kal-bdt:hover { border-color: #1e293b; color: #1e293b; }
+    #kalSheet .kal-bdt .ch { font-size: .7rem; transition: transform .25s; }
+    #kalSheet .kal-dc.open .kal-bdt { background: #f1f5f9; border-color: #94a3b8; color: #1e293b; }
+    #kalSheet .kal-dc.open .kal-bdt .ch { transform: rotate(180deg); }
+    #kalSheet .kal-dt { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .3s ease, visibility 0s linear .3s; }
+    #kalSheet .kal-dc.open .kal-dt { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows .3s ease, visibility 0s; }
+    #kalSheet .kal-dt > div { overflow: hidden; min-height: 0; }
+    #kalSheet .kal-dt .in { padding-top: 12px; }
+    #kalSheet .kal-dmeta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; padding: 10px 12px; border-radius: 7px; background: #f8fafc; border: 1px solid #eef2f6; font-size: .78rem; }
+    #kalSheet .kal-dmeta .f { grid-column: 1 / -1; }
+    #kalSheet .kal-dmeta .k { color: #64748b; display: block; }
+    #kalSheet .kal-dmeta .mono { font-family: ui-monospace, Consolas, monospace; font-weight: 700; }
+    #kalSheet .kal-dmeta .n { font-weight: 600; word-break: break-word; }
+    #kalSheet .kal-dmeta .fl { font-family: ui-monospace, Consolas, monospace; color: #475569; font-size: .74rem; word-break: break-all; }
+    @media (max-width: 575.98px) { #kalSheet .kal-dmeta { grid-template-columns: 1fr; } }
+    /* pratinjau berkas: dibuka di dalam slide (sama seperti slide Review PO) */
+    #kalFv { position: fixed; top: 0; right: 0; bottom: 0; width: calc(100vw - var(--sidebar-expanded-width, 264px)); background: #fff; z-index: 1060; display: flex; flex-direction: column; animation: kalFvIn .25s ease both; }
+    body.sidebar-collapsed #kalFv { width: calc(100vw - var(--sidebar-mini-width, 74px)); }
+    @media (max-width: 991.98px) { #kalFv, body.sidebar-collapsed #kalFv { width: 100vw; } }
+    #kalSheet.wide ~ #kalFv, body.sidebar-collapsed #kalSheet.wide ~ #kalFv { width: 100vw; }
+    #kalFv[hidden] { display: none; }
+    @keyframes kalFvIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    #kalFv *, #kalFv *::before, #kalFv *::after { box-sizing: border-box; }
+    #kalFv .top { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+    #kalFv .back { width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 0; background: #f1f5f9; color: #0f172a; display: grid; place-items: center; cursor: pointer; transition: background .15s, transform .2s; }
+    #kalFv .back:hover { background: #e2e8f0; transform: translateX(-2px); }
+    #kalFv .tt { flex: 1; min-width: 0; }
+    #kalFv .tt b { display: block; font-size: .95rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #kalFv .tt small { display: block; font-family: ui-monospace, Consolas, monospace; font-size: .75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #kalFv .kal-btn { border: 1.5px solid #e2e8f0; background: #fff; color: #334155; border-radius: 9px; padding: .4rem .8rem; font-size: .8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; white-space: nowrap; }
+    #kalFv .kal-btn:hover { border-color: #334155; color: #334155; }
+    #kalFv .bd { flex: 1; background: #e2e8f0; position: relative; }
+    #kalFv iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+    @media (max-width: 575.98px) { #kalFv .kal-btn span { display: none; } }
+    #kalSheet .kal-kosong { color: #94a3b8; font-size: .85rem; text-align: center; padding: 48px 16px; }
+    @media (max-width: 575.98px) { #kalSheet .kal-float > * { bottom: 14px; } #kalSheet .kal-fzm { left: 4px; } #kalSheet .kal-float .kal-btn { right: 4px; } }
+</style>
+<div id="kalScrim"></div>
+<aside id="kalSheet" role="dialog" aria-modal="true" aria-labelledby="kalNo" aria-hidden="true">
+    <div class="kal-shh">
+        <div class="grow">
+            <div class="t1"><h2 id="kalNo">-</h2><span class="kal-pill" id="kalPill"></span></div>
+            <div class="kal-sub" id="kalSub" hidden></div>
+        </div>
+        <div class="kal-tools">
+            <button type="button" class="kal-ibtn" id="kalWide" aria-label="Lebarkan panel" aria-pressed="false" title="Lebarkan panel (sembunyikan sidebar)"><i class="bi bi-arrows-angle-expand"></i></button>
+            <button type="button" class="kal-ibtn" id="kalX" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+        </div>
+    </div>
+    <div class="kal-tabs" role="tablist">
+        <button type="button" class="kal-tab on" data-kt="dok" role="tab">Dokumen PO</button>
+        <button type="button" class="kal-tab" data-kt="berkas" role="tab">Berkas</button>
+    </div>
+    <div class="kal-body">
+        <div class="kal-pane" id="kalDok">
+            <div class="kal-loading" id="kalMuat">Memuat dokumen PO...</div>
+            <iframe id="kalFrame" title="Dokumen PO Kalibrasi"></iframe>
+            <div class="kal-float">
+                <div class="kal-fzm" role="group" aria-label="Zoom dokumen PO">
+                    <button type="button" data-kz="-" title="Perkecil" aria-label="Perkecil"><i class="bi bi-zoom-out"></i></button>
+                    <button type="button" class="zl" id="kalZl" data-kz="0" title="Kembali ke 100%">100%</button>
+                    <button type="button" data-kz="+" title="Perbesar" aria-label="Perbesar"><i class="bi bi-zoom-in"></i></button>
+                    <span class="sep"></span>
+                    <button type="button" data-kz="fit" title="Pas lebar layar" aria-label="Pas lebar layar"><i class="bi bi-arrows-angle-expand"></i></button>
+                </div>
+                <button type="button" class="kal-btn pri" id="kalUnduh"><i class="bi bi-download"></i>Unduh PO</button>
+            </div>
+        </div>
+        <div class="kal-pane scroll" id="kalBerkas" hidden></div>
+    </div>
+    <div class="kal-dock" id="kalDock" hidden>
+        <div class="hintline">PO ini masih draft. Perbaiki isinya lewat form sebelum dikirim.</div>
+        <a href="#" class="kal-btn pri" id="kalEdit"><i class="bi bi-pencil"></i>Edit PO</a>
+    </div>
+</aside>
+<div id="kalFv" hidden role="dialog" aria-modal="true" aria-labelledby="kalFvJudul">
+    <div class="top">
+        <button type="button" class="back" id="kalFvBack" title="Kembali" aria-label="Kembali"><i class="bi bi-arrow-left"></i></button>
+        <div class="tt"><b id="kalFvJudul">Surat Penawaran</b><small id="kalFvSub"></small></div>
+        <a class="kal-btn" id="kalFvTab" href="#" target="_blank" rel="noopener" title="Buka di tab baru"><i class="bi bi-box-arrow-up-right"></i><span>Tab Baru</span></a>
+    </div>
+    <div class="bd"><iframe id="kalFvFrame" title="Pratinjau berkas"></iframe></div>
+</div>
+<script>
+(function () {
+    var scrim = document.getElementById('kalScrim'), sheet = document.getElementById('kalSheet'), frame = document.getElementById('kalFrame');
+    var muat = document.getElementById('kalMuat'), dok = document.getElementById('kalDok'), brk = document.getElementById('kalBerkas');
+    if (!sheet) { return; }
+    var timer = null, tutupT = null, urlBerkas = '', berkasMuat = false;
+    var PILL = { draft: ['draft', 'bi-pencil-square', 'Draft PO'], terkirim: ['terkirim', 'bi-send-check', 'Terkirim'], disetujui: ['disetujui', 'bi-check-circle', 'Disetujui'], disetujui_mitra: ['disetujui', 'bi-check-circle', 'Disetujui'] };
+    function esc(x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function siap() { clearTimeout(timer); frame.style.visibility = 'visible'; muat.style.display = 'none'; }
+    function pilihTab(k) {
+        Array.prototype.forEach.call(sheet.querySelectorAll('.kal-tab'), function (t) { t.classList.toggle('on', t.getAttribute('data-kt') === k); });
+        dok.hidden = k !== 'dok'; brk.hidden = k !== 'berkas';
+        if (k === 'berkas' && !berkasMuat) { muatBerkas(); }
+    }
+    function rp(n) { return 'Rp ' + Math.round(+n || 0).toLocaleString('id-ID'); }
+    function kartu(o) {
+        var isi = '';
+        if (o.meta && o.meta.length) {
+            isi = '<div class="kal-dmeta">' + o.meta.map(function (x) {
+                return '<div' + (x[3] ? ' class="f"' : '') + '><span class="k">' + esc(x[0]) + ':</span><span class="' + x[2] + '">' + (x[2] === 'fl' ? '<i class="bi bi-file-earmark"></i> ' : '') + esc(x[1]) + '</span></div>';
+            }).join('') + '</div>';
+        }
+        var aksi = (o.ada && !o.url && isi)
+            ? '<div class="kal-acts"><span class="sp"></span><button type="button" class="kal-bdt" data-kdok-toggle aria-expanded="' + (o.buka ? 'true' : 'false') + '">Detail <i class="bi bi-chevron-down ch"></i></button></div>'
+              + '<div class="kal-dt"><div><div class="in">' + isi + '</div></div></div>'
+            : (o.ada && o.url
+            ? '<div class="kal-acts">'
+              + '<button type="button" class="kal-btn pri" data-kfv="' + esc(o.url) + '" data-kjudul="' + esc(o.judul) + '" data-kno="' + esc(o.no) + '"><i class="bi bi-eye"></i>Lihat Pratinjau</button>'
+              + '<a class="kal-btn" href="' + esc(o.url) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i>Buka Tab Baru</a>'
+              + '<span class="sp"></span><button type="button" class="kal-bdt" data-kdok-toggle aria-expanded="false">Detail <i class="bi bi-chevron-down ch"></i></button></div>'
+              + '<div class="kal-dt"><div><div class="in">' + isi + '</div></div></div>'
+            : '');
+        return '<div class="kal-dc' + (o.ada ? '' : ' kosong') + (o.buka ? ' open' : '') + '"><div class="kal-dic"><i class="bi ' + (o.ikon || (o.ada ? 'bi-file-earmark-text' : 'bi-file-earmark')) + '"></i></div><div class="kal-dbody">'
+            + '<div class="kal-dh"><h6>' + esc(o.label) + '</h6><span class="kal-bd ' + (o.ada ? 'ok' : 'no') + '"><i class="bi ' + (o.ada ? 'bi-check-lg' : 'bi-dash-lg') + '"></i>' + (o.ada ? (o.badge || 'Tersedia') : 'Belum Ada') + '</span></div>'
+            + '<p class="kal-dsub">' + esc(o.sub) + '</p>' + aksi + '</div></div>';
+    }
+    function bukaFv(url, judul, no) {
+        var fv = document.getElementById('kalFv');
+        document.getElementById('kalFvJudul').textContent = judul || 'Berkas';
+        document.getElementById('kalFvSub').textContent = no || '';
+        document.getElementById('kalFvTab').setAttribute('href', url);
+        document.getElementById('kalFvFrame').src = url;
+        fv.hidden = false;
+    }
+    function tutupFv() {
+        var fv = document.getElementById('kalFv');
+        if (fv.hidden) { return false; }
+        fv.hidden = true; document.getElementById('kalFvFrame').src = 'about:blank';
+        return true;
+    }
+    function muatBerkas() {
+        brk.innerHTML = '<div class="kal-kosong">Memuat berkas...</div>';
+        fetch(urlBerkas, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                if (!j || !j.ok) { throw new Error((j && j.message) || 'Gagal memuat berkas.'); }
+                berkasMuat = true;
+                var h = '';
+                var bi = j.biaya;
+                if (bi) {
+                    var tot = +bi.total || 0, byr = (+bi.bayar_kerjasama || 0) + (+bi.bayar_petugas || 0), sisa = Math.max(0, tot - byr);
+                    h += '<div class="kal-sumgrid"><div class="kal-sum"><div class="l">Nilai kontrak</div><div class="v">' + rp(tot) + '</div></div>'
+                        + '<div class="kal-sum"><div class="l">Total terbayar</div><div class="v">' + rp(byr) + '</div></div>'
+                        + '<div class="kal-sum"><div class="l">Sisa pembayaran</div><div class="v' + (sisa > 0 ? ' warn' : '') + '">' + rp(sisa) + '</div></div></div>';
+                }
+                if (!bi) {
+                    h += '<div class="kal-dc kosong" style="margin-top:0"><div class="kal-dic"><i class="bi bi-cash-stack"></i></div><div class="kal-dbody"><div class="kal-dh"><h6>Rincian Biaya</h6><span class="kal-bd no"><i class="bi bi-dash-lg"></i>Belum Ada</span></div><p class="kal-dsub">Biaya order tidak bisa dimuat' + (j.biaya_galat ? ': ' + esc(j.biaya_galat) : '.') + '</p></div></div>';
+                }
+                h += '<div class="kal-dtop"><button type="button" class="kal-tl" data-kdok-semua="1">Buka semua detail</button> &middot; <button type="button" class="kal-tl" data-kdok-semua="0">Tutup semua</button></div>';
+                if (!j.berkas.length) {
+                    h += kartu({ ada: false, label: 'Surat Penawaran', sub: 'Belum ada surat penawaran yang diklaim untuk PO ini. Surat muncul di sini setelah diambil dari arsip surat keluar.' });
+                }
+                h += j.berkas.map(function (b, i) {
+                    var meta = [['Nomor Dokumen', b.no_surat, 'mono'], ['Tanggal Dokumen', b.tanggal_fmt && b.tanggal_fmt !== '-' ? b.tanggal_fmt : '', 'n'], ['Customer', b.customer, 'n'], ['Berkas Fisik', b.berkas, 'fl', 1], ['Perihal', b.perihal, 'n', 1]]
+                        .filter(function (x) { return x[1]; });
+                    return kartu({ ada: true, idx: i, label: b.jenis || 'Surat Penawaran', sub: b.perihal || b.no_surat || 'Surat penawaran dari arsip surat keluar', url: b.preview_url, judul: (b.jenis || 'Surat Penawaran'), no: b.no_surat, meta: meta });
+                }).join('');
+                if (bi) {
+                    var t2 = +bi.total || 0, bk = +bi.bayar_kerjasama || 0, bp = +bi.bayar_petugas || 0, by2 = bk + bp, ss = Math.max(0, t2 - by2);
+                    function uang(v) { return v > 0 ? rp(v) : ''; }
+                    var mBiaya = [['Biaya kerja sama', uang(+bi.kerjasama), 'mono'], ['Biaya petugas', uang(+bi.petugas), 'mono'], ['In-situ', uang(+bi.insitu), 'mono'], ['Transportasi', uang(+bi.transportasi), 'mono'], ['Pembulatan', uang(+bi.pembulatan), 'mono'], ['Total biaya', rp(t2), 'mono', 1]]
+                        .filter(function (x) { return x[1]; });
+                    h += kartu({ ada: t2 > 0, buka: true, ikon: 'bi-cash-stack', badge: 'Dari Order', label: 'Rincian Biaya', sub: 'Biaya kerja sama, petugas, in-situ, transportasi, dan pembulatan sesuai data order kalibrasi.', meta: mBiaya });
+                    var mBayar = [['Sudah dibayar (kerja sama)', uang(bk), 'mono'], ['Sudah dibayar (petugas)', uang(bp), 'mono'], ['Total terbayar', rp(by2), 'mono'], ['Sisa pembayaran', rp(ss), 'mono']];
+                    h += kartu({ ada: by2 > 0, ikon: 'bi-wallet2', badge: ss <= 0 && t2 > 0 ? 'Lunas' : 'Sebagian', label: 'Pembayaran Customer', sub: by2 > 0 ? 'Pembayaran yang sudah tercatat di order kalibrasi.' : 'Belum ada pembayaran yang tercatat di order ini.', meta: mBayar });
+                }
+                brk.innerHTML = h;
+            })
+            .catch(function (err) { brk.innerHTML = '<div class="kal-kosong" style="color:#b91c1c">' + esc(err.message) + '</div>'; });
+    }
+    function buka(b) {
+        var u = b.getAttribute('data-lihat') || '';
+        if (!u) { return; }
+        clearTimeout(tutupT);
+        document.getElementById('kalNo').textContent = b.getAttribute('data-nomor') || '(belum bernomor)';
+        var sub = [b.getAttribute('data-order'), b.getAttribute('data-mitra')].filter(function (x) { return x && x !== '-'; }).join(' • ');
+        var se = document.getElementById('kalSub'); se.textContent = sub; se.hidden = !sub;
+        var st = b.getAttribute('data-status') || 'draft', pp = PILL[st] || ['draft', 'bi-file-earmark', st];
+        var pl = document.getElementById('kalPill'); pl.className = 'kal-pill ' + pp[0]; pl.innerHTML = '<i class="bi ' + pp[1] + '"></i>' + esc(pp[2]);
+        var ed = b.getAttribute('data-edit') || '', draft = (st === 'draft' || st === '') && ed;
+        document.getElementById('kalDock').hidden = !draft;
+        document.getElementById('kalUnduh').hidden = (st === 'draft' || st === '');   // PO draft belum bisa diunduh
+        if (draft) { document.getElementById('kalEdit').setAttribute('href', ed); }
+        urlBerkas = u.replace(/\/lihat(\?.*)?$/, '/berkas'); berkasMuat = false;
+        pilihTab('dok');
+        document.getElementById('kalZl').textContent = '100%';
+        frame.style.visibility = 'hidden'; muat.style.display = '';
+        clearTimeout(timer); timer = setTimeout(siap, 9000);   // cadangan bila halaman tidak memberi tanda siap
+        frame.src = u + (u.indexOf('?') > -1 ? '&' : '?') + 'embed=1&slide=1';
+        sheet.setAttribute('aria-hidden', 'false');
+        scrim.classList.add('open'); sheet.classList.add('open');
+    }
+    function tutup() {
+        tutupFv();
+        scrim.classList.remove('open'); sheet.classList.remove('open', 'wide'); sheet.setAttribute('aria-hidden', 'true');
+        document.getElementById('kalWide').setAttribute('aria-pressed', 'false');
+        clearTimeout(timer); clearTimeout(tutupT);
+        tutupT = setTimeout(function () { frame.src = 'about:blank'; }, 460);
+    }
+    function kirim(o) { try { frame.contentWindow.postMessage(o, window.location.origin); } catch (e) {} }
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-po-kal]');
+        if (!b) { return; }
+        e.preventDefault(); buka(b);
+    });
+    brk.addEventListener('click', function (e) {
+        var fv = e.target.closest('[data-kfv]');
+        if (fv) { bukaFv(fv.getAttribute('data-kfv'), fv.getAttribute('data-kjudul'), fv.getAttribute('data-kno')); return; }
+        var tg = e.target.closest('[data-kdok-toggle]');
+        if (tg) { var c = tg.closest('.kal-dc'), o = c.classList.toggle('open'); tg.setAttribute('aria-expanded', o ? 'true' : 'false'); return; }
+        var sm = e.target.closest('[data-kdok-semua]');
+        if (sm) { var buka = sm.getAttribute('data-kdok-semua') === '1'; Array.prototype.forEach.call(brk.querySelectorAll('.kal-dc'), function (c) { c.classList.toggle('open', buka); var t = c.querySelector('[data-kdok-toggle]'); if (t) { t.setAttribute('aria-expanded', buka ? 'true' : 'false'); } }); }
+    });
+    document.getElementById('kalFvBack').addEventListener('click', tutupFv);
+    scrim.addEventListener('click', tutup);
+    document.getElementById('kalX').addEventListener('click', tutup);
+    document.getElementById('kalWide').addEventListener('click', function () { var w = sheet.classList.toggle('wide'); this.setAttribute('aria-pressed', w ? 'true' : 'false'); });
+    sheet.querySelector('.kal-tabs').addEventListener('click', function (e) { var t = e.target.closest('[data-kt]'); if (t) { pilihTab(t.getAttribute('data-kt')); } });
+    sheet.querySelector('.kal-fzm').addEventListener('click', function (e) { var z = e.target.closest('[data-kz]'); if (z) { kirim({ kalCmd: 'zoom', k: z.getAttribute('data-kz') }); } });
+    document.getElementById('kalUnduh').addEventListener('click', function () { kirim({ kalCmd: 'cetak' }); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('open')) { if (!tutupFv()) { tutup(); } } });
+    window.addEventListener('message', function (e) {
+        if (e.origin !== window.location.origin || !e.data || !e.data.poPreview) { return; }
+        if (!sheet.classList.contains('open')) { return; }
+        if (e.data.poPreview === 'siap') { siap(); }
+        if (e.data.poPreview === 'tutup') { tutup(); }
+        if (e.data.poPreview === 'zoom') { var m = /(\d+)%/.exec(e.data.label || ''); if (m) { document.getElementById('kalZl').textContent = m[1] + '%'; } }
+    });
+})();
+</script>
+
+<!-- ============================================================ -->
 <!-- MODAL PREVIEW PO -->
 <!-- ============================================================ -->
 <div class="modal fade" id="modalPreviewPo" tabindex="-1" aria-hidden="true">
@@ -1057,6 +1374,17 @@ function pilihKartuTab(tab) {
     var a = document.querySelector('#poTabs a.po-tab[href*="tab=' + tab + '&"]');
     if (a) { a.click(); }
 }
+</script>
+<script>
+// Halaman dibuka tanpa memilih tab: kalau tab bawaannya kosong (tidak ada tugas), langsung buka tab Semua
+(function () {
+    try {
+        if (new URL(window.location.href).searchParams.has('tab')) { return; }
+        var aktif = document.querySelector('#poTabs a.po-tab.active'), semua = document.querySelector('#poTabs a.po-tab[href*="tab=semua&"]');
+        var chip = aktif ? aktif.querySelector('.count-chip') : null;
+        if (aktif && semua && aktif !== semua && chip && parseInt(chip.textContent, 10) === 0) { window.location.replace(semua.getAttribute('href')); }
+    } catch (e) {}
+})();
 </script>
 <script>
 // ==== Filter & tab realtime (tanpa tombol "Terapkan", tanpa reload halaman) ====

@@ -282,18 +282,28 @@ class PoKalibrasi
             self::$catatan[] = 'Daftar alat gagal dibaca dari tabel ' . $t[1] . '.';
             return array();
         }
-        // Nama layanan/alat di order kalibrasi ada di tabel tarif (id_tarif_simponi); kolom lhu_alat_* baru terisi saat LHU dibuat
-        $nmTarif = array();
+        // Nama alat: kolom nama di baris alat bila ada; kalau tidak, dari tabel tarif lewat id_tarif_simponi
+        // (kolom lhu_alat_* baru terisi saat LHU dibuat, jadi sering kosong)
+        $kolNama = array('nama_alat', 'nama_tarif', 'nama_layanan', 'nama_peralatan', 'uraian_alat', 'nama_item', 'nama');
         $idTarif = array();
-        foreach ($rows as $r) { if (isset($r['id_tarif_simponi'])) { $idTarif[] = (int) $r['id_tarif_simponi']; } }
-        try { $nmTarif = self::namaTarif($db, $t[0], $t[1], $idTarif); } catch (\Throwable $e) { error_log('[PO Kalibrasi] tarif: ' . $e->getMessage()); }
+        foreach ($rows as $r) {
+            if (self::ambilKol($r, $kolNama) === '' && isset($r['id_tarif_simponi'])) { $idTarif[] = (int) $r['id_tarif_simponi']; }
+        }
+        $nmTarif = array();
+        if ($idTarif) {
+            try { $nmTarif = self::namaTarif($db, $t[0], $t[1], $idTarif); } catch (\Throwable $e) { error_log('[PO Kalibrasi] tarif: ' . $e->getMessage()); }
+        }
 
         $out = array();
         foreach ($rows as $r) {
             if (isset($r['showhide']) && strtolower((string) $r['showhide']) === 'hide') { continue; }
             $tid = isset($r['id_tarif_simponi']) ? (int) $r['id_tarif_simponi'] : 0;
+            $nama = self::ambilKol($r, $kolNama);
+            if ($nama === '' && isset($nmTarif[$tid])) { $nama = $nmTarif[$tid]; }
+            // sementara (nama tarif belum ketemu): tampilkan ID tarifnya supaya baris alat tidak kosong
+            if ($nama === '' && $tid > 0) { $nama = 'ID Tarif ' . $tid; }
             $out[(int) $r['id_arsip_kalibrasi']][] = array(
-                'nama'      => isset($nmTarif[$tid]) ? $nmTarif[$tid] : '',
+                'nama'      => $nama,
                 'tipe'      => self::ambilKol($r, array('lhu_alat_type_model')),
                 'merk'      => self::ambilKol($r, array('lhu_alat_merk_buatan')),
                 'kapasitas' => self::ambilKol($r, array('lhu_alat_kapasitas')),
@@ -305,28 +315,42 @@ class PoKalibrasi
         return $out;
     }
 
-    /** [tabel, kolom nama] tabel tarif (id_tarif_simponi) di schema yang sama dengan tabel alat, atau null. */
+    /**
+     * [schema, tabel, kolom nama, daftar kolom] tabel tarif (induk id_tarif_simponi), atau null.
+     * Dicari di SEMUA database (bukan hanya sikalib2024): tabel yang menyimpan id_tarif_simponi sebagai kunci utama,
+     * atau yang namanya mengandung "tarif". Bila salah tebak, isi variabel F3 PO_KALIBRASI_TARIF = 'schema.nama_tabel'.
+     */
     protected static function tabelTarif($db, $schema, $tabelAlat)
     {
         $k = 'tarif:' . $schema . '.' . $tabelAlat;
         if (array_key_exists($k, self::$cache)) { return self::$cache[$k]; }
         $hasil = null;
-        $r = $db->exec(
-            "SELECT TABLE_NAME AS n FROM information_schema.COLUMNS
-             WHERE TABLE_SCHEMA = ? AND COLUMN_NAME = 'id_tarif_simponi' AND TABLE_NAME <> ? AND TABLE_NAME LIKE '%tarif%'
-             ORDER BY (TABLE_NAME = 'tb_tarif_simponi') DESC, CHAR_LENGTH(TABLE_NAME) ASC LIMIT 1",
-            array(1 => $schema, 2 => $tabelAlat)
-        );
-        if (!empty($r)) {
-            $tbl = (string) $r[0]['n'];
+        $sch = ''; $tbl = '';
+        $manual = '';
+        try { $manual = trim((string) \Base::instance()->get('PO_KALIBRASI_TARIF')); } catch (\Throwable $e) { $manual = ''; }
+        if ($manual !== '' && strpos($manual, '.') !== false) {
+            list($sch, $tbl) = explode('.', $manual, 2);
+        } else {
+            $r = $db->exec(
+                "SELECT TABLE_SCHEMA AS s, TABLE_NAME AS n FROM information_schema.COLUMNS
+                 WHERE COLUMN_NAME = 'id_tarif_simponi'
+                   AND TABLE_SCHEMA NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')
+                   AND NOT (TABLE_SCHEMA = ? AND TABLE_NAME = ?)
+                   AND (COLUMN_KEY = 'PRI' OR TABLE_NAME LIKE '%tarif%')
+                 ORDER BY (COLUMN_KEY = 'PRI') DESC, (TABLE_NAME LIKE '%tarif%') DESC, (TABLE_SCHEMA = ?) DESC, CHAR_LENGTH(TABLE_NAME) ASC LIMIT 1",
+                array(1 => $schema, 2 => $tabelAlat, 3 => $schema)
+            );
+            if (!empty($r)) { $sch = (string) $r[0]['s']; $tbl = (string) $r[0]['n']; }
+        }
+        if ($sch !== '' && $tbl !== '') {
             $kol = $db->exec(
                 "SELECT COLUMN_NAME AS n, DATA_TYPE AS t FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION",
-                array(1 => $schema, 2 => $tbl)
+                array(1 => $sch, 2 => $tbl)
             );
             $ada = array();
             foreach ($kol as $c) { $ada[strtolower((string) $c['n'])] = strtolower((string) $c['t']); }
             $nama = '';
-            foreach (array('nama_tarif', 'nama_layanan', 'nama_alat', 'nama', 'uraian_tarif', 'uraian', 'jenis_tarif', 'jenis_layanan', 'deskripsi') as $c) {
+            foreach (array('nama_tarif', 'nama_layanan', 'nama_alat', 'nama_peralatan', 'nama_item', 'nama_jasa', 'nama', 'uraian_tarif', 'uraian', 'jenis_tarif', 'jenis_layanan', 'jenis_alat', 'layanan', 'deskripsi') as $c) {
                 if (isset($ada[$c])) { $nama = $c; break; }
             }
             if ($nama === '') {
@@ -334,7 +358,7 @@ class PoKalibrasi
                     if (in_array($tp, array('varchar', 'text', 'tinytext', 'mediumtext'), true) && preg_match('/(nama|uraian|jenis|layanan|tarif|desk)/i', $c) && !preg_match('/^id_|kode/i', $c)) { $nama = $c; break; }
                 }
             }
-            $hasil = array($tbl, $nama, array_keys($ada));
+            if ($ada) { $hasil = array($sch, $tbl, $nama, array_keys($ada)); }
         }
         self::$cache[$k] = $hasil;
         return $hasil;
@@ -347,15 +371,14 @@ class PoKalibrasi
         if (!$ids) { return array(); }
         $t = self::tabelTarif($db, $schema, $tabelAlat);
         if ($t === null) {
-            self::$catatan[] = 'Tabel tarif (id_tarif_simponi) tidak ditemukan di database ' . $schema . ', jadi nama alat belum bisa tampil.';
             return array();
         }
-        if ($t[1] === '') {
-            self::$catatan[] = 'Kolom nama di tabel ' . $t[0] . ' belum ketemu. Kolomnya: ' . implode(', ', $t[2]) . '.';
+        if ($t[2] === '') {
+            self::$catatan[] = 'Kolom nama di tabel ' . $t[0] . '.' . $t[1] . ' belum ketemu. Kolomnya: ' . implode(', ', $t[3]) . '.';
             return array();
         }
         $rows = $db->exec(
-            'SELECT id_tarif_simponi AS i, ' . self::q($t[1]) . ' AS n FROM ' . self::q($schema) . '.' . self::q($t[0])
+            'SELECT id_tarif_simponi AS i, ' . self::q($t[2]) . ' AS n FROM ' . self::q($t[0]) . '.' . self::q($t[1])
             . ' WHERE id_tarif_simponi IN (' . implode(',', array_fill(0, count($ids), '?')) . ')',
             array_combine(range(1, count($ids)), $ids)
         );
@@ -389,7 +412,7 @@ class PoKalibrasi
             $tr = self::tabelTarif($db, $t[0], $t[1]);
             $d['tabel_tarif'] = $tr;
             if ($tr !== null) {
-                $d['contoh_tarif'] = $db->exec('SELECT * FROM ' . self::q($t[0]) . '.' . self::q($tr[0]) . ' LIMIT 3');
+                $d['contoh_tarif'] = $db->exec('SELECT * FROM ' . self::q($tr[0]) . '.' . self::q($tr[1]) . ' LIMIT 3');
             }
         }
         return $d;
@@ -408,18 +431,15 @@ class PoKalibrasi
         $bl = self::angka($f('struktural_biaya_kerjasama_pembulatan'));
         $pt = self::angka($f('struktural_biaya_kerjasama_petugas'));
         $tot = self::angka($f('struktural_biaya_kerjasama_total'));
+        $byk = self::angka($f('struktural_bayar_kerjasama'));
+        $byp = self::angka($f('struktural_bayar_kerjasama_petugas'));
         if ($tot <= 0) { $tot = $ks + $ins + $tr + $bl + $pt; }
 
-        // Lokasi: keterangan_lokasi (order) lalu lhu_lokasi_kalibrasi (alat); kalau tidak jelas, tebak dari biaya in-situ / transportasi
-        $teksLok = self::ambilKol($r, array('keterangan_lokasi'));
-        $teksAlat = '';
-        foreach ($alat as $a) { if (!empty($a['lokasi'])) { $teksAlat = $a['lokasi']; break; }  }
-        $cek = $teksLok . ' ' . $teksAlat;
-        if (preg_match('/situ/i', $cek)) { $tipe = 'insitu'; }
-        elseif (preg_match('/\blab/i', $cek)) { $tipe = 'lab'; }
-        else { $tipe = ($ins > 0 || $tr > 0) ? 'insitu' : 'lab'; }
-        $lokTampil = $teksLok !== '' ? $teksLok : $teksAlat;
-        $tempat = $lokTampil !== '' ? $lokTampil : ($tipe === 'insitu' ? ($alamat !== '' ? $alamat : 'Lokasi mitra') : 'Laboratorium kalibrasi');
+        // Lokasi: apa adanya dari keterangan_lokasi (order), cadangan lhu_lokasi_kalibrasi (alat); kosong bila tidak tercatat
+        $tempat = self::ambilKol($r, array('keterangan_lokasi'));
+        if ($tempat === '') {
+            foreach ($alat as $a) { if (!empty($a['lokasi'])) { $tempat = $a['lokasi']; break; } }
+        }
 
         $ids = self::idTeknisi($r);
         $nm = array();
@@ -432,7 +452,6 @@ class PoKalibrasi
             'mitra'    => $mitra,
             'alamat'   => $alamat,
             'uraian'   => self::ambilKol($r, array('uraian_order')),
-            'tipe'     => $tipe,
             'tempat'   => $tempat,
             'tgl_order'=> self::tanggal($f('tanggal_order')),
             'berangkat'=> self::tanggal($f('tanggal_kalibrasi_berangkat')),
@@ -440,7 +459,7 @@ class PoKalibrasi
             'target'   => self::tanggal($f('tanggal_selesai_target')),
             'jml_teknisi' => count($ids),
             'teknisi'  => (count($nm) === count($ids)) ? $nm : array(),
-            'biaya'    => array('kerjasama' => $ks, 'petugas' => $pt, 'insitu' => $ins, 'transportasi' => $tr, 'pembulatan' => $bl, 'total' => $tot),
+            'biaya'    => array('kerjasama' => $ks, 'petugas' => $pt, 'insitu' => $ins, 'transportasi' => $tr, 'pembulatan' => $bl, 'total' => $tot, 'bayar_kerjasama' => $byk, 'bayar_petugas' => $byp),
             'alat'     => $alat,
         );
     }

@@ -17,11 +17,6 @@
             <div class="modal-body">
                 <div class="kal-tools">
                     <input type="search" id="cariOrderKal" class="form-control" placeholder="Cari nomor order / nama mitra / uraian..." autocomplete="off">
-                    <div class="kal-chips" id="lokOrderKal" role="group" aria-label="Lokasi kalibrasi">
-                        <button type="button" class="kal-chip" data-l="" aria-pressed="true">Semua</button>
-                        <button type="button" class="kal-chip" data-l="lab" aria-pressed="false">Di lab</button>
-                        <button type="button" class="kal-chip" data-l="insitu" aria-pressed="false">In-situ</button>
-                    </div>
                 </div>
                 <div id="catatanOrderKal" class="alert alert-warning border-0 small py-2 d-none"></div>
                 <div id="stateOrderKal" class="text-center text-muted small py-4"></div>
@@ -44,10 +39,6 @@
 <style>
     #modalOrderKal .kal-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
     #modalOrderKal .kal-tools .form-control { flex: 1 1 260px; min-width: 0; }
-    #modalOrderKal .kal-chips { display: flex; gap: 5px; }
-    #modalOrderKal .kal-chip { border: 1px solid #cbd5e1; background: #fff; border-radius: 999px; padding: 5px 13px; font-size: .8rem; font-weight: 600; color: #64748b; transition: background .15s, color .15s, border-color .15s; }
-    #modalOrderKal .kal-chip:hover { border-color: #64748b; color: #0f172a; }
-    #modalOrderKal .kal-chip[aria-pressed="true"] { background: #1e293b; border-color: #1e293b; color: #fff; }
     #modalOrderKal .kal-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 14px; align-items: start; }
     #modalOrderKal .kal-list { display: grid; gap: 6px; align-content: start; }
     #modalOrderKal .kal-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left; width: 100%; border: 1px solid #e2e8f0; background: #fff; border-radius: 10px; padding: 9px 11px; transition: border-color .15s, background .15s; }
@@ -90,7 +81,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var duaEl = document.getElementById('duaOrderKal');
     var stateEl = document.getElementById('stateOrderKal');
     var cariEl = document.getElementById('cariOrderKal');
-    var lokEl = document.getElementById('lokOrderKal');
     var jmlEl = document.getElementById('jmlOrderKal');
     var catEl = document.getElementById('catatanOrderKal');
     var buatEl = document.getElementById('btnBuatOrderKal');
@@ -101,14 +91,12 @@ document.addEventListener('DOMContentLoaded', function () {
     var timer = null, reqId = 0;
     var data = [];           // order hasil pencarian terakhir
     var cur = 0;             // id order yang rinciannya tampil
-    var lok = '';            // '' | 'lab' | 'insitu'
     var opsi = { onPilih: null };
 
     function elKal(tag, cls, txt) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (txt != null) { e.textContent = txt; } return e; }
     function tgl(iso) { if (!iso) { return '-'; } var p = String(iso).split('-'); return p.length === 3 ? (parseInt(p[2], 10) + ' ' + BLN[parseInt(p[1], 10) - 1] + ' ' + p[0]) : iso; }
     function rp(n) { n = Math.round(n || 0); return 'Rp ' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-    function labelLok(o) { return o.tipe === 'insitu' ? 'In-situ' : 'Di lab'; }
-    function tampilData() { return data.filter(function (o) { return !lok || o.tipe === lok; }); }
+    function tampilData() { return data; }
     function cariOrder(id) { for (var i = 0; i < data.length; i++) { if (data[i].id === id) { return data[i]; } } return null; }
 
     function gambarDetail() {
@@ -123,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var kv = elKal('div', 'kal-kv');
         function sel(label, isi) { var d = elKal('div'); d.appendChild(elKal('small', '', label)); d.appendChild(elKal('span', '', isi)); kv.appendChild(d); }
         if (o.uraian) { var u = elKal('div'); u.style.gridColumn = '1 / -1'; u.appendChild(elKal('small', '', 'Uraian')); u.appendChild(elKal('span', '', o.uraian)); kv.appendChild(u); }
-        sel('Lokasi', labelLok(o) + ' · ' + o.tempat);
+        if (o.tempat) { sel('Lokasi', o.tempat); }
         sel('Tanggal order', tgl(o.tgl_order));
         sel('Berangkat - pulang', (o.berangkat && o.berangkat === o.pulang) ? tgl(o.berangkat) : (o.berangkat || o.pulang ? tgl(o.berangkat) + ' - ' + tgl(o.pulang) : '-'));
         sel('Target selesai', tgl(o.target));
@@ -174,7 +162,6 @@ document.addEventListener('DOMContentLoaded', function () {
             kiri.appendChild(elKal('span', 'no', o.nomor || '-'));
             if (o.uraian) { kiri.appendChild(elKal('span', 'ur', o.uraian)); }
             var tags = elKal('div', 'kal-tags');
-            tags.appendChild(elKal('span', 'dk', labelLok(o)));
             tags.appendChild(elKal('span', '', (o.alat ? o.alat.length : 0) + ' alat'));
             kiri.appendChild(tags);
             b.appendChild(kiri);
@@ -190,8 +177,6 @@ document.addEventListener('DOMContentLoaded', function () {
         stateEl.className = 'text-center text-muted small py-4';
         if (!data.length) {
             stateEl.textContent = q ? 'Tidak ada order yang cocok dengan pencarian.' : 'Tidak ada order kalibrasi yang perlu dibuatkan PO.';
-        } else if (!rows.length) {
-            stateEl.textContent = 'Tidak ada order ' + (lok === 'insitu' ? 'in-situ' : 'di lab') + ' pada hasil ini.';
         } else {
             stateEl.textContent = '';
         }
@@ -242,8 +227,7 @@ document.addEventListener('DOMContentLoaded', function () {
         buatTxt.textContent = opsi.onPilih ? 'Pakai order ini' : 'Buat PO dari order ini';
         buatEl.disabled = true;
         cariEl.value = '';
-        data = []; cur = 0; lok = '';
-        Array.prototype.forEach.call(lokEl.children, function (c) { c.setAttribute('aria-pressed', c.getAttribute('data-l') === '' ? 'true' : 'false'); });
+        data = []; cur = 0;
         listEl.innerHTML = ''; detEl.innerHTML = '';
         duaEl.classList.add('d-none'); catEl.classList.add('d-none'); jmlEl.textContent = '';
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
@@ -251,14 +235,6 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     buatEl.addEventListener('click', function () { var o = cariOrder(cur); if (o) { pilihOrder(o); } });
-    lokEl.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-l]');
-        if (!b) { return; }
-        lok = b.getAttribute('data-l');
-        Array.prototype.forEach.call(lokEl.children, function (c) { c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); });
-        gambarList();
-        gambarDetail();
-    });
     cariEl.addEventListener('input', function () {
         clearTimeout(timer);
         timer = setTimeout(muat, 300);

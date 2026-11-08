@@ -1827,6 +1827,14 @@
             $('rvwFv').hidden = false;
             var n = ++fvSeq;
             var aktif = function () { return n === fvSeq && !$('rvwFv').hidden; };
+            if (judul === 'Kontrak (PKS)') {   // PKS: pratinjau per halaman (batas halaman + "n dari N"), sama dengan halaman Kontrak
+                var idPks = (curPo() || {}).id;
+                if (idPks) {
+                    var uPks = BASE + '/pks/' + idPks + '/form?lihat=1';
+                    $('rvwFvTab').href = uPks; $('rvwFvDoc').style.display = 'none'; $('rvwFvDoc').innerHTML = ''; $('rvwFvFrame').style.display = ''; $('rvwFvFrame').src = uPks + '&embed=1';
+                    return;
+                }
+            }
             if (window.optiTampilkanBerkas) {
                 // PDF/gambar lewat iframe (toolbar bawaan disembunyikan), Word dirender di dalam modal
                 window.optiTampilkanBerkas(url, $('rvwFvFrame'), $('rvwFvDoc'), aktif);

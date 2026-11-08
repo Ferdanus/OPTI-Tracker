@@ -1155,6 +1155,7 @@
 
         terapkanKertas();
         isiFilter();
+        if (!/[?&]tab=/.test(window.location.search) && jml(dasar(), 'baru') === 0) { tab = 'semua'; }   // tidak ada kontrak baru yang perlu diproses: langsung buka tab Semua
         render();
         if (PESAN_AWAL) { toast(PESAN_AWAL); }
     })();

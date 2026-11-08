@@ -130,6 +130,7 @@ class PoKalibrasiController extends \Controller {
 
         $f3->set('order_json', $this->jsonHive($order));
         $f3->set('klaim_json', $this->jsonHive($this->klaimUntukView($idOrder)));
+        $this->setVarMaster($f3);
         $f3->set('po_json', 'null');
         $f3->set('mode_lihat', 'false');
         $f3->set('tanggal_default', date('Y-m-d'));
@@ -344,8 +345,9 @@ class PoKalibrasiController extends \Controller {
         return array(null, array('tanggal_po' => $tgl, 'judul' => $judul, 'alamat' => $alamat, 'kolom' => $kolom));
     }
 
+    /** Kalibrasi tidak lagi membedakan lab / in-situ, jadi kolom jenis dikosongkan. */
     protected function jenisOrder(array $order) {
-        return (isset($order['tipe']) && $order['tipe'] === 'insitu') ? 'Insitu' : 'Inlab';
+        return '';
     }
 
     /**
@@ -737,6 +739,74 @@ class PoKalibrasiController extends \Controller {
     /** GET /petunjuk-operasional/kalibrasi/@id/lihat -- hanya pratinjau dokumen PO (tanpa form). */
     public function lihat($f3, $params) { return $this->tampilkan($f3, $params, true); }
 
+    /**
+     * GET /petunjuk-operasional/kalibrasi/@id/berkas  (JSON)
+     * Tab Berkas di slide Lihat PO (Daftar PO): berkas yang terkait PO ini. Saat ini: surat penawaran yang diklaim dari arsip surat keluar.
+     */
+    public function berkas($f3, $params) {
+        if (!$this->cekAkses()) { return; }
+        $po = null;
+        try { $po = $this->ambilPo((int) $params['id']); } catch (\Throwable $e) { $po = null; }
+        if (!$po) { $this->json(array('ok' => false, 'message' => 'PO Kalibrasi tidak ditemukan.'), 404); return; }
+        $out = array();
+        $k = $this->klaimUntukView((int) $po['order_id']);
+        if ($k) {
+            $out[] = array(
+                'jenis'       => 'Surat Penawaran',
+                'no_surat'    => $k['no_surat'],
+                'tanggal_fmt' => $k['tanggal_fmt'],
+                'customer'    => $k['customer'],
+                'perihal'     => $k['perihal'],
+                'berkas'      => $k['berkas'],
+                'preview_url' => $k['preview_url'],
+            );
+        }
+        // Acuan biaya + pembayaran dari data order (kolom struktural_biaya_* dan struktural_bayar_*)
+        $biaya = null; $galat = '';
+        try {
+            $o = \PoKalibrasi::ambil($this->db, (int) $po['order_id']);
+            if (!$o) {
+                // order tersembunyi / disaring dari daftar: baca barisnya langsung supaya biaya tetap tampil
+                $sk = \PoKalibrasi::skema($this->db, \PoKalibrasi::TABEL_ORDER);
+                if ($sk !== '') {
+                    $rr = $this->db->exec('SELECT * FROM `' . $sk . '`.`' . \PoKalibrasi::TABEL_ORDER . '` WHERE id_arsip_kalibrasi = ? LIMIT 1', array(1 => (int) $po['order_id']));
+                    if ($rr) { $o = \PoKalibrasi::petakan($rr[0], array(), array()); }
+                }
+            }
+            if ($o && !empty($o['biaya'])) { $biaya = $o['biaya']; }
+            else { $galat = 'Data order tidak ditemukan.'; }
+        } catch (\Throwable $e) {
+            $galat = $e->getMessage();
+            error_log('[PO Kalibrasi] gagal baca biaya order: ' . $e->getMessage());
+        }
+        $this->json(array('ok' => true, 'berkas' => $out, 'biaya' => $biaya, 'biaya_galat' => $galat));
+    }
+
+    /**
+     * Pilihan Nama & Jabatan di Tim Pelaksana form PO: Data Master Tim Pelaksana PO dan Master Jabatan Pelaksana PO
+     * layanan Kalibrasi (yang aktif). Master anggota masih kosong -> cadangan: semua pegawai, supaya form tetap bisa diisi.
+     */
+    protected function setVarMaster($f3) {
+        $nama = array();
+        $jabatan = array();
+        try {
+            if (class_exists('MasterTimPelaksanaController')) {
+                foreach (\MasterTimPelaksanaController::ambilAktif($this->db, 'kalibrasi') as $r) { $nama[] = (string) $r['nama']; }
+                $jabatan = \MasterTimPelaksanaController::ambilJabatanAktif($this->db, 'kalibrasi');
+            }
+        } catch (\Throwable $e) { error_log('[PO Kalibrasi] gagal baca master tim pelaksana: ' . $e->getMessage()); }
+        if (!$nama) {
+            try {
+                foreach ($this->db->exec('SELECT nama_user FROM tb_arsipuser ORDER BY nama_user ASC') as $r) {
+                    $n = trim((string) $r['nama_user']);
+                    if ($n !== '') { $nama[] = $n; }
+                }
+            } catch (\Throwable $e) { error_log('[PO Kalibrasi] gagal baca pegawai: ' . $e->getMessage()); }
+        }
+        $f3->set('master_pelaksana_json', $this->jsonHive(array_values(array_unique($nama))));
+        $f3->set('jabatan_pelaksana_json', $this->jsonHive(array_values($jabatan)));
+    }
+
     protected function tampilkan($f3, $params, $lihat) {
         $this->requireAuth();
         if (!$this->izinKalibrasi()) {
@@ -765,7 +835,7 @@ class PoKalibrasiController extends \Controller {
         if ($order === null) {
             // order sudah tidak terbaca -> PO tetap bisa dibuka dari data yang tersimpan
             $order = array('id' => (int) $po['order_id'], 'nomor' => (string) ($po['order_nomor'] ?? ''), 'mitra' => (string) ($po['nama_perusahaan'] ?? ''),
-                           'alamat' => '', 'uraian' => '', 'tipe' => ((string) ($po['jenis'] ?? '') === 'Insitu') ? 'insitu' : 'lab', 'tempat' => '',
+                           'alamat' => '', 'uraian' => '', 'tempat' => '',
                            'tgl_order' => '', 'berangkat' => '', 'pulang' => '', 'target' => '', 'jml_teknisi' => 0, 'teknisi' => array(),
                            'biaya' => array(), 'alat' => array());
         }
@@ -785,6 +855,7 @@ class PoKalibrasiController extends \Controller {
 
         $f3->set('order_json', $this->jsonHive($order));
         $f3->set('klaim_json', $this->jsonHive($this->klaimUntukView((int) $po['order_id'])));
+        $this->setVarMaster($f3);
         $f3->set('po_json', $this->jsonHive($poInfo));
         $f3->set('mode_lihat', $lihat ? 'true' : 'false');
         $f3->set('tanggal_default', date('Y-m-d'));

@@ -82,6 +82,11 @@ class OptiPembayaran extends \DB\SQL\Mapper {
         );
 
         $pembayaranId = (int)$this->db->exec("SELECT LAST_INSERT_ID() AS id")[0]['id'];
+        // Tanggal pengesahan (opsional): kolom hanya disentuh bila diisi
+        $tglSah = (string)($data['tanggal_pengesahan'] ?? '');
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $tglSah)) {
+            $this->db->exec("UPDATE opti_pembayaran SET tanggal_pengesahan = ? WHERE id = ?", array(1 => $tglSah, 2 => $pembayaranId));
+        }
 
         // Sinkronisasi status invoice & keuangan order
         $this->sinkronkanKeuanganOrder($orderId);

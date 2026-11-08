@@ -30,8 +30,11 @@
     html.pp-embed, html.pp-embed body { overflow: hidden !important; background: #e9ecef !important; }
     html.pp-embed .po-live-card { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; z-index: 2050; height: auto !important; min-height: 0 !important; border: 0; border-radius: 0; box-shadow: none; }
     html.pp-embed #ppLiveBadge { display: none; }
-    .pp-devbar { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin-bottom: 12px; padding: 8px 12px; border: 1px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; font-size: .8rem; color: #64748b; }
-    .pp-devbar .form-select { width: auto; }
+    /* Slide Lihat PO di Daftar PO (?embed=1&slide=1): hanya lembar dokumen; bilah, zoom, dan tombol ada di slide induk */
+    html.pp-slide, html.pp-slide body { background: #f1f5f9 !important; }
+    html.pp-slide .po-live-card { background: #f1f5f9 !important; }
+    html.pp-slide .po-live-card .pp-modal-bar { display: none !important; }
+    html.pp-slide #pvBox { background: #f1f5f9 !important; padding-top: 16px; padding-bottom: 96px; }
     .pp-orderbar { max-width: 1100px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; font-size: .85rem; }
     .pp-orderbar[hidden] { display: none; }
     .pp-ob-info { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; min-width: 0; }
@@ -52,6 +55,16 @@
     #ppSpModal .pp-sp-sub { color: #64748b; font-size: .74rem; }
     #ppSpModal tr.pp-sp-cocok { background: #f8fafc; }
     #ppSpModal tr.pp-sp-out { opacity: 0; transform: translateX(20px); transition: all .35s; }
+    #ppSpModal #ppSpTblWrap { min-height: 440px; }            /* tinggi tetap: modal tidak menyusut/membesar walau datanya sedikit atau kosong */
+    #ppSpModal .pp-sp-kosong td { height: 380px; }
+    #ppSpModal #ppSpJml { min-width: 136px; justify-content: center; align-items: center; gap: 6px; height: 30px; display: inline-flex; }
+    #ppSpModal .pp-sp-dots { display: inline-flex; gap: 3px; }
+    #ppSpModal .pp-sp-dots s { width: 4px; height: 4px; border-radius: 50%; background: #0f172a; animation: ppSpBnc 1s ease-in-out infinite; }
+    #ppSpModal .pp-sp-dots s:nth-child(2) { animation-delay: .15s; }
+    #ppSpModal .pp-sp-dots s:nth-child(3) { animation-delay: .3s; }
+    @keyframes ppSpBnc { 0%, 70%, 100% { transform: translateY(0); opacity: .35; } 35% { transform: translateY(-3px); opacity: 1; } }
+    #ppSpModal tr.pp-sp-row { animation: ppSpIn .18s ease both; }
+    @keyframes ppSpIn { from { opacity: 0; } to { opacity: 1; } }
     .pp-sp-pv { position: fixed; inset: 0; z-index: 2100; background: rgba(15,23,42,.6); display: none; align-items: center; justify-content: center; padding: 18px; }
     .pp-sp-pv.on { display: flex; }
     .pp-sp-pv > div { background: #fff; border-radius: 12px; width: 100%; max-width: 860px; height: calc(100vh - 36px); display: flex; flex-direction: column; overflow: hidden; }
@@ -86,6 +99,85 @@
     .pp-induk-h { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     .pp-sub { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; margin-top: 8px; background: #fff; }
     .pp-letter { width: 26px; height: 26px; border-radius: 50%; background: var(--color-primary, #334155); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; flex: none; }
+    /* ---------- RAB (gaya Sertifikasi) ---------- */
+    .pr-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 4px; }
+    .pr-kpi { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 11px 14px; display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .pr-kpi.ok { background: #f0fdf4; border-color: #bbf7d0; } .pr-kpi.warn { background: #fffbeb; border-color: #fde68a; } .pr-kpi.bad { background: #fef2f2; border-color: #fecaca; }
+    .pr-kico { width: 38px; height: 38px; border-radius: 9px; background: #1e293b; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .9rem; flex: none; }
+    .pr-kl { display: block; font-size: .66rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #64748b; }
+    .pr-kv { font: 700 .98rem ui-monospace, Menlo, Consolas, monospace; word-break: break-word; }
+    .pr-ks { font-size: .76rem; font-weight: 600; margin-top: 1px; }
+    .pr-sech { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin: 18px 0 8px; }
+    .pr-lab { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #1d4ed8; }
+    .pr-pill { border: 1px solid #334155; color: #334155; background: #fff; border-radius: 999px; padding: 4px 13px; font-size: .78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+    .pr-pill:hover { background: #334155; color: #fff; }
+    .pr-pill.dark { background: #1e293b; border-color: #1e293b; color: #fff; } .pr-pill.dark:hover { opacity: .9; }
+    .pr-ig { display: flex; align-items: stretch; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; overflow: hidden; margin-bottom: 8px; min-width: 0; }
+    .pr-ig > input, .pr-ig > .form-control { border: 0; border-radius: 0; box-shadow: none; min-width: 0; min-height: 34px; flex: 1 1 140px; width: auto; }
+    .pr-ig > input:focus { box-shadow: inset 0 0 0 2px rgba(51,65,85,.25); }
+    .pr-ad { display: flex; align-items: center; padding: 0 10px; background: #f1f5f9; color: #64748b; font-size: .8rem; white-space: nowrap; border-right: 1px solid #cbd5e1; }
+    .pr-ad.last { border-right: 0; border-left: 1px solid #cbd5e1; }
+    .pr-ad.w { background: #fff; padding: 0 6px; gap: 4px; border-left: 1px solid #cbd5e1; border-right: 0; }
+    .pr-ad.lb { flex: 1 1 200px; white-space: normal; font-weight: 600; color: #1e293b; padding: 6px 10px; }
+    .pr-ad.no { font-weight: 700; color: #1d4ed8; }
+    .pr-ig > input.pr-m { flex: 0 1 190px; text-align: right; font-variant-numeric: tabular-nums; }
+    .pr-kat { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.04); overflow: hidden; }
+    .pr-kat:not(.open):hover { border-color: #cbd5e1; }
+    .pr-kat .pr-ring { cursor: pointer; }
+    /* buka/tutup kategori: tinggi melebar pelan, isi muncul bertahap */
+    .pr-sw, .pr-bw { display: grid; transition: grid-template-rows .3s cubic-bezier(.4, 0, .2, 1); }
+    .pr-sw { grid-template-rows: 1fr; } .pr-kat.open > .pr-sw { grid-template-rows: 0fr; }
+    .pr-bw { grid-template-rows: 0fr; } .pr-kat.open > .pr-bw { grid-template-rows: 1fr; }
+    .pr-si, .pr-bi { min-height: 0; overflow: hidden; }
+    .pr-si { opacity: 1; transition: opacity .2s ease; }
+    .pr-kat.open > .pr-sw > .pr-si { opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s linear .3s; }
+    .pr-bi { opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s linear .3s; }
+    .pr-kat.open > .pr-bw > .pr-bi { opacity: 1; visibility: visible; transition: opacity .28s ease .08s, visibility 0s; }
+    .pr-bp { padding: 14px; }
+    @media (prefers-reduced-motion: reduce) { .pr-sw, .pr-bw, .pr-si, .pr-bi { transition: none !important; } }
+    .pr-ring { display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-width: 0; }
+    .pr-lt { flex: none; width: 28px; height: 28px; border-radius: 8px; background: #f1f5f9; border: 1px solid #e2e8f0; display: grid; place-items: center; font-weight: 700; color: #1d4ed8; }
+    .pr-rn { flex: 1; min-width: 0; } .pr-rn b { display: block; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pr-rn small { color: #64748b; font-size: .75rem; }
+    .pr-ph { color: #94a3b8; font-weight: 500; }
+    .pr-rv { text-align: right; white-space: nowrap; font: 700 .85rem ui-monospace, Menlo, Consolas, monospace; } .pr-rv .pr-bdg { display: block; font-family: inherit; font-weight: 500; font-size: .7rem; color: #64748b; background: none; border: 0; padding: 0; margin: 0; }
+    .pr-chv { width: 24px; height: 24px; border: 0; background: transparent; color: #64748b; cursor: pointer; border-radius: 6px; font-size: .85rem; flex: none; align-self: center; padding: 0; }
+    .pr-chv:hover { background: #f1f5f9; color: #0f172a; }
+    .pr-pill.on { background: #334155; color: #fff; }
+    .pr-chev { flex: none; color: #64748b; font-size: .78rem; }
+    .pr-lb2 { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #64748b; margin-bottom: 4px; }
+    .pr-seg { display: inline-flex; gap: 2px; padding: 3px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 999px; flex-wrap: wrap; }
+    .pr-seg button { border: 0; background: transparent; color: #64748b; font-size: .8rem; font-weight: 600; padding: 5px 14px; border-radius: 999px; cursor: pointer; }
+    .pr-seg button:hover { color: #0f172a; } .pr-seg button.on { background: #1e293b; color: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.2); }
+    .pr-seg.sm { padding: 2px; } .pr-seg.sm button { padding: 3px 10px; font-size: .74rem; }
+    .pr-subopt { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0 6px; font-size: .78rem; color: #64748b; }
+    .pr-subopt .pr-lt.sm { width: 24px; height: 24px; border-radius: 50%; background: #1e293b; color: #fff; border: 0; font-size: .72rem; }
+    .pr-subopt label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; margin: 0; }
+    .pr-subopt .pr-ig { margin: 0; flex: 0 0 auto; }
+    /* RAB: tabel dengan isian timbul */
+    .pr-tbl { table-layout: fixed; min-width: 640px; border-collapse: collapse; }
+    .pr-tbl th { border: 0; border-bottom: 2px solid #1e293b; padding: 8px 6px !important; text-align: left; }
+    .pr-tbl td { padding: 5px 4px !important; border: 0; vertical-align: middle; }
+    .pr-tbl td .form-control, .pr-tbl td .form-select { box-sizing: border-box; }
+    .pp-root .pr-tbl td .form-control, .pp-root .pr-tbl td .form-control-sm { width: 100% !important; border: 0; background-color: #fff; border-radius: 9px; padding: 9px 8px; font-size: .85rem; height: auto; box-shadow: 0 1px 3px rgba(10,10,10,.10), 0 0 0 1px #e5e7eb; }
+    .pp-root .pr-tbl td .form-control:focus { background-color: #fff; box-shadow: 0 3px 10px rgba(10,10,10,.14), 0 0 0 2px #1e293b; outline: 0; }
+    .pp-root .pr-tbl td input[readonly] { background-color: #f8fafc; color: #64748b; }
+    .pr-dd { display: flex; align-items: center; gap: 4px; }
+    .pr-tbl .pr-dd .form-control { flex: 0 0 38%; width: 38% !important; min-width: 0; }
+    .pp-root .pp-tbl .form-select.pr-sel { flex: 1; min-width: 0; width: auto; border: 0; border-radius: 9px !important; background-color: #fff; padding: 9px 20px 9px 6px; font-size: .82rem; background-position: right 6px center; background-size: 10px 8px; cursor: pointer; box-shadow: 0 1px 3px rgba(10,10,10,.10), 0 0 0 1px #e5e7eb; }
+    .pp-root .pp-tbl .form-select.pr-sel:focus { box-shadow: 0 3px 10px rgba(10,10,10,.14), 0 0 0 2px #1e293b; outline: 0; }
+    .pr-tbl td.pp-r { background: transparent; font-weight: 700; padding: 5px 8px !important; }
+    .pr-tbl td.ak { text-align: right; padding-right: 2px !important; white-space: nowrap; }
+    .pr-subtot { text-align: right; font-size: .78rem; color: #64748b; margin: 6px 0; } .pr-subtot b, .pr-cek b, .pr-kt b { color: #0f172a; font-family: ui-monospace, Menlo, Consolas, monospace; }
+    .pr-bud { border: 1px solid #e2e8f0; border-radius: 10px; padding: 9px 12px; margin: 8px 0 2px; font-size: .78rem; background: #f8fafc; }
+    .pr-bud .bk { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: #64748b; } .pr-bud b { font-family: ui-monospace, Menlo, Consolas, monospace; color: #0f172a; }
+    .pr-bud .bar { height: 6px; border-radius: 999px; background: #e2e8f0; margin: 7px 0 3px; overflow: hidden; }
+    .pr-bud .bar i { display: block; height: 100%; background: #334155; border-radius: 999px; transition: width .25s; }
+    .pr-bud.ok .bar i { background: #15803d; } .pr-bud.bad { background: #fef2f2; border-color: #fecaca; } .pr-bud.bad .bar i { background: #b91c1c; }
+    .pr-bud .bs { font-size: .72rem; color: #94a3b8; }
+    .pr-cek { margin-top: 8px; font-size: .78rem; color: #64748b; text-align: right; } .pr-cek.ok { color: #15803d; } .pr-cek.bad { color: #b91c1c; }
+    .pr-kt { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: .82rem; color: #64748b; }
+    .pr-bdg { font-size: .7rem; border: 1px solid #e2e8f0; background: #f1f5f9; color: #64748b; border-radius: 6px; padding: 1px 7px; margin-left: 6px; }
+    @media (max-width: 520px) { .pr-rv { text-align: left; } .pr-ring { flex-wrap: wrap; } }
     .pp-letter.sm { width: 22px; height: 22px; font-size: .72rem; background: #64748b; }
     .pp-jad { border-collapse: collapse; }
     .pp-jad td, .pp-jad th { border: 1px solid #e2e8f0; text-align: center; }
@@ -102,6 +194,18 @@
     .pp-rte-body ol:not([type]) { list-style-type: lower-alpha; }
     .pp-rte-body ol, .pp-rte-body ul { padding-left: 1.6em; margin: 0 0 4px; }
     .pp-rte-body p { margin: 0 0 4px; }
+    .pp-rte-bar .pp-sp { flex: 1; }
+    .pp-lock { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #cbd5e1 !important; background: #fff !important; border-radius: 8px !important; padding: 0 10px !important; height: 28px; font-size: .78rem !important; font-weight: 600; color: #475569 !important; }
+    .pp-lock:hover { border-color: #0f172a !important; color: #0f172a !important; }
+    .pp-lock.on { background: #1e293b !important; border-color: #1e293b !important; color: #fff !important; }
+    .pp-rte.pp-locked .pp-rte-bar [data-cmd] { opacity: .35; pointer-events: none; }
+    .pp-rte.pp-locked .pp-rte-body { background: #f8fafc; cursor: default; }
+    .pp-rte-st { display: flex; align-items: center; gap: 6px; font-size: .74rem; color: #94a3b8; padding: 7px 12px; border-top: 1px solid #eef0f3; }
+    .pp-rte-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; background: #f1f5f9; border-top: 1px solid #e2e8f0; font-size: .8rem; color: #475569; }
+    .pp-rte-ask span { flex: 1; min-width: 140px; }
+    .pp-lnk[hidden], .pp-rte-ask[hidden] { display: none !important; }
+    .pp-lnk { border: 0; background: none; padding: 4px 2px; font-size: .8rem; font-weight: 600; color: #475569; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: #cbd5e1; }
+    .pp-lnk:hover { color: #0f172a; text-decoration-color: #0f172a; }
 
     /* ---------- Preview (modal) ---------- */
     .pp-modal { display: none; position: fixed; inset: 0; z-index: 2050; background: rgba(15,23,42,.65); padding: 18px; justify-content: center; }
@@ -169,6 +273,25 @@
         .pp-page { margin: 0; box-shadow: none; page-break-after: always; }
         .pp-page:last-child { page-break-after: auto; }
     }
+    .pp-root .po-table td .pp-rte-mini { margin: 0; }
+    /* ---------- Pilih pegawai Tim Pelaksana (jendela centang banyak) ---------- */
+    .pp-av { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; color: #fff; font-size: .68rem; font-weight: 700; flex: none; }
+    .pp-nm { display: flex; align-items: center; gap: 9px; min-height: 31px; }
+    .pp-nm .pp-ganti { margin-left: auto; border: 0; background: none; color: #64748b; font-size: .72rem; text-decoration: underline; padding: 0; cursor: pointer; }
+    .pp-pk { display: none; position: fixed; inset: 0; z-index: 2060; background: rgba(15,23,42,.55); padding: 18px; align-items: center; justify-content: center; }
+    .pp-pk.open { display: flex; }
+    .pp-pk-box { background: #fff; border-radius: 16px; width: 100%; max-width: 520px; max-height: 86vh; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(15,23,42,.35); }
+    .pp-pk-hd { padding: 14px 18px; border-bottom: 1px solid #e2e8f0; }
+    .pp-pk-bd { padding: 14px 18px 6px; overflow-y: auto; flex: 1 1 auto; }
+    .pp-pk-ft { padding: 12px 18px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .pp-pk-opt { display: flex; align-items: center; gap: 12px; padding: 7px 8px; border-radius: 10px; cursor: pointer; }
+    .pp-pk-opt:hover { background: #f1f5f9; }
+    .pp-pk-opt.on { background: #eff6ff; }
+    .pp-pk-opt.off { opacity: .45; cursor: not-allowed; }
+    .pp-pk-opt.off:hover { background: none; }
+    .pp-pk-opt small { margin-left: auto; color: #64748b; font-size: .72rem; }
+    .pp-pk-chk { width: 20px; height: 20px; border: 1.5px solid #94a3b8; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; color: #fff; flex: none; }
+    .pp-pk-opt.on .pp-pk-chk { background: #2b3a4f; border-color: #2b3a4f; }
 </style>
 
 <include href="petunjuk_operasional/_tema_po.html" />
@@ -197,14 +320,6 @@
     <div class="pp-grid">
         <!-- ===================== FORM ===================== -->
         <div id="ppForm">
-            <div class="pp-devbar">
-                <span><i class="bi bi-info-circle me-1"></i>Alat bantu pengisian form.</span>
-                <select id="ppSample" class="form-select form-select-sm ms-auto" title="Isi form dengan data dari PO contoh untuk mengecek hasilnya">
-                    <option value="">Muat data contoh...</option>
-                    <option value="mitra">Contoh - PT Contoh Kalibrasi</option>
-                </select>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="ppReset"><i class="bi bi-arrow-counterclockwise me-1"></i>Kosongkan</button>
-            </div>
             <section class="pp-card" id="ppOrderCard" hidden>
                 <h3><span class="pp-num"><i class="bi bi-clipboard-check"></i></span><span class="pp-ttl"><span class="pp-tt">Informasi Order</span><span class="pp-dsc">Data order kalibrasi (hanya baca)</span></span></h3>
                 <div class="pp-body">
@@ -297,7 +412,13 @@
                 <h3><span class="pp-num">1</span>Dasar</h3>
                 <div class="pp-body">
                     <div class="pp-rte" data-rte="dasar"></div>
-                    <div class="pp-hint">Kode otomatis dari kolom di atas: <b>[perusahaan]</b>, <b>[alamat]</b>, <b>[no_penawaran]</b>, <b>[tgl_penawaran]</b>.</div>
+                    <div class="mt-2">
+                        <div class="d-flex flex-wrap align-items-center gap-2" id="ppBayarRow">
+                            <label class="form-label mb-0 small fw-semibold text-secondary" for="ppTglBayar">Bukti bayar</label>
+                            <input type="date" class="form-control form-control-sm" style="width:auto" id="ppTglBayar" data-bind="tglBuktiBayar" aria-label="Tanggal bukti bayar">
+                            <button type="button" class="pp-lnk" id="ppTglBayarHapus" hidden>Hapus</button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -305,7 +426,6 @@
                 <h3><span class="pp-num">2</span>Tujuan</h3>
                 <div class="pp-body">
                     <div class="pp-rte" data-rte="tujuan"></div>
-                    <div class="pp-hint">Diisi bebas oleh tim kerja. Kode yang sama (<b>[perusahaan]</b>, <b>[alamat]</b>) bisa dipakai.</div>
                 </div>
             </section>
 
@@ -321,41 +441,40 @@
                         </table>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-primary mt-1" data-act="add" data-list="alat"><i class="bi bi-plus-lg me-1"></i>Tambah alat</button>
-                    <datalist id="dlKet"><option value="Insitu"><option value="Inlab"></datalist>
                     <div class="pp-hint">Total jam = jumlah &times; waktu per unit &divide; 60. Total alat dan total lama pengerjaan dihitung otomatis.</div>
                 </div>
             </section>
 
             <section class="pp-card">
-                <h3><span class="pp-num">4</span>Tim Pelaksana</h3>
+                <h3 class="pp-h3x"><span class="pp-ht"><span class="pp-num">4</span><span class="pp-ttl"><span class="pp-tt">Tim Pelaksana</span><span class="pp-dsc">Personil pelaksana, tugas, dan uraian tugas</span></span></span>
+                    <span class="pp-hbtns"><button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs d-inline-flex align-items-center gap-1" data-act="pick-tim"><i class="bi bi-people-fill"></i> <span>Pilih dari daftar pegawai</span></button></span></h3>
                 <div class="pp-body">
-                    <div class="table-responsive">
-                        <table class="pp-tbl">
-                            <thead><tr><th></th><th>Nama</th><th>Tugas / tanggung jawab</th><th>Uraian tugas</th><th></th></tr></thead>
+                    <div class="po-table-wrap">
+                        <table class="table po-table align-middle mb-0">
+                            <thead><tr><th style="width:230px">Nama Pegawai</th><th style="width:220px">Jabatan</th><th>Keterangan</th><th style="width:96px"></th></tr></thead>
                             <tbody id="ppTim"></tbody>
                         </table>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="tim"><i class="bi bi-plus-lg me-1"></i>Tambah anggota</button>
-                    <datalist id="dlTugas"></datalist>
-                    <datalist id="dlNama"></datalist>
                 </div>
             </section>
 
             <section class="pp-card">
-                <h3><span class="pp-num">5</span>Rencana Anggaran Biaya</h3>
+                <h3><span class="pp-num">5</span><span class="pp-ttl"><span class="pp-tt">Rencana Anggaran Biaya (RAB)</span><span class="pp-dsc">Alokasi penerimaan kontrak dan rincian pos pengeluaran</span></span></h3>
                 <div class="pp-body">
-                    <div class="pp-hint mb-2" style="margin-top:0">Isi dua nilai penerimaan yang sudah deal. Lalu tambahkan kelompok pengeluaran satu per satu (1, 2, 3, ...). Tiap kelompok berisi sub-kelompok (a, b, c, ...) dan baris rincian. Kelompok <b>Harga langsung</b> dihitung dari rinciannya; kelompok <b>Persen</b> mengambil persen dari <b>nilai setelah biaya petugas</b> (total penerimaan dikurangi semua kelompok Harga langsung).</div>
-                    <div class="row g-2">
-                        <div class="col-sm-6"><label class="form-label">Nilai kontrak (Biaya Kalibrasi dan Petugas) (Rp)</label><input type="text" class="form-control form-control-sm pp-r" data-bind="rab.kalibrasi" data-type="money" inputmode="numeric"></div>
-                        <div class="col-sm-6"><label class="form-label">Nilai kontrak (Transportasi) (Rp)</label><input type="text" class="form-control form-control-sm pp-r" data-bind="rab.transport" data-type="money" inputmode="numeric"></div>
+                    <div class="pr-kpis">
+                        <div class="pr-kpi"><span class="pr-kico">Rp</span><div><span class="pr-kl">Total Penerimaan</span><div class="pr-kv" id="ppKpiT">Rp 0</div></div></div>
+                        <div class="pr-kpi"><span class="pr-kico">&minus;</span><div><span class="pr-kl">Total Pengeluaran</span><div class="pr-kv" id="ppKpiK">Rp 0</div></div></div>
+                        <div class="pr-kpi" id="ppKpiBox"><span class="pr-kico" id="ppKpiIco">&asymp;</span><div><span class="pr-kl">Selisih / Sisa</span><div class="pr-ks" id="ppKpiS">-</div></div></div>
                     </div>
 
-                    <label class="form-label mt-3">Rencana pengeluaran</label>
-                    <div id="ppKel"></div>
-                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="rab.kel"><i class="bi bi-plus-lg me-1"></i>Tambah kelompok</button>
-                    <datalist id="dlSatuan"><option value="orang"><option value="mobil"><option value="unit"><option value="paket"><option value="kali"></datalist>
+                    <div class="pr-sech"><div class="pr-lab">A. Penerimaan Kontrak</div></div>
+                    <div class="pr-ig"><span class="pr-ad lb">Nilai kontrak (Biaya Kalibrasi dan Petugas)</span><span class="pr-ad">Rp</span><input type="text" class="form-control form-control-sm pr-m" data-bind="rab.kalibrasi" data-type="money" inputmode="numeric" placeholder="0"></div>
+                    <div class="pr-ig"><span class="pr-ad lb">Nilai kontrak (Transportasi)</span><span class="pr-ad">Rp</span><input type="text" class="form-control form-control-sm pr-m" data-bind="rab.transport" data-type="money" inputmode="numeric" placeholder="0"></div>
+                    <div class="pp-hint" style="margin-top:0">Nilai kontrak diisi manual oleh pembuat PO karena nilainya tidak tentu.</div>
 
-                    <div class="pp-sum mt-3" id="ppSum"></div>
+                    <div class="pr-sech"><div class="pr-lab">B. Rencana Pos Pengeluaran</div><span style="display:inline-flex;gap:6px;flex-wrap:wrap"><button type="button" class="pr-pill" id="ppRabAtur" data-act="rab-atur" title="Tampilkan tombol naik, turun, dan hapus"><i class="bi bi-arrow-down-up"></i><span>Atur urutan</span></button><button type="button" class="pr-pill" data-act="add" data-list="rab.kel"><i class="bi bi-folder-plus"></i>Tambah Kategori Biaya</button></span></div>
+                    <div id="ppKel"></div>
+                    <datalist id="dlSatuan"><option value="orang"><option value="mobil"><option value="unit"><option value="paket"><option value="kali"></datalist>
                     <div id="ppRabWarn"></div>
                 </div>
             </section>
@@ -391,6 +510,21 @@
 </div>
 
 <button type="button" class="btn btn-primary pp-fab" id="ppPreviewFab"><i class="bi bi-eye me-1"></i>Preview Data</button>
+
+<!-- ===================== PILIH PEGAWAI TIM PELAKSANA (modal) ===================== -->
+<div class="pp-pk" id="ppPk" aria-hidden="true">
+    <div class="pp-pk-box" role="dialog" aria-modal="true" aria-labelledby="ppPkTtl">
+        <div class="pp-pk-hd"><b id="ppPkTtl">Pilih anggota tim</b><div class="small text-muted">Centang satu atau lebih pegawai</div></div>
+        <div class="pp-pk-bd">
+            <input type="search" class="form-control mb-2" id="ppPkCari" placeholder="Cari nama pegawai..." autocomplete="off">
+            <div id="ppPkList"></div>
+        </div>
+        <div class="pp-pk-ft">
+            <b id="ppPkN">0 orang dipilih</b>
+            <span><button type="button" class="btn btn-sm btn-outline-secondary me-1" id="ppPkBatal">Batal</button><button type="button" class="btn btn-sm btn-dark" id="ppPkOk" disabled>Tambahkan</button></span>
+        </div>
+    </div>
+</div>
 
 <!-- ===================== PREVIEW (modal) ===================== -->
 <div class="pp-modal" id="ppModal" aria-hidden="true">
@@ -428,17 +562,17 @@
                         </div>
                     </div>
                     <div class="col-12 col-md-4 d-flex gap-2 justify-content-md-end align-items-center">
-                        <span class="badge text-bg-light border" id="ppSpJml"></span>
+                        <span class="badge text-bg-light border" id="ppSpJml">&nbsp;</span>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="ppSpSegar"><i class="bi bi-arrow-clockwise me-1"></i>Segarkan</button>
                     </div>
                 </div>
-                <div id="ppSpLoad" class="text-center py-5 d-none"><div class="spinner-border spinner-border-sm text-dark" role="status"></div><div class="small text-muted mt-2">Mengambil arsip surat keluar...</div></div>
-                <div id="ppSpKosong" class="text-center py-5 d-none"><i class="bi bi-inbox fs-2 text-muted"></i><div class="fw-bold mt-1" id="ppSpKosongT">Tidak ada surat penawaran tersedia</div><div class="small text-muted" id="ppSpKosongP">Belum ada surat penawaran baru yang belum diklaim.</div></div>
-                <div class="table-responsive bg-white rounded-3 border" id="ppSpTblWrap">
+                <div class="bg-white rounded-3 border overflow-hidden" id="ppSpTblWrap">
+                    <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead><tr><th class="text-center" style="width:44px">No</th><th style="width:200px">Nomor &amp; Tgl Surat</th><th style="width:220px">Instansi / Customer</th><th>Perihal &amp; Keterangan</th><th class="text-center" style="width:80px">Berkas</th><th class="text-center" style="width:100px">Aksi</th></tr></thead>
                         <tbody id="ppSpBody"></tbody>
                     </table>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer py-2 px-4"><small class="text-muted me-auto">Surat yang sudah diklaim tidak muncul lagi di daftar order Kalibrasi lain.</small><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button></div>
@@ -449,6 +583,8 @@
 
 <script>
 window.PO_SAVED = {{ @po_json | raw }};
+window.MASTER_NAMA = {{ @master_pelaksana_json | raw }};      // [nama pegawai, ...] Master Tim Pelaksana PO layanan Kalibrasi (aktif)
+window.MASTER_JABATAN = {{ @jabatan_pelaksana_json | raw }};  // [nama jabatan, ...] Master Jabatan Pelaksana PO layanan Kalibrasi (aktif)
 window.PO_KLAIM = {{ @klaim_json | raw }};   // surat penawaran yang sedang diklaim order ini (null = belum)
 window.PO_CSRF = '{{ @csrf_po }}';
 window.PP_LIVE_TEXT = 'Tersinkronisasi';
@@ -486,7 +622,7 @@ window.PO_URLS = {
         { tugas: 'Pengendali Dokumen', uraian: 'Mengendalikan Dokumen integrasi ISO 9001:2015 & ISO 17025:2017' }
     ];
 
-    var DEF_DASAR = '<ol><li>Permintaan dari [perusahaan] pada ...</li><li>Bukti bayar dari [perusahaan] pada ...</li></ol>';
+    var DEF_DASAR = '<ol><li>Permintaan dari [perusahaan] pada ...</li></ol>';   // baris "Bukti bayar" ditambahkan dari pilihan tanggal bukti bayar
     var DEF_TUJUAN = '<p>Membantu menjaga ketelitian dan kebenaran penunjukkan peralatan laboratorium dari [perusahaan]</p><p>Alamat : [alamat]</p>';
     var DEF_RUANG = '<p>List Alat yang dilayani jasa kalibrasi BBSPJIS terlampir pada Surat Penawaran dari BBSPJIS Nomor [no_penawaran] tanggal [tgl_penawaran] dengan [perusahaan]. Dengan rincian sebagai berikut:</p>';
 
@@ -494,18 +630,19 @@ window.PO_URLS = {
         var d = new Date();
         return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
     }
-    function newBaris() { return { uraian: '', qty: 1, satuan: '', tarif: 0, hari: '', faktor: '' }; }
-    function newSub() { return { nama: '', tampilTotal: 1, persen: '', baris: [newBaris()], bp: [{ nama: '', persen: '' }] }; }
+    var DURASI = ['hari', 'malam', 'kali', 'bulan'];
+    function newBaris() { return { uraian: '', qty: '', satuan: '', tarif: 0, hari: '', durSat: 'hari', faktor: '', jumlah: 0 }; }
+    function newSub() { return { nama: '', tampilTotal: 1, persen: '', mode: 'nilai', baris: [newBaris()], bp: [{ nama: '', persen: '' }] }; }
     function newKel() { return { nama: '', tipe: 'harga', persen: '', subs: [newSub()] }; }
     function T(nama, i) { return { nama: nama, tugas: ROLES[i].tugas, uraian: ROLES[i].uraian }; }
 
     function blank0() {
         return {
             urut: '', tanggal: todayMonth(), perusahaan: '', alamat: '', judul: '',
-            noPenawaran: '', tglPenawaran: '', idSuratKeluar: '',
+            noPenawaran: '', tglPenawaran: '', idSuratKeluar: '', tglBuktiBayar: '', tglPermintaan: '', kunci: { dasar: true, tujuan: true, ruang: true },
             dasar: DEF_DASAR, tujuan: DEF_TUJUAN, ruang: DEF_RUANG,
-            alat: [{ nama: '', jumlah: 1, menit: '', ket: 'Insitu' }],
-            tim: ROLES.map(function (r) { return { nama: '', tugas: r.tugas, uraian: r.uraian }; }),
+            alat: [{ nama: '', jumlah: 1, menit: '', ket: '' }],
+            tim: [{ nama: '', tugas: '', uraian: '' }],   // form baru: satu baris kosong; anggota lain ditambah lewat Pilih dari daftar pegawai
             rab: { kalibrasi: 0, transport: 0, kel: [] },
             jadwal: {
                 bulan: '', tahun: '', kolom: ['1', '2', '3', '4'],
@@ -518,37 +655,6 @@ window.PO_URLS = {
             }
         };
     }
-
-    /* ---------------- DATA CONTOH (dari PO yang dikirim) ---------------- */
-    var SAMPLES = {
-        'mitra': function () {
-            var s = blank();
-            s.perusahaan = 'PT Contoh Kalibrasi';
-            s.alamat = 'Jl. Contoh No. 1, Kec. Contoh, Kota Contoh, 40000';
-            s.noPenawaran = 'B/0004/BBSPJIS/MS/VI/2026'; s.tglPenawaran = '2026-06-15';
-            s.dasar = '<ol><li>Permintaan dari [perusahaan] pada 14 Juni 2026</li><li>Bukti bayar dari [perusahaan] pada 2026</li></ol>';
-            s.alat = [{ nama: 'TDS Meter', jumlah: 1, menit: 120, ket: 'Insitu' }, { nama: 'pH Meter', jumlah: 1, menit: 120, ket: 'Insitu' }];
-            s.tim = [T('Pegawai A', 0), T('Pegawai B', 1), T('Pegawai C', 2), T('Pegawai D', 3),
-                T('Pegawai E', 5), T('Pegawai F', 4), T('Pegawai G', 5), T('Pegawai H', 5),
-                T('Pegawai I', 5), T('Pegawai J', 6), T('Pegawai K', 7), T('Pegawai L', 8)];
-            s.rab.kalibrasi = 1000000; s.rab.transport = 100000;
-            s.rab.kel = [
-                { nama: 'Biaya Layanan Kepada Klien', tipe: 'harga', persen: '', subs: [
-                    { nama: 'Perjalanan Dinas Ke Kota A (Dalam rangka kalibrasi alat PT Contoh Kalibrasi )', tampilTotal: 0, persen: '', bp: [],
-                      baris: [{ uraian: 'Lumsum petugas', qty: 1, satuan: 'orang', tarif: 200000, hari: '', faktor: '' }] },
-                    { nama: 'Transportasi', tampilTotal: 1, persen: '', bp: [],
-                      baris: [{ uraian: 'Tol dan Bensin (estimasi BBM dexlite)', qty: 1, satuan: '', tarif: 100000, hari: '', faktor: '' }] }
-                ] },
-                { nama: 'Biaya Penunjang Layanan Kepada Klien', tipe: 'persen', persen: 100, subs: [
-                    { nama: 'Biaya Operasional', tampilTotal: 1, persen: 40, baris: [], bp: [{ nama: 'Bahan Kimia', persen: '' }] },
-                    { nama: 'Biaya Non Operasional', tampilTotal: 1, persen: 60, baris: [], bp: [{ nama: 'operasional balai', persen: '' }] }
-                ] }
-            ];
-            s.ttd.ketua = PoTtd.baru({ ketua: { nama: 'Pegawai B', nip: '', jabatan: 'Ketua Tim Kalibrasi' } }).ketua;
-            s.ttd.mengetahui = PoTtd.baru({ mengetahui: { nama: 'Pegawai A', nip: '' } }).mengetahui;
-            return s;
-        }
-    };
 
     function blank() { var s0 = blank0(); s0.ttd = PoTtd.baru(); return s0; }
     var S = blank();
@@ -602,8 +708,13 @@ window.PO_URLS = {
     }
 
     /* ---------------- hitungan ---------------- */
+    // rincian berupa baris Jml x Harga: kategori Harga langsung, atau sub-rincian bermode Nilai langsung di kategori Persen
+    function pakaiBaris(k, s) { return k.tipe === 'harga' || s.mode === 'nilai'; }
+    // Harga satuan diisi: jumlah dihitung otomatis (Jml x Harga x Hari x %). Kalau kosong: jumlah diketik langsung.
+    function qtyBaris(it) { return (it.qty === '' || it.qty == null) ? 1 : num(it.qty); }   // Jml dikosongi = 1
     function hargaBaris(it) {
-        return Math.round(num(it.qty) * num(it.tarif) * (num(it.hari) || 1) * (it.faktor === '' || it.faktor == null ? 100 : num(it.faktor)) / 100);
+        if (num(it.tarif) > 0) { return Math.round(qtyBaris(it) * num(it.tarif) * (num(it.hari) || 1) * (it.faktor === '' || it.faktor == null ? 100 : num(it.faktor)) / 100); }
+        return Math.round(num(it.jumlah));
     }
     function calc() {
         var r = S.rab, c = {};
@@ -630,19 +741,27 @@ window.PO_URLS = {
             var o = c.kel[i]; c.adaPersen = true;
             o.amt = Math.round(c.base * num(k.persen) / 100);
             c.pctTot = r4(c.pctTot + num(k.persen));
-            var spTot = 0;
+            var spTot = 0, adaNilai = false;
             k.subs.forEach(function (s, j) {
                 var so = o.subs[j], bp = s.bp || [];
+                if (s.mode === 'nilai') {   // rincian diisi nilai langsung (Rp), tidak ikut persen kategori
+                    adaNilai = true; so.bar = (s.baris || []).map(hargaBaris); so.amt = sum(so.bar); return;
+                }
                 so.amt = Math.round(o.amt * num(s.persen) / 100); spTot += num(s.persen);
                 so.bar = bp.map(function (b) {
                     return (bp.length === 1 && (b.persen === '' || b.persen == null)) ? so.amt : Math.round(so.amt * num(b.persen) / 100);
                 });
                 if (bp.length > 1) {
                     var bt = r4(sum(bp.map(function (b) { return num(b.persen); })));
-                    if (Math.abs(bt - 100) > 0.001) { c.warn.push('Baris di "' + (s.nama || 'sub-kelompok') + '" totalnya ' + bt + '%, seharusnya 100%.'); }
+                    if (Math.abs(bt - 100) > 0.001) { c.warn.push('Baris di "' + (s.nama || 'rincian') + '" totalnya ' + bt + '%, seharusnya 100%.'); }
                 }
             });
-            if (k.subs.length && Math.abs(r4(spTot) - 100) > 0.001) { c.warn.push('Sub-kelompok di "' + (k.nama || 'kelompok ' + (i + 1)) + '" totalnya ' + r4(spTot) + '%, seharusnya 100%.'); }
+            o.tot = sum(o.subs.map(function (x) { return x.amt; })); o.adaNilai = adaNilai;
+            if (adaNilai) {
+                var nk = '"' + (k.nama || 'kategori ' + (i + 1)) + '"';
+                if (o.tot - o.amt > 0.5) { c.warn.push('Total rincian di ' + nk + ' melebihi nilai kategori (lebih Rp ' + rupiah(o.tot - o.amt) + ').'); }
+                else if (o.amt - o.tot > 0.5) { c.warn.push('Rincian di ' + nk + ' masih kurang Rp ' + rupiah(o.amt - o.tot) + ' dari nilai kategori.'); }
+            } else if (k.subs.length && Math.abs(r4(spTot) - 100) > 0.001) { c.warn.push('Rincian di "' + (k.nama || 'kategori ' + (i + 1)) + '" totalnya ' + r4(spTot) + '%, seharusnya 100%.'); }
         });
         c.total = sum(c.kel.map(function (o) { return o.amt; }));
         // 3) alat
@@ -653,20 +772,21 @@ window.PO_URLS = {
     }
     // rumus ditampilkan hanya kalau baris memang dihitung (ada jumlah >1 / satuan / hari / persen)
     function rumusText(it) {
-        var q = num(it.qty), sat = String(it.satuan || '').trim(), hari = num(it.hari);
+        if (num(it.tarif) <= 0) { return ''; }   // jumlah diketik langsung: tidak ada rumus
+        var q = qtyBaris(it), sat = String(it.satuan || '').trim(), hari = num(it.hari), ds = it.durSat || 'hari';
         var fk = !(it.faktor === '' || it.faktor == null) && num(it.faktor) !== 100;
-        if (q === 1 && !sat && hari <= 1 && !fk) { return ''; }
+        if (q === 1 && !sat && hari <= 1 && ds === 'hari' && !fk) { return ''; }
         var s = ' (@' + rupiah(num(it.tarif)) + ')';
-        if (hari > 1) { s += ' x ' + hari + ' hari'; }
+        if (hari > 1 || (hari === 1 && ds !== 'hari')) { s += ' x ' + hari + ' ' + ds; }
         if (fk) { s += ' x ' + num(it.faktor) + '%'; }
         return s;
     }
     // [jml] di nama diganti "4 orang"; kalau tidak ada, "4 orang" ditaruh setelah nama (hanya bila satuan diisi)
     function labelBaris(it) {
-        var q = num(it.qty), sat = String(it.satuan || '').trim(), nm = String(it.uraian || '');
-        var jml = sat ? q + ' ' + sat : String(q), out;
+        var qb = (it.qty === '' || it.qty == null), q = num(it.qty), sat = String(it.satuan || '').trim(), nm = String(it.uraian || '');
+        var jml = qb ? sat : (sat ? q + ' ' + sat : String(q)), out;
         if (nm.indexOf('[jml]') !== -1) { out = esc(nm).replace(/\[jml\]/g, esc(jml)); }
-        else { out = esc(nm) + (sat ? ' ' + esc(jml) : ''); }
+        else { out = esc(nm) + (sat ? ' ' + esc(jml) : ''); }   // Jml kosong + satuan diisi: hanya satuan
         return out + esc(rumusText(it));
     }
 
@@ -709,32 +829,32 @@ window.PO_URLS = {
             '<tr><td colspan="3" class="pp-b">Nilai Setelah Biaya Petugas</td><td></td><td></td></tr>';
         r.kel.forEach(function (k, i) {
             var o = c.kel[i], n = 1;
-            k.subs.forEach(function (s) { n += 1 + (k.tipe === 'harga' ? s.baris.length : s.bp.length); });
+            k.subs.forEach(function (s) { n += 1 + (pakaiBaris(k, s) ? s.baris.length : s.bp.length); });
             var pct = c.penerimaan > 0 ? koma(o.amt / c.penerimaan * 100, 1) : '0';
             out += '<tr><td rowspan="' + n + '" class="pp-c">' + (i + 1) + '.</td><td colspan="2" class="pp-b">' + esc(k.nama) + ' (' + pct + '%)</td>' + rp(o.amt, true) + '</tr>';
             k.subs.forEach(function (s, j) {
-                var so = o.subs[j], bars = k.tipe === 'harga' ? s.baris : s.bp, hd = esc(s.nama);
+                var so = o.subs[j], bars = pakaiBaris(k, s) ? s.baris : s.bp, hd = esc(s.nama);
                 if (k.tipe === 'harga') { if (s.tampilTotal) { hd += ' (Total : Rp ' + rupiah(so.amt) + ')'; } }
-                else { hd += ' (Rp ' + rupiah(so.amt) + ')'; }
+                else if (s.tampilTotal === undefined || s.tampilTotal) { hd += ' (Rp ' + rupiah(so.amt) + ')'; }
                 out += '<tr><td rowspan="' + (1 + bars.length) + '" class="pp-c">' + huruf(j, true) + '</td><td colspan="3" class="pp-b">' + hd + '</td></tr>';
                 bars.forEach(function (b, m) {
-                    out += '<tr><td>' + (k.tipe === 'harga' ? labelBaris(b) : esc(b.nama)) + '</td>' + rp(so.bar[m]) + '</tr>';
+                    out += '<tr><td>' + (pakaiBaris(k, s) ? labelBaris(b) : esc(b.nama)) + '</td>' + rp(so.bar[m]) + '</tr>';
                 });
             });
         });
         out += '<tr><td colspan="3" class="pp-b">Total Pengeluaran</td>' + rp(c.total, true) + '</tr>';
-        return '<table class="pp-sans pp-rab pp-narrow blk"><colgroup><col style="width:34px"><col style="width:34px"><col><col style="width:34px"><col style="width:98px"></colgroup><tbody>' + out + '</tbody></table>';
+        return '<table class="pp-sans pp-rab blk"><colgroup><col style="width:34px"><col style="width:34px"><col><col style="width:34px"><col style="width:98px"></colgroup><tbody>' + out + '</tbody></table>';
     }
 
     function jadwalTtdHtml() {
         var jd = S.jadwal, n = Math.max(jd.kolom.length, 1), bt = bulanTahun();
         var bulan = jd.bulan || bt.b, tahun = jd.tahun || (bt.y === '....' ? '' : bt.y);
-        var cw = Math.floor(280 / n);
+        var cw = Math.floor(360 / n);
         var rows = jd.rows.map(function (r, i) {
             return '<tr style="height:28px"><td class="pp-c">' + (i + 1) + '.</td><td class="pp-l">' + esc(r.nama) + '</td>' +
                 jd.kolom.map(function (k, j) { return '<td' + (r.on[j] ? ' class="pp-dark"' : '') + '></td>'; }).join('') + '</tr>';
         }).join('') || '<tr><td colspan="' + (n + 2) + '" class="pp-c pp-ph">Belum ada kegiatan</td></tr>';
-        var tbl = '<table class="pp-sans pp-narrow blk" style="font-family:\'Times New Roman\',Times,serif;font-size:10.5pt"><colgroup><col style="width:50px"><col>' +
+        var tbl = '<table class="pp-sans blk" style="font-family:\'Times New Roman\',Times,serif;font-size:10.5pt"><colgroup><col style="width:50px"><col>' +
             jd.kolom.map(function () { return '<col style="width:' + cw + 'px">'; }).join('') + '</colgroup><thead>' +
             '<tr><th rowspan="3" style="background:#fff">No.</th><th rowspan="3" style="background:#fff">Kegiatan</th><th colspan="' + n + '" style="background:#fff">' + esc(bulan) + '</th></tr>' +
             '<tr><th colspan="' + n + '" style="background:#fff">' + esc(tahun) + '</th></tr>' +
@@ -814,6 +934,7 @@ window.PO_URLS = {
     function schedule() { if (pending) { return; } pending = true; requestAnimationFrame(function () { pending = false; render(); }); }
 
     function render() {
+        autoSync();
         var c = calc(), host = $('ppMeasure');
         host.innerHTML = docHtml(c);
         var pages = paginate(host), out = $('pvPages');
@@ -854,28 +975,51 @@ window.PO_URLS = {
         var rpx = function (id, v) { var el = $(id); if (el) { el.textContent = rupiah(v); } };
         S.alat.forEach(function (a, i) { var el = $('alatJam' + i); if (el) { el.textContent = koma(c.alat[i].jam, 1); } });
         S.rab.kel.forEach(function (k, i) {
-            var o = c.kel[i]; rpx('kelJml' + i, o.amt);
+            var o = c.kel[i]; rpx('kelJml' + i, o.amt); rpx('kelJmlR' + i, o.amt);
+            var pct = '(' + koma(c.penerimaan > 0 ? o.amt / c.penerimaan * 100 : 0, 1) + '%)';
+            var pe = $('kelPct' + i); if (pe) { pe.textContent = pct; }
+            pe = $('kelPctR' + i); if (pe) { pe.textContent = pct; }
+            var rt = rabRingTeks(k), ne = $('kelNmR' + i), se = $('kelSubR' + i);
+            if (ne) { ne.textContent = rt.nm || '(kategori belum diberi nama)'; ne.className = rt.nm ? '' : 'pr-ph'; }
+            if (se) { se.textContent = rt.sub; }
+            var ce = $('kelCek' + i);
+            if (ce) {
+                var bat = o.amt, pak = o.tot == null ? bat : o.tot, sis = bat - pak, pas = Math.abs(sis) < 0.5, pr = bat > 0 ? Math.min(100, pak / bat * 100) : 0;
+                ce.className = 'pr-bud ' + (pas ? 'ok' : (sis < 0 ? 'bad' : ''));
+                ce.innerHTML = '<div class="bk"><span>Nilai kategori <b>Rp ' + rupiah(bat) + '</b> (' + num(k.persen) + '% dari nilai setelah biaya petugas)</span><span>' + (pas ? 'Pas, tidak ada sisa' : (sis < 0 ? 'Lebih <b>Rp ' + rupiah(-sis) + '</b>' : 'Sisa <b>Rp ' + rupiah(sis) + '</b>')) + '</span></div><div class="bar"><i style="width:' + pr + '%"></i></div><div class="bs">Terpakai Rp ' + rupiah(pak) + '</div>';
+            }
             k.subs.forEach(function (s, j) {
                 rpx('subJml' + i + '_' + j, o.subs[j].amt);
-                o.subs[j].bar.forEach(function (v, m) { rpx('barJml' + i + '_' + j + '_' + m, v); });
+                o.subs[j].bar.forEach(function (v, m) {
+                    var el = $('barJml' + i + '_' + j + '_' + m); if (!el) { return; }
+                    if (el.tagName !== 'INPUT') { el.textContent = rupiah(v); return; }
+                    var br = (s.baris || [])[m], au = !!br && num(br.tarif) > 0;
+                    el.readOnly = au;
+                    if (au) { el.value = rupiah(v); }
+                    else if (document.activeElement !== el) { el.value = br && br.jumlah ? rupiah(num(br.jumlah)) : ''; }
+                });
             });
         });
-        var sm = function (l, v, cls) { return '<div class="' + (cls || '') + '"><span>' + l + '</span><span>Rp ' + rupiah(v) + '</span></div>'; };
-        $('ppSum').innerHTML = sm('Total Penerimaan', c.penerimaan) + sm('Biaya langsung (kelompok Harga langsung)', c.langsung) +
-            sm('Nilai Setelah Biaya Petugas', c.base) +
-            S.rab.kel.map(function (k, i) { return sm((i + 1) + '. ' + esc(k.nama) + (k.tipe === 'persen' ? ' ' + num(k.persen) + '%' : ''), c.kel[i].amt); }).join('') +
-            sm('Total Pengeluaran', c.total, 'tot');
+        var sel = c.penerimaan - c.total, box = $('ppKpiBox'), t = $('ppKpiS'), cls = sel === 0 ? 'ok' : (sel > 0 ? 'warn' : 'bad');
+        $('ppKpiT').textContent = 'Rp ' + rupiah(c.penerimaan); $('ppKpiK').textContent = 'Rp ' + rupiah(c.total);
+        box.className = 'pr-kpi ' + cls;
+        t.style.color = sel === 0 ? '#15803d' : (sel > 0 ? '#b45309' : '#b91c1c');
+        $('ppKpiIco').textContent = sel === 0 ? '\u2713' : (sel > 0 ? '+' : '!');
+        t.textContent = sel === 0 ? 'Seimbang, semua penerimaan teralokasi' : (sel > 0 ? 'Sisa Rp ' + rupiah(sel) + ' belum teralokasi' : 'Kurang Rp ' + rupiah(-sel) + ' (melebihi penerimaan)');
         var w = c.warn.slice();
-        if (c.adaPersen && Math.abs(c.pctTot - 100) > 0.001) { w.push('Total persen kelompok = ' + c.pctTot + '%, seharusnya 100% supaya total pengeluaran sama dengan penerimaan.'); }
-        if (!c.adaPersen && S.rab.kel.length && c.base !== 0) { w.push('Belum ada kelompok bermode Persen, sisa Rp ' + rupiah(c.base) + ' dari penerimaan belum teralokasi.'); }
+        if (c.adaPersen && Math.abs(c.pctTot - 100) > 0.001) { w.push('Total persen kategori = ' + c.pctTot + '%, seharusnya 100% supaya total pengeluaran sama dengan penerimaan.'); }
+        if (!c.adaPersen && S.rab.kel.length && c.base !== 0) { w.push('Belum ada kategori bermode Persen, sisa Rp ' + rupiah(c.base) + ' dari penerimaan belum teralokasi.'); }
         if (c.base < 0) { w.push('Biaya langsung melebihi penerimaan.'); }
         $('ppRabWarn').innerHTML = w.map(function (x) { return '<div class="pp-warn"><i class="bi bi-exclamation-triangle me-1"></i>' + x + '</div>'; }).join('');
-        $('dlNama').innerHTML = S.tim.filter(function (t) { return t.nama; }).map(function (t) { return '<option value="' + esc(t.nama) + '">'; }).join('');
     }
 
     /* ---------------- form: tabel dinamis ---------------- */
     var inp = function (list, i, k, v, extra) {
         return '<input class="form-control form-control-sm" data-list="' + list + '" data-i="' + i + '" data-k="' + k + '" value="' + esc(v) + '" ' + (extra || '') + '>';
+    };
+    var cg = function (w, ak) {
+        var f = ak ? 0.88 : 1;
+        return '<colgroup>' + w.map(function (x) { return '<col style="width:' + (Math.round(x * f * 10) / 10) + '%">'; }).join('') + (ak ? '<col style="width:84px">' : '') + '</colgroup>';
     };
     var ctl = function (list, i) {
         return '<button type="button" class="pp-ico mv" data-act="mv" data-list="' + list + '" data-i="' + i + '" data-dir="-1" title="Naik">&uarr;</button> ' +
@@ -883,14 +1027,64 @@ window.PO_URLS = {
             '<button type="button" class="pp-ico" data-act="del" data-list="' + list + '" data-i="' + i + '" title="Hapus">&times;</button>';
     };
 
+    // pilihan jabatan: Master Jabatan Pelaksana layanan Kalibrasi + tugas baku form ini; nilai tersimpan yang tidak ada di daftar tetap ditampilkan
+    function jabatanPilihan() {
+        var out = [];
+        (window.MASTER_JABATAN || []).concat(ROLES.map(function (r) { return r.tugas; })).forEach(function (n) { if (n && out.indexOf(n) < 0) { out.push(n); } });
+        return out;
+    }
+    function selJabatan(i, v) {
+        var opt = '<option value=""' + (v ? '' : ' selected') + ' disabled hidden>Pilih jabatan...</option>', ada = false;
+        jabatanPilihan().forEach(function (n) { if (n === v) { ada = true; } opt += '<option value="' + esc(n) + '"' + (n === v ? ' selected' : '') + '>' + esc(n) + '</option>'; });
+        if (v && !ada) { opt += '<option value="' + esc(v) + '" selected>' + esc(v) + '</option>'; }
+        return '<select class="form-select form-select-sm" data-list="tim" data-i="' + i + '" data-k="tugas">' + opt + '</select>';
+    }
+    // avatar inisial (warna tetap per nama)
+    var WARNA_AV = ['#2b3a4f', '#0e7490', '#7c3aed', '#b45309', '#be123c', '#15803d', '#4338ca', '#0f766e'];
+    function avTim(n) {
+        n = String(n || '');
+        var p = n.trim().split(/\s+/), h = 0, k;
+        for (k = 0; k < n.length; k++) { h = (h * 31 + n.charCodeAt(k)) % 997; }
+        return '<span class="pp-av" style="background:' + WARNA_AV[h % WARNA_AV.length] + '">' + esc(((p[0] || '').charAt(0) + (p[1] || '').charAt(0)).toUpperCase()) + '</span>';
+    }
     function buildTim() {
         $('ppTim').innerHTML = S.tim.map(function (t, i) {
-            return '<tr><td class="pp-no">' + (i + 1) + '</td><td style="min-width:130px">' + inp('tim', i, 'nama', t.nama, 'list="dlNama" placeholder="Nama petugas"') + '</td>' +
-                '<td style="min-width:130px">' + inp('tim', i, 'tugas', t.tugas, 'list="dlTugas"') + '</td>' +
+            var nm = t.nama
+                ? '<div class="pp-nm" tabindex="-1" data-list="tim" data-i="' + i + '" data-k="nama">' + avTim(t.nama) + '<b>' + esc(t.nama) + '</b><button type="button" class="pp-ganti" data-act="ganti-tim" data-i="' + i + '">ganti</button></div>'
+                : '<button type="button" class="btn btn-sm btn-outline-secondary w-100 text-start" data-act="pick-tim" data-list="tim" data-i="' + i + '" data-k="nama"><i class="bi bi-person-plus me-1"></i>Pilih pegawai...</button>';
+            return '<tr><td>' + nm + '</td>' +
+                '<td>' + selJabatan(i, t.tugas) + '</td>' +
                 '<td style="min-width:220px">' + ppMiniRte('data-list="tim" data-i="' + i + '" data-k="uraian"', t.uraian) + '</td>' +
-                '<td style="white-space:nowrap">' + ctl('tim', i) + '</td></tr>';
-        }).join('');
-        $('dlTugas').innerHTML = ROLES.map(function (r) { return '<option value="' + esc(r.tugas) + '">'; }).join('');
+                '<td class="text-end" style="white-space:nowrap">' + ctl('tim', i) + '</td></tr>';
+        }).join('') || '<tr><td colspan="4" class="text-center text-muted small py-3"><i class="bi bi-info-circle me-1"></i>Belum ada anggota. Klik <b>Pilih dari daftar pegawai</b>.</td></tr>';
+    }
+
+    /* jendela pilih pegawai (centang banyak): isi dari Master Tim Pelaksana layanan Kalibrasi */
+    var pkSel = [];
+    function pkTerpakai() { return S.tim.map(function (t) { return t.nama; }).filter(function (n) { return n; }); }
+    function pkGambar() {
+        var q = ($('ppPkCari').value || '').toLowerCase().trim(), tk = pkTerpakai(), daftar = window.MASTER_NAMA || [];
+        var L = daftar.filter(function (n) { return n.toLowerCase().indexOf(q) > -1; });
+        $('ppPkList').innerHTML = L.map(function (n) {
+            var off = tk.indexOf(n) > -1, on = pkSel.indexOf(n) > -1;
+            return '<div class="pp-pk-opt' + (off ? ' off' : '') + (on ? ' on' : '') + '"' + (off ? '' : ' data-n="' + esc(n) + '"') + '>' +
+                '<span class="pp-pk-chk">' + (on ? '&#10003;' : '') + '</span>' + avTim(n) + '<span>' + esc(n) + '</span>' + (off ? '<small>sudah di tim</small>' : '') + '</div>';
+        }).join('') || '<div class="text-center text-muted small py-4">' + (daftar.length ? 'Tidak ada pegawai yang cocok.' : 'Belum ada pegawai di Master Tim Pelaksana layanan ini.') + '</div>';
+        $('ppPkN').textContent = pkSel.length + ' orang dipilih';
+        var ok = $('ppPkOk'); ok.disabled = !pkSel.length; ok.textContent = pkSel.length ? 'Tambahkan ' + pkSel.length + ' orang' : 'Tambahkan';
+    }
+    function bukaPilihTim() {
+        pkSel = []; $('ppPkCari').value = ''; pkGambar();
+        $('ppPk').classList.add('open'); $('ppPk').setAttribute('aria-hidden', 'false');
+        setTimeout(function () { $('ppPkCari').focus(); }, 30);
+    }
+    function tutupPilihTim() { $('ppPk').classList.remove('open'); $('ppPk').setAttribute('aria-hidden', 'true'); }
+    function tambahkanPilihan() {
+        pkSel.forEach(function (n) {
+            var kosong = S.tim.filter(function (t) { return !t.nama; })[0];
+            if (kosong) { kosong.nama = n; } else { S.tim.push({ nama: n, tugas: '', uraian: '' }); }
+        });
+        tutupPilihTim(); buildTim(); schedule();
     }
 
     function buildAlat() {
@@ -899,62 +1093,90 @@ window.PO_URLS = {
                 '<td>' + inp('alat', i, 'jumlah', a.jumlah, 'type="number" min="0" step="any" style="width:70px"') + '</td>' +
                 '<td>' + inp('alat', i, 'menit', a.menit, 'type="number" min="0" step="any" style="width:80px" placeholder="120"') + '</td>' +
                 '<td class="pp-r" style="padding-top:8px" id="alatJam' + i + '">0</td>' +
-                '<td>' + inp('alat', i, 'ket', a.ket, 'list="dlKet" style="width:90px"') + '</td>' +
+                '<td>' + inp('alat', i, 'ket', a.ket, 'style="width:90px"') + '</td>' +
                 '<td style="white-space:nowrap">' + ctl('alat', i) + '</td></tr>';
         }).join('');
     }
 
+    function rabRingTeks(k) {
+        var nrin = k.subs.reduce(function (a, s) { return a + (pakaiBaris(k, s) ? (s.baris || []).length : (s.bp || []).length); }, 0);
+        return { nm: k.nama, sub: (k.tipe === 'harga' ? 'Harga langsung' : 'Persen ' + num(k.persen) + '% dari nilai setelah biaya petugas') + ' \u00b7 ' + k.subs.length + ' judul, ' + nrin + ' rincian' };
+    }
+    // buka/tutup tanpa membangun ulang, supaya animasinya jalan
+    function rabSetOpen(i) {
+        rabOpen = i;
+        Array.prototype.forEach.call($('ppKel').querySelectorAll('.pr-kat'), function (el) { el.classList.toggle('open', +el.dataset.k === i); });
+    }
+    var rabOpen = 0;   // kategori yang sedang terbuka (satu saja); -1 = semua terlipat
+    var rabAtur = false;   // mode Atur urutan: tombol naik/turun/hapus hanya tampil saat mode ini aktif
     function buildRab() {
-        $('ppKel').innerHTML = S.rab.kel.map(function (k, i) {
-            var lk = 'rab.kel.' + i;
-            var head = '<div class="pp-induk-h"><span class="pp-letter">' + (i + 1) + '</span>' +
-                '<input class="form-control form-control-sm" style="flex:1 1 150px;min-width:130px;width:auto" data-list="rab.kel" data-i="' + i + '" data-k="nama" value="' + esc(k.nama) + '" placeholder="Nama kelompok, mis. Biaya Layanan Kepada Klien">' +
-                '<select class="form-select form-select-sm" style="width:auto" data-list="rab.kel" data-i="' + i + '" data-k="tipe">' +
-                '<option value="harga"' + (k.tipe === 'harga' ? ' selected' : '') + '>Harga langsung</option>' +
-                '<option value="persen"' + (k.tipe === 'persen' ? ' selected' : '') + '>Persen dari nilai setelah biaya petugas</option></select>' +
-                (k.tipe === 'persen' ? '<div class="input-group input-group-sm" style="width:120px">' + inp('rab.kel', i, 'persen', k.persen, 'type="number" step="0.01" min="0" style="text-align:right" placeholder="mis. 100"') + '<span class="input-group-text">%</span></div>' : '') +
-                '<span style="white-space:nowrap">' + ctl('rab.kel', i) + '</span></div>';
+        var kels = S.rab.kel;
+        if (rabOpen >= kels.length) { rabOpen = kels.length - 1; }
+        $('ppKel').innerHTML = kels.map(function (k, i) {
+            var lk = 'rab.kel.' + i, no = i + 1;
+            var rt = rabRingTeks(k);
+            var ring = '<div class="pr-sw"><div class="pr-si"><div class="pr-ring ring" data-act="kel-open" data-i="' + i + '" role="button" tabindex="0"><span class="pr-lt">' + no + '</span>' +
+                '<div class="pr-rn"><b id="kelNmR' + i + '"' + (rt.nm ? '' : ' class="pr-ph"') + '>' + (esc(rt.nm) || '(kategori belum diberi nama)') + '</b><small id="kelSubR' + i + '">' + esc(rt.sub) + '</small></div>' +
+                '<div class="pr-rv">Rp <span id="kelJmlR' + i + '">0</span><span class="pr-bdg" id="kelPctR' + i + '"></span></div><span class="pr-chev">&#9660; Buka</span></div></div></div>';
+            var val = k.tipe === 'persen'
+                ? inp('rab.kel', i, 'persen', k.persen, 'type="number" step="0.01" min="0" placeholder="mis. 100" style="flex:0 0 84px;text-align:right"') + '<span class="pr-ad last">%</span>'
+                : '<span class="pr-ad last">otomatis: total rincian</span>';
+            var head = '<div class="pr-ig"><span class="pr-ad no">' + no + '</span>' +
+                '<button type="button" class="pr-chv" data-act="kel-open" data-i="-1" title="Lipat kategori" aria-label="Lipat kategori">&#9662;</button>' +
+                inp('rab.kel', i, 'nama', k.nama, 'placeholder="Nama kategori, mis. Biaya Layanan Kepada Klien" style="font-weight:600"') + val +
+                (rabAtur ? '<span class="pr-ad w">' + ctl('rab.kel', i) + '</span>' : '') + '</div>';
+            var seg = '<div class="pr-lb2">Cara menentukan nilai</div><div class="pr-seg" role="group" aria-label="Cara menentukan nilai">' +
+                '<button type="button" class="' + (k.tipe === 'harga' ? 'on' : '') + '" data-act="kel-tipe" data-i="' + i + '" data-tipe="harga">Harga langsung</button>' +
+                '<button type="button" class="' + (k.tipe === 'persen' ? 'on' : '') + '" data-act="kel-tipe" data-i="' + i + '" data-tipe="persen">Persen dari nilai setelah biaya petugas</button></div>' +
+                '<div class="pp-hint">' + (k.tipe === 'harga' ? 'Nilai kategori otomatis sama dengan total semua rincian di bawah.' : 'Persen hanya ada di kategori. Nilainya diambil dari penerimaan setelah dikurangi semua kategori Harga langsung, lalu menjadi batas untuk rincian a, b, c di bawah.') + '</div>' +
+                (k.tipe === 'persen' ? '<div class="pr-bud" id="kelCek' + i + '"></div>' : '');
             var subs = k.subs.map(function (s, j) {
-                var ls = lk + '.subs', bars = '';
-                var sh = '<div class="pp-induk-h"><span class="pp-letter sm">' + huruf(j, true) + '</span>' +
-                    '<input class="form-control form-control-sm" style="flex:1 1 150px;min-width:130px;width:auto" data-list="' + ls + '" data-i="' + j + '" data-k="nama" value="' + esc(s.nama) + '" placeholder="Judul sub-kelompok, mis. Transportasi">' +
-                    (k.tipe === 'persen'
-                        ? '<div class="input-group input-group-sm" style="width:120px">' + inp(ls, j, 'persen', s.persen, 'type="number" step="0.01" min="0" style="text-align:right" placeholder="mis. 40"') + '<span class="input-group-text">%</span></div>'
-                        : '<label class="small text-muted" style="white-space:nowrap"><input type="checkbox" class="me-1" data-list="' + ls + '" data-i="' + j + '" data-k="tampilTotal"' + (s.tampilTotal ? ' checked' : '') + '>tampilkan total di judul</label>') +
-                    '<span style="white-space:nowrap">' + ctl(ls, j) + '</span></div>';
-                if (k.tipe === 'harga') {
-                    bars = '<div class="table-responsive"><table class="pp-tbl"><thead><tr><th>Nama rincian</th><th>Jml</th><th>Satuan</th><th>Harga satuan (Rp)</th><th title="Opsional">Hari</th><th title="Opsional, mis. akomodasi 20%">%</th><th>Jumlah (Rp)</th><th></th></tr></thead><tbody>' +
-                        s.baris.map(function (b, m) {
-                            var lb = ls + '.' + j + '.baris';
-                            return '<tr><td style="min-width:150px">' + inp(lb, m, 'uraian', b.uraian, 'placeholder="mis. Lumsum petugas"') + '</td>' +
-                                '<td>' + inp(lb, m, 'qty', b.qty, 'type="number" min="0" step="any" style="width:56px"') + '</td>' +
-                                '<td>' + inp(lb, m, 'satuan', b.satuan || '', 'list="dlSatuan" placeholder="orang" style="width:78px"') + '</td>' +
-                                '<td>' + inp(lb, m, 'tarif', b.tarif ? rupiah(b.tarif) : '', 'data-type="money" inputmode="numeric" style="width:92px;text-align:right"') + '</td>' +
-                                '<td>' + inp(lb, m, 'hari', b.hari, 'type="number" min="1" step="any" style="width:56px"') + '</td>' +
-                                '<td>' + inp(lb, m, 'faktor', b.faktor, 'type="number" min="0" step="any" style="width:58px"') + '</td>' +
-                                '<td class="pp-r" style="white-space:nowrap;padding-top:8px" id="barJml' + i + '_' + j + '_' + m + '">0</td>' +
-                                '<td style="white-space:nowrap">' + ctl(lb, m) + '</td></tr>';
-                        }).join('') + '</tbody></table></div>' +
-                        '<div class="pp-hint">Jumlah = Jml &times; Harga satuan &times; Hari &times; %. <b>Satuan</b>, <b>Hari</b>, <b>%</b> opsional (kosong = tidak dipakai). Ketik <b>[jml]</b> di nama kalau jumlah + satuan mau ditaruh di tengah kalimat.</div>' +
-                        '<button type="button" class="btn btn-sm btn-outline-secondary mt-1" data-act="add" data-list="' + ls + '.' + j + '.baris"><i class="bi bi-plus-lg me-1"></i>Tambah rincian</button>';
-                } else {
-                    bars = '<div class="table-responsive"><table class="pp-tbl"><thead><tr><th>Nama rincian</th><th>%</th><th>Jumlah (Rp)</th><th></th></tr></thead><tbody>' +
+                var ls = lk + '.subs', bars = '', persenLama = k.tipe === 'persen' && s.mode !== 'nilai';
+                var tt = s.tampilTotal === undefined ? 1 : s.tampilTotal, lb = ls + '.' + j;
+                var sh = '<div class="pr-subopt"><span class="pr-lt sm">' + huruf(j, true) + '</span>' +
+                    inp(ls, j, 'nama', s.nama, 'placeholder="Judul rincian, mis. Transportasi" style="flex:1 1 170px;min-width:130px;width:auto"') +
+                    (persenLama
+                        ? '<span class="pr-ig">' + inp(ls, j, 'persen', s.persen, 'type="number" step="0.01" min="0" placeholder="mis. 40" style="flex:0 0 66px;text-align:right"') + '<span class="pr-ad last">% dari kategori (lama)</span></span>' +
+                          '<button type="button" class="pr-pill" data-act="sub-nilai" data-i="' + i + '" data-j="' + j + '" title="Ubah rincian ini menjadi nilai langsung (Rp)">Ubah ke nilai langsung</button>'
+                        : '') +
+                    '<label><input type="checkbox" data-list="' + ls + '" data-i="' + j + '" data-k="tampilTotal"' + (tt ? ' checked' : '') + '>tampilkan total di judul</label>' +
+                    (rabAtur ? '<span style="white-space:nowrap;margin-left:auto">' + ctl(ls, j) + '</span>' : '') + '</div>';
+                var addBaris = '<button type="button" class="pr-pill" data-act="add" data-list="' + lb + '.baris"><i class="bi bi-plus-lg"></i>Tambah Rincian</button>';
+                if (persenLama) {
+                    bars = '<div class="table-responsive"><table class="pp-tbl pr-tbl">' + cg([56, 14, 30], rabAtur) + '<thead><tr><th>Nama rincian</th><th style="text-align:center">%</th><th class="pp-r">Jumlah (Rp)</th>' + (rabAtur ? '<th></th>' : '') + '</tr></thead><tbody>' +
                         s.bp.map(function (b, m) {
-                            var lb = ls + '.' + j + '.bp';
-                            return '<tr><td style="min-width:170px">' + inp(lb, m, 'nama', b.nama, 'placeholder="mis. Bahan Kimia"') + '</td>' +
-                                '<td>' + inp(lb, m, 'persen', b.persen, 'type="number" step="0.01" min="0" style="width:70px;text-align:right"') + '</td>' +
-                                '<td class="pp-r" style="white-space:nowrap;padding-top:8px" id="barJml' + i + '_' + j + '_' + m + '">0</td>' +
-                                '<td style="white-space:nowrap">' + ctl(lb, m) + '</td></tr>';
+                            var lq = lb + '.bp';
+                            return '<tr><td>' + inp(lq, m, 'nama', b.nama, 'placeholder="mis. Bahan Kimia"') + '</td>' +
+                                '<td>' + inp(lq, m, 'persen', b.persen, 'type="number" step="0.01" min="0" style="text-align:center"') + '</td>' +
+                                '<td class="pp-r" style="white-space:nowrap" id="barJml' + i + '_' + j + '_' + m + '">0</td>' +
+                                (rabAtur ? '<td class="ak">' + ctl(lq, m) + '</td>' : '') + '</tr>';
                         }).join('') + '</tbody></table></div>' +
-                        '<div class="pp-hint">Kalau hanya satu baris, % boleh dikosongi (otomatis seluruh nilai sub-kelompok).</div>' +
-                        '<button type="button" class="btn btn-sm btn-outline-secondary mt-1" data-act="add" data-list="' + ls + '.' + j + '.bp"><i class="bi bi-plus-lg me-1"></i>Tambah rincian</button>';
+                        '<div class="pp-hint">Rincian lama ini memakai persen. Kalau hanya satu baris, % boleh dikosongi. Klik <b>Ubah ke nilai langsung</b> untuk memakai jumlah Rp seperti rincian baru.</div>' +
+                        '<button type="button" class="pr-pill" data-act="add" data-list="' + lb + '.bp"><i class="bi bi-plus-lg"></i>Tambah Rincian</button>';
+                } else {
+                    var adaFaktor = (s.baris || []).some(function (b) { return !(b.faktor === '' || b.faktor == null); });   // kolom % hanya muncul untuk rincian lama yang memakainya
+                    bars = '<div class="table-responsive"><table class="pp-tbl pr-tbl">' + cg(adaFaktor ? [19, 6, 11, 15, 21, 7, 21] : [23, 6, 12, 16, 22, 21], rabAtur) + '<thead><tr><th>Keterangan</th><th style="text-align:center">Jml</th><th>Satuan</th><th class="pp-r">Harga satuan</th><th>Durasi</th>' + (adaFaktor ? '<th title="Faktor persen rincian lama" style="text-align:center">%</th>' : '') + '<th class="pp-r">Jumlah (Rp)</th>' + (rabAtur ? '<th></th>' : '') + '</tr></thead><tbody>' +
+                        s.baris.map(function (b, m) {
+                            var lq = lb + '.baris', auto = num(b.tarif) > 0;
+                            return '<tr><td>' + inp(lq, m, 'uraian', b.uraian, 'placeholder="mis. Lumsum petugas 4 orang"') + '</td>' +
+                                '<td>' + inp(lq, m, 'qty', b.qty, 'type="number" min="0" step="any" style="text-align:center"') + '</td>' +
+                                '<td>' + inp(lq, m, 'satuan', b.satuan || '', 'list="dlSatuan"') + '</td>' +
+                                '<td>' + inp(lq, m, 'tarif', b.tarif ? rupiah(b.tarif) : '', 'data-type="money" inputmode="numeric" style="text-align:right"') + '</td>' +
+                                '<td><div class="pr-dd">' + inp(lq, m, 'hari', b.hari, 'type="number" min="1" step="any" style="text-align:center"') +
+                                '<select class="form-select form-select-sm pr-sel" data-list="' + lq + '" data-i="' + m + '" data-k="durSat">' + DURASI.map(function (d) { return '<option value="' + d + '"' + ((b.durSat || 'hari') === d ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></div></td>' +
+                                (adaFaktor ? '<td>' + inp(lq, m, 'faktor', b.faktor, 'type="number" min="0" step="any" style="text-align:center"') + '</td>' : '') +
+                                '<td class="tj">' + inp(lq, m, 'jumlah', auto ? rupiah(hargaBaris(b)) : (b.jumlah ? rupiah(num(b.jumlah)) : ''), 'id="barJml' + i + '_' + j + '_' + m + '" data-type="money" inputmode="numeric" style="text-align:right;font-weight:700"' + (auto ? ' readonly' : '')) + '</td>' +
+                                (rabAtur ? '<td class="ak">' + ctl(lq, m) + '</td>' : '') + '</tr>';
+                        }).join('') + '</tbody></table></div>' +
+                        '<div class="pp-hint">Hanya Keterangan yang wajib. Kalau Harga satuan diisi, Jumlah dihitung otomatis (Jml &times; Harga satuan &times; Durasi); Jml kosong dihitung 1. Durasi bisa hari, malam, kali, atau bulan. Kalau Harga satuan dikosongkan, ketik Jumlah langsung.' + (k.tipe === 'persen' ? ' Jumlah semua rincian dibatasi oleh nilai kategori di atas.' : '') + '</div>' + addBaris;
                 }
-                return '<div class="pp-sub">' + sh + bars + '<div class="pp-r small mt-1">Jumlah sub-kelompok: <b>Rp <span id="subJml' + i + '_' + j + '">0</span></b></div></div>';
+                return sh + bars + '<div class="pr-subtot">Jumlah rincian: <b>Rp <span id="subJml' + i + '_' + j + '">0</span></b></div>';
             }).join('');
-            return '<div class="pp-induk">' + head + subs +
-                '<button type="button" class="btn btn-sm btn-outline-primary mt-2" data-act="add" data-list="' + lk + '.subs"><i class="bi bi-plus-lg me-1"></i>Tambah sub-kelompok</button>' +
-                '<div class="pp-r small mt-2">Jumlah kelompok: <b>Rp <span id="kelJml' + i + '">0</span></b></div></div>';
-        }).join('') || '<div class="pp-hint">Belum ada kelompok. Klik <b>Tambah kelompok</b> untuk mulai (1, 2, 3, ...).</div>';
+            var body = '<div class="pr-bw"><div class="pr-bi"><div class="pr-bp">' + head + seg + subs +
+                '<button type="button" class="pr-pill dark" data-act="add" data-list="' + lk + '.subs"><i class="bi bi-plus-lg"></i>Tambah Rincian dengan Judul Lain</button>' +
+                '<div class="pr-kt"><span>Subtotal Kategori</span><span><b>Rp <span id="kelJml' + i + '">0</span></b><span class="pr-bdg" id="kelPct' + i + '"></span></span></div></div></div></div>';
+            return '<div class="pr-kat' + (i === rabOpen ? ' open' : '') + '" data-k="' + i + '">' + ring + body + '</div>';
+        }).join('') || '<div class="pp-hint">Belum ada kategori. Klik <b>Tambah Kategori Biaya</b> untuk mulai (1, 2, 3, ...).</div>';
     }
 
     function buildJad() {
@@ -975,7 +1197,7 @@ window.PO_URLS = {
     function builderFor(list) { return BUILDERS[list] || (list.indexOf('rab.kel') === 0 ? buildRab : buildTim); }
     var NEWROW = {
         'tim': function () { return { nama: '', tugas: 'Teknisi', uraian: 'Melaksanakan Kalibrasi Peralatan' }; },
-        'alat': function () { return { nama: '', jumlah: 1, menit: '', ket: 'Insitu' }; },
+        'alat': function () { return { nama: '', jumlah: 1, menit: '', ket: '' }; },
         'rab.kel': newKel,
         'jadwal.rows': function () { return { nama: '', on: S.jadwal.kolom.map(function () { return 0; }) }; }
     };
@@ -997,15 +1219,95 @@ window.PO_URLS = {
         S.ttd = PoTtd.baru(S.ttd);
         ttdUi = PoTtd.mount($('ppTtd'), S.ttd, { kota: true, bulanTahun: ttdBulanTahun, ket_ketua: 'Ketua Tim Kalibrasi', onChange: function () { schedule(); } });
     }
+    /* ---------------- DASAR / TUJUAN / RUANG LINGKUP: teks otomatis + kunci ----------------
+       Terkunci: isi = templat otomatis (nama perusahaan, tanggal, dst. tampil apa adanya, bukan kode dalam kurung)
+       dan ikut berubah kalau datanya diganti. Dibuka kuncinya: isi diketik manual dan tidak berubah sendiri. */
+    var AUTO_RTE = ['dasar', 'tujuan', 'ruang'];
+    var ISO_TGL = /^\d{4}-\d{2}-\d{2}$/;
+    function terkunci(f) { return !!(S.kunci && S.kunci[f]); }
+    function autoTpl(f) {
+        if (f === 'tujuan') { return DEF_TUJUAN; }
+        if (f === 'ruang') { return DEF_RUANG; }
+        var h = '<li>Permintaan dari [perusahaan] pada ' + tglID(S.tglPermintaan) + '</li>';
+        if (S.tglBuktiBayar) { h += '<li>Bukti bayar dari [perusahaan] pada ' + tglID(S.tglBuktiBayar) + '</li>'; }
+        return '<ol>' + h + '</ol>';
+    }
+    /* yang tampil di editor: kode [perusahaan] dst. sudah diganti isinya */
+    function rteHtml(f) { return AUTO_RTE.indexOf(f) >= 0 ? tok(ppToHtml(S[f])) : ppToHtml(S[f]); }
+    function teksDari(h) { var d = document.createElement('div'); d.innerHTML = h || ''; return (d.textContent || '').replace(/\s+/g, ' ').trim(); }
+    function paintKunci(f) {
+        var w = document.querySelector('[data-rte="' + f + '"]'); if (!w) { return; }
+        var on = terkunci(f), body = w.querySelector('.pp-rte-body'), btn = w.querySelector('[data-lock]'), st = w.querySelector('.pp-rte-st');
+        w.classList.toggle('pp-locked', on);
+        body.contentEditable = on ? 'false' : 'true';
+        btn.className = 'pp-lock' + (on ? ' on' : '');
+        btn.innerHTML = on ? '<i class="bi bi-lock-fill"></i>Terkunci' : '<i class="bi bi-unlock"></i>Edit manual';
+        btn.title = on ? 'Klik untuk membuka kunci dan mengedit manual' : 'Klik untuk mengunci dan kembali ke teks otomatis';
+        st.innerHTML = '<i class="bi bi-info-circle"></i>' + (on ? 'Terkunci: isi mengikuti data di form secara otomatis.' : 'Edit manual: isi tidak ikut berubah lagi kalau data di form diganti.');
+    }
+    function autoSync() {
+        AUTO_RTE.forEach(function (f) {
+            var w = document.querySelector('[data-rte="' + f + '"]'); if (!w) { return; }
+            if (terkunci(f)) {
+                S[f] = autoTpl(f);
+                var body = w.querySelector('.pp-rte-body'), h = rteHtml(f);
+                if (w.dataset.last !== h) { body.innerHTML = h; w.dataset.last = h; }
+            }
+            paintKunci(f);
+        });
+    }
+    function ubahKunci(f) {
+        var w = document.querySelector('[data-rte="' + f + '"]'), ask = w.querySelector('.pp-rte-ask');
+        if (terkunci(f)) {
+            S.kunci[f] = false; S[f] = rteHtml(f); w.dataset.last = ''; ask.hidden = true;   // jadikan teks biasa (nama/tanggal sudah tertulis)
+            paintKunci(f); schedule(); w.querySelector('.pp-rte-body').focus();
+        } else if (teksDari(rteHtml(f)) === teksDari(tok(autoTpl(f)))) {
+            S.kunci[f] = true; w.dataset.last = ''; autoSync(); schedule();   // belum diubah: kunci langsung
+        } else { ask.hidden = !ask.hidden; }
+    }
+
+    /* Tanggal bukti bayar -> baris b Dasar. Terkunci: otomatis lewat autoSync. Edit manual: baris itu saja yang disentuh. */
+    function bayarUi() { $('ppTglBayarHapus').hidden = !S.tglBuktiBayar; }
+    function dasarBayar() {
+        var v = $('ppTglBayar').value;
+        S.tglBuktiBayar = ISO_TGL.test(v) ? v : '';
+        if (!terkunci('dasar')) {
+            var box = document.createElement('div'), li = null, i;
+            box.innerHTML = ppToHtml(S.dasar);
+            var lis = box.querySelectorAll('li');
+            for (i = 0; i < lis.length; i++) { if (/^\s*bukti\s+bayar/i.test(lis[i].textContent)) { li = lis[i]; break; } }
+            if (S.tglBuktiBayar) {
+                var teks = 'Bukti bayar dari ' + (S.perusahaan || '...') + ' pada ' + tglID(S.tglBuktiBayar);
+                if (li) { li.textContent = teks; }
+                else {
+                    var ol = box.querySelector('ol');
+                    if (!ol) { ol = document.createElement('ol'); box.appendChild(ol); }
+                    var baru = document.createElement('li'); baru.textContent = teks; ol.appendChild(baru);
+                }
+            } else if (li) {
+                var ortu = li.parentNode; ortu.removeChild(li);
+                if (!ortu.children.length && ortu.parentNode) { ortu.parentNode.removeChild(ortu); }
+            }
+            S.dasar = box.innerHTML;
+            document.querySelector('[data-rte="dasar"] .pp-rte-body').innerHTML = rteHtml('dasar');
+        }
+        bayarUi(); schedule();
+    }
+    $('ppTglBayar').addEventListener('change', dasarBayar);
+    $('ppTglBayar').addEventListener('input', dasarBayar);
+    $('ppTglBayarHapus').addEventListener('click', function () { $('ppTglBayar').value = ''; dasarBayar(); });
+
     function populate() { populate0(); pasangTtd(); }
     function populate0() {
         spSinkron();
+        autoSync();
         Array.prototype.forEach.call(document.querySelectorAll('#ppForm [data-bind]'), function (el) {
             var v = getPath(S, el.dataset.bind);
             fmtBind(el, v);
         });
-        Array.prototype.forEach.call(document.querySelectorAll('[data-rte]'), function (w) { w.querySelector('.pp-rte-body').innerHTML = ppToHtml(S[w.dataset.rte]); if (w.dataset.ph) { w.querySelector('.pp-rte-body').setAttribute('data-placeholder', w.dataset.ph); } });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-rte]'), function (w) { w.querySelector('.pp-rte-body').innerHTML = rteHtml(w.dataset.rte); if (w.dataset.ph) { w.querySelector('.pp-rte-body').setAttribute('data-placeholder', w.dataset.ph); } });
         buildTim(); buildAlat(); buildRab(); buildJad();
+        bayarUi();
         spTampil();
         render();
     }
@@ -1023,7 +1325,13 @@ window.PO_URLS = {
             return t === '|' ? '<span class="sep"></span>' : '<button type="button" data-cmd="' + t[0] + '" title="' + t[2] + '">' + t[1] + '</button>';
         }).join('') + '</div>';
         Array.prototype.forEach.call(document.querySelectorAll('[data-rte]'), function (w) {
-            w.innerHTML = bar + '<div class="pp-rte-body" contenteditable="true" spellcheck="true"></div>';
+            if (AUTO_RTE.indexOf(w.dataset.rte) >= 0) {
+                w.innerHTML = bar.replace(/<\/div>$/, '<span class="pp-sp"></span><button type="button" class="pp-lock on" data-lock="' + w.dataset.rte + '"></button></div>')
+                    + '<div class="pp-rte-body" contenteditable="false" spellcheck="true"></div><div class="pp-rte-st"></div>'
+                    + '<div class="pp-rte-ask" hidden><span>Kunci lagi? Teks kembali ke versi otomatis dan hasil ketikanmu hilang.</span><button type="button" class="btn btn-sm btn-light border" data-lk="no">Batal</button><button type="button" class="btn btn-sm btn-dark" data-lk="yes">Ya, kunci</button></div>';
+            } else {
+                w.innerHTML = bar + '<div class="pp-rte-body" contenteditable="true" spellcheck="true"></div>';
+            }
         });
     }
 
@@ -1031,6 +1339,14 @@ window.PO_URLS = {
 
     root.addEventListener('mousedown', function (e) { if (e.target.closest('.pp-rte-bar button')) { e.preventDefault(); } });
     root.addEventListener('click', function (e) {
+        var kb = e.target.closest('[data-lock]');
+        if (kb) { ubahKunci(kb.dataset.lock); return; }
+        var ya = e.target.closest('[data-lk]');
+        if (ya) {
+            var wk = ya.closest('[data-rte]'), fk = wk.dataset.rte;
+            if (ya.dataset.lk === 'yes') { S.kunci[fk] = true; wk.dataset.last = ''; autoSync(); schedule(); }
+            wk.querySelector('.pp-rte-ask').hidden = true; return;
+        }
         var b = e.target.closest('[data-cmd]');
         if (b) {
             var body = b.closest('.pp-rte').querySelector('.pp-rte-body'); body.focus();
@@ -1049,17 +1365,87 @@ window.PO_URLS = {
         var a = e.target.closest('[data-act]');
         if (!a) { return; }
         var act = a.dataset.act, list = a.dataset.list, i = +a.dataset.i;
-        if (act === 'add') { getPath(S, list).push(newRow(list)); builderFor(list)(); }
-        else if (act === 'del') { getPath(S, list).splice(i, 1); builderFor(list)(); }
+        if (act === 'pick-tim') { bukaPilihTim(); return; }
+        if (act === 'ganti-tim') { if (S.tim[i]) { S.tim[i].nama = ''; buildTim(); schedule(); } bukaPilihTim(); return; }
+        if (act === 'rab-atur') {
+            rabAtur = !rabAtur; buildRab();
+            var ba = $('ppRabAtur'); ba.classList.toggle('on', rabAtur); ba.querySelector('span').textContent = rabAtur ? 'Selesai mengatur' : 'Atur urutan';
+            return;
+        }
+        if (act === 'kel-open') { rabSetOpen(i); return; }
+        if (act === 'kel-tipe') {
+            var kk = S.rab.kel[i];
+            if (kk && kk.tipe !== a.dataset.tipe) {
+                kk.tipe = a.dataset.tipe;
+                if (!kk.subs.length) { kk.subs.push(newSub()); }
+                kk.subs.forEach(function (sb) {
+                    if (!(sb.baris || []).length) { sb.baris = [newBaris()]; }
+                    if (!(sb.bp || []).length) { sb.bp = [{ nama: '', persen: '' }]; }
+                    var adaPersenLama = sb.persen !== '' && sb.persen != null || sb.bp.some(function (b) { return b.nama || (b.persen !== '' && b.persen != null); });
+                    if (kk.tipe === 'persen' && !adaPersenLama) { sb.mode = 'nilai'; }
+                });
+                buildRab();
+            }
+            schedule(); return;
+        }
+        if (act === 'sub-nilai') {
+            var ks = S.rab.kel[i], sb = ks && ks.subs[+a.dataset.j];
+            if (sb && sb.mode !== 'nilai') {
+                var bar = calc().kel[i].subs[+a.dataset.j].bar;   // jumlah rincian persen lama diubah jadi nilai Rp
+                sb.baris = (sb.bp || []).map(function (b, m) { return { uraian: b.nama || '', qty: 1, satuan: '', tarif: Math.round(bar[m] || 0), hari: '', faktor: '' }; });
+                if (!sb.baris.length) { sb.baris = [newBaris()]; }
+                sb.mode = 'nilai'; sb.persen = '';
+                buildRab();
+            }
+            schedule(); return;
+        }
+        if (act === 'add') {
+            getPath(S, list).push(newRow(list)); builderFor(list)();
+            if (list === 'rab.kel') { void root.offsetWidth; rabSetOpen(S.rab.kel.length - 1); }   // kategori baru dibuka dengan animasi
+        }
+        else if (act === 'del') {
+            if (list === 'rab.kel') { if (rabOpen === i) { rabOpen = -1; } else if (rabOpen > i) { rabOpen--; } }
+            getPath(S, list).splice(i, 1); builderFor(list)();
+        }
         else if (act === 'mv') {
             var arr = getPath(S, list), j = i + (+a.dataset.dir);
-            if (j >= 0 && j < arr.length) { var t = arr[i]; arr[i] = arr[j]; arr[j] = t; builderFor(list)(); }
+            if (j >= 0 && j < arr.length) {
+                var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+                if (list === 'rab.kel') { if (rabOpen === i) { rabOpen = j; } else if (rabOpen === j) { rabOpen = i; } }
+                builderFor(list)();
+            }
         }
         else if (act === 'add-kolom') { S.jadwal.kolom.push(''); S.jadwal.rows.forEach(function (r) { r.on.push(0); }); buildJad(); }
         else if (act === 'del-kolom') {
             if (S.jadwal.kolom.length > 1) { S.jadwal.kolom.splice(i, 1); S.jadwal.rows.forEach(function (r) { r.on.splice(i, 1); }); buildJad(); }
         }
         schedule();
+    });
+
+    root.addEventListener('keydown', function (e) {
+        var t = e.target;
+        if ((e.key === 'Enter' || e.key === ' ') && t.classList && t.classList.contains('ring') && t.dataset.act === 'kel-open') { e.preventDefault(); rabSetOpen(+t.dataset.i); }
+    });
+
+    // kolom angka: scroll mouse tidak boleh mengubah nilai (angka hanya berubah lewat ketikan); halaman tetap ikut scroll
+    root.addEventListener('wheel', function (e) {
+        var t = e.target;
+        if (t && t.tagName === 'INPUT' && t.type === 'number' && document.activeElement === t) { t.blur(); }
+    }, { passive: true });
+
+    // kolom uang: titik ribuan langsung muncul saat mengetik (posisi kursor dijaga)
+    root.addEventListener('input', function (e) {
+        var t = e.target;
+        if (!t.dataset || t.dataset.type !== 'money') { return; }
+        var raw = t.value, pos = t.selectionStart == null ? raw.length : t.selectionStart;
+        var sebelum = raw.slice(0, pos).replace(/\D/g, '').length;
+        var d = raw.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+        var f = d ? rupiah(parseInt(d, 10)) : '';
+        if (f === raw) { return; }
+        t.value = f;
+        var n = 0, k = 0;
+        while (k < f.length && n < sebelum) { if (/\d/.test(f.charAt(k))) { n++; } k++; }
+        try { t.setSelectionRange(k, k); } catch (x) {}
     });
 
     function onInput(e) {
@@ -1129,6 +1515,20 @@ window.PO_URLS = {
         document.documentElement.classList.add('pp-embed');
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { kabariInduk('tutup'); } });
     }
+    var SLIDE = EMBED && /[?&]slide=1(&|$)/.test(window.location.search);
+    if (SLIDE) {
+        document.documentElement.classList.add('pp-slide');
+        if (window.PP_Z) { PP_Z.mode = 'manual'; PP_Z.scale = 1; }   // dokumen mulai di 100%, seperti slide PO lain
+        window.addEventListener('message', function (e) {
+            if (e.origin !== window.location.origin || !e.data || !e.data.kalCmd) { return; }
+            if (e.data.kalCmd === 'zoom') {
+                var zb = document.querySelector('.pp-zoom [data-z="' + e.data.k + '"]'); if (zb) { zb.click(); }
+                setTimeout(kabariZoom, 120);
+            } else if (e.data.kalCmd === 'cetak') { $('ppPrint').click(); }
+        });
+    }
+    function kabariZoom() { var lb = $('ppZoomLabel'); kabariInduk2({ poPreview: 'zoom', label: lb ? lb.textContent : '' }); }
+    function kabariInduk2(o) { try { window.parent.postMessage(o, window.location.origin); } catch (e) {} }
     function kabariInduk(pesan) { try { window.parent.postMessage({ poPreview: pesan }, window.location.origin); } catch (e) {} }
     function kembaliKeDaftar() {
         var ref = document.referrer || '';
@@ -1149,38 +1549,27 @@ window.PO_URLS = {
     modal.addEventListener('click', function (e) { if (e.target === modal) { tutupPreview(); } });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) { tutupPreview(); } });
     $('ppPrint').addEventListener('click', function () { render(); window.print(); });
-    $('ppReset').addEventListener('click', function () {
-        if (confirm('Kosongkan semua isian form?')) { S = blank(); populate(); }
-    });
-    $('ppSample').addEventListener('change', function () {
-        var k = this.value; this.value = '';
-        if (!k || !SAMPLES[k]) { return; }
-        if (confirm('Isi form dengan data PO contoh? Isian yang sekarang akan diganti.')) {
-            S = SAMPLES[k]();
-            populate();
-        }
-    });
     window.addEventListener('resize', fit);
 
     /* ---------------- ISI AWAL DARI ORDER (tb_arsip_kalibrasi) ---------------- */
-    var ORDER = {{ @order_json | raw }};   // satu order kalibrasi: {id, nomor, mitra, alamat, tipe, tgl_order, berangkat, pulang, target, teknisi, biaya, alat}
+    var ORDER = {{ @order_json | raw }};   // satu order kalibrasi: {id, nomor, mitra, alamat, tempat, tgl_order, berangkat, pulang, target, teknisi, biaya, alat}
     function isiDariOrder(o) {
         S.perusahaan = o.mitra || '';
         S.alamat = o.alamat || '';
         if (/^\d{4}-\d{2}-\d{2}$/.test(o.tgl_order || '')) {
-            S.dasar = DEF_DASAR.replace('Permintaan dari [perusahaan] pada ...', 'Permintaan dari [perusahaan] pada ' + tglID(o.tgl_order));
+            S.tglPermintaan = o.tgl_order;   // baris a Dasar mengikuti tanggal order (selama Dasar terkunci)
         }
         // 3. Ruang lingkup: satu baris per alat (jumlah 1; waktu per unit diisi manual)
-        var ket = o.tipe === 'insitu' ? 'Insitu' : 'Inlab';
         if (o.alat && o.alat.length) {
             S.alat = o.alat.map(function (a) {
                 var nama = a.nama || a.tipe || '';
                 var rinci = [a.merk, a.nama ? a.tipe : '', a.kapasitas, a.sn ? 'SN ' + a.sn : ''].filter(Boolean).join(' ');
-                return { nama: rinci ? nama + ' (' + rinci + ')' : nama, jumlah: 1, menit: '', ket: ket };
+                return { nama: rinci ? nama + ' (' + rinci + ')' : nama, jumlah: 1, menit: '', ket: '' };
             });
         }
         // 4. Tim pelaksana: teknisi order mengisi baris bertugas "Teknisi" secara berurutan; kelebihannya jadi baris baru
         if (o.teknisi && o.teknisi.length) {
+            if (S.tim.length === 1 && !S.tim[0].nama && !S.tim[0].tugas && !S.tim[0].uraian) { S.tim = []; }   // baris kosong bawaan diganti teknisi order
             var idx = [];
             S.tim.forEach(function (t, i) { if (/teknisi/i.test(t.tugas)) { idx.push(i); } });
             o.teknisi.forEach(function (nm, k) {
@@ -1188,18 +1577,15 @@ window.PO_URLS = {
                 else { S.tim.push({ nama: nm, tugas: 'Teknisi', uraian: 'Melaksanakan Kalibrasi Peralatan' }); }
             });
         }
-        // 5. RAB: transportasi terpisah; sisanya (kerja sama + in-situ + pembulatan) = biaya kalibrasi dan petugas
-        var b = o.biaya || {};
-        S.rab.transport = Math.round(b.transportasi || 0);
-        S.rab.kalibrasi = Math.max(0, Math.round((b.total || 0) - (b.transportasi || 0)));
+        // 5. RAB: nilai kontrak (kalibrasi + petugas, transportasi) diisi manual oleh pembuat PO, tidak diambil dari order
         // 6. Jadwal: bulan & tahun mengikuti keberangkatan (cadangan: target selesai / tanggal order)
         var m = /^(\d{4})-(\d{2})/.exec(o.berangkat || o.target || o.tgl_order || '');
         if (m) { S.jadwal.bulan = BULAN[parseInt(m[2], 10) - 1]; S.jadwal.tahun = m[1]; }
     }
     function isiBarOrder(o) {
-        $('ppObText').textContent = 'Nomor Order: ' + (o.nomor || '-') + ' \u2022 ' + (o.mitra || '-') + ' (' + (o.tipe === 'insitu' ? 'In-situ' : 'Di lab') + ')';
+        $('ppObText').textContent = 'Nomor Order: ' + (o.nomor || '-') + ' \u2022 ' + (o.mitra || '-');
         $('ppOrderInfo').hidden = false;
-        var isi = { nomor: o.nomor || '-', mitra: o.mitra || '-', tgl_order: o.tgl_order ? tglID(o.tgl_order) : '-', lokasi: o.tipe === 'insitu' ? 'In-situ' : 'Di lab', uraian: o.uraian || '-' };
+        var isi = { nomor: o.nomor || '-', mitra: o.mitra || '-', tgl_order: o.tgl_order ? tglID(o.tgl_order) : '-', lokasi: o.tempat || '-', uraian: o.uraian || '-' };
         Array.prototype.forEach.call(document.querySelectorAll('[data-order]'), function (el) { el.textContent = isi[el.dataset.order] || '-'; });
         $('ppOrderCard').hidden = false;
     }
@@ -1216,6 +1602,7 @@ window.PO_URLS = {
         // PO yang sudah tersimpan: isi form dari data tersimpan (bukan dari order)
         var b0 = blank();
         S = PO_SAVED.data;
+        if (S.kunci === undefined) { S.kunci = { dasar: false, tujuan: false, ruang: false }; }   // PO lama: isi yang sudah tersimpan tidak ditimpa otomatis
         Object.keys(b0).forEach(function (k) { if (S[k] === undefined) { S[k] = b0[k]; } });
         if (!PO_SAVED.nomor) { S.tanggal = todayMonth(); }   // belum bernomor: bulan/tahun mengikuti hari ini
         $('ppObGanti').hidden = true;
@@ -1433,29 +1820,39 @@ window.PO_URLS = {
         if (!ORDER || !ORDER.id) { popup('error', 'Order belum dipilih', 'Pilih order kalibrasi dulu.'); return; }
         var el = $('ppSpModal');
         if (el.parentNode !== document.body) { document.body.appendChild(el); document.body.appendChild($('ppSpPv')); }
-        $('ppSpCari').value = '';
+        $('ppSpCari').value = ''; spJmlTeks = ''; $('ppSpBody').innerHTML = '';
         bootstrap.Modal.getOrCreateInstance(el).show();
         spMuat();
     }
+    var spSeq = 0, spTimer = null, spJmlTeks = '';
+    // Tidak ada layar loading: daftar lama tetap tampil apa adanya sampai hasil baru siap.
+    // Satu-satunya penanda: angka di badge jadi tiga titik, dan itu baru muncul kalau pencarian > 250 ms (server cepat = tidak kelihatan sama sekali).
+    function spSibuk(on) {
+        clearTimeout(spTimer);
+        if (on) {
+            spTimer = setTimeout(function () { $('ppSpJml').innerHTML = 'Mencari <span class="pp-sp-dots"><s></s><s></s><s></s></span>'; }, 250);
+        } else { $('ppSpJml').textContent = spJmlTeks || ' '; }
+    }
     function spMuat() {
-        var q = $('ppSpCari').value.trim();
-        $('ppSpLoad').classList.remove('d-none'); $('ppSpKosong').classList.add('d-none'); $('ppSpTblWrap').classList.add('d-none'); $('ppSpBody').innerHTML = '';
+        var q = $('ppSpCari').value.trim(), seq = ++spSeq;
+        spSibuk(true);
         fetch(window.PO_URLS.sp.daftar + '?order=' + encodeURIComponent(ORDER.id) + (q ? '&q=' + encodeURIComponent(q) : ''), { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (j) {
-                $('ppSpLoad').classList.add('d-none');
-                if (!j || !j.ok) { spKosong('Gagal memuat arsip', (j && j.message) || 'Coba segarkan lagi.'); return; }
-                $('ppSpJml').textContent = j.total + ' surat tersedia';
-                if (!j.data.length) { spKosong(q ? 'Tidak ada yang cocok' : 'Tidak ada surat penawaran tersedia', q ? 'Coba kata kunci lain.' : 'Belum ada surat penawaran baru yang belum diklaim.'); return; }
+                if (seq !== spSeq) { return; }   // balasan lama (sudah ada ketikan baru) diabaikan
+                if (!j || !j.ok) { spJmlTeks = ''; spSibuk(false); spKosong('Gagal memuat arsip', (j && j.message) || 'Coba segarkan lagi.', 'bi-exclamation-circle'); return; }
+                spJmlTeks = j.total + ' surat tersedia'; spSibuk(false);
+                if (!j.data.length) { spKosong(q ? 'Tidak ada yang cocok' : 'Tidak ada surat penawaran tersedia', q ? 'Coba kata kunci lain.' : 'Belum ada surat penawaran baru yang belum diklaim.', 'bi-inbox'); return; }
                 spTabel(j.data);
             })
-            .catch(function () { $('ppSpLoad').classList.add('d-none'); spKosong('Gagal memuat arsip', 'Tidak bisa terhubung ke server.'); });
+            .catch(function () { if (seq !== spSeq) { return; } spJmlTeks = ''; spSibuk(false); spKosong('Gagal memuat arsip', 'Tidak bisa terhubung ke server.', 'bi-wifi-off'); });
     }
-    function spKosong(judul, teks) { $('ppSpKosongT').textContent = judul; $('ppSpKosongP').textContent = teks; $('ppSpKosong').classList.remove('d-none'); }
+    function spKosong(judul, teks, ikon) {
+        $('ppSpBody').innerHTML = '<tr class="pp-sp-row pp-sp-kosong"><td colspan="6" class="text-center"><i class="bi ' + (ikon || 'bi-inbox') + ' fs-2 text-muted"></i><div class="fw-bold mt-1">' + esc(judul) + '</div><div class="small text-muted">' + esc(teks) + '</div></td></tr>';
+    }
     function spTabel(list) {
-        $('ppSpTblWrap').classList.remove('d-none');
         $('ppSpBody').innerHTML = list.map(function (r, i) {
-            return '<tr id="ppSpR' + r.id + '" class="' + (r.cocok ? 'pp-sp-cocok' : '') + '">'
+            return '<tr id="ppSpR' + r.id + '" class="pp-sp-row ' + (r.cocok ? 'pp-sp-cocok' : '') + '" style="animation-delay:' + Math.min(i, 8) * 25 + 'ms">'
                 + '<td class="text-center text-muted fw-bold">' + (i + 1) + '</td>'
                 + '<td><div class="pp-sp-no">' + esc(r.no_surat || '-') + '</div><div class="pp-sp-sub"><i class="bi bi-calendar3 me-1"></i>' + esc(r.tanggal_fmt) + '</div></td>'
                 + '<td><div class="fw-semibold">' + esc(r.customer) + (r.cocok ? ' <span class="badge text-bg-dark ms-1" style="font-size:.66rem">Sesuai Mitra</span>' : '') + '</div>' + (r.jabatan ? '<div class="pp-sp-sub">' + esc(r.jabatan) + '</div>' : '') + '</td>'
@@ -1508,6 +1905,18 @@ window.PO_URLS = {
         var k = e.target.closest('[data-sp-klaim]'); if (k) { spKlaim(+k.dataset.spKlaim, k.dataset.spNo, k); }
     });
 
+    $('ppPkCari').addEventListener('input', pkGambar);
+    $('ppPkList').addEventListener('click', function (e) {
+        var o = e.target.closest('.pp-pk-opt[data-n]'); if (!o) { return; }
+        var n = o.getAttribute('data-n'), k = pkSel.indexOf(n);
+        if (k < 0) { pkSel.push(n); } else { pkSel.splice(k, 1); }
+        pkGambar();
+    });
+    $('ppPkBatal').addEventListener('click', tutupPilihTim);
+    $('ppPkOk').addEventListener('click', tambahkanPilihan);
+    $('ppPk').addEventListener('mousedown', function (e) { if (e.target === $('ppPk')) { tutupPilihTim(); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('ppPk').classList.contains('open')) { tutupPilihTim(); } });
+
     buildRte();
     populate();
 tampilNomor();
@@ -1521,7 +1930,7 @@ tampilNomor();
             if (EMBED) { be.target = '_top'; }
         }
         bukaPreview();
-        if (EMBED) { setTimeout(function () { kabariInduk('siap'); }, 300); }
+        if (EMBED) { setTimeout(function () { kabariInduk('siap'); if (SLIDE) { kabariZoom(); } }, 300); }
     }
 window.ppRender = render;
 })();

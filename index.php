@@ -487,6 +487,7 @@ $f3->route('GET /petunjuk-operasional/kalibrasi/create', 'petunjuk_operasional\P
 $f3->route('POST /petunjuk-operasional/kalibrasi/simpan', 'petunjuk_operasional\PoKalibrasiController->simpan');
 $f3->route('GET /petunjuk-operasional/kalibrasi/@id/edit', 'petunjuk_operasional\PoKalibrasiController->edit');
 $f3->route('GET /petunjuk-operasional/kalibrasi/@id/lihat', 'petunjuk_operasional\PoKalibrasiController->lihat');
+$f3->route('GET /petunjuk-operasional/kalibrasi/@id/berkas', 'petunjuk_operasional\PoKalibrasiController->berkas');   // tab Berkas di slide Lihat PO (JSON)
 $f3->route('POST /petunjuk-operasional/kalibrasi/@id/update', 'petunjuk_operasional\PoKalibrasiController->update');
 $f3->route('GET /petunjuk-operasional/kalibrasi/surat-keluar', 'petunjuk_operasional\PoKalibrasiController->daftarSurat');          // arsip surat keluar sekretariat yang belum diklaim (JSON)
 $f3->route('POST /petunjuk-operasional/kalibrasi/surat-keluar/klaim', 'petunjuk_operasional\PoKalibrasiController->klaimSurat');     // klaim surat penawaran untuk satu order kalibrasi
