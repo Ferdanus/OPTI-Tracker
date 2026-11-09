@@ -2195,8 +2195,8 @@
                 </div>
                 <check if="{{ @can_edit }}">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <div id="infoWajibNomorSurat" class="small fw-semibold text-danger d-inline-flex align-items-center gap-1.5 px-2.5 py-1.5 bg-danger-subtle border border-danger-subtle rounded-2 {{ @is_nomor_surat_lengkap ? 'd-none' : '' }}" style="font-size: 0.78rem; cursor: pointer;" onclick="var elN = document.getElementById('input_nomor_surat'); if(elN) { elN.focus(); elN.scrollIntoView({behavior:'smooth', block:'center'}); }" title="Klik untuk langsung mengisi nomor surat">
-                            <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+                        <div id="infoWajibNomorSurat" class="small fw-semibold text-danger d-inline-flex align-items-center rounded-pill bg-danger-subtle border border-danger-subtle shadow-xs {{ @is_nomor_surat_lengkap ? 'd-none' : '' }}" style="font-size: 0.78rem; padding: 6px 14px; gap: 8px; cursor: pointer; line-height: 1.4;" onclick="var elN = document.getElementById('input_nomor_surat'); if(elN) { elN.focus(); elN.scrollIntoView({behavior:'smooth', block:'center'}); }" title="Klik untuk langsung mengisi nomor surat">
+                            <i class="bi bi-exclamation-circle-fill flex-shrink-0" style="font-size: 0.85rem;"></i>
                             <span>Nomor surat belum diisi (ganti <strong>...</strong> dengan nomor agenda resmi)</span>
                         </div>
                         <check if="{{ @is_locked_deal || (@sp_existing && @sp_existing.status_respon_klien == 'deal') || (@order.status_penawaran == 'deal') }}">
