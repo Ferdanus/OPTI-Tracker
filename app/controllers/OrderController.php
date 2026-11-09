@@ -1121,17 +1121,15 @@ class OrderController extends Controller {
         $f3->set('proposal_file', $proposalFile);
         $f3->set('proposal_file_exists', $proposalFileExists);
 
-        $sumberLampiranDefault = 'tanpa';
+        $sumberLampiranDefault = '';
         if (!empty($lampiranUserExisting)) {
             if ($proposalFileExists && ($lampiranUserExisting === $proposalFile || basename($lampiranUserExisting) === basename($proposalFile))) {
                 $sumberLampiranDefault = 'proposal';
             } else {
                 $sumberLampiranDefault = 'upload';
             }
-        } elseif ($proposalFileExists) {
-            $sumberLampiranDefault = 'proposal';
-            $lampiranUserExisting = $proposalFile;
-            $f3->set('lampiran_user_existing', $lampiranUserExisting);
+        } elseif (!empty($spExisting) && !empty($spExisting['id']) && !$isRevisiBaru) {
+            $sumberLampiranDefault = 'tanpa';
         }
         $f3->set('sumber_lampiran_default', $sumberLampiranDefault);
         $f3->set('default_ruang_lingkup', '');

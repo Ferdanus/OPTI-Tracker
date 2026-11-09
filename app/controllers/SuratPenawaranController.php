@@ -905,17 +905,15 @@ $daftarPegawai = $arsipUser->find(
         $f3->set('proposal_file', $proposalFile);
         $f3->set('proposal_file_exists', $proposalFileExists);
 
-        $sumberLampiranDefault = 'tanpa';
+        $sumberLampiranDefault = '';
         if (!empty($lampiranUserExisting)) {
             if ($proposalFileExists && ($lampiranUserExisting === $proposalFile || basename($lampiranUserExisting) === basename($proposalFile))) {
                 $sumberLampiranDefault = 'proposal';
             } else {
                 $sumberLampiranDefault = 'upload';
             }
-        } elseif ($proposalFileExists) {
-            $sumberLampiranDefault = 'proposal';
-            $lampiranUserExisting = $proposalFile;
-            $f3->set('lampiran_user_existing', $lampiranUserExisting);
+        } elseif (!empty($spExisting) && !empty($spExisting['id']) && !$isRevisiBaru) {
+            $sumberLampiranDefault = 'tanpa';
         }
         $f3->set('sumber_lampiran_default', $sumberLampiranDefault);
         $f3->set('kalkulasi', $kalkulasi);
@@ -1037,6 +1035,12 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $post = $f3->get('POST');
+        $opsiLampiran = trim((string)($post['opsi_lampiran_sumber'] ?? ''));
+        if (empty($opsiLampiran) || !in_array($opsiLampiran, ['proposal', 'upload', 'tanpa'])) {
+            $this->setFlashError("Gagal: Pilihan sumber Dokumen Lampiran Penawaran wajib ditentukan (Proposal Teknis, Upload File Baru, atau Tanpa Lampiran).");
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
         $userId = $this->getUserId() ?? 1;
 
         $spModel = new SuratPenawaran($this->db);

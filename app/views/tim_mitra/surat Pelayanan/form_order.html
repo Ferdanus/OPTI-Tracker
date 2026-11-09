@@ -1930,20 +1930,9 @@
                     <div class="d-flex align-items-center gap-2">
                         <span class="section-badge-num">3</span>
                         <div>
-                            <div class="section-header-text">Dokumen Lampiran Penawaran</div>
+                            <div class="section-header-text">Dokumen Lampiran Penawaran <span class="text-danger fw-bold ms-0.5">*</span></div>
                         </div>
                     </div>
-                    <span id="badgeStatusLampiran" class="badge rounded-pill px-2.5 py-1 fw-medium {{ @sumber_lampiran_default == 'proposal' ? 'bg-success-subtle text-success border border-success-subtle' : (@sumber_lampiran_default == 'upload' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle') }}" style="font-size: 0.7rem;">
-                        <check if="{{ @sumber_lampiran_default == 'proposal' }}">
-                            <i class="bi bi-file-earmark-check me-1"></i>Proposal Riset
-                        </check>
-                        <check if="{{ @sumber_lampiran_default == 'upload' }}">
-                            <i class="bi bi-cloud-arrow-up me-1"></i>Berkas Kustom
-                        </check>
-                        <check if="{{ @sumber_lampiran_default == 'tanpa' }}">
-                            <i class="bi bi-dash-circle me-1"></i>Tanpa Lampiran
-                        </check>
-                    </span>
                 </div>
                 <div class="form-section-body p-3">
                     <!-- Input State -->
@@ -1953,7 +1942,7 @@
 
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <label class="form-label mb-0" style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; font-weight: 700;">
-                            Pilihan Sumber Berkas Lampiran:
+                            Pilihan Sumber Berkas Lampiran <span class="text-danger fw-bold">*</span>
                         </label>
                     </div>
 
@@ -2243,7 +2232,7 @@
                             <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft'; var sr = document.getElementById('select_status_respon_klien'); if (sr) sr.value='draft';">
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
-                            <button type="submit" name="action_status" value="deal" class="btn btn-primary fw-semibold px-4 py-2 d-inline-flex align-items-center gap-1.5 shadow-xs">
+                            <button type="submit" name="action_status" value="deal" id="btnSimpanPerubahanDokumen" class="btn btn-primary fw-semibold px-4 py-2 d-inline-flex align-items-center gap-1.5 shadow-xs" {{ empty(@sumber_lampiran_default) ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu"' : '' }}>
                                 <i class="bi bi-save2-fill"></i> Simpan Perubahan Dokumen
                             </button>
                         </check>
@@ -2252,7 +2241,7 @@
                             <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft'; var sr = document.getElementById('select_status_respon_klien'); if (sr) sr.value='draft';">
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
-                            <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();">
+                            <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();" {{ empty(@sumber_lampiran_default) ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu"' : '' }}>
                                 <i class="bi bi-send-fill"></i> Terbitkan
                             </button>
                         </check>
@@ -3680,6 +3669,7 @@ function escapeHtml(text) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    updateSubmitButtonState();
     var realEl = document.getElementById('inputNominalReal');
     var displayEl = document.getElementById('inputNominalDisplay');
     if (realEl && displayEl) {
@@ -3936,6 +3926,27 @@ function zoomProposalPdf(delta) {
 }
 
 function confirmKirimPenawaran() {
+    var inpSumber = document.getElementById('opsiLampiranSumber');
+    var valSumber = inpSumber ? (inpSumber.value || '').trim() : '';
+    if (!valSumber || ['proposal', 'upload', 'tanpa'].indexOf(valSumber) === -1) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Opsi Lampiran Wajib Dipilih',
+                text: 'Silakan pilih salah satu opsi Dokumen Lampiran Penawaran (Proposal Teknis, Upload File Baru, atau Tanpa Lampiran).'
+            });
+        } else {
+            alert('Silakan pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu.');
+        }
+        var cardLamp = document.getElementById('cardDokumenLampiran');
+        if (cardLamp) {
+            cardLamp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            cardLamp.classList.add('border-danger', 'shadow-sm');
+            setTimeout(function() { cardLamp.classList.remove('border-danger', 'shadow-sm'); }, 3000);
+        }
+        return;
+    }
+
     var form = document.getElementById('formPenawaranOrder');
     if (form && !form.checkValidity()) {
         form.reportValidity();
@@ -4118,11 +4129,37 @@ function initPenandatanganTomSelect() {
     }
 }
 
+
+function updateSubmitButtonState() {
+    var inp = document.getElementById('opsiLampiranSumber');
+    var val = inp ? (inp.value || '').trim() : '';
+    var isValid = ['proposal', 'upload', 'tanpa'].indexOf(val) !== -1;
+
+    var btnTerbit = document.getElementById('btnTerbitkanPenawaran');
+    var btnSimpan = document.getElementById('btnSimpanPerubahanDokumen');
+
+    [btnTerbit, btnSimpan].forEach(function(btn) {
+        if (!btn) return;
+        if (isValid) {
+            btn.removeAttribute('disabled');
+            btn.style.opacity = '';
+            btn.style.cursor = '';
+            btn.removeAttribute('title');
+        } else {
+            btn.setAttribute('disabled', 'disabled');
+            btn.style.opacity = '0.45';
+            btn.style.cursor = 'not-allowed';
+            btn.setAttribute('title', 'Pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu');
+        }
+    });
+}
+
 function switchOpsiLampiran(sumber, autoAjax) {
     if (autoAjax === undefined) autoAjax = true;
     var inpSumber = document.getElementById('opsiLampiranSumber');
     var isSame = inpSumber && inpSumber.value === sumber;
     if (inpSumber) inpSumber.value = sumber;
+    updateSubmitButtonState();
 
     var badge = document.getElementById('badgeStatusLampiran');
     if (badge) {
