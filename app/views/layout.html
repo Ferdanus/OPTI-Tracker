@@ -2209,7 +2209,7 @@
                             <div class="list-group list-group-flush" style="max-height: 360px; overflow-y: auto;" id="notifListContainer">
                                 <check if="{{ @list_notifikasi_user && count(@list_notifikasi_user) > 0 }}">
                                     <repeat group="{{ @list_notifikasi_user }}" value="{{ @n }}">
-                                        <a href="{{ @BASE }}{{ @n.link_url }}" id="topbarNotifItem_{{ @n.id }}" data-read="{{ @n.is_read ? '1' : '0' }}" onclick="window.markNotifRead({{ @n.id }}, '{{ @BASE }}{{ @n.link_url }}')" class="list-group-item list-group-item-action px-3 py-3 {{ @n.is_read ? 'bg-white' : 'bg-light bg-opacity-40' }} border-bottom d-flex align-items-start text-decoration-none transition-all" style="gap: 14px;{{ @n.is_read ? ' opacity: .72;' : '' }}">
+                                        <a href="{{ @BASE }}{{ @n.link_url }}" id="topbarNotifItem_{{ @n.id }}" data-read="0" onclick="window.markNotifRead({{ @n.id }}, '{{ @BASE }}{{ @n.link_url }}')" class="list-group-item list-group-item-action px-3 py-3 bg-light bg-opacity-40 border-bottom d-flex align-items-start text-decoration-none transition-all" style="gap: 14px;">
                                             <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 bg-secondary-subtle text-dark" style="width: 36px; height: 36px; margin-top: 2px;">
                                                 <i class="bi {{ @n.icon ?: 'bi-bell-fill' }}" style="font-size: 0.95rem;"></i>
                                             </div>
@@ -2745,18 +2745,10 @@
         // NOTIFICATION & FLOATING BUBBLE ENGINE
         // ==========================================
         window.markNotifRead = function(notifId, redirectUrl) {
-            // Item yang sudah dibaca tetap ada di daftar lonceng: cukup buka tautannya (angka belum dibaca tidak berubah)
+            // Lonceng khusus hanya menampilkan pesan yang belum dibaca: hapus item langsung dari dropdown saat dibaca
             var itemEl = document.getElementById('topbarNotifItem_' + notifId);
-            if (itemEl && itemEl.getAttribute('data-read') === '1') {
-                if (redirectUrl && redirectUrl !== '#') { window.location.href = redirectUrl; }
-                return;
-            }
-            // Belum dibaca: tandai dibaca langsung (item tidak dihapus, hanya diredupkan) untuk feedback instan
             if (itemEl) {
-                itemEl.setAttribute('data-read', '1');
-                itemEl.classList.remove('bg-light', 'bg-opacity-40');
-                itemEl.classList.add('bg-white');
-                itemEl.style.opacity = '.72';
+                itemEl.remove();
             }
 
             var badge = document.getElementById('notifBadgeCount');
@@ -2780,7 +2772,7 @@
                 }
             }
             var container = document.getElementById('notifListContainer');
-            if (container && container.querySelectorAll('.list-group-item').length === 0) {
+            if (container && container.querySelectorAll('[id^="topbarNotifItem_"]').length === 0) {
                 container.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash fs-3 d-block mb-1 opacity-40"></i><small class="text-muted">Tidak ada pemberitahuan baru</small></div>';
                 var btnMarkAll = document.getElementById('notifMarkAllReadBtn');
                 if (btnMarkAll) btnMarkAll.remove();
@@ -2816,15 +2808,10 @@
                 var bubble = document.getElementById('activeFloatingBubble');
                 if (bubble) bubble.remove();
 
-                // Daftar lonceng tetap menampilkan pemberitahuan terbaru, hanya diredupkan sebagai sudah dibaca
+                // Lonceng khusus hanya notifikasi belum dibaca: kosongkan saat tandai semua dibaca
                 var container = document.getElementById('notifListContainer');
                 if (container) {
-                    Array.prototype.forEach.call(container.querySelectorAll('[id^="topbarNotifItem_"]'), function(a) {
-                        a.setAttribute('data-read', '1');
-                        a.classList.remove('bg-light', 'bg-opacity-40');
-                        a.classList.add('bg-white');
-                        a.style.opacity = '.72';
-                    });
+                    container.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash fs-3 d-block mb-1 opacity-40"></i><small class="text-muted">Tidak ada pemberitahuan baru</small></div>';
                 }
 
                 // Jika sedang berada di halaman riwayat /notifikasi:

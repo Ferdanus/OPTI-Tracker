@@ -715,9 +715,18 @@ class PoRevisiPpkController extends Controller {
             }
         }
         if (!$r) { return [false, 'PO tidak ditemukan.', '']; }
-        if (!in_array($r['status'], ['terkirim', 'disetujui_mitra', 'disetujui'], true)) { return [true, '', '']; }   // draf biasa; PO yang sudah diverifikasi Tim Mitra statusnya 'disetujui_mitra'
+        
+        $ketuaPelaksanaId = (int) ($r['ketua_pelaksana_id'] ?? 0);
+        $pembuat = ((int) $userId > 0 && (int) $userId === $ketuaPelaksanaId);
 
-        $pembuat = ((int) $userId > 0 && (int) $userId === (int) $r['ketua_pelaksana_id']);
+        // Strict PIC User ID Binding:
+        // Jika user adalah Tim Kerja, dan PO/Order memiliki Ketua Pelaksana yang ditugaskan:
+        // HANYA Ketua Pelaksana tersebut (atau Superadmin) yang berwenang mengedit PO (baik draf maupun revisi)!
+        if ($role === 'tim_kerja' && !$superadmin && $ketuaPelaksanaId > 0 && !$pembuat) {
+            return [false, 'Akses Ditolak: Anda bukan Ketua Pelaksana yang ditugaskan untuk menyusun atau merevisi PO ini.', ''];
+        }
+
+        if (!in_array($r['status'], ['terkirim', 'disetujui_mitra', 'disetujui'], true)) { return [true, '', '']; }   // draf biasa; PO yang sudah diverifikasi Tim Mitra statusnya 'disetujui_mitra'
         $sr = (string) $r['status_review'];
         $ps = (string) $r['ppk_status'];
 
@@ -1638,4 +1647,4 @@ class PoRevisiPpkController extends Controller {
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
-}
+}
