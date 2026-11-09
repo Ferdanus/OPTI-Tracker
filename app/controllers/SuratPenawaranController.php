@@ -874,18 +874,45 @@ $daftarPegawai = $arsipUser->find(
         $f3->set('revisi_ke', $revisiKe);
         $f3->set('proposal', $proposal);
         $proposalFile = !empty($proposal['file_proposal']) ? str_replace('\\', '/', trim((string)$proposal['file_proposal'])) : '';
+        $proposalFileExists = false;
+        if (!empty($proposalFile)) {
+            $cleanPath = ltrim($proposalFile, '/\\');
+            $candidates = [
+                $proposalFile,
+                $cleanPath,
+                'public/' . $cleanPath,
+                (strpos($cleanPath, 'public/') === 0 ? substr($cleanPath, 7) : $cleanPath),
+                __DIR__ . '/../../' . $cleanPath,
+                __DIR__ . '/../../public/' . $cleanPath,
+                dirname(__DIR__, 2) . '/' . $cleanPath,
+                dirname(__DIR__, 2) . '/public/' . $cleanPath,
+            ];
+            foreach ($candidates as $cand) {
+                if (!empty($cand) && is_file($cand)) {
+                    $proposalFileExists = true;
+                    if (is_file('public/' . $cleanPath)) {
+                        $proposalFile = 'public/' . $cleanPath;
+                    } elseif (is_file($cleanPath)) {
+                        $proposalFile = $cleanPath;
+                    }
+                    break;
+                }
+            }
+            if (!$proposalFileExists && !empty($proposal['file_proposal'])) {
+                $proposalFileExists = true;
+            }
+        }
         $f3->set('proposal_file', $proposalFile);
-        $proposalFileExists = !empty($proposalFile) && is_file($proposalFile);
         $f3->set('proposal_file_exists', $proposalFileExists);
 
         $sumberLampiranDefault = 'tanpa';
         if (!empty($lampiranUserExisting)) {
-            if ($proposalFileExists && $lampiranUserExisting === $proposalFile) {
+            if ($proposalFileExists && ($lampiranUserExisting === $proposalFile || basename($lampiranUserExisting) === basename($proposalFile))) {
                 $sumberLampiranDefault = 'proposal';
             } else {
                 $sumberLampiranDefault = 'upload';
             }
-        } elseif ($proposalFileExists && empty($spExisting)) {
+        } elseif ($proposalFileExists) {
             $sumberLampiranDefault = 'proposal';
             $lampiranUserExisting = $proposalFile;
             $f3->set('lampiran_user_existing', $lampiranUserExisting);
