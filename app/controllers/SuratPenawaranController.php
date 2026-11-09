@@ -447,6 +447,11 @@ $daftarPegawai = $arsipUser->find(
         $isNew = $sp->dry();
 
         if ($action === 'kirim') {
+            if (empty($nomorSurat) || strpos($nomorSurat, '...') !== false || strpos($nomorSurat, '..') !== false) {
+                $f3->set('SESSION.flash_error', "Gagal: Nomor surat penawaran wajib diisi nomor agenda lengkap dari sekretariat (tidak boleh masih mengandung '...').");
+                $f3->reroute($id > 0 ? "/surat-penawaran/{$id}/edit" : "/surat-penawaran/buat");
+                return;
+            }
             $sp->status = 'terkirim';
             $sp->status_respon_klien = 'terkirim';
             $sp->updated_at = date('Y-m-d H:i:s');
@@ -988,7 +993,7 @@ $daftarPegawai = $arsipUser->find(
     {
         $orderId = (int)($params['id'] ?? 0);
 
-        if (!$this->hasPermission('penawaran:create') && !$this->isSuperadmin() && !$this->isAdminOrder()) {
+        if (!$this->hasPermission('penawaran:create') && !$this->isSuperadmin() && !$this->isAdminOrder() && !$this->isTimMitra()) {
             $this->setFlashError("Akses Ditolak: Penerbitan Surat Penawaran Resmi merupakan wewenang Tim Mitra.");
             $f3->reroute("/order/{$orderId}/penawaran/buat");
             return;
@@ -1068,14 +1073,24 @@ $daftarPegawai = $arsipUser->find(
             }
         }
 
-        $isSpSubmitted = !empty($spExisting) && ($spExisting['status_respon_klien'] ?? '') !== 'draft';
-        if ($isSpSubmitted && !$this->canEditSubmittedData(true, $orderId)) {
-            $this->setFlashError("Akses Ditolak: Surat Penawaran telah diterbitkan dan dikunci. Hubungi Superadmin untuk membuka izin edit.");
+        $isSpDeal = $isLockedDeal || $orderHasDeal;
+        if ($isSpDeal && !$this->canEditSubmittedData(true, $orderId)) {
+            $this->setFlashError("Akses Ditolak: Surat Penawaran telah DEAL dan dikunci. Hubungi Superadmin untuk membuka izin edit.");
             $f3->reroute("/order/{$orderId}#pane-stage-5");
             return;
         }
 
         $actionStatus = $post['action_status'] ?? '';
+
+        // Validasi nomor surat jika bukan draft (yaitu jika diterbitkan atau deal)
+        if ($actionStatus !== 'draft') {
+            $nomorSuratAwal = trim((string)($post['nomor_surat'] ?? ''));
+            if (empty($nomorSuratAwal) || strpos($nomorSuratAwal, '...') !== false || strpos($nomorSuratAwal, '..') !== false) {
+                $this->setFlashError("Gagal: Nomor Surat Penawaran Resmi wajib diisi nomor agenda lengkap dari sekretariat (tidak boleh masih mengandung '...').");
+                $f3->reroute("/order/{$orderId}#pane-stage-5");
+                return;
+            }
+        }
 
         // Simpan Draf murni: jika tombol draf diklik dan alur belum terkunci permanen (belum bayar/PO), simpan sebagai draft
         if ($actionStatus === 'draft' && !$isLockedDeal) {
@@ -1125,6 +1140,13 @@ $daftarPegawai = $arsipUser->find(
                 $blnRom = \SuratPenawaran::bulanKeRomawi((int)date('n', $time));
                 $thn = date('Y', $time);
                 $ns = "B/{$ns}/BBSPJIS/MS/{$blnRom}/{$thn}";
+            }
+            if ($actionStatus !== 'draft') {
+                if (empty($ns) || strpos($ns, '...') !== false || strpos($ns, '..') !== false) {
+                    $this->setFlashError("Gagal: Nomor surat penawaran wajib diisi nomor agenda lengkap dari sekretariat (tidak boleh masih mengandung '...').");
+                    $f3->reroute("/order/{$orderId}#pane-stage-5");
+                    return;
+                }
             }
             $post['nomor_surat'] = $ns;
         }

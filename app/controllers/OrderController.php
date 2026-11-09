@@ -1034,6 +1034,13 @@ class OrderController extends Controller {
                 $isLockedDeal = true;
             }
         }
+        if ($orderHasDeal && !$canKoreksi) {
+            $canEditPenawaran = false;
+        }
+
+        $currentNomorSurat = $isRevisiBaru ? $nomorSuratBaru : (!empty($nomorSuratLama) ? $nomorSuratLama : $nomorSuratBaru);
+        $isNomorSuratLengkap = !empty($currentNomorSurat) && strpos($currentNomorSurat, '...') === false && strpos($currentNomorSurat, '..') === false;
+        $f3->set('is_nomor_surat_lengkap', $isNomorSuratLengkap);
 
         $pembuatNama = $_SESSION['user']['nama'] ?? ($_SESSION['nama_lengkap'] ?? ($spExisting['pembuat_nama'] ?? 'Tim Mitra BBSPJIS'));
 

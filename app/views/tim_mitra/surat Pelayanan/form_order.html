@@ -1687,7 +1687,7 @@
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-hash"></i></span>
                                 <input type="text" name="nomor_surat" id="input_nomor_surat" class="form-control form-control-sm font-monospace fw-bold" value="{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}" data-nomor-lama="{{ @nomor_surat_lama ?: (@sp_existing.nomor_surat ?? '') }}" data-nomor-baru="{{ @nomor_surat_baru ?: @nomor_surat_otomatis }}" placeholder="Contoh: B/.../BBSPJIS/MS/XI/2026 atau B/12/BBSPJIS/MS/XI/2026" required {{ !@can_edit ? 'disabled' : '' }}>
                             </div>
-                            <small class="text-muted" style="font-size: 0.72rem;">Format: <strong>B/…/BBSPJIS/MS/{bulan_romawi}/{tahun}</strong>. Nomor urut dikosongkan (titik-titik) dan diisi manual oleh Tim Mitra (nomor agenda keluar dari sekretaris balai).</small>
+                            <small class="text-muted" style="font-size: 0.72rem;">Format: <strong>B/…/BBSPJIS/MS/{bulan_romawi}/{tahun}</strong>. Wajib ganti tanda titik-titik (<strong>...</strong>) dengan nomor agenda surat keluar resmi dari sekretariat sebelum diterbitkan.</small>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label small fw-semibold text-dark mb-1">
@@ -1916,9 +1916,7 @@
                                 <input type="hidden" name="pejabat_nama" id="input_pejabat_nama" value="{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: @default_pejabat_nama) }}">
                                 <input type="hidden" name="pembuat_nama" id="input_pembuat_nama" value="{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: @default_pejabat_nama) }}">
                             </div>
-                            <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">
-                                <i class="bi bi-info-circle me-1 text-primary"></i> Memilih pejabat otomatis menyesuaikan jabatan berwenang dan menyinkronkan data ke lembar naskah dinas.
-                            </small>
+
                         </div>
                     </div>
                 </div>
@@ -1963,20 +1961,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between" style="border-color: #f1f5f9 !important;">
-                                    <check if="{{ @proposal_file_exists }}">
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem;">
-                                            <i class="bi bi-check-circle-fill me-1"></i>Tersedia
-                                        </span>
-                                        <span class="text-muted" style="font-size: 0.68rem;">Siap Gabung</span>
-                                    </check>
-                                    <check if="{{ !@proposal_file_exists }}">
-                                        <span class="badge bg-light text-muted border px-2 py-0.5" style="font-size: 0.65rem;">
-                                            <i class="bi bi-dash-circle me-1"></i>Belum Ada
-                                        </span>
-                                        <span class="text-muted" style="font-size: 0.68rem;">Tidak Ditemukan</span>
-                                    </check>
-                                </div>
+
                             </div>
                         </div>
 
@@ -1995,12 +1980,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between" style="border-color: #f1f5f9 !important;">
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 0.65rem;" id="badgeUploadKustomStatus">
-                                        <i class="bi bi-folder2 me-1"></i>Berkas Kustom
-                                    </span>
-                                    <span class="text-muted" style="font-size: 0.68rem;">Maks 10 MB</span>
-                                </div>
+
                             </div>
                         </div>
 
@@ -2019,12 +1999,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between" style="border-color: #f1f5f9 !important;">
-                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5" style="font-size: 0.65rem;">
-                                        <i class="bi bi-file-text me-1"></i>Hal 1 &amp; 2
-                                    </span>
-                                    <span class="text-muted" style="font-size: 0.68rem;">Standar</span>
-                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -2050,10 +2025,7 @@
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto ms-sm-0">
-                                    <a href="{{ @BASE }}/{{ @proposal_file }}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5" style="font-size: 0.78rem;" title="Buka berkas proposal di tab baru">
-                                        <i class="bi bi-box-arrow-up-right"></i>
-                                        <span>Buka File</span>
-                                    </a>
+
                                     <button type="button" class="btn btn-sm btn-outline-primary px-3 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @proposal_file }}" data-title="Proposal Teknis (Lampiran)" data-subtitle="Order #{{ @order.nomor_permintaan ?: @order.nomor_order }} &bull; {{ @order.nama_perusahaan }}" onclick="bukaPratinjauLampiranHal3('{{ @BASE }}/{{ @proposal_file }}')" style="font-size: 0.78rem;" title="Pratinjau Dokumen">
                                         <i class="bi bi-eye"></i>
                                         <span>Pratinjau Hal 3</span>
@@ -2107,10 +2079,7 @@
                                         <i class="bi bi-arrow-repeat"></i>
                                         <span>Ganti File</span>
                                     </button>
-                                    <a href="{{ @BASE }}/{{ @lampiran_user_existing }}" target="_blank" id="btnBukaCustomLampiran" class="btn btn-sm btn-outline-secondary px-2.5 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5 {{ empty(@lampiran_user_existing) ? 'd-none' : '' }}" style="font-size: 0.78rem;" title="Buka berkas di tab baru">
-                                        <i class="bi bi-box-arrow-up-right"></i>
-                                        <span>Buka File</span>
-                                    </a>
+
                                     <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5 btn-preview-pdf" id="btnPreviewCustomLampiran" data-preview-pdf="{{ @BASE }}/{{ @lampiran_user_existing }}" data-title="Berkas Lampiran Penawaran" data-subtitle="Order #{{ @order.nomor_permintaan ?: @order.nomor_order }} &bull; {{ @order.nama_perusahaan }}" onclick="bukaPratinjauLampiranHal3()" style="font-size: 0.78rem;" title="Pratinjau Dokumen">
                                         <i class="bi bi-eye"></i>
                                         <span>Pratinjau Hal 3</span>
@@ -2145,7 +2114,7 @@
                                 <i class="bi bi-file-earmark-text fs-6"></i>
                             </div>
                             <div style="font-size: 0.75rem; line-height: 1.45;">
-                                Surat Penawaran resmi akan diterbitkan dalam format standar <strong>2 Halaman</strong> (Cover Surat Penawaran &amp; Lembar Persetujuan Biaya) tanpa menyertakan lembar lampiran tambahan di Halaman 3+.
+                                Surat Penawaran resmi akan diterbitkan dalam format standar 2 Halaman tanpa menyertakan lembar lampiran tambahan di Halaman 3.
                             </div>
                         </div>
                     </div>
@@ -2232,7 +2201,7 @@
                             <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft'; var sr = document.getElementById('select_status_respon_klien'); if (sr) sr.value='draft';">
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
-                            <button type="submit" name="action_status" value="deal" id="btnSimpanPerubahanDokumen" class="btn btn-primary fw-semibold px-4 py-2 d-inline-flex align-items-center gap-1.5 shadow-xs" {{ empty(@sumber_lampiran_default) ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu"' : '' }}>
+                            <button type="submit" name="action_status" value="deal" id="btnSimpanPerubahanDokumen" class="btn btn-primary fw-semibold px-4 py-2 d-inline-flex align-items-center gap-1.5 shadow-xs" {{ (empty(@sumber_lampiran_default) || empty(@is_nomor_surat_lengkap)) ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Lengkapi nomor surat penawaran dan tentukan opsi lampiran"' : '' }}>
                                 <i class="bi bi-save2-fill"></i> Simpan Perubahan Dokumen
                             </button>
                         </check>
@@ -2241,7 +2210,7 @@
                             <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft'; var sr = document.getElementById('select_status_respon_klien'); if (sr) sr.value='draft';">
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
-                            <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();" {{ empty(@sumber_lampiran_default) ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu"' : '' }}>
+                            <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();" {{ (empty(@sumber_lampiran_default) || empty(@is_nomor_surat_lengkap)) ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Lengkapi nomor surat penawaran dan tentukan opsi lampiran"' : '' }}>
                                 <i class="bi bi-send-fill"></i> Terbitkan
                             </button>
                         </check>
@@ -3690,6 +3659,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (inputNomorSurat) {
         inputNomorSurat.addEventListener('input', function() {
             isNomorManuallyEdited = true;
+            updateSubmitButtonState();
+        });
+        inputNomorSurat.addEventListener('change', function() {
+            updateSubmitButtonState();
         });
     }
     if (selectStatus && inputNomorSurat) {
@@ -3760,9 +3733,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Jalankan sinkronisasi awal saat halaman dimuat
     syncLivePreview();
+    updateSubmitButtonState();
     <check if="{{ !empty(@lampiran_user_existing) }}">
     renderLampiranPreviewOnSheet('{{ @lampiran_user_existing }}');
     </check>
+
+    var formPenawaran = document.getElementById('formPenawaranOrder');
+    if (formPenawaran) {
+        formPenawaran.addEventListener('submit', function(e) {
+            var submitter = e.submitter;
+            var actionStatus = (submitter && submitter.value) ? submitter.value : '';
+            var inputAct = document.getElementById('inputActionStatus');
+            if (!actionStatus && inputAct) {
+                actionStatus = inputAct.value;
+            }
+            if (actionStatus === 'draft') {
+                return true;
+            }
+            if (!isNomorSuratValid()) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Nomor Surat Belum Lengkap',
+                        text: "Nomor surat penawaran wajib diisi nomor agenda lengkap dari sekretariat dan tidak boleh masih mengandung '...'."
+                    });
+                } else {
+                    alert("Nomor surat penawaran wajib diisi nomor agenda lengkap dari sekretariat (tidak boleh masih mengandung '...').");
+                }
+                var elNomor = document.getElementById('input_nomor_surat');
+                if (elNomor) {
+                    elNomor.focus();
+                    elNomor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    elNomor.classList.add('is-invalid');
+                    setTimeout(function() { elNomor.classList.remove('is-invalid'); }, 3000);
+                }
+                return false;
+            }
+        });
+    }
 
     // Pastikan pratinjau selalu membuka Halaman 1 (Cover Surat) saat pertama dimuat
     if ('{{ @order.jenis_layanan_opti }}' === 'lingkungan') {
@@ -3926,6 +3936,27 @@ function zoomProposalPdf(delta) {
 }
 
 function confirmKirimPenawaran() {
+    var elNomor = document.getElementById('input_nomor_surat');
+    var valNomor = elNomor ? (elNomor.value || '').trim() : '';
+    if (!valNomor || valNomor.indexOf('...') !== -1 || valNomor.indexOf('..') !== -1) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Nomor Surat Belum Lengkap',
+                text: "Nomor surat penawaran wajib diisi nomor agenda lengkap dari sekretariat dan tidak boleh masih mengandung '...'."
+            });
+        } else {
+            alert("Nomor surat penawaran wajib diisi nomor agenda lengkap dari sekretariat (tidak boleh masih mengandung '...').");
+        }
+        if (elNomor) {
+            elNomor.focus();
+            elNomor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            elNomor.classList.add('is-invalid');
+            setTimeout(function() { elNomor.classList.remove('is-invalid'); }, 3000);
+        }
+        return;
+    }
+
     var inpSumber = document.getElementById('opsiLampiranSumber');
     var valSumber = inpSumber ? (inpSumber.value || '').trim() : '';
     if (!valSumber || ['proposal', 'upload', 'tanpa'].indexOf(valSumber) === -1) {
@@ -4130,13 +4161,31 @@ function initPenandatanganTomSelect() {
 }
 
 
+function isNomorSuratValid() {
+    var el = document.getElementById('input_nomor_surat');
+    if (!el) return true;
+    var val = (el.value || '').trim();
+    if (!val) return false;
+    if (val.indexOf('...') !== -1 || val.indexOf('..') !== -1) return false;
+    return true;
+}
+
 function updateSubmitButtonState() {
     var inp = document.getElementById('opsiLampiranSumber');
     var val = inp ? (inp.value || '').trim() : '';
-    var isValid = ['proposal', 'upload', 'tanpa'].indexOf(val) !== -1;
+    var isLampiranValid = ['proposal', 'upload', 'tanpa'].indexOf(val) !== -1;
+    var isNomorValid = isNomorSuratValid();
+    var isValid = isLampiranValid && isNomorValid;
 
     var btnTerbit = document.getElementById('btnTerbitkanPenawaran');
     var btnSimpan = document.getElementById('btnSimpanPerubahanDokumen');
+
+    var reason = '';
+    if (!isNomorValid) {
+        reason = "Nomor surat penawaran wajib diisi nomor agenda lengkap dari sekretariat (tidak boleh masih mengandung '...')";
+    } else if (!isLampiranValid) {
+        reason = "Pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu";
+    }
 
     [btnTerbit, btnSimpan].forEach(function(btn) {
         if (!btn) return;
@@ -4149,7 +4198,7 @@ function updateSubmitButtonState() {
             btn.setAttribute('disabled', 'disabled');
             btn.style.opacity = '0.45';
             btn.style.cursor = 'not-allowed';
-            btn.setAttribute('title', 'Pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu');
+            btn.setAttribute('title', reason);
         }
     });
 }

@@ -4658,35 +4658,41 @@
                                                     </button>
                                                 </true>
                                                 <false>
-                                                    <!-- Tombol Buat Surat Baru (Khusus jika surat dalam negosiasi dan belum deal) -->
-                                                    <check if="{{ !empty(@penawaran) && (@penawaran.status_respon_klien != 'deal') && (@order.status_penawaran != 'deal') && !@is_locked_deal }}">
-                                                        <check if="{{ @can_koreksi }}">
-                                                            <true>
-                                                                <button type="button" class="btn btn-sm btn-white border fw-semibold text-primary px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaFormPenawaranInline('baru')" title="Buat surat penawaran baru dengan nomor surat otomatis berurutan (revisi negosiasi)">
-                                                                    <i class="bi bi-file-earmark-plus"></i>
-                                                                    <span>Buat Surat Baru</span>
-                                                                </button>
-                                                            </true>
-                                                            <false>
-                                                                <button type="button" class="btn btn-sm btn-light border fw-semibold text-muted px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" disabled title="Pembuatan surat penawaran baru dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
-                                                                    <i class="bi bi-lock-fill text-muted"></i>
-                                                                    <span>Buat Surat Baru</span>
-                                                                </button>
-                                                            </false>
-                                                        </check>
-                                                    </check>
-
-                                                    <check if="{{ @penawaran.status_respon_klien == 'draft' || @can_koreksi }}">
+                                                    <check if="{{ (@penawaran.status_respon_klien == 'deal') || (@order.status_penawaran == 'deal') || @is_locked_deal }}">
                                                         <true>
+                                                            <!-- STATUS DEAL: Kunci untuk Tim Mitra, tetapi bisa dibuka kembali oleh Superadmin atau jika order di-unlock -->
+                                                            <check if="{{ @is_superadmin || @can_koreksi }}">
+                                                                <true>
+                                                                    <button type="button" class="btn btn-sm btn-white border fw-semibold text-primary px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaFormPenawaranInline('baru')" title="Buat surat penawaran baru (Akses Superadmin / Unlocked)">
+                                                                        <i class="bi bi-file-earmark-plus"></i>
+                                                                        <span>Buat Surat Baru</span>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" onclick="bukaFormPenawaranInline('edit')" title="Buka dan sunting formulir penawaran (Akses Superadmin / Unlocked)">
+                                                                        <i class="bi bi-pencil-square"></i>
+                                                                        <span>Koreksi Formulir</span>
+                                                                    </button>
+                                                                </true>
+                                                                <false>
+                                                                    <button type="button" class="btn btn-sm btn-light border fw-semibold text-muted px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" disabled title="Surat penawaran telah deal dan dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                                        <i class="bi bi-lock-fill text-muted"></i>
+                                                                        <span>Buat Surat Baru</span>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Surat penawaran telah deal dan dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                                        <i class="bi bi-lock-fill text-muted"></i>
+                                                                        <span>Koreksi Formulir</span>
+                                                                    </button>
+                                                                </false>
+                                                            </check>
+                                                        </true>
+                                                        <false>
+                                                            <!-- STATUS MASIH NEGO / DRAFT: Terbuka untuk Tim Mitra & Pengelola Order -->
+                                                            <button type="button" class="btn btn-sm btn-white border fw-semibold text-primary px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaFormPenawaranInline('baru')" title="Buat surat penawaran baru dengan nomor surat otomatis berurutan (revisi negosiasi)">
+                                                                <i class="bi bi-file-earmark-plus"></i>
+                                                                <span>Buat Surat Baru</span>
+                                                            </button>
                                                             <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" onclick="bukaFormPenawaranInline('edit')" title="Buka dan sunting formulir penawaran langsung di halaman ini">
                                                                 <i class="bi bi-pencil-square"></i>
                                                                 <span>{{ @penawaran.status_respon_klien == 'draft' ? 'Lanjutkan Edit Draf' : 'Koreksi Formulir' }}</span>
-                                                            </button>
-                                                        </true>
-                                                        <false>
-                                                            <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Koreksi formulir penawaran dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
-                                                                <i class="bi bi-lock-fill text-muted"></i>
-                                                                <span>Koreksi Formulir</span>
                                                             </button>
                                                         </false>
                                                     </check>
@@ -12492,6 +12498,9 @@ window.bukaFormPenawaranInline = function(mode) {
     try {
         if (typeof syncLivePreview === 'function') {
             syncLivePreview();
+        }
+        if (typeof updateSubmitButtonState === 'function') {
+            updateSubmitButtonState();
         }
     } catch (eSync) {
         console.warn('Sync live preview error caught in bukaFormPenawaranInline:', eSync);
