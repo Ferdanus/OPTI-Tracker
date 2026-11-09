@@ -203,8 +203,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
             !empty($r['tanggal_terima_sampel'])
         );
 
-        $durasiTotalNilai = 30;
-        $durasiSatuan = 'Hari Kerja';
+        $durasiTotalNilai = 0;
+        $durasiSatuan = (($r['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 'Bulan' : 'Hari Kerja';
 
         if (!empty($r['spm_durasi_nilai']) && (!empty($r['tanggal_spm_mulai']) || !empty($r['tanggal_terima_sampel']))) {
             $durasiTotalNilai = (int)$r['spm_durasi_nilai'];
@@ -226,12 +226,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
         } elseif (!empty($r['spm_durasi_nilai']) && (int)$r['spm_durasi_nilai'] > 0) {
             $durasiTotalNilai = (int)$r['spm_durasi_nilai'];
             $durasiSatuan = !empty($r['spm_durasi_satuan']) ? $r['spm_durasi_satuan'] : 'Hari Kerja';
-        } elseif (!empty($r['durasi_hari_kerja']) && (int)$r['durasi_hari_kerja'] > 0) {
+        } elseif (($r['jenis_layanan_opti'] ?? '') !== 'selulosa' && !empty($r['durasi_hari_kerja']) && (int)$r['durasi_hari_kerja'] > 0) {
             $durasiTotalNilai = (int)$r['durasi_hari_kerja'];
             $durasiSatuan = 'Hari Kerja';
         }
 
-        $durasiAwalLabel = "{$durasiTotalNilai} {$durasiSatuan}";
+        $durasiAwalLabel = $durasiTotalNilai > 0 ? "{$durasiTotalNilai} {$durasiSatuan}" : '-';
 
         $isOrderSelesai = (
             (!empty($r['bast_id']) && in_array($r['status_bast'] ?? '', ['disetujui', 'selesai', 'terbit'])) ||

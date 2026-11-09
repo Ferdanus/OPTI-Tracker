@@ -4223,8 +4223,8 @@
                                                             Durasi Pelaksanaan <span class="text-danger">*</span>
                                                         </label>
                                                         <div class="input-group input-group-sm">
-                                                            <input type="number" min="1" max="365" name="durasi_hari" id="inputDurasiHariDetail" class="form-control fw-semibold font-monospace" 
-                                                                   value="{{ @durasi_hari }}" placeholder="Isi jumlah hari" oninput="checkKirimButtonStateDetail()" required {{ !@can_edit_proposal ? 'disabled' : '' }}>
+                                                            <input type="number" min="1" max="365" name="durasi_hari" id="inputDurasiHariDetail" class="form-control fw-semibold font-monospace" 
+                                                                   value="{{ @durasi_hari ?: '' }}" placeholder="Isi jumlah hari" oninput="checkKirimButtonStateDetail()" required {{ !@can_edit_proposal ? 'disabled' : '' }}>
                                                             <span class="input-group-text bg-light text-secondary">Hari Kerja</span>
                                                         </div>
                                                     </div>
@@ -4340,15 +4340,7 @@
                                                             <div class="small text-muted d-flex align-items-center" style="font-size: 0.8rem; gap: 5px;">
                                                                 <i class="bi bi-info-circle text-primary flex-shrink-0"></i>
                                                                 <span id="hintKirimProposalTextDetail">
-                                                                    <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
-                                                                        Isi estimasi biaya dan unggah berkas Word untuk mengaktifkan tombol kirim.
-                                                                    </check>
-                                                                    <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) }}">
-                                                                        Unggah berkas dokumen proposal Word untuk mengaktifkan tombol kirim.
-                                                                    </check>
-                                                                    <check if="{{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
-                                                                        Isi estimasi total biaya untuk mengaktifkan tombol kirim.
-                                                                    </check>
+                                                                    Lengkapi estimasi kerja (durasi pelaksanaan), estimasi biaya (RAB), dan unggah berkas proposal Word (.doc/.docx) untuk mengaktifkan tombol kirim.
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -4413,7 +4405,7 @@
                                                     <check if="{{ !@proposal_has_file_cost }}">
                                                         <div class="alert alert-danger border border-danger-subtle p-2.5 mb-3 rounded-2 small d-flex align-items-center gap-2">
                                                             <i class="bi bi-exclamation-circle text-danger flex-shrink-0"></i>
-                                                            <div>PIC belum melengkapi estimasi biaya atau berkas proposal. Proposal belum dapat disetujui.</div>
+                                                            <div>PIC belum melengkapi estimasi kerja, estimasi biaya (RAB), atau berkas proposal. Proposal belum dapat disetujui.</div>
                                                         </div>
                                                     </check>
                                                     <div class="mb-3">
@@ -12303,6 +12295,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (tabStage4) {
         tabStage4.addEventListener('shown.bs.tab', function() {
             adjustAllNamaUjiTextareas();
+            if (typeof checkKirimButtonStateDetail === 'function') {
+                checkKirimButtonStateDetail();
+            }
         });
     }
 });

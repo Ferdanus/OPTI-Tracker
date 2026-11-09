@@ -724,39 +724,47 @@ class OrderController extends Controller {
         }
 
         // Parse durasi kegiatan / SPM layanan secara dinamis dan akurat
-        $durasiNilai = !empty($order['durasi_total_nilai']) ? (int)$order['durasi_total_nilai'] : (!empty($order['spm_durasi_nilai']) ? (int)$order['spm_durasi_nilai'] : (!empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 0));
-        $durasiSatuan = !empty($order['durasi_satuan_efektif']) ? $order['durasi_satuan_efektif'] : (!empty($order['spm_durasi_satuan']) ? $order['spm_durasi_satuan'] : (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Bulan' : 'Hari Kerja'));
+        if ($isOrderSelulosa) {
+            $durasiStr = $proposal['durasi_kegiatan'] ?? '';
+            if (!empty($durasiStr) && preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
+                $durasiNilai = (int)$matches[1];
+                $durasiSatuan = (stripos($durasiStr, 'bulan') !== false) ? 'Bulan' : 'Hari Kerja';
+                $durasiHari = $durasiNilai;
+            } else {
+                // Default estimasi kerja untuk proposal OPTI Selulosa adalah KOSONG / 0
+                $durasiNilai = 0;
+                $durasiSatuan = 'Hari Kerja';
+                $durasiHari = '';
+            }
+        } else {
+            $durasiNilai = !empty($order['durasi_total_nilai']) ? (int)$order['durasi_total_nilai'] : (!empty($order['spm_durasi_nilai']) ? (int)$order['spm_durasi_nilai'] : (!empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 0));
+            $durasiSatuan = !empty($order['durasi_satuan_efektif']) ? $order['durasi_satuan_efektif'] : (!empty($order['spm_durasi_satuan']) ? $order['spm_durasi_satuan'] : 'Bulan');
 
-        $durasiStr = $proposal['durasi_kegiatan'] ?? '';
-        if (!empty($durasiStr) && preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
-            $durasiNilai = (int)$matches[1];
-            if (stripos($durasiStr, 'bulan') !== false) {
-                $durasiSatuan = 'Bulan';
+            if (!empty($kalkulasiLingkungan) && $durasiNilai <= 0) {
+                $maxBulan = 0;
+                foreach ($kalkulasiLingkungan as $kIt) {
+                    $b = (int)($kIt['durasi_bulan'] ?? ($kIt['durasi_nilai'] ?? 0));
+                    if ($b > $maxBulan) $maxBulan = $b;
+                }
+                if ($maxBulan > 0) {
+                    $durasiNilai = $maxBulan;
+                    $durasiSatuan = 'Bulan';
+                }
             }
-        } elseif (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' && !empty($kalkulasiLingkungan) && $durasiNilai <= 0) {
-            $maxBulan = 0;
-            foreach ($kalkulasiLingkungan as $kIt) {
-                $b = (int)($kIt['durasi_bulan'] ?? ($kIt['durasi_nilai'] ?? 0));
-                if ($b > $maxBulan) $maxBulan = $b;
+
+            if ($durasiNilai <= 0 && !empty($order['spm_layanan'])) {
+                if (preg_match('/(\d+)\s*(bulan|hari)/i', $order['spm_layanan'], $m)) {
+                    $durasiNilai = (int)$m[1];
+                    $durasiSatuan = (stripos($m[2], 'bulan') !== false) ? 'Bulan' : 'Hari Kerja';
+                }
             }
-            if ($maxBulan > 0) {
-                $durasiNilai = $maxBulan;
-                $durasiSatuan = 'Bulan';
+
+            if ($durasiNilai <= 0) {
+                $durasiNilai = 1;
             }
+
+            $durasiHari = $durasiNilai;
         }
-
-        if ($durasiNilai <= 0 && !empty($order['spm_layanan'])) {
-            if (preg_match('/(\d+)\s*(bulan|hari)/i', $order['spm_layanan'], $m)) {
-                $durasiNilai = (int)$m[1];
-                $durasiSatuan = (stripos($m[2], 'bulan') !== false) ? 'Bulan' : 'Hari Kerja';
-            }
-        }
-
-        if ($durasiNilai <= 0) {
-            $durasiNilai = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 1 : 20;
-        }
-
-        $durasiHari = $durasiNilai;
 
         // Jejak audit & riwayat aktivitas khusus proposal teknis
         $proposalActivityLogs = [];
@@ -4660,39 +4668,47 @@ class OrderController extends Controller {
         }
 
         // Parse durasi kegiatan / SPM layanan secara dinamis dan akurat
-        $durasiNilai = !empty($order['durasi_total_nilai']) ? (int)$order['durasi_total_nilai'] : (!empty($order['spm_durasi_nilai']) ? (int)$order['spm_durasi_nilai'] : (!empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 0));
-        $durasiSatuan = !empty($order['durasi_satuan_efektif']) ? $order['durasi_satuan_efektif'] : (!empty($order['spm_durasi_satuan']) ? $order['spm_durasi_satuan'] : (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Bulan' : 'Hari Kerja'));
+        if ($isOrderSelulosa) {
+            $durasiStr = $proposal['durasi_kegiatan'] ?? '';
+            if (!empty($durasiStr) && preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
+                $durasiNilai = (int)$matches[1];
+                $durasiSatuan = (stripos($durasiStr, 'bulan') !== false) ? 'Bulan' : 'Hari Kerja';
+                $durasiHari = $durasiNilai;
+            } else {
+                // Default estimasi kerja untuk proposal OPTI Selulosa adalah KOSONG / 0
+                $durasiNilai = 0;
+                $durasiSatuan = 'Hari Kerja';
+                $durasiHari = '';
+            }
+        } else {
+            $durasiNilai = !empty($order['durasi_total_nilai']) ? (int)$order['durasi_total_nilai'] : (!empty($order['spm_durasi_nilai']) ? (int)$order['spm_durasi_nilai'] : (!empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 0));
+            $durasiSatuan = !empty($order['durasi_satuan_efektif']) ? $order['durasi_satuan_efektif'] : (!empty($order['spm_durasi_satuan']) ? $order['spm_durasi_satuan'] : 'Bulan');
 
-        $durasiStr = $proposal['durasi_kegiatan'] ?? '';
-        if (!empty($durasiStr) && preg_match('/^(\d+)/', trim($durasiStr), $matches)) {
-            $durasiNilai = (int)$matches[1];
-            if (stripos($durasiStr, 'bulan') !== false) {
-                $durasiSatuan = 'Bulan';
+            if (!empty($kalkulasiLingkungan) && $durasiNilai <= 0) {
+                $maxBulan = 0;
+                foreach ($kalkulasiLingkungan as $kIt) {
+                    $b = (int)($kIt['durasi_bulan'] ?? ($kIt['durasi_nilai'] ?? 0));
+                    if ($b > $maxBulan) $maxBulan = $b;
+                }
+                if ($maxBulan > 0) {
+                    $durasiNilai = $maxBulan;
+                    $durasiSatuan = 'Bulan';
+                }
             }
-        } elseif (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' && !empty($kalkulasiLingkungan) && $durasiNilai <= 0) {
-            $maxBulan = 0;
-            foreach ($kalkulasiLingkungan as $kIt) {
-                $b = (int)($kIt['durasi_bulan'] ?? ($kIt['durasi_nilai'] ?? 0));
-                if ($b > $maxBulan) $maxBulan = $b;
+
+            if ($durasiNilai <= 0 && !empty($order['spm_layanan'])) {
+                if (preg_match('/(\d+)\s*(bulan|hari)/i', $order['spm_layanan'], $m)) {
+                    $durasiNilai = (int)$m[1];
+                    $durasiSatuan = (stripos($m[2], 'bulan') !== false) ? 'Bulan' : 'Hari Kerja';
+                }
             }
-            if ($maxBulan > 0) {
-                $durasiNilai = $maxBulan;
-                $durasiSatuan = 'Bulan';
+
+            if ($durasiNilai <= 0) {
+                $durasiNilai = 1;
             }
+
+            $durasiHari = $durasiNilai;
         }
-
-        if ($durasiNilai <= 0 && !empty($order['spm_layanan'])) {
-            if (preg_match('/(\d+)\s*(bulan|hari)/i', $order['spm_layanan'], $m)) {
-                $durasiNilai = (int)$m[1];
-                $durasiSatuan = (stripos($m[2], 'bulan') !== false) ? 'Bulan' : 'Hari Kerja';
-            }
-        }
-
-        if ($durasiNilai <= 0) {
-            $durasiNilai = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 1 : 20;
-        }
-
-        $durasiHari = $durasiNilai;
 
         // Ambil jejak audit & riwayat aktivitas khusus proposal teknis (Pengerjaan, Revisian, dan ACC antara Ka Tim OPTI & PIC)
         $activityLogs = $this->db->exec(
