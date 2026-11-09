@@ -765,7 +765,7 @@ $daftarPegawai = $arsipUser->find(
         }
         $revisiKe = count($allSp) + 1;
 
-        $proposal = ($order['jenis_layanan_opti'] === 'selulosa') ? $orderModel->getProposalRiset($orderId) : null;
+        $proposal = $orderModel->getProposalRiset($orderId);
         $kalkulasi = ($order['jenis_layanan_opti'] === 'lingkungan') ? $orderModel->getKalkulasiLingkungan($orderId) : [];
 
         $durasiNilai = !empty($order['durasi_total_nilai']) ? (int)$order['durasi_total_nilai'] : (!empty($order['spm_durasi_nilai']) ? (int)$order['spm_durasi_nilai'] : (!empty($order['durasi_hari_kerja']) ? (int)$order['durasi_hari_kerja'] : 0));
@@ -873,6 +873,24 @@ $daftarPegawai = $arsipUser->find(
         $f3->set('is_revisi_baru', $isRevisiBaru);
         $f3->set('revisi_ke', $revisiKe);
         $f3->set('proposal', $proposal);
+        $proposalFile = !empty($proposal['file_proposal']) ? str_replace('\\', '/', trim((string)$proposal['file_proposal'])) : '';
+        $f3->set('proposal_file', $proposalFile);
+        $proposalFileExists = !empty($proposalFile) && is_file($proposalFile);
+        $f3->set('proposal_file_exists', $proposalFileExists);
+
+        $sumberLampiranDefault = 'tanpa';
+        if (!empty($lampiranUserExisting)) {
+            if ($proposalFileExists && $lampiranUserExisting === $proposalFile) {
+                $sumberLampiranDefault = 'proposal';
+            } else {
+                $sumberLampiranDefault = 'upload';
+            }
+        } elseif ($proposalFileExists && empty($spExisting)) {
+            $sumberLampiranDefault = 'proposal';
+            $lampiranUserExisting = $proposalFile;
+            $f3->set('lampiran_user_existing', $lampiranUserExisting);
+        }
+        $f3->set('sumber_lampiran_default', $sumberLampiranDefault);
         $f3->set('kalkulasi', $kalkulasi);
         $f3->set('tinjauan', $tinjauan);
 
@@ -1064,36 +1082,63 @@ $daftarPegawai = $arsipUser->find(
             $post['spm_layanan'] = (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') ? '1 Bulan' : '30 Hari Kerja';
         }
 
-        if (!empty($post['nomor_surat']) && preg_match('/^\d+\/BBSPJIS\/MS\//i', $post['nomor_surat'])) {
-            $post['nomor_surat'] = 'B/' . $post['nomor_surat'];
+        if (!empty($post['nomor_surat'])) {
+            $ns = trim((string)$post['nomor_surat']);
+            if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $ns) || preg_match('/^\.\.\.\/BBSPJIS\/MS\//i', $ns)) {
+                $ns = 'B/' . $ns;
+            } elseif (preg_match('/^B\//i', $ns)) {
+                // Sudah berawalan B/
+            } elseif (!preg_match('/\/BBSPJIS\/MS\//i', $ns)) {
+                // Diisi angka saja oleh Tim Mitra (misal: "12")
+                $time = !empty($post['tanggal_surat']) && strtotime($post['tanggal_surat']) ? strtotime($post['tanggal_surat']) : time();
+                $blnRom = \SuratPenawaran::bulanKeRomawi((int)date('n', $time));
+                $thn = date('Y', $time);
+                $ns = "B/{$ns}/BBSPJIS/MS/{$blnRom}/{$thn}";
+            }
+            $post['nomor_surat'] = $ns;
         }
 
         try {
             $orderModel = new \OrderLayanan($this->db);
             $order = $orderModel->getDetail($orderId);
 
-            // Opsional: simpan berkas lampiran yang diunggah user sebelum generate PDF gabungan
-            if (!empty($_FILES['file_lampiran_user']) && $_FILES['file_lampiran_user']['error'] === UPLOAD_ERR_OK) {
-                $allowedExt = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'];
-                $origName = $_FILES['file_lampiran_user']['name'] ?? '';
-                $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
-                if (in_array($ext, $allowedExt, true) && (int)$_FILES['file_lampiran_user']['size'] <= 10 * 1024 * 1024) {
-                    $lampiranDir = 'uploads/penawaran/lampiran/';
-                    if (!is_dir($lampiranDir)) {
-                        @mkdir($lampiranDir, 0777, true);
-                    }
-                    $safeBase = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($origName, PATHINFO_FILENAME));
-                    $safeBase = substr($safeBase ?: 'Lampiran', 0, 50);
-                    $lampiranFileName = 'Lampiran_SP_' . $orderId . '_' . time() . '_' . $safeBase . '.' . $ext;
-                    $lampiranDest = $lampiranDir . $lampiranFileName;
-                    if (@move_uploaded_file($_FILES['file_lampiran_user']['tmp_name'], $lampiranDest)) {
-                        $post['file_lampiran_user'] = $lampiranDest;
-                        unset($_SESSION['pending_lampiran_sp_' . $orderId]);
-                    }
+            // Periksa opsi sumber lampiran yang dipilih: 'proposal', 'upload', atau 'tanpa'
+            $opsiLampiran = trim((string)($post['opsi_lampiran_sumber'] ?? ''));
+            if ($opsiLampiran === 'proposal') {
+                $proposalData = $orderModel->getProposalRiset($orderId);
+                if (!empty($proposalData['file_proposal'])) {
+                    $post['file_lampiran_user'] = str_replace('\\', '/', trim((string)$proposalData['file_proposal']));
+                    unset($_SESSION['pending_lampiran_sp_' . $orderId]);
                 }
-            } elseif (!empty($_SESSION['pending_lampiran_sp_' . $orderId])) {
-                $post['file_lampiran_user'] = $_SESSION['pending_lampiran_sp_' . $orderId];
+            } elseif ($opsiLampiran === 'tanpa') {
+                $post['file_lampiran_user'] = null;
                 unset($_SESSION['pending_lampiran_sp_' . $orderId]);
+            } else {
+                // Opsi 'upload' atau fallback
+                if (!empty($_FILES['file_lampiran_user']) && $_FILES['file_lampiran_user']['error'] === UPLOAD_ERR_OK) {
+                    $allowedExt = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'];
+                    $origName = $_FILES['file_lampiran_user']['name'] ?? '';
+                    $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                    if (in_array($ext, $allowedExt, true) && (int)$_FILES['file_lampiran_user']['size'] <= 10 * 1024 * 1024) {
+                        $lampiranDir = 'uploads/penawaran/lampiran/';
+                        if (!is_dir($lampiranDir)) {
+                            @mkdir($lampiranDir, 0777, true);
+                        }
+                        $safeBase = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($origName, PATHINFO_FILENAME));
+                        $safeBase = substr($safeBase ?: 'Lampiran', 0, 50);
+                        $lampiranFileName = 'Lampiran_SP_' . $orderId . '_' . time() . '_' . $safeBase . '.' . $ext;
+                        $lampiranDest = $lampiranDir . $lampiranFileName;
+                        if (@move_uploaded_file($_FILES['file_lampiran_user']['tmp_name'], $lampiranDest)) {
+                            $post['file_lampiran_user'] = $lampiranDest;
+                            unset($_SESSION['pending_lampiran_sp_' . $orderId]);
+                        }
+                    }
+                } elseif (!empty($_SESSION['pending_lampiran_sp_' . $orderId])) {
+                    $post['file_lampiran_user'] = $_SESSION['pending_lampiran_sp_' . $orderId];
+                    unset($_SESSION['pending_lampiran_sp_' . $orderId]);
+                } elseif (!empty($spExisting['file_lampiran_user'])) {
+                    $post['file_lampiran_user'] = $spExisting['file_lampiran_user'];
+                }
             }
 
 
@@ -1134,17 +1179,20 @@ $daftarPegawai = $arsipUser->find(
                 try {
                     $orderModel = new \OrderLayanan($this->db);
                     $order = $orderModel->getDetail($orderId);
+                    $ordLblSp = \NotificationService::formatOrderLabel($order, $orderId);
+                    $ptSp = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
+                    $actorSp = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Mitra');
                     \NotificationService::send($this->db, [
                         'order_id'       => $orderId,
                         'target_role'    => 'ketua_tim',
                         'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                         'judul'          => 'Surat Penawaran Resmi Diterbitkan',
-                        'pesan'          => "Surat Penawaran No. {$hasil['nomor_surat']} senilai Rp " . number_format($hasil['nominal'], 0, ',', '.') . " telah dikirimkan ke {$order['nama_perusahaan']}.",
+                        'pesan'          => "Surat Penawaran No. {$hasil['nomor_surat']} order {$ordLblSp} {$ptSp} diterbitkan oleh {$actorSp}.",
                         'tipe'           => 'info',
                         'icon'           => 'bi-send-check-fill',
                         'link_url'       => "/order/{$orderId}",
                         'created_by'     => $userId,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                        'created_by_name'=> $actorSp
                     ]);
                 } catch (\Exception $eNotif) {}
 
@@ -1267,18 +1315,22 @@ $daftarPegawai = $arsipUser->find(
                         $order['nomor_order'] = $nomorOrderBaru;
                     }
 
+                    $ordLblStat = \NotificationService::formatOrderLabel($order, $orderId);
+                    $ptStat = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
+                    $actorStat = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Mitra');
+
                     // Notif ke Ketua Tim Keuangan
                     \NotificationService::send($this->db, [
                         'order_id'        => $orderId,
                         'target_role'     => 'ketua_tim_keuangan',
                         'target_layanan'  => 'semua',
-                        'judul'           => 'Disposisi Pembayaran: Order #' . ($order['nomor_order'] ?? $orderId),
-                        'pesan'           => "Penawaran {$order['nama_perusahaan']} telah disepakati (DEAL senilai Rp " . number_format($nominal, 0, ',', '.') . "). Siap untuk proses pembayaran.",
+                        'judul'           => 'Disposisi Pembayaran: Order ' . $ordLblStat,
+                        'pesan'           => "Penawaran {$ptStat} disepakati DEAL (Rp " . number_format($nominal, 0, ',', '.') . ") oleh {$actorStat}. Siap proses pembayaran.",
                         'tipe'            => 'success',
                         'icon'            => 'bi-wallet2',
                         'link_url'        => "/pembayaran/tambah?order_id={$orderId}",
                         'created_by'      => $this->getUserId() ?? 1,
-                        'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                        'created_by_name' => $actorStat
                     ]);
 
                     // Notif ke Ka Tim OPTI
@@ -1287,12 +1339,12 @@ $daftarPegawai = $arsipUser->find(
                         'target_role'    => 'ketua_tim',
                         'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                         'judul'          => 'Penawaran Order DEAL',
-                        'pesan'          => "Klien ({$order['nama_perusahaan']}) telah sepakat dengan penawaran Order #{$order['nomor_order']}. Silakan lakukan Disposisi ke Tim Keuangan.",
+                        'pesan'          => "Penawaran order {$ordLblStat} {$ptStat} disepakati DEAL oleh {$actorStat}.",
                         'tipe'           => 'success',
                         'icon'           => 'bi-check-circle-fill',
                         'link_url'       => "/order/{$orderId}",
                         'created_by'     => $this->getUserId() ?? 1,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                        'created_by_name'=> $actorStat
                     ]);
 
                     // Notif ke Tim Mitra
@@ -1301,12 +1353,12 @@ $daftarPegawai = $arsipUser->find(
                         'target_role'    => 'tim_mitra',
                         'target_layanan' => 'semua',
                         'judul'          => 'Penawaran Order DEAL Disetujui',
-                        'pesan'          => "Klien ({$order['nama_perusahaan']}) telah sepakat dengan penawaran Order #{$order['nomor_order']} (Rp " . number_format($nominal, 0, ',', '.') . "). Segera lengkapi berkas & lakukan disposisi ke Tim Keuangan.",
+                        'pesan'          => "Penawaran order {$ordLblStat} {$ptStat} disepakati DEAL oleh {$actorStat}.",
                         'tipe'           => 'success',
                         'icon'           => 'bi-check-circle-fill',
                         'link_url'       => "/order/{$orderId}",
                         'created_by'     => $this->getUserId() ?? 1,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                        'created_by_name'=> $actorStat
                     ]);
                 } catch (\Exception $eNotif) {}
 
@@ -1321,7 +1373,7 @@ $daftarPegawai = $arsipUser->find(
                         'target_role'    => 'tim_mitra',
                         'target_layanan' => 'semua',
                         'judul'          => $judulStatus,
-                        'pesan'          => "Respon klien ({$order['nama_perusahaan']}) untuk Order #{$order['nomor_order']}: " . strtoupper($statusRespon) . ".",
+                        'pesan'          => "Respon klien {$order['nama_perusahaan']} untuk Order #{$order['nomor_order']}: " . strtoupper($statusRespon) . ".",
                         'tipe'           => $tipeNotif,
                         'icon'           => $iconNotif,
                         'link_url'       => "/order/{$orderId}",
@@ -1465,13 +1517,16 @@ $daftarPegawai = $arsipUser->find(
                 $order['nomor_order'] = $nomorOrderBaru;
             }
 
+            $ordLblDispK = \NotificationService::formatOrderLabel($order, $orderId);
+            $ptDispK = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
+
             // 1. Kirim Notifikasi ke Ketua Tim Keuangan
             \NotificationService::send($this->db, [
                 'order_id'        => $orderId,
                 'target_role'     => 'ketua_tim_keuangan',
                 'target_layanan'  => 'semua',
-                'judul'           => 'Disposisi Pembayaran: Order #' . $order['nomor_order'],
-                'pesan'           => "Penawaran {$order['nama_perusahaan']} (No: {$sp['nomor_surat']}, Nilai: Rp " . number_format($nominal, 0, ',', '.') . ") telah DEAL dan didisposisikan ke Tim Keuangan untuk proses pencatatan pembayaran.",
+                'judul'           => 'Disposisi Pembayaran: Order ' . $ordLblDispK,
+                'pesan'           => "Penawaran {$ptDispK} (No: {$sp['nomor_surat']}, Rp " . number_format($nominal, 0, ',', '.') . ") didisposisikan ke Tim Keuangan oleh {$userNama}.",
                 'tipe'            => 'success',
                 'icon'            => 'bi-wallet2',
                 'link_url'        => "/pembayaran/tambah?order_id={$orderId}",
@@ -1485,7 +1540,7 @@ $daftarPegawai = $arsipUser->find(
                 'target_role'     => 'ketua_tim',
                 'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
                 'judul'           => 'Penawaran Order DEAL - Didisposisikan ke Keuangan',
-                'pesan'           => "Penawaran {$order['nama_perusahaan']} telah disepakati (DEAL) dan didisposisikan ke Tim Keuangan.",
+                'pesan'           => "Penawaran order {$ordLblDispK} {$ptDispK} didisposisikan ke Tim Keuangan oleh {$userNama}.",
                 'tipe'            => 'info',
                 'icon'            => 'bi-send-check-fill',
                 'link_url'        => "/order/{$orderId}",
@@ -1499,7 +1554,7 @@ $daftarPegawai = $arsipUser->find(
                 'target_role'     => 'tim_mitra',
                 'target_layanan'  => 'semua',
                 'judul'           => 'Disposisi ke Tim Keuangan Berhasil',
-                'pesan'           => "Penawaran {$order['nama_perusahaan']} (No: {$sp['nomor_surat']}) berhasil didisposisikan ke Tim Keuangan untuk proses pembayaran.",
+                'pesan'           => "Penawaran order {$ordLblDispK} {$ptDispK} didisposisikan ke Tim Keuangan oleh {$userNama}.",
                 'tipe'            => 'success',
                 'icon'            => 'bi-send-check-fill',
                 'link_url'        => "/order/{$orderId}",
@@ -2492,7 +2547,7 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $tglFormatted = self::formatTanggalIndoSurat($sp['tanggal_surat'] ?? date('Y-m-d'));
-        $noSurat = $sp['nomor_surat'] ?: ('B/01/BBSPJIS/MS/' . SuratPenawaran::bulanKeRomawi((int)date('n')) . '/' . date('Y'));
+        $noSurat = $sp['nomor_surat'] ?: ('B/.../BBSPJIS/MS/' . SuratPenawaran::bulanKeRomawi((int)date('n')) . '/' . date('Y'));
         if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $noSurat)) {
             $noSurat = 'B/' . $noSurat;
         }
@@ -2825,7 +2880,7 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $tglFormatted = self::formatTanggalIndoSurat($sp['tanggal_surat'] ?? date('Y-m-d'));
-        $noSurat = $sp['nomor_surat'] ?: ('B/01/BBSPJIS/MS/' . SuratPenawaran::bulanKeRomawi((int)date('n')) . '/' . date('Y'));
+        $noSurat = $sp['nomor_surat'] ?: ('B/.../BBSPJIS/MS/' . SuratPenawaran::bulanKeRomawi((int)date('n')) . '/' . date('Y'));
         if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $noSurat)) {
             $noSurat = 'B/' . $noSurat;
         }
@@ -3609,6 +3664,86 @@ $daftarPegawai = $arsipUser->find(
      * Upload lampiran tambahan (opsional) oleh user pada Surat Penawaran
      * Route: POST /order/@id/penawaran/upload-lampiran ATAU POST /surat-penawaran/@id/upload-lampiran
      */
+    /**
+     * Hubungkan berkas proposal riset/teknis (Tahap 4) sebagai lampiran Surat Penawaran
+     * Route: POST /order/@id/penawaran/set-lampiran-proposal ATAU POST /surat-penawaran/@id/set-lampiran-proposal
+     */
+    public function setLampiranProposal($f3, $params)
+    {
+        $targetId = (int)($params['id'] ?? 0);
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+            || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+
+        if (!$this->hasPermission('penawaran:create') && !$this->isSuperadmin() && !$this->isAdminOrder()) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Akses ditolak: Hanya Tim Mitra yang dapat mengatur lampiran penawaran.']);
+                exit;
+            }
+            $this->setFlashError('Akses ditolak.');
+            $f3->reroute('/order/' . $targetId);
+            return;
+        }
+
+        $orderModel = new \OrderLayanan($this->db);
+        $spModel = new \SuratPenawaran($this->db);
+        $spIdExplicit = (int)($f3->get('POST.sp_id') ?? $f3->get('GET.sp_id') ?? 0);
+        $sp = null;
+        if ($spIdExplicit > 0) {
+            $sp = $spModel->getById($spIdExplicit);
+        }
+        if (!$sp) {
+            $sp = $spModel->getByOrderId($targetId);
+        }
+        if (!$sp) {
+            $sp = $spModel->getById($targetId);
+        }
+
+        $orderId = !empty($sp['order_id']) ? (int)$sp['order_id'] : $targetId;
+        $proposal = $orderModel->getProposalRiset($orderId);
+
+        if (empty($proposal) || empty($proposal['file_proposal'])) {
+            $msg = 'Berkas proposal teknis/riset belum diunggah untuk order ini.';
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            $this->setFlashError($msg);
+            $f3->reroute('/order/' . $orderId);
+            return;
+        }
+
+        $filePath = str_replace('\\', '/', trim((string)$proposal['file_proposal']));
+        if ($sp && !empty($sp['id'])) {
+            $this->db->exec(
+                "UPDATE tb_surat_penawaran SET file_lampiran_user = ?, updated_at = NOW() WHERE id = ?",
+                [1 => $filePath, 2 => (int)$sp['id']]
+            );
+            unset($_SESSION['pending_lampiran_sp_' . $orderId]);
+        } else {
+            $_SESSION['pending_lampiran_sp_' . $orderId] = $filePath;
+        }
+
+        $previewUrl = $f3->get('BASE') . '/order/' . $orderId . '/penawaran/lampiran-user' . (!empty($sp['id']) ? ('?id=' . $sp['id']) : '');
+        $fileName = basename($filePath);
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success'     => true,
+                'message'     => 'Berkas proposal teknis berhasil diatur sebagai lampiran penawaran.',
+                'file_name'   => $fileName,
+                'file_path'   => $filePath,
+                'preview_url' => $previewUrl
+            ]);
+            exit;
+        }
+
+        $this->setFlashSuccess('Berkas proposal teknis berhasil diatur sebagai lampiran penawaran.');
+        $f3->reroute('/order/' . $orderId);
+    }
+
     public function uploadLampiranUser($f3, $params)
     {
         $targetId = (int)($params['id'] ?? 0);

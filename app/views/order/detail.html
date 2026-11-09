@@ -2608,6 +2608,11 @@
                             <i class="bi bi-hourglass-split me-1"></i> Perlu Dilengkapi
                         </span>
                     </check>
+                    <check if="{{ !@is_form_pelayanan_done && @order.status != 'draft_disimpan' && @order.status != 'permintaan_masuk' }}">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold">
+                            <i class="bi bi-hourglass-split me-1"></i> Perlu Dilengkapi
+                        </span>
+                    </check>
                     <check if="{{ @is_form_pelayanan_done }}">
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold">
                             <i class="bi bi-check-circle-fill me-1"></i> Diteruskan ke Ka. Tim {{ @order.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@order.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : 'OPTI') }}
@@ -2634,7 +2639,7 @@
                                     </div>
                                 </div>
                                 <check if="{{ @is_admin_order || @is_superadmin }}">
-                                    <check if="{{ @can_koreksi }}">
+                                    <check if="{{ @can_koreksi_pelayanan }}">
                                         <true>
                                             <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditInlinePelayanan" aria-expanded="false" aria-controls="collapseEditInlinePelayanan">
                                                 <i class="bi bi-pencil-square"></i>
@@ -2642,7 +2647,7 @@
                                             </button>
                                         </true>
                                         <false>
-                                            <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Koreksi formulir dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                            <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Koreksi formulir dikunci karena kaji kelayakan telah diproses. Hubungi Superadmin untuk membuka izin edit order ini.">
                                                 <i class="bi bi-lock-fill text-muted"></i>
                                                 <span>Koreksi Formulir</span>
                                             </button>
@@ -2876,13 +2881,9 @@
                         <!-- SUBKONDISI 2A: NON-USER / VIEWER (READ-ONLY CALM SUMMARY) -->
                         <check if="{{ !@is_admin_order && !@is_superadmin }}">
                             <div class="p-3 bg-light rounded-3 border">
-                                <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="d-flex align-items-center gap-2 mb-3">
                                     <span class="badge bg-primary-subtle text-primary fw-semibold"><i class="bi bi-clock-history me-1"></i>Menunggu Pengisian Formulir Pelayanan</span>
-                                    <small class="text-muted">Tahap ini ditangani oleh Tim Kemitraan (Tim Mitra)</small>
                                 </div>
-                                <p class="small text-secondary mb-3">
-                                    Formulir spesifikasi pelayanan dan disposisi divisi pelaksana (OPTI Selulosa / OPTI Lingkungan) sedang dalam proses oleh Tim Mitra sebelum diajukan ke Ketua Tim.
-                                </p>
                                 <div class="row g-3">
                                     <div class="col-sm-6">
                                         <div class="p-3 border rounded-3 bg-white h-100" style="border-color: #e2e8f0 !important;">
@@ -3187,8 +3188,8 @@
                                     <div class="d-flex align-items-center gap-2.5">
                                         <i class="bi bi-exclamation-triangle-fill text-warning fs-4"></i>
                                         <div>
-                                            <strong class="text-dark small d-block">Penetapan PIC Proposal Diperlukan (OPTI Selulosa)</strong>
-                                            <span class="text-muted small">Kelayakan teknis telah disetujui, namun Tim Mitra belum memilih personil PIC Peneliti. Silakan tetapkan PIC agar pengerjaan proposal dapat dimulai.</span>
+                                            <strong class="text-dark small d-block">Penetapan PIC Proposal Diperlukan</strong>
+                                            <span class="text-muted small">Silakan tetapkan PIC Proposal agar pengerjaan proposal dapat dimulai.</span>
                                         </div>
                                     </div>
                                     <check if="{{ @is_ketua_tim || @is_superadmin }}">
@@ -3456,8 +3457,8 @@
                             <div class="alert alert-warning border border-warning-subtle shadow-xs rounded-3 p-3.5 mb-3.5 d-flex align-items-start gap-3">
                                 <i class="bi bi-exclamation-triangle-fill text-warning fs-4 flex-shrink-0 mt-0.5"></i>
                                 <div class="flex-grow-1">
-                                    <strong class="d-block text-dark mb-1">Perhatian Ketua Tim OPTI Selulosa: PIC Proposal Belum Ditetapkan!</strong>
-                                    <p class="small text-muted mb-2">Tim Mitra telah menyelesaikan kaji kelayakan untuk order ini, namun belum menunjuk personil PIC Peneliti. Silakan tetapkan PIC Proposal agar dokumen proposal teknis dan rincian biaya dapat mulai disusun.</p>
+                                    <strong class="d-block text-dark mb-1">PIC Proposal Belum Ditetapkan</strong>
+                                    <p class="small text-muted mb-2">Silakan tetapkan PIC Proposal agar penyusunan proposal dapat dimulai.</p>
                                     <check if="{{ @is_ketua_tim || @is_superadmin }}">
                                         <true>
                                             <button type="button" class="btn btn-warning btn-sm fw-bold px-3 shadow-xs" data-bs-toggle="modal" data-bs-target="#modalTunjukPic">
@@ -4437,12 +4438,15 @@
                                         <div class="alert alert-primary bg-primary-subtle text-primary border border-primary-subtle py-2.5 px-3 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 small rounded-3 shadow-xs">
                                             <div class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-check-circle-fill text-primary fs-5 flex-shrink-0" style="margin-right: 0.65rem;"></i>
-                                                <span><strong>Proposal Teknis Disetujui Ka. Tim</strong> &bull; Siap diterbitkan Surat Penawaran Resmi</span>
+                                                <div>
+                                                    <strong class="d-block">Proposal Teknis &amp; Biaya Telah Disetujui Ka. Tim</strong>
+                                                    <span class="text-secondary small">Alur selanjutnya berpindah ke <strong>Tahap 5: Surat Penawaran Resmi</strong> untuk diterbitkan oleh Tim Mitra BBSPJIS.</span>
+                                                </div>
                                             </div>
                                             <check if="{{ !@penawaran }}">
-                                                <a href="#cardPenawaran" class="btn btn-sm btn-primary fw-bold shadow-xs" onclick="document.getElementById('tab-stage-5').click(); document.getElementById('cardPenawaran').scrollIntoView({behavior: 'smooth'}); return false;">
-                                                    <i class="bi bi-file-earmark-plus me-1"></i> Buat Surat Penawaran
-                                                </a>
+                                                <button type="button" class="btn btn-sm btn-primary fw-bold shadow-xs d-inline-flex align-items-center gap-1.5" onclick="document.getElementById('tab-stage-5').click(); document.getElementById('cardPenawaran').scrollIntoView({behavior: 'smooth'}); return false;">
+                                                    <span>Lanjut ke Tahap 5: Surat Penawaran</span> <i class="bi bi-arrow-right"></i>
+                                                </button>
                                             </check>
                                         </div>
                                     </check>
@@ -4463,7 +4467,7 @@
                     <div>
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">5</span>
-                            <i class="bi bi-file-earmark-text-fill text-primary fs-5"></i> Surat Penawaran Resmi &amp; Respon Klien
+                            <i class="bi bi-file-earmark-text-fill text-primary fs-5"></i> Lembar Surat Penawaran Resmi &amp; Tindak Lanjut Klien
                         </h6>
                         <div class="d-none align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
                             <span id="audit-dibaca-stage-5" class="audit-dibaca-stage-5 me-3 {{ !@audit_stages[5].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[5].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[5].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[5].dibaca_nama ?: @audit_stages[5].dibaca_role }})</span></span>
@@ -5021,6 +5025,7 @@
                                         </div>
                                         <button type="button" class="btn-close btn-sm" data-bs-toggle="collapse" data-bs-target="#collapseFormPenawaranInline" aria-label="Tutup"></button>
                                     </div>
+                                    <set is_embedded_in_detail="1" />
                                     <include href="tim_mitra/surat Pelayanan/form_order.html" />
                                 </div>
                             </div>
@@ -5125,22 +5130,11 @@
                             </check>
                         </check>
 
-                        <!-- JIKA BELUM ADA SURAT PENAWARAN: LANGSUNG FORMULIR PEMBUATAN PENAWARAN -->
+                        <!-- JIKA BELUM ADA SURAT PENAWARAN -->
                         <check if="{{ !@penawaran }}">
                             <check if="{{ @is_admin_order || @is_tim_mitra || @is_superadmin || @can_manage_penawaran || @order.jenis_layanan_opti == 'lingkungan' }}">
-                                <div class="card border rounded-3 bg-white shadow-xs p-3 p-md-4">
-                                    <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom flex-wrap gap-2">
-                                        <div>
-                                            <h6 class="fw-bold text-dark mb-1 font-display d-flex align-items-center gap-2">
-                                                <i class="bi bi-file-earmark-plus-fill text-primary"></i> Formulir Pembuatan Surat Penawaran Resmi
-                                            </h6>
-                                            <div class="text-muted small">
-                                                Lengkapi rincian biaya, durasi pelaksanaan, serta data penandatangan untuk menerbitkan Surat Penawaran Resmi kepada pelanggan.
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <include href="tim_mitra/surat Pelayanan/form_order.html" />
-                                </div>
+                                <set is_embedded_in_detail="1" />
+                                <include href="tim_mitra/surat Pelayanan/form_order.html" />
                             </check>
                             <check if="{{ !(@is_admin_order || @is_tim_mitra || @is_superadmin || @can_manage_penawaran || @order.jenis_layanan_opti == 'lingkungan') }}">
                                 <div class="p-4 bg-light rounded-3 border text-center text-muted small">
@@ -5827,14 +5821,32 @@
                                     <check if="{{ @is_ketua_tim || @is_superadmin }}">
                                         <div class="d-flex align-items-center gap-2">
                                             <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) }}">
-                                                <button type="button" class="btn btn-primary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Konfirmasi atau sesuaikan kembali Ketua Tim Pelaksana">
-                                                    <i class="bi bi-check2-circle"></i> Konfirmasi / Ganti Pelaksana
-                                                </button>
+                                                <check if="{{ @can_koreksi }}">
+                                                    <true>
+                                                        <button type="button" class="btn btn-primary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs rounded-2" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Konfirmasi atau sesuaikan kembali Ketua Tim Pelaksana">
+                                                            <i class="bi bi-check2-circle"></i> Konfirmasi / Ganti Pelaksana
+                                                        </button>
+                                                    </true>
+                                                    <false>
+                                                        <button type="button" class="btn btn-light btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 border text-muted shadow-xs rounded-2" disabled title="Ganti pelaksana dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                            <i class="bi bi-lock-fill text-muted"></i> Konfirmasi / Ganti Pelaksana
+                                                        </button>
+                                                    </false>
+                                                </check>
                                             </check>
                                             <check if="{{ @order.jenis_layanan_opti != 'lingkungan' || (!empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel)) }}">
-                                                <button type="button" class="btn btn-outline-secondary btn-xs px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Ganti personil PIC PO">
-                                                    <i class="bi bi-arrow-repeat"></i> Ganti PIC PO
-                                                </button>
+                                                <check if="{{ @can_koreksi }}">
+                                                    <true>
+                                                        <button type="button" class="btn btn-sm btn-outline-primary px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs rounded-2" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Ganti personil PIC PO">
+                                                            <i class="bi bi-arrow-repeat"></i> Ganti PIC PO
+                                                        </button>
+                                                    </true>
+                                                    <false>
+                                                        <button type="button" class="btn btn-sm btn-light border text-muted px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs rounded-2" disabled title="Ganti PIC PO dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                            <i class="bi bi-lock-fill text-muted"></i> Ganti PIC PO
+                                                        </button>
+                                                    </false>
+                                                </check>
                                             </check>
                                         </div>
                                     </check>

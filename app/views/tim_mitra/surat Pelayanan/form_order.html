@@ -1,15 +1,35 @@
 <check if="{{ empty(@is_embedded_in_detail) }}">
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-    <div>
-        <h4 class="fw-bold mb-0 text-dark">Penerbitan Surat Penawaran Resmi</h4>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-        <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-xs d-inline-flex align-items-center gap-1.5" onclick="toggleFloatingSpPreview(true)" title="Buka Pratinjau Naskah Surat Penawaran">
-            <i class="bi bi-file-earmark-text"></i> Pratinjau Surat
-        </button>
-        <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary btn-sm px-3 shadow-xs">
-            <i class="bi bi-arrow-left me-1"></i> Kembali ke Order
-        </a>
+<div class="card border rounded-3 bg-white shadow-xs p-3 mb-3 border-primary-subtle" id="headerStage5Penawaran">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-3 shadow-xs flex-shrink-0" style="width: 42px; height: 42px; font-size: 1.25rem;">
+                <i class="bi bi-file-earmark-text-fill"></i>
+            </div>
+            <div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="badge bg-primary text-white fw-bold px-2 py-0.5" style="font-size: 0.72rem;">TAHAP 5 DARI 9</span>
+                    <span class="badge bg-light text-secondary border px-2 py-0.5" style="font-size: 0.72rem;">Tim Mitra Industri BBSPJIS</span>
+                    <span class="text-muted small">&bull; Order <strong>#{{ @order.nomor_order }}</strong></span>
+                </div>
+                <h5 class="fw-bold text-dark mb-0 mt-1 font-display">Penerbitan Surat Penawaran Resmi &amp; Biaya Layanan</h5>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-primary shadow-xs d-inline-flex align-items-center gap-1.5" onclick="toggleFloatingSpPreview()" title="Buka / Tutup Pratinjau Surat">
+                <i class="bi bi-file-earmark-text"></i> <span>Pratinjau Surat</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary shadow-xs d-inline-flex align-items-center gap-1.5" id="btnToggleSidePanelTop" onclick="toggleDockSpPreview()" title="Tampilkan di Panel Samping Berdampingan (Tidak Menutupi Form)">
+                <i class="bi bi-layout-sidebar-reverse"></i> <span>Panel Samping</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary shadow-xs d-inline-flex align-items-center gap-1.5" id="btnToggleGhostTop" onclick="toggleGhostSpPreview()" title="Mode Transparan (Tembus Pandang agar tidak menutupi isian)">
+                <i class="bi bi-droplet-half"></i> <span>Transparan</span>
+            </button>
+            <check if="{{ empty(@is_embedded_in_detail) }}">
+                <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-sm btn-outline-secondary shadow-xs d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-arrow-left"></i> <span>Kembali ke Order</span>
+                </a>
+            </check>
+        </div>
     </div>
 </div>
 </check>
@@ -75,6 +95,35 @@
         color: #1e293b;
         margin: 0;
         line-height: 1.2;
+    }
+    .card-pilih-lampiran {
+        background: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+        cursor: pointer;
+        transition: all 0.18s ease-in-out;
+        position: relative;
+    }
+    .card-pilih-lampiran:hover {
+        border-color: #94a3b8 !important;
+        background: #f8fafc;
+        transform: translateY(-1px);
+    }
+    .card-pilih-lampiran.active-option {
+        border-color: #1e3a8a !important;
+        background: #f8fafc !important;
+        box-shadow: 0 0 0 1px #1e3a8a, 0 2px 6px rgba(30, 58, 138, 0.08);
+    }
+    .card-pilih-lampiran .form-check-input {
+        float: none !important;
+        margin: 0 !important;
+        margin-top: 2px !important;
+        margin-right: 12px !important;
+        width: 17px !important;
+        height: 17px !important;
+        cursor: pointer;
+        flex-shrink: 0 !important;
     }
     .section-header-sub {
         font-size: 0.72rem;
@@ -244,17 +293,19 @@
         bottom: 0 !important;
         left: auto !important;
         height: calc(100vh - 72px) !important;
-        width: 680px !important;
-        max-width: 58vw !important;
+        width: 48vw !important;
+        max-width: 48vw !important;
         border-radius: 16px 0 0 0 !important;
         border-right: none !important;
         resize: horizontal !important;
-        box-shadow: -8px 0 28px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.9) !important;
+        box-shadow: -8px 0 28px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.9) !important;
     }
-    @media (min-width: 992px) {
+    @media (min-width: 1200px) {
         .form-preview-grid.has-docked-preview {
-            margin-right: 690px !important;
-            transition: margin-right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            width: calc(52vw - 36px) !important;
+            max-width: calc(52vw - 36px) !important;
+            margin-right: 48vw !important;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
     }
 
@@ -1634,9 +1685,9 @@
                             </label>
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-hash"></i></span>
-                                <input type="text" name="nomor_surat" id="input_nomor_surat" class="form-control form-control-sm font-monospace fw-bold" value="{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}" data-nomor-lama="{{ @nomor_surat_lama ?: (@sp_existing.nomor_surat ?? '') }}" data-nomor-baru="{{ @nomor_surat_baru ?: @nomor_surat_otomatis }}" required {{ !@can_edit ? 'disabled' : '' }}>
+                                <input type="text" name="nomor_surat" id="input_nomor_surat" class="form-control form-control-sm font-monospace fw-bold" value="{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}" data-nomor-lama="{{ @nomor_surat_lama ?: (@sp_existing.nomor_surat ?? '') }}" data-nomor-baru="{{ @nomor_surat_baru ?: @nomor_surat_otomatis }}" placeholder="Contoh: B/.../BBSPJIS/MS/XI/2026 atau B/12/BBSPJIS/MS/XI/2026" required {{ !@can_edit ? 'disabled' : '' }}>
                             </div>
-                            <small class="text-muted" style="font-size: 0.72rem;">Format otomatis: B/{urut}/BBSPJIS/MS/{bulan_romawi}/{tahun}. Nomor dapat disunting secara manual.</small>
+                            <small class="text-muted" style="font-size: 0.72rem;">Format: <strong>B/…/BBSPJIS/MS/{bulan_romawi}/{tahun}</strong>. Nomor urut dikosongkan (titik-titik) dan diisi manual oleh Tim Mitra (nomor agenda keluar dari sekretaris balai).</small>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label small fw-semibold text-dark mb-1">
@@ -1873,10 +1924,234 @@
                 </div>
             </div>
 
+            <!-- 3. Dokumen Lampiran Penawaran (Opsional & Dinamis) -->
+            <div class="form-section-card" id="cardDokumenLampiran">
+                <div class="form-section-header d-flex align-items-center justify-content-between px-3 py-2.5">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="section-badge-num">3</span>
+                        <div>
+                            <div class="section-header-text">Dokumen Lampiran Penawaran</div>
+                            <div class="text-muted" style="font-size: 0.72rem;">Pilih berkas dokumen yang akan digabungkan pada Halaman 3+ Surat Penawaran</div>
+                        </div>
+                    </div>
+                    <span id="badgeStatusLampiran" class="badge rounded-pill px-2.5 py-1 fw-medium {{ @sumber_lampiran_default == 'proposal' ? 'bg-success-subtle text-success border border-success-subtle' : (@sumber_lampiran_default == 'upload' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle') }}" style="font-size: 0.7rem;">
+                        <check if="{{ @sumber_lampiran_default == 'proposal' }}">
+                            <i class="bi bi-file-earmark-check me-1"></i>Proposal Riset
+                        </check>
+                        <check if="{{ @sumber_lampiran_default == 'upload' }}">
+                            <i class="bi bi-cloud-arrow-up me-1"></i>Berkas Kustom
+                        </check>
+                        <check if="{{ @sumber_lampiran_default == 'tanpa' }}">
+                            <i class="bi bi-dash-circle me-1"></i>Tanpa Lampiran
+                        </check>
+                    </span>
+                </div>
+                <div class="form-section-body p-3">
+                    <!-- Input State -->
+                    <input type="hidden" name="opsi_lampiran_sumber" id="opsiLampiranSumber" value="{{ @sumber_lampiran_default }}">
+                    <input type="hidden" id="currentCustomLampiranPath" value="{{ (@sumber_lampiran_default == 'upload' && !empty(@lampiran_user_existing)) ? @lampiran_user_existing : '' }}">
+                    <input type="hidden" id="proposalLampiranPath" value="{{ @proposal_file }}">
+
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <label class="form-label mb-0" style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; font-weight: 700;">
+                            Pilihan Sumber Berkas Lampiran:
+                        </label>
+                    </div>
+
+                    <!-- Pilihan 3 Opsi Kartu -->
+                    <div class="row g-2.5 mb-3">
+                        <!-- Opsi 1: Berkas Proposal -->
+                        <div class="col-md-4">
+                            <div class="card-pilih-lampiran h-100 d-flex flex-column justify-content-between {{ @sumber_lampiran_default == 'proposal' ? 'active-option' : '' }}" id="cardOpsiLampiran_proposal" onclick="switchOpsiLampiran('proposal')">
+                                <div class="d-flex align-items-start gap-3">
+                                    <input class="form-check-input" type="radio" name="opsi_lampiran_radio" id="optLampiran_proposal" value="proposal" {{ @sumber_lampiran_default == 'proposal' ? 'checked' : '' }} onchange="switchOpsiLampiran('proposal')" style="margin: 3px 0 0 0 !important; cursor: pointer; flex-shrink: 0;">
+                                    <div class="flex-grow-1" style="min-width: 0;">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <strong class="text-dark" style="font-size: 0.86rem; font-weight: 700;">Proposal Teknis</strong>
+                                            <i class="bi bi-file-earmark-text text-muted ms-1" style="font-size: 1.05rem;"></i>
+                                        </div>
+                                        <span class="text-muted d-block mt-0.5" style="font-size: 0.72rem; line-height: 1.35;">
+                                            Ambil dari Tahap 4 (Riset &amp; Biaya)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between" style="border-color: #f1f5f9 !important;">
+                                    <check if="{{ @proposal_file_exists }}">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.65rem;">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Tersedia
+                                        </span>
+                                        <span class="text-muted" style="font-size: 0.68rem;">Siap Gabung</span>
+                                    </check>
+                                    <check if="{{ !@proposal_file_exists }}">
+                                        <span class="badge bg-light text-muted border px-2 py-0.5" style="font-size: 0.65rem;">
+                                            <i class="bi bi-dash-circle me-1"></i>Belum Ada
+                                        </span>
+                                        <span class="text-muted" style="font-size: 0.68rem;">Tidak Ditemukan</span>
+                                    </check>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opsi 2: Upload File Baru -->
+                        <div class="col-md-4">
+                            <div class="card-pilih-lampiran h-100 d-flex flex-column justify-content-between {{ @sumber_lampiran_default == 'upload' ? 'active-option' : '' }}" id="cardOpsiLampiran_upload" onclick="switchOpsiLampiran('upload')">
+                                <div class="d-flex align-items-start gap-3">
+                                    <input class="form-check-input" type="radio" name="opsi_lampiran_radio" id="optLampiran_upload" value="upload" {{ @sumber_lampiran_default == 'upload' ? 'checked' : '' }} onchange="switchOpsiLampiran('upload')" style="margin: 3px 0 0 0 !important; cursor: pointer; flex-shrink: 0;">
+                                    <div class="flex-grow-1" style="min-width: 0;">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <strong class="text-dark" style="font-size: 0.86rem; font-weight: 700;">Upload File Baru</strong>
+                                            <i class="bi bi-cloud-arrow-up text-muted ms-1" style="font-size: 1.05rem;"></i>
+                                        </div>
+                                        <span class="text-muted d-block mt-0.5" style="font-size: 0.72rem; line-height: 1.35;">
+                                            PDF, Word, atau Gambar
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between" style="border-color: #f1f5f9 !important;">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 0.65rem;" id="badgeUploadKustomStatus">
+                                        <i class="bi bi-folder2 me-1"></i>Berkas Kustom
+                                    </span>
+                                    <span class="text-muted" style="font-size: 0.68rem;">Maks 10 MB</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opsi 3: Tanpa Lampiran -->
+                        <div class="col-md-4">
+                            <div class="card-pilih-lampiran h-100 d-flex flex-column justify-content-between {{ @sumber_lampiran_default == 'tanpa' ? 'active-option' : '' }}" id="cardOpsiLampiran_tanpa" onclick="switchOpsiLampiran('tanpa')">
+                                <div class="d-flex align-items-start gap-3">
+                                    <input class="form-check-input" type="radio" name="opsi_lampiran_radio" id="optLampiran_tanpa" value="tanpa" {{ @sumber_lampiran_default == 'tanpa' ? 'checked' : '' }} onchange="switchOpsiLampiran('tanpa')" style="margin: 3px 0 0 0 !important; cursor: pointer; flex-shrink: 0;">
+                                    <div class="flex-grow-1" style="min-width: 0;">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <strong class="text-dark" style="font-size: 0.86rem; font-weight: 700;">Tanpa Lampiran</strong>
+                                            <i class="bi bi-file-earmark-minus text-muted ms-1" style="font-size: 1.05rem;"></i>
+                                        </div>
+                                        <span class="text-muted d-block mt-0.5" style="font-size: 0.72rem; line-height: 1.35;">
+                                            Format standar 2 halaman
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between" style="border-color: #f1f5f9 !important;">
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5" style="font-size: 0.65rem;">
+                                        <i class="bi bi-file-text me-1"></i>Hal 1 &amp; 2
+                                    </span>
+                                    <span class="text-muted" style="font-size: 0.68rem;">Standar</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Konten Opsi 1: Proposal -->
+                    <div id="panelLampiran_proposal" class="{{ @sumber_lampiran_default == 'proposal' ? '' : 'd-none' }}">
+                        <check if="{{ @proposal_file_exists }}">
+                            <div class="p-3 bg-white border border-success-subtle rounded-3 shadow-2xs d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="p-2 bg-success-subtle text-success rounded-2 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                        <i class="bi bi-file-earmark-check fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="d-block text-dark small text-break">{{ basename(@proposal_file) }}</strong>
+                                        <span class="text-muted d-block" style="font-size: 0.72rem;">
+                                            Tersambung otomatis dari Berkas Proposal Riset / Teknis (Tahap 4) &bull; Menyatu di Halaman 3+
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                                    <a href="{{ @BASE }}/{{ @proposal_file }}" target="_blank" class="btn btn-sm btn-outline-secondary px-2.5 py-1.5" style="font-size: 0.75rem;" title="Buka berkas proposal di tab baru">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i> Buka File
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1.5" style="font-size: 0.75rem;" onclick="bukaPratinjauLampiranHal3()" title="Lihat lembar lampiran pada pratinjau naskah">
+                                        <i class="bi bi-eye-fill me-1"></i> Pratinjau Hal 3
+                                    </button>
+                                </div>
+                            </div>
+                        </check>
+                        <check if="{{ !@proposal_file_exists }}">
+                            <div class="alert alert-warning border-0 rounded-3 p-3 mb-0 d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 shadow-2xs" style="background: #fffbeb; border: 1px solid #fef3c7 !important;">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="d-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle flex-shrink-0" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-exclamation-triangle-fill fs-5 text-warning-emphasis"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.82rem;">Berkas Proposal Teknis Belum Tersedia</div>
+                                        <div class="text-secondary" style="font-size: 0.75rem;">Order ini belum memiliki unggahan berkas proposal teknis di Tahap 4.</div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-warning text-dark bg-white border-warning-subtle fw-semibold px-3 py-1.5 rounded-2 shadow-xs text-nowrap d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;" onclick="switchOpsiLampiran('upload')">
+                                    <i class="bi bi-cloud-arrow-up text-primary"></i> Pilih Opsi Upload File
+                                </button>
+                            </div>
+                        </check>
+                    </div>
+
+                    <!-- Panel Konten Opsi 2: Upload Baru -->
+                    <div id="panelLampiran_upload" class="{{ @sumber_lampiran_default == 'upload' ? '' : 'd-none' }}">
+                        <input type="file" name="file_lampiran_user" id="inputFileLampiranUser" class="d-none" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleLampiranUserChange(this)">
+
+                        <!-- Tampilan berkas kustom terunggah -->
+                        <div id="cardCustomLampiranUploaded" class="{{ (@sumber_lampiran_default == 'upload' && !empty(@lampiran_user_existing) && @lampiran_user_existing != @proposal_file) ? '' : 'd-none' }}">
+                            <div class="p-3 bg-white border border-primary-subtle rounded-3 shadow-2xs d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="p-2 bg-primary-subtle text-primary rounded-2 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                        <i class="bi bi-paperclip fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="d-block text-dark small text-break" id="labelNamaFileCustom">{{ (!empty(@lampiran_user_existing) && @lampiran_user_existing != @proposal_file) ? basename(@lampiran_user_existing) : '' }}</strong>
+                                        <span class="text-muted d-block" style="font-size: 0.72rem;">
+                                            Berkas Lampiran Kustom &bull; Menyatu di Halaman 3+ Surat Penawaran
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                                    <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1.5" style="font-size: 0.75rem;" onclick="document.getElementById('inputFileLampiranUser').click()" title="Ganti berkas">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Ganti File
+                                    </button>
+                                    <a href="{{ @BASE }}/{{ @lampiran_user_existing }}" target="_blank" id="btnBukaCustomLampiran" class="btn btn-sm btn-outline-secondary px-2.5 py-1.5 {{ empty(@lampiran_user_existing) ? 'd-none' : '' }}" style="font-size: 0.75rem;" title="Buka berkas di tab baru">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i> Buka File
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1.5" style="font-size: 0.75rem;" onclick="bukaPratinjauLampiranHal3()" title="Lihat lembar lampiran pada pratinjau naskah">
+                                        <i class="bi bi-eye-fill me-1"></i> Pratinjau Hal 3
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger px-2.5 py-1.5" style="font-size: 0.75rem;" onclick="hapusLampiranUser(false)" title="Lepas berkas ini">
+                                        <i class="bi bi-trash3 me-1"></i> Hapus
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dropzone upload jika belum ada file kustom -->
+                        <div id="dropzoneCustomLampiran" class="{{ (@sumber_lampiran_default == 'upload' && !empty(@lampiran_user_existing) && @lampiran_user_existing != @proposal_file) ? 'd-none' : '' }}">
+                            <div class="border border-2 border-dashed rounded-3 p-3 text-center bg-light" onclick="document.getElementById('inputFileLampiranUser').click()" style="cursor: pointer; transition: all 0.2s ease;">
+                                <i class="bi bi-cloud-arrow-up text-primary fs-2 mb-1 d-block"></i>
+                                <div class="fw-semibold text-dark small">Pilih Berkas Lampiran untuk Diunggah</div>
+                                <div class="text-muted" style="font-size: 0.72rem; line-height: 1.4;">
+                                    Format: <strong>PDF, Word (.docx / .doc), Excel, Gambar (.jpg, .png)</strong> &bull; Maksimal 10 MB
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2 px-3 py-1 fw-semibold shadow-xs">
+                                    <i class="bi bi-folder2-open me-1"></i> Cari &amp; Pilih Berkas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Konten Opsi 3: Tanpa Lampiran -->
+                    <div id="panelLampiran_tanpa" class="{{ @sumber_lampiran_default == 'tanpa' ? '' : 'd-none' }}">
+                        <div class="p-3 bg-light border border-slate-200 rounded-3 text-secondary small d-flex align-items-center gap-2.5">
+                            <div class="d-flex align-items-center justify-content-center bg-white border rounded-circle flex-shrink-0 text-primary shadow-xs" style="width: 32px; height: 32px;">
+                                <i class="bi bi-file-earmark-text fs-6"></i>
+                            </div>
+                            <div style="font-size: 0.75rem; line-height: 1.45;">
+                                Surat Penawaran resmi akan diterbitkan dalam format standar <strong>2 Halaman</strong> (Cover Surat Penawaran &amp; Lembar Persetujuan Biaya) tanpa menyertakan lembar lampiran tambahan di Halaman 3+.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 4. Status Respon Klien & Riwayat Revisi -->
             <div class="form-section-card">
                 <div class="form-section-header">
-                    <span class="section-badge-num">3</span>
+                    <span class="section-badge-num">4</span>
                     <div>
                         <div class="section-header-text">Status Respon Klien &amp; Riwayat Revisi</div>
                         </div>
@@ -2004,6 +2279,9 @@
                         <span class="badge px-2 py-0.5 rounded-pill small ms-1 flex-shrink-0" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.68rem;">
                             Live
                         </span>
+                        <span id="ghostActiveIndicator" class="badge bg-warning text-dark px-2 py-0.5 rounded-pill small ms-1" style="display: none; cursor: pointer; font-size: 0.68rem;" onclick="toggleGhostSpPreview()" title="Klik untuk mematikan mode transparan">
+                            <i class="bi bi-droplet-fill me-1"></i>Transparan
+                        </span>
                     </div>
                     <div class="d-flex align-items-center gap-1 flex-shrink-0">
                         <!-- Mode Transparan (Ghost) -->
@@ -2032,12 +2310,7 @@
                             <i class="bi bi-file-earmark-pdf-fill"></i> PDF
                         </button>
 
-                        <!-- Fitur Upload Lampiran Opsional (Sebelah Kiri Unduh PDF - Menyatu di Halaman 3+) -->
-                        <input type="file" name="file_lampiran_user" id="inputFileLampiranUser" class="d-none" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleLampiranUserChange(this)">
-                        <button type="button" id="btnTriggerUploadLampiranUser" class="preview-btn preview-btn-secondary" onclick="document.getElementById('inputFileLampiranUser').click()" title="{{ !empty(@lampiran_user_existing) ? ('Lampiran menyatu di Hal. 3+: ' . basename(@lampiran_user_existing)) : 'Opsional: Unggah lampiran untuk digabungkan ke Halaman 3+ Surat Penawaran (PDF/Word/JPG/PNG)' }}">
-                            <i class="bi bi-paperclip text-primary" id="iconUploadLampiranUser"></i>
-                            <span id="labelUploadLampiranUser">{{ !empty(@lampiran_user_existing) ? 'Lampiran (Hal 3+)' : 'Upload Lampiran' }}</span>
-                        </button>
+
 
                         <div class="dropdown d-inline-block">
                             <button type="button" class="preview-btn preview-btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Pilihan Unduh Dokumen (PDF / Word)">
@@ -3830,6 +4103,156 @@ function initPenandatanganTomSelect() {
     }
 }
 
+function switchOpsiLampiran(sumber, autoAjax) {
+    if (autoAjax === undefined) autoAjax = true;
+    var inpSumber = document.getElementById('opsiLampiranSumber');
+    var isSame = inpSumber && inpSumber.value === sumber;
+    if (inpSumber) inpSumber.value = sumber;
+
+    var badge = document.getElementById('badgeStatusLampiran');
+    if (badge) {
+        if (sumber === 'proposal') {
+            badge.className = 'badge bg-success-subtle text-success border border-success-subtle';
+            badge.innerHTML = '<i class="bi bi-file-earmark-check me-1"></i>Proposal Riset';
+        } else if (sumber === 'upload') {
+            badge.className = 'badge bg-primary-subtle text-primary border border-primary-subtle';
+            badge.innerHTML = '<i class="bi bi-cloud-arrow-up me-1"></i>Berkas Kustom';
+        } else {
+            badge.className = 'badge bg-secondary-subtle text-secondary border border-secondary-subtle';
+            badge.innerHTML = '<i class="bi bi-dash-circle me-1"></i>Tanpa Lampiran';
+        }
+    }
+
+    ['proposal', 'upload', 'tanpa'].forEach(function(s) {
+        var card = document.getElementById('cardOpsiLampiran_' + s);
+        var panel = document.getElementById('panelLampiran_' + s);
+        var radio = document.getElementById('optLampiran_' + s);
+        if (s === sumber) {
+            if (card) card.classList.add('active-option');
+            if (panel) panel.classList.remove('d-none');
+            if (radio) radio.checked = true;
+        } else {
+            if (card) card.classList.remove('active-option');
+            if (panel) panel.classList.add('d-none');
+            if (radio) radio.checked = false;
+        }
+    });
+
+    if (sumber === 'proposal') {
+        var proposalFile = '{{ !empty(@proposal_file) ? @proposal_file : "" }}';
+        if (proposalFile) {
+            if (autoAjax && !isSame) {
+                pilihLampiranProposal();
+            } else {
+                renderLampiranPreviewOnSheet(proposalFile, '{{ !empty(@proposal_file) ? basename(@proposal_file) : "" }}');
+            }
+        } else {
+            hideLampiranPreview();
+        }
+    } else if (sumber === 'upload') {
+        var existingUpload = document.getElementById('currentCustomLampiranPath') ? document.getElementById('currentCustomLampiranPath').value : '';
+        if (existingUpload) {
+            renderLampiranPreviewOnSheet(existingUpload);
+        } else {
+            hideLampiranPreview();
+        }
+    } else if (sumber === 'tanpa') {
+        if (autoAjax && !isSame) {
+            hapusLampiranUser(true);
+        } else {
+            hideLampiranPreview();
+        }
+    }
+}
+
+function pilihLampiranProposal() {
+    var orderId = '{{ @order.id }}';
+    var spId = '{{ @sp_existing && @sp_existing.id ? @sp_existing.id : 0 }}';
+
+    var formData = new FormData();
+    if (spId && spId !== '0') formData.append('sp_id', spId);
+
+    fetch('{{ @BASE }}/order/' + orderId + '/penawaran/set-lampiran-proposal', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: formData
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data && data.success) {
+            renderLampiranPreviewOnSheet(data.file_path, data.file_name);
+            var spPdfUrlBase = '{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak{{ @sp_existing && @sp_existing.id ? ("?id=" . @sp_existing.id . "&t=") : "?t=" }}' + Date.now();
+            var btnPrevMain = document.getElementById('btnPreviewSpPdfMain');
+            if (btnPrevMain) btnPrevMain.setAttribute('data-preview-pdf', spPdfUrlBase + '&kop=1');
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Proposal Digabung ke Hal. 3+',
+                    text: data.file_name,
+                    showConfirmButton: false,
+                    timer: 2500
+                });
+            }
+        } else {
+            var msg = (data && data.message) ? data.message : 'Gagal menghubungkan berkas proposal.';
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'warning', title: 'Perhatian', text: msg });
+            } else {
+                alert(msg);
+            }
+        }
+    })
+    .catch(function(err) {
+        console.error('Error set lampiran proposal:', err);
+    });
+}
+
+function bukaPratinjauLampiranHal3() {
+    if ('{{ @order.jenis_layanan_opti }}' === 'lingkungan') {
+        switchLingPage(3);
+    } else {
+        switchSelPage(3);
+    }
+    var sheetArea = document.querySelector('.floating-sp-preview');
+    if (sheetArea && sheetArea.classList.contains('minimized')) {
+        toggleMinimizeSpPreview();
+    }
+    var pEl = document.getElementById('{{ @order.jenis_layanan_opti }}' === 'lingkungan' ? 'lingPage3' : 'selPage3');
+    if (pEl) {
+        pEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function hideLampiranPreview() {
+    document.body.classList.remove('has-sp-lampiran');
+    var tabSel3 = document.getElementById('btnSelPage3');
+    var tabLing3 = document.getElementById('btnLingPage3');
+    if (tabSel3) tabSel3.classList.add('d-none');
+    if (tabLing3) tabLing3.classList.add('d-none');
+    var selPage = document.getElementById('selPage3');
+    var lingPage = document.getElementById('lingPage3');
+    if (selPage) selPage.classList.add('d-none');
+    if (lingPage) lingPage.classList.add('d-none');
+
+    var selContent = document.getElementById('selPage3Content');
+    var lingContent = document.getElementById('lingPage3Content');
+    if (selContent) selContent.innerHTML = '';
+    if (lingContent) lingContent.innerHTML = '';
+
+    if ('{{ @order.jenis_layanan_opti }}' === 'lingkungan') {
+        switchLingPage(1);
+    } else {
+        switchSelPage(1);
+    }
+
+    var spPdfUrlBase = '{{ @BASE }}/order/{{ @order.id }}/penawaran/cetak{{ @sp_existing && @sp_existing.id ? ("?id=" . @sp_existing.id . "&t=") : "?t=" }}' + Date.now();
+    var btnPrevMain = document.getElementById('btnPreviewSpPdfMain');
+    if (btnPrevMain) btnPrevMain.setAttribute('data-preview-pdf', spPdfUrlBase + '&kop=1');
+}
+
 function handleLampiranUserChange(input) {
     if (!input || !input.files || !input.files[0]) return;
     var file = input.files[0];
@@ -3868,8 +4291,21 @@ function handleLampiranUserChange(input) {
         if (btn) btn.disabled = false;
         if (icon) icon.className = 'bi bi-paperclip text-primary';
         if (data && data.success) {
-            if (label) label.textContent = 'Ganti Lampiran (Hal. 3+)';
-            if (btn) btn.title = 'Lampiran menyatu di Hal. 3+: ' + (data.file_name || file.name);
+            // Update custom upload card UI in the form
+            var customCard = document.getElementById('cardCustomLampiranUploaded');
+            var emptyDrop = document.getElementById('dropzoneCustomLampiran');
+            var labelNama = document.getElementById('labelNamaFileCustom');
+            var btnBuka = document.getElementById('btnBukaCustomLampiran');
+            var curCustomPath = document.getElementById('currentCustomLampiranPath');
+
+            if (labelNama) labelNama.textContent = data.file_name || file.name;
+            if (curCustomPath) curCustomPath.value = data.file_path;
+            if (btnBuka) {
+                btnBuka.href = (data.file_path.indexOf('http') === 0 || data.file_path.indexOf('/') === 0) ? data.file_path : ('{{ @BASE }}/' + data.file_path.replace(/^\/+/, ''));
+                btnBuka.classList.remove('d-none');
+            }
+            if (customCard) customCard.classList.remove('d-none');
+            if (emptyDrop) emptyDrop.classList.add('d-none');
 
             // Render langsung berkas lampiran ke lembar Hal 3 Live Preview
             renderLampiranPreviewOnSheet(data.file_path, data.file_name || file.name);
@@ -4053,7 +4489,8 @@ function renderLampiranPreviewOnSheet(filePath, fileName) {
     });
 }
 
-function hapusLampiranUser() {
+function hapusLampiranUser(silent) {
+    if (silent === undefined) silent = false;
     var spIdParam = '{{ @sp_existing && @sp_existing.id ? @sp_existing.id : 0 }}';
     var orderId = '{{ @order.id }}';
 
@@ -4110,25 +4547,40 @@ function hapusLampiranUser() {
                 var btnPrevMain = document.getElementById('btnPreviewSpPdfMain');
                 if (btnPrevMain) btnPrevMain.setAttribute('data-preview-pdf', spPdfUrlBase + '&kop=1');
 
-                if (typeof Swal !== 'undefined') {
+                // Reset custom card in form
+                var inp = document.getElementById('inputFileLampiranUser');
+                if (inp) inp.value = '';
+                var curPath = document.getElementById('currentCustomLampiranPath');
+                if (curPath) curPath.value = '';
+                var customCard = document.getElementById('cardCustomLampiranUploaded');
+                var emptyDrop = document.getElementById('dropzoneCustomLampiran');
+                if (customCard) customCard.classList.add('d-none');
+                if (emptyDrop) emptyDrop.classList.remove('d-none');
+
+                if (!silent && typeof Swal !== 'undefined') {
                     Swal.fire({
                         toast: true,
                         position: 'top-end',
                         icon: 'success',
-                        title: 'Lampiran berhasil dihapus',
+                        title: 'Lampiran berhasil dilepas',
                         showConfirmButton: false,
                         timer: 2000
                     });
                 }
             } else {
-                alert((data && data.message) ? data.message : 'Gagal menghapus lampiran.');
+                if (!silent) alert((data && data.message) ? data.message : 'Gagal melepas lampiran.');
             }
         })
         .catch(function(err) {
             console.error('Error removing lampiran:', err);
-            alert('Terjadi kesalahan saat menghapus lampiran.');
+            if (!silent) alert('Terjadi kesalahan saat melepas lampiran.');
         });
     };
+
+    if (silent) {
+        executeHapus();
+        return;
+    }
 
     if (typeof Swal !== 'undefined') {
         Swal.fire({
@@ -4497,31 +4949,52 @@ function clampPanelInViewport(panel) {
 function toggleGhostSpPreview() {
     var panel = document.getElementById("previewStickyWrapper");
     var btn = document.getElementById("btnGhostSpPreview");
+    var btnTop = document.getElementById("btnToggleGhostTop");
+    var indicator = document.getElementById("ghostActiveIndicator");
     if (!panel) return;
     var isGhost = panel.classList.toggle("is-ghost");
     if (isGhost) {
-        panel.style.setProperty("opacity", "0.35", "important");
+        panel.style.setProperty("opacity", "0.28", "important");
+        if (indicator) indicator.style.display = "inline-flex";
     } else {
         panel.style.removeProperty("opacity");
+        if (indicator) indicator.style.display = "none";
     }
     if (btn) {
         btn.classList.toggle("active", isGhost);
         btn.innerHTML = isGhost ? '<i class="bi bi-droplet-fill text-info"></i>' : '<i class="bi bi-droplet-half"></i>';
         btn.title = isGhost ? "Matikan Mode Transparan" : "Mode Transparan (Tembus Pandang agar tidak menghalangi formulir)";
     }
+    if (btnTop) {
+        btnTop.classList.toggle("btn-warning", isGhost);
+        btnTop.classList.toggle("text-dark", isGhost);
+        btnTop.classList.toggle("btn-outline-secondary", !isGhost);
+    }
 }
 
-function toggleDockSpPreview() {
+function toggleDockSpPreview(forceDock) {
     var panel = document.getElementById("previewStickyWrapper");
     var btn = document.getElementById("btnDockSpPreview");
+    var btnTop = document.getElementById("btnToggleSidePanelTop");
     var formGrid = document.querySelector(".form-preview-grid");
     if (!panel) return;
 
-    var isDocked = panel.classList.toggle("is-docked");
+    // Pastikan panel terlihat saat ingin mode dock
+    if (panel.style.display === "none" || panel.classList.contains("d-none")) {
+        toggleFloatingSpPreview(true);
+    }
+
+    var isDocked = (typeof forceDock !== "undefined") ? forceDock : !panel.classList.contains("is-docked");
+    panel.classList.toggle("is-docked", isDocked);
     if (btn) {
         btn.classList.toggle("active", isDocked);
         btn.innerHTML = isDocked ? '<i class="bi bi-window"></i>' : '<i class="bi bi-layout-sidebar-reverse"></i>';
         btn.title = isDocked ? "Ubah ke Mode Melayang Bebas" : "Sematkan ke Sisi Kanan (Dock)";
+    }
+    if (btnTop) {
+        btnTop.classList.toggle("btn-primary", isDocked);
+        btnTop.classList.toggle("text-white", isDocked);
+        btnTop.classList.toggle("btn-outline-secondary", !isDocked);
     }
     if (formGrid) {
         formGrid.classList.toggle("has-docked-preview", isDocked);

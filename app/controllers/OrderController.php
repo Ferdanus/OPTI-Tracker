@@ -1062,8 +1062,10 @@ class OrderController extends Controller {
         // Step 1: Surat Masuk (selalu selesai karena order sudah tercatat)
         $isSuratMasukDone = true;
 
-        // Step 2: Form Pelayanan (selesai jika status bukan permintaan_masuk/draft dan jenis layanan sudah ditentukan)
-        $isFormPelayananDone = !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan', 'draft']) && $hasLayanan;
+        // Step 2: Form Pelayanan (selesai jika formulir telah dikirim ke Ka. Tim dan jenis layanan sudah ditentukan)
+        $isPelayananSentToKatim = !empty($order['status_tinjauan']) && in_array($order['status_tinjauan'], ['menunggu', 'layak', 'tidak_layak']);
+        $hasMovedPastStage2 = !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan', 'draft', 'baru']) || (!empty($tinjauan) && empty($tinjauan['is_draft']));
+        $isFormPelayananDone = ($isPelayananSentToKatim || $hasMovedPastStage2) && $hasLayanan && !in_array($order['status'] ?? '', ['draft_disimpan', 'draft']);
 
         // Step 3: Kaji Kelayakan (selesai jika kaji ulang kelayakan disetujui dan bukan draf)
         $tinjauanDisetujui = (($order['status_tinjauan'] ?? '') === 'layak') || (!empty($tinjauan) && empty($tinjauan['is_draft']) && (($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan'));
@@ -1322,6 +1324,8 @@ class OrderController extends Controller {
         $f3->set('active_step', $activeStep);
         $f3->set('is_form_pelayanan_done', $isFormPelayananDone);
         $f3->set('is_tinjauan_done', $isTinjauanDone);
+        $canKoreksiPelayanan = $isSuperadmin || $isUnlockedOrder || (!$isTinjauanDone && ($this->isTimMitra() || $this->hasPermission('order:form_pelayanan')));
+        $f3->set('can_koreksi_pelayanan', $canKoreksiPelayanan);
         $f3->set('is_step4_done', $isStep4Done);
         $f3->set('proposal_has_file_cost', $proposalHasFileAndCost);
         $f3->set('is_proposal_approved', $isProposalApproved);
@@ -2258,53 +2262,65 @@ class OrderController extends Controller {
 
             // Kirim notifikasi ke Tim Mitra & PIC
             try {
+                $orderLabel = \NotificationService::formatOrderLabel($order, $id);
+                $namaPt = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
+                $actorName = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Ketua Tim OPTI');
+
                 if ($hasil['keputusan'] === 'dapat_dilaksanakan') {
-                    $picNama = !empty($post['pic_nama']) ? $post['pic_nama'] : 'PIC Terpilih';
-                    
+                    if (empty($picNama) && !empty($post['pic_proposal_id'])) {
+                        $picRow = $this->db->exec("SELECT nama_user FROM tb_arsipuser WHERE id_user = ?", [1 => (int)$post['pic_proposal_id']]);
+                        if (!empty($picRow[0]['nama_user'])) {
+                            $picNama = $picRow[0]['nama_user'];
+                        }
+                    }
+                    if (empty($picNama)) {
+                        $picNama = 'PIC';
+                    }
+
                     // Notif ke Ketua Tim Mitra
                     \NotificationService::send($this->db, [
                         'order_id'       => $id,
                         'target_role'    => 'ketua_tim_mitra',
                         'target_layanan' => 'semua',
                         'judul'          => 'Kelayakan Teknis ISO Disetujui',
-                        'pesan'          => "Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) dinyatakan 'Dapat Dilaksanakan' oleh Ka. Tim OPTI. PIC yang ditugaskan: {$picNama}.",
+                        'pesan'          => "Kelayakan order {$orderLabel} {$namaPt} disetujui oleh {$actorName}. PIC: {$picNama}.",
                         'tipe'           => 'success',
                         'icon'           => 'bi-check-circle-fill',
                         'link_url'       => "/order/{$id}",
                         'created_by'     => $userId,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                        'created_by_name'=> $actorName
                     ]);
 
                     // Notif ke PIC Peneliti / Tim Kerja
                     if (!empty($post['pic_proposal_id'])) {
-                        $nomorReq = !empty($order['nomor_permintaan']) ? $order['nomor_permintaan'] : (!empty($order['nomor_order']) ? $order['nomor_order'] : ('REQ-' . $id));
                         \NotificationService::send($this->db, [
                             'order_id'       => $id,
                             'target_role'    => 'tim_kerja',
                             'target_user_id' => (int)$post['pic_proposal_id'],
                             'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                             'judul'          => 'Penugasan PIC Dokumen Proposal',
-                            'pesan'          => "Ditugaskan sebagai PIC untuk order {$nomorReq}. Mohon susun dan unggah dokumen proposal teknis.",
+                            'pesan'          => "Anda ({$picNama}) ditugaskan jadi PIC Proposal order {$orderLabel} {$namaPt} oleh {$actorName}.",
                             'tipe'           => 'primary',
                             'icon'           => 'bi-file-earmark-arrow-up-fill',
                             'link_url'       => "/order/{$id}",
                             'created_by'     => $userId,
-                            'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                            'created_by_name'=> $actorName
                         ]);
                     }
                 } else {
                     // Notif penolakan ke Ketua Tim Mitra
+                    $alasanTxt = !empty($post['alasan_penolakan']) ? " (Alasan: {$post['alasan_penolakan']})" : "";
                     \NotificationService::send($this->db, [
                         'order_id'       => $id,
                         'target_role'    => 'ketua_tim_mitra',
                         'target_layanan' => 'semua',
-                        'judul'          => 'Order Tidak Dapat Dilaksanakan',
-                        'pesan'          => "Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) dinyatakan 'Tidak Dapat Dilaksanakan' oleh Ka. Tim OPTI.",
+                        'judul'          => 'Kelayakan Teknis Ditolak',
+                        'pesan'          => "Kelayakan order {$orderLabel} {$namaPt} ditolak oleh {$actorName}{$alasanTxt}.",
                         'tipe'           => 'warning',
                         'icon'           => 'bi-x-circle-fill',
                         'link_url'       => "/order/{$id}",
                         'created_by'     => $userId,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                        'created_by_name'=> $actorName
                     ]);
                 }
             } catch (\Exception $eNotif) {
@@ -2549,18 +2565,21 @@ class OrderController extends Controller {
                             $uPic = $this->db->exec("SELECT nama_user FROM tb_arsipuser WHERE id_user = ?", [1 => $newPicId]);
                             $picNama = !empty($uPic) ? $uPic[0]['nama_user'] : 'PIC';
                             $this->logActivity($id, 'kalkulasi_lingkungan', 'tunjuk_pic_lingkungan', "Menetapkan PIC Pengujian & Lab Lingkungan: {$picNama}");
+                            $ordLblLing = \NotificationService::formatOrderLabel($orderBefore, $id);
+                            $ptLing = !empty($orderBefore['nama_perusahaan']) ? $orderBefore['nama_perusahaan'] : 'Klien';
+                            $actorLing = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Ketua Tim OPTI');
                             \NotificationService::send($this->db, [
                                 'order_id'       => $id,
                                 'target_role'    => 'tim_kerja',
                                 'target_user_id' => $newPicId,
                                 'target_layanan' => 'lingkungan',
                                 'judul'          => 'Penugasan PIC Pengujian Lingkungan',
-                                'pesan'          => "Anda telah ditugaskan sebagai PIC Pengujian & Lab Lingkungan untuk Order #{$orderBefore['nomor_order']} ({$orderBefore['nama_perusahaan']}).",
+                                'pesan'          => "Anda ({$picNama}) ditugaskan jadi PIC Pengujian Lingkungan order {$ordLblLing} {$ptLing} oleh {$actorLing}.",
                                 'tipe'           => 'primary',
                                 'icon'           => 'bi-person-check-fill',
                                 'link_url'       => "/order/{$id}",
                                 'created_by'     => $userId,
-                                'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                                'created_by_name'=> $actorLing
                             ]);
                         } catch (\Exception $eNotifPic) {}
                     }
@@ -2594,18 +2613,20 @@ class OrderController extends Controller {
 
             // Kirim notifikasi ke Tim Mitra / Ka Tim
             try {
+                $ordLblKalk = \NotificationService::formatOrderLabel($order, $id);
+                $ptKalk = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
                 if ($actionBtn === 'kirim_katim') {
                     \NotificationService::send($this->db, [
                         'order_id'       => $id,
                         'target_role'    => 'ketua_tim',
                         'target_layanan' => 'lingkungan',
                         'judul'          => 'Kalkulasi Pengujian Diajukan',
-                        'pesan'          => "Kalkulasi pengujian Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) menunggu pemeriksaan Ketua Tim.",
+                        'pesan'          => "Kalkulasi pengujian order {$ordLblKalk} {$ptKalk} diajukan oleh {$currentUserNama}.",
                         'tipe'           => 'primary',
                         'icon'           => 'bi-calculator-fill',
                         'link_url'       => "/order/{$id}",
                         'created_by'     => $userId,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
+                        'created_by_name'=> $currentUserNama
                     ]);
                 } else {
                     \NotificationService::send($this->db, [
@@ -2613,12 +2634,12 @@ class OrderController extends Controller {
                         'target_role'    => 'ketua_tim_mitra',
                         'target_layanan' => 'semua',
                         'judul'          => 'Kalkulasi Pengujian Lab Selesai',
-                        'pesan'          => "Rincian biaya pengujian Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) sebesar Rp " . number_format($hasil['total_netto'], 0, ',', '.') . " siap dibuatkan penawaran resmi.",
+                        'pesan'          => "Kalkulasi pengujian order {$ordLblKalk} {$ptKalk} sebesar Rp " . number_format($hasil['total_netto'], 0, ',', '.') . " diselesaikan oleh {$currentUserNama}.",
                         'tipe'           => 'info',
                         'icon'           => 'bi-cash-stack',
                         'link_url'       => "/order/{$id}",
                         'created_by'     => $userId,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
+                        'created_by_name'=> $currentUserNama
                     ]);
                 }
             } catch (\Exception $eNotif) {}
@@ -2719,7 +2740,7 @@ class OrderController extends Controller {
                         'target_user_id' => $targetPicId,
                         'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                         'judul'          => 'PO Resmi Aktif - Pengujian Lab Dimulai',
-                        'pesan'          => "Dokumen PO #{$hasil['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) resmi aktif! Pelaksanaan riset/pengujian dapat dimulai.",
+                        'pesan'          => "Dokumen PO #{$hasil['nomor_po']} untuk Order #{$order['nomor_order']} {$order['nama_perusahaan']} resmi aktif! Pelaksanaan riset/pengujian dapat dimulai.",
                         'tipe'           => 'success',
                         'icon'           => 'bi-gear-wide-connected',
                         'link_url'       => (!empty($hasil['po_id']) ? "/po/{$hasil['po_id']}" : "/po"),
@@ -2734,7 +2755,7 @@ class OrderController extends Controller {
                     'target_role'    => 'ketua_tim',
                     'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                     'judul'          => 'PO Resmi Diterbitkan',
-                    'pesan'          => "PO #{$hasil['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah disetujui & diterbitkan.",
+                    'pesan'          => "PO #{$hasil['nomor_po']} untuk Order #{$order['nomor_order']} {$order['nama_perusahaan']} telah disetujui & diterbitkan.",
                     'tipe'           => 'success',
                     'icon'           => 'bi-patch-check-fill',
                     'link_url'       => (!empty($hasil['po_id']) ? "/po/{$hasil['po_id']}" : "/po"),
@@ -2749,7 +2770,7 @@ class OrderController extends Controller {
                     'target_role'    => 'tim_mitra',
                     'target_layanan' => 'semua',
                     'judul'          => 'PO Resmi Diterbitkan',
-                    'pesan'          => "PO #{$hasil['nomor_po']} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah disetujui & diterbitkan. Pelaksanaan pekerjaan resmi dimulai.",
+                    'pesan'          => "PO #{$hasil['nomor_po']} untuk Order #{$order['nomor_order']} {$order['nama_perusahaan']} telah disetujui & diterbitkan. Pelaksanaan pekerjaan resmi dimulai.",
                     'tipe'           => 'success',
                     'icon'           => 'bi-patch-check-fill',
                     'link_url'       => (!empty($hasil['po_id']) ? "/po/{$hasil['po_id']}" : "/order/{$id}"),
@@ -2873,7 +2894,7 @@ class OrderController extends Controller {
                     'target_role'    => 'ketua_tim',
                     'target_layanan' => $jenisOpti,
                     'judul'          => "Permohonan Masuk: Disposisi ke {$optiNama}",
-                    'pesan'          => "Order #{$nomorOrderStr} ({$perusahaanStr}) telah didisposisikan ke {$optiNama} oleh {$userPengirim}. Mohon kaji kelayakan teknis & tindak lanjuti.",
+                    'pesan'          => "Order #{$nomorOrderStr} {$perusahaanStr} telah didisposisikan ke {$optiNama} oleh {$userPengirim}. Mohon kaji kelayakan teknis & tindak lanjuti.",
                     'tipe'           => 'primary',
                     'icon'           => 'bi-box-arrow-in-right',
                     'link_url'       => "/order/{$id}",
@@ -2887,7 +2908,7 @@ class OrderController extends Controller {
                     'target_role'    => 'tim_mitra',
                     'target_layanan' => 'semua',
                     'judul'          => "Disposisi Order Berhasil",
-                    'pesan'          => "Order #{$nomorOrderStr} ({$perusahaanStr}) berhasil didisposisikan ke {$optiNama}.",
+                    'pesan'          => "Order #{$nomorOrderStr} {$perusahaanStr} berhasil didisposisikan ke {$optiNama}.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-arrow-right-circle-fill',
                     'link_url'       => "/order/{$id}",
@@ -3669,6 +3690,17 @@ class OrderController extends Controller {
             return;
         }
 
+        // Cek izin edit jika mengganti pelaksana yang sudah ditunjuk sebelumnya
+        if (!empty($order['ketua_pelaksana_id']) && (int)$order['ketua_pelaksana_id'] !== $picId) {
+            $isSuperadmin = $this->isSuperadmin();
+            $isUnlocked = \OrderLayanan::isOrderUnlocked($id);
+            if (!$isSuperadmin && !$isUnlocked) {
+                $this->setFlashError('Perubahan Ketua Pelaksana PO dikunci. Hubungi Superadmin untuk membuka izin edit order ini.');
+                $f3->reroute("/order/{$id}");
+                return;
+            }
+        }
+
         try {
             $cek = $this->db->exec('SELECT id, status FROM po_kegiatan WHERE order_id = ?' . \PoSchema::bukanSertifikasi('') . ' LIMIT 1', array(1 => $id));
         } catch (\Exception $e) {
@@ -3691,13 +3723,15 @@ class OrderController extends Controller {
             $userNama = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : 'Ketua Tim OPTI';
             $this->logActivity($id, 'po', 'tunjuk_ketupel', "Menunjuk {$picNama} sebagai Ketua Pelaksana PO Kegiatan");
             try {
+                $ordLblKp = \NotificationService::formatOrderLabel($order, $id);
+                $ptKp = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
                 \NotificationService::send($this->db, array(
                     'order_id'        => $id,
                     'target_role'     => 'tim_kerja',
                     'target_user_id'  => $picId,
                     'target_layanan'  => isset($order['jenis_layanan_opti']) ? $order['jenis_layanan_opti'] : 'semua',
                     'judul'           => 'Penugasan Ketua Pelaksana PO Kegiatan',
-                    'pesan'           => "Anda telah ditunjuk oleh Ketua Tim OPTI ({$userNama}) sebagai Ketua Pelaksana untuk menyusun Dokumen Petunjuk Operasional (PO) Order #{$order['nomor_order']} ({$order['nama_perusahaan']}).",
+                    'pesan'           => "Anda ({$picNama}) ditunjuk jadi Ketua Pelaksana PO order {$ordLblKp} {$ptKp} oleh {$userNama}.",
                     'tipe'            => 'primary',
                     'icon'            => 'bi-person-check-fill',
                     'link_url'        => "/order/{$id}",
@@ -3709,7 +3743,7 @@ class OrderController extends Controller {
                     'target_role'     => 'tim_mitra',
                     'target_layanan'  => 'semua',
                     'judul'           => 'Ketua Pelaksana PO Ditunjuk',
-                    'pesan'           => "Ketua Tim OPTI ({$userNama}) telah menunjuk Ketua Pelaksana untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Penyusunan PO sedang berjalan.",
+                    'pesan'           => "{$picNama} ditunjuk jadi Ketua Pelaksana PO order {$ordLblKp} {$ptKp} oleh {$userNama}.",
                     'tipe'            => 'info',
                     'icon'            => 'bi-person-check-fill',
                     'link_url'        => "/order/{$id}",
@@ -3775,14 +3809,16 @@ class OrderController extends Controller {
 
             // Kirim notifikasi ke PIC yang baru ditunjuk & Tim Mitra
             try {
-                $nomorReq = !empty($order['nomor_permintaan']) ? $order['nomor_permintaan'] : (!empty($order['nomor_order']) ? $order['nomor_order'] : ('REQ-' . $id));
+                $orderLabel = \NotificationService::formatOrderLabel($order, $id);
+                $namaPt = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
+
                 \NotificationService::send($this->db, [
                     'order_id'       => $id,
                     'target_role'    => 'tim_kerja',
                     'target_user_id' => $picId,
                     'target_layanan' => $order['jenis_layanan_opti'] ?? 'selulosa',
                     'judul'          => 'Penugasan PIC Dokumen Proposal',
-                    'pesan'          => "Ditugaskan sebagai PIC untuk order {$nomorReq}. Mohon susun dan unggah dokumen proposal teknis.",
+                    'pesan'          => "Anda ({$picNama}) ditugaskan jadi PIC Proposal order {$orderLabel} {$namaPt} oleh {$userNama}.",
                     'tipe'           => 'primary',
                     'icon'           => 'bi-person-check-fill',
                     'link_url'       => "/order/{$id}",
@@ -3796,7 +3832,7 @@ class OrderController extends Controller {
                     'target_role'    => 'tim_mitra',
                     'target_layanan' => 'semua',
                     'judul'          => 'PIC Proposal Ditetapkan',
-                    'pesan'          => "Ketua Tim OPTI ({$userNama}) telah menetapkan {$picNama} sebagai PIC Proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}).",
+                    'pesan'          => "{$picNama} ditunjuk jadi PIC Proposal order {$orderLabel} {$namaPt} oleh {$userNama}.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-person-check-fill',
                     'link_url'       => "/order/{$id}",
@@ -3892,8 +3928,11 @@ class OrderController extends Controller {
         $daftarPegawai = $arsipUser->find(null, ['order' => 'nama_user ASC']);
 
         $tinjauan = $orderModel->getTinjauanKelayakan($id);
-        $isSubmitted = !in_array($order['status'] ?? '', ['permintaan_masuk', 'draft_disimpan', 'draft']) && in_array($order['jenis_layanan_opti'] ?? '', ['selulosa', 'lingkungan']) && !empty($tinjauan);
-        $canEdit = ($this->hasPermission('order:form_pelayanan') || $this->isSuperadmin() || $this->isTimMitra()) && $this->canEditSubmittedData($isSubmitted);
+        $tinjauanDone = (!empty($order['status_tinjauan']) && in_array($order['status_tinjauan'], ['layak', 'tidak_layak'])) 
+            || (!empty($tinjauan) && empty($tinjauan['is_draft']) && !empty($tinjauan['keputusan']));
+        $hasMovedBeyond = in_array($order['status'] ?? '', ['siap_penawaran', 'penawaran', 'negosiasi', 'deal', 'menunggu_pembayaran', 'terbayar_sebagian', 'lunas', 'po_terbit', 'spm_aktif', 'selesai', 'ditolak']);
+        $isSubmitted = ($tinjauanDone || $hasMovedBeyond);
+        $canEdit = ($this->hasPermission('order:form_pelayanan') || $this->isSuperadmin() || $this->isTimMitra()) && $this->canEditSubmittedData($isSubmitted, (int)$id);
 
         $f3->set('order', $order);
         $f3->set('sp', $sp);
@@ -4024,14 +4063,21 @@ class OrderController extends Controller {
                 throw new \Exception("Order #{$id} tidak ditemukan.");
             }
 
-            $isPelayananSubmitted = !in_array($order->status ?? '', ['draft', 'permohonan']);
+            // Formulir pelayanan terkunci jika Kaji Kelayakan (Tahap 3) telah diputuskan/disetujui oleh Ka. Tim, 
+            // atau order telah berlanjut ke tahap berikutnya (penawaran/pembayaran/selesai), kecuali dibuka izin edit oleh Superadmin.
+            $tinjauanExisting = $orderModel->getTinjauanKelayakan($id);
+            $tinjauanDone = (!empty($order->status_tinjauan) && in_array($order->status_tinjauan, ['layak', 'tidak_layak'])) 
+                || (!empty($tinjauanExisting) && empty($tinjauanExisting['is_draft']) && !empty($tinjauanExisting['keputusan']));
+            $hasMovedBeyond = in_array($order->status ?? '', ['siap_penawaran', 'penawaran', 'negosiasi', 'deal', 'menunggu_pembayaran', 'terbayar_sebagian', 'lunas', 'po_terbit', 'spm_aktif', 'selesai', 'ditolak']);
+
+            $isPelayananSubmitted = ($tinjauanDone || $hasMovedBeyond);
             if ($isPelayananSubmitted && !$this->canEditSubmittedData(true, $id)) {
                 if ($isAjax) {
                     header('Content-Type: application/json');
-                    echo json_encode(['success' => false, 'message' => 'Akses ditolak: Formulir pelayanan telah disubmit dan terkunci. Hubungi Superadmin untuk membuka izin edit.']);
+                    echo json_encode(['success' => false, 'message' => 'Akses ditolak: Formulir pelayanan telah disubmit dan terkunci karena kaji kelayakan telah diproses. Hubungi Superadmin untuk membuka izin edit.']);
                     exit;
                 }
-                $this->setFlashError('Akses ditolak: Formulir pelayanan telah disubmit dan terkunci. Hubungi Superadmin untuk membuka izin edit.');
+                $this->setFlashError('Akses ditolak: Formulir pelayanan telah disubmit dan terkunci karena kaji kelayakan telah diproses. Hubungi Superadmin untuk membuka izin edit.');
                 $f3->reroute("/order/{$id}#pane-stage-2");
                 return;
             }
@@ -4120,19 +4166,20 @@ class OrderController extends Controller {
                         // Notifikasi ke Ketua Tim Layanan OPTI & Tim Mitra
                         if (in_array($jenisLayanan, ['selulosa', 'lingkungan']) && empty($order->pic_proposal_id)) {
                             try {
-                                $nomorReq = !empty($order->nomor_permintaan) ? $order->nomor_permintaan : ('REQ-' . date('Ym') . '-' . str_pad($id, 4, '0', STR_PAD_LEFT));
-                                $judulKeg = !empty($order->judul_kegiatan) ? " ({$order->judul_kegiatan})" : "";
+                                $orderLabel = \NotificationService::formatOrderLabel($order, $id);
+                                $actorName = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Mitra');
+
                                 \NotificationService::send($this->db, [
                                     'order_id'       => $id,
                                     'target_role'    => 'ketua_tim',
                                     'target_layanan' => $jenisLayanan,
                                     'judul'          => 'Permintaan Permohonan Baru',
-                                    'pesan'          => "Permohonan layanan [{$nomorReq}] dari {$perusahaan}{$judulKeg}.\nTindakan: Tentukan PIC.",
+                                    'pesan'          => "Permohonan baru {$orderLabel} {$perusahaan} diterima dari {$actorName}.",
                                     'tipe'           => 'primary',
                                     'icon'           => 'bi-person-check',
                                     'link_url'       => "/order/{$id}",
                                     'created_by'     => $userId,
-                                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                                    'created_by_name'=> $actorName
                                 ]);
 
                                 \NotificationService::send($this->db, [
@@ -4140,12 +4187,12 @@ class OrderController extends Controller {
                                     'target_role'    => 'tim_mitra',
                                     'target_layanan' => 'semua',
                                     'judul'          => 'Permohonan Diteruskan ke Ka. Tim OPTI',
-                                    'pesan'          => "Permohonan [{$nomorReq}] ({$perusahaan}) telah diteruskan ke Ketua Tim OPTI " . ucfirst($jenisLayanan) . ".\nTindakan: Tentukan PIC.",
+                                    'pesan'          => "Permohonan {$orderLabel} {$perusahaan} diteruskan oleh {$actorName} ke Ka. Tim OPTI " . ucfirst($jenisLayanan) . ".",
                                     'tipe'           => 'info',
                                     'icon'           => 'bi-send-check',
                                     'link_url'       => "/order/{$id}",
                                     'created_by'     => $userId,
-                                    'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                                    'created_by_name'=> $actorName
                                 ]);
                             } catch (\Exception $eNotif) {}
                         }
@@ -4180,19 +4227,20 @@ class OrderController extends Controller {
                     // Notifikasi ke Ketua Tim Layanan OPTI & Tim Mitra (Standar SOP: Kaji Kelayakan & PIC oleh Ketua Tim)
                     if (in_array($jenisLayanan, ['selulosa', 'lingkungan'])) {
                         try {
-                            $nomorReq = !empty($order->nomor_permintaan) ? $order->nomor_permintaan : ('REQ-' . date('Ym') . '-' . str_pad($id, 4, '0', STR_PAD_LEFT));
-                            $judulKeg = !empty($order->judul_kegiatan) ? " ({$order->judul_kegiatan})" : "";
+                            $orderLabel = \NotificationService::formatOrderLabel($order, $id);
+                            $actorName = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Mitra');
+
                             \NotificationService::send($this->db, [
                                 'order_id'       => $id,
                                 'target_role'    => 'ketua_tim',
                                 'target_layanan' => $jenisLayanan,
                                 'judul'          => 'Permintaan Permohonan Baru',
-                                'pesan'          => "Permohonan layanan [{$nomorReq}] dari {$perusahaan}{$judulKeg}.\nTindakan: Evaluasi kelayakan teknis dan tentukan PIC.",
+                                'pesan'          => "Permohonan baru {$orderLabel} {$perusahaan} diterima dari {$actorName}.",
                                 'tipe'           => 'primary',
                                 'icon'           => 'bi-clipboard2-check',
                                 'link_url'       => "/order/{$id}",
                                 'created_by'     => $userId,
-                                'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                                'created_by_name'=> $actorName
                             ]);
 
                             \NotificationService::send($this->db, [
@@ -4200,12 +4248,12 @@ class OrderController extends Controller {
                                 'target_role'    => 'tim_mitra',
                                 'target_layanan' => 'semua',
                                 'judul'          => 'Permohonan Diteruskan ke Ka. Tim OPTI',
-                                'pesan'          => "Permohonan [{$nomorReq}] ({$perusahaan}) telah diteruskan ke Ketua Tim OPTI " . ucfirst($jenisLayanan) . ".\nTindakan: Evaluasi kelayakan teknis dan tentukan PIC.",
+                                'pesan'          => "Permohonan {$orderLabel} {$perusahaan} diteruskan oleh {$actorName} ke Ka. Tim OPTI " . ucfirst($jenisLayanan) . ".",
                                 'tipe'           => 'info',
                                 'icon'           => 'bi-send-check',
                                 'link_url'       => "/order/{$id}",
                                 'created_by'     => $userId,
-                                'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                                'created_by_name'=> $actorName
                             ]);
                         } catch (\Exception $eNotif) {}
                     }
@@ -5038,6 +5086,8 @@ class OrderController extends Controller {
             }
 
             // Notifikasi
+            $ordLblProp = \NotificationService::formatOrderLabel($order, $id);
+            $ptProp = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
             if ($actionType === 'simpan_dan_approve') {
                 try {
                     \NotificationService::send($this->db, [
@@ -5045,7 +5095,7 @@ class OrderController extends Controller {
                         'target_role'    => 'ketua_tim_mitra',
                         'target_layanan' => 'semua',
                         'judul'          => "Proposal Teknis Selulosa Disetujui Ka. Tim",
-                        'pesan'          => "Proposal teknis untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah direvisi dan disetujui langsung oleh Ketua Tim OPTI Selulosa ({$userNama}). Tim Mitra dapat menerbitkan Surat Penawaran resmi.",
+                        'pesan'          => "Proposal teknis order {$ordLblProp} {$ptProp} disetujui langsung oleh {$userNama}. Siap terbitkan penawaran.",
                         'tipe'           => 'success',
                         'icon'           => 'bi-award-fill',
                         'link_url'       => "/order/{$id}",
@@ -5065,7 +5115,7 @@ class OrderController extends Controller {
                         'target_role'    => 'ketua_tim',
                         'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                         'judul'          => 'Proposal Teknis Siap Diperiksa',
-                        'pesan'          => "PIC Proposal ({$userNama}) telah mengajukan dokumen proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon periksa dan berikan persetujuan.",
+                        'pesan'          => "Proposal teknis order {$ordLblProp} {$ptProp} diajukan oleh {$userNama}.",
                         'tipe'           => 'info',
                         'icon'           => 'bi-file-earmark-check-fill',
                         'link_url'       => "/order/{$id}",
@@ -5079,7 +5129,7 @@ class OrderController extends Controller {
                         'target_role'    => 'tim_mitra',
                         'target_layanan' => 'semua',
                         'judul'          => 'Proposal Teknis Diajukan ke Ka. Tim',
-                        'pesan'          => "PIC Proposal ({$userNama}) telah mengajukan proposal teknis untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) ke Ketua Tim OPTI.",
+                        'pesan'          => "Proposal teknis order {$ordLblProp} {$ptProp} diajukan oleh {$userNama} ke Ka. Tim OPTI.",
                         'tipe'           => 'info',
                         'icon'           => 'bi-file-earmark-arrow-up',
                         'link_url'       => "/order/{$id}",
@@ -5339,12 +5389,14 @@ class OrderController extends Controller {
 
             // Notifikasi ke Ka Tim & Tim Mitra
             try {
+                $ordLblAjukan = \NotificationService::formatOrderLabel($order, $id);
+                $ptAjukan = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
                 \NotificationService::send($this->db, [
                     'order_id'       => $id,
                     'target_role'    => 'ketua_tim',
                     'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                     'judul'          => 'Proposal Teknis Siap Diperiksa',
-                    'pesan'          => "PIC Proposal ({$userNama}) telah mengajukan dokumen proposal untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Mohon periksa dan berikan persetujuan.",
+                    'pesan'          => "Proposal teknis order {$ordLblAjukan} {$ptAjukan} diajukan oleh {$userNama}.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-file-earmark-check-fill',
                     'link_url'       => "/order/{$id}",
@@ -5357,7 +5409,7 @@ class OrderController extends Controller {
                     'target_role'    => 'tim_mitra',
                     'target_layanan' => 'semua',
                     'judul'          => 'Proposal Teknis Diajukan ke Ka. Tim',
-                    'pesan'          => "PIC Proposal ({$userNama}) telah mengajukan proposal teknis untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) ke Ketua Tim OPTI.",
+                    'pesan'          => "Proposal teknis order {$ordLblAjukan} {$ptAjukan} diajukan oleh {$userNama} ke Ka. Tim OPTI.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-file-earmark-arrow-up',
                     'link_url'       => "/order/{$id}",
@@ -5445,13 +5497,15 @@ class OrderController extends Controller {
                 );
 
                 // Kirim notifikasi ke Ketua Tim Mitra
+                $ordLblRev = \NotificationService::formatOrderLabel($order, $id);
+                $ptRev = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
                 try {
                     \NotificationService::send($this->db, [
                         'order_id'       => $id,
                         'target_role'    => 'ketua_tim_mitra',
                         'target_layanan' => 'semua',
                         'judul'          => "{$labelKapital} Disetujui Ka. Tim",
-                        'pesan'          => "{$labelKapital} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah disetujui oleh {$userNama}. Tim Mitra dapat menerbitkan Surat Penawaran resmi.",
+                        'pesan'          => "{$labelKapital} order {$ordLblRev} {$ptRev} disetujui oleh {$userNama}. Tim Mitra dapat menerbitkan Surat Penawaran resmi.",
                         'tipe'           => 'success',
                         'icon'           => 'bi-award-fill',
                         'link_url'       => "/order/{$id}",
@@ -5469,7 +5523,7 @@ class OrderController extends Controller {
                             'target_user_id' => (int)$order['pic_proposal_id'],
                             'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                             'judul'          => "{$labelKapital} Telah Disetujui",
-                            'pesan'          => "{$labelKapital} Anda untuk Order #{$order['nomor_order']} telah disetujui oleh Ka. Tim OPTI ({$userNama}).",
+                            'pesan'          => "{$labelKapital} Anda untuk order {$ordLblRev} disetujui oleh {$userNama}.",
                             'tipe'           => 'success',
                             'icon'           => 'bi-check-circle-fill',
                             'link_url'       => $linkPic,
@@ -5501,6 +5555,9 @@ class OrderController extends Controller {
                 $this->logActivity($id, 'proposal', 'minta_revisi', "Permintaan revisi {$labelDokumen}" . (!empty($catatan) ? ": \"{$catatan}\"" : ""));
 
                 // Kirim notifikasi revisi ke PIC & Tim Mitra
+                $ordLblRevTolak = \NotificationService::formatOrderLabel($order, $id);
+                $ptRevTolak = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
+                $catatanTxt = !empty($catatan) ? " Catatan: {$catatan}" : "";
                 if (!empty($order['pic_proposal_id'])) {
                     try {
                         \NotificationService::send($this->db, [
@@ -5509,12 +5566,12 @@ class OrderController extends Controller {
                             'target_user_id' => (int)$order['pic_proposal_id'],
                             'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                             'judul'          => "Revisi {$labelKapital} Diperlukan",
-                            'pesan'          => "Ka. Tim OPTI meminta revisi untuk {$labelDokumen} Order #{$order['nomor_order']}. Catatan: {$catatan}",
+                            'pesan'          => "Revisi {$labelDokumen} order {$ordLblRevTolak} diminta oleh {$userNama}.{$catatanTxt}",
                             'tipe'           => 'warning',
                             'icon'           => 'bi-exclamation-diamond-fill',
                             'link_url'       => $linkPic,
                             'created_by'     => $this->getUserId(),
-                            'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI'
+                            'created_by_name'=> $userNama
                         ]);
                     } catch (\Exception $e) {}
                 }
@@ -5525,7 +5582,7 @@ class OrderController extends Controller {
                         'target_role'    => 'tim_mitra',
                         'target_layanan' => 'semua',
                         'judul'          => "Revisi {$labelKapital} Diminta Ka. Tim",
-                        'pesan'          => "Ka. Tim OPTI ({$userNama}) mengembalikan {$labelDokumen} Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) ke PIC untuk direvisi. Catatan: {$catatan}",
+                        'pesan'          => "{$labelDokumen} order {$ordLblRevTolak} {$ptRevTolak} dikembalikan oleh {$userNama} ke PIC untuk direvisi.",
                         'tipe'           => 'warning',
                         'icon'           => 'bi-exclamation-triangle-fill',
                         'link_url'       => "/order/{$id}",
@@ -5598,7 +5655,7 @@ class OrderController extends Controller {
                         'target_role'     => 'ketua_tim',
                         'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
                         'judul'           => 'Penawaran Order DEAL',
-                        'pesan'           => "Klien (" . ($order['nama_perusahaan'] ?? 'Klien') . ") telah sepakat dengan penawaran Order #" . ($order['nomor_order'] ?? $id) . ".",
+                        'pesan'           => "(" . ($order['nama_perusahaan'] ?? 'Klien') . ") telah sepakat dengan penawaran Order #" . ($order['nomor_order'] ?? $id) . ".",
                         'tipe'            => 'success',
                         'icon'            => 'bi-check-circle-fill',
                         'link_url'        => "/order/{$id}",
@@ -5747,7 +5804,7 @@ class OrderController extends Controller {
                     'target_role'    => 'tim_mitra',
                     'target_layanan' => 'semua',
                     'judul'          => 'Aktivasi SPM / Sampel Diterima',
-                    'pesan'          => "Aktivasi SPM via {$labelTrigger} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah dicatat oleh {$namaPetugas}. Target penyelesaian: {$deadlineFormatted}.",
+                    'pesan'          => "Aktivasi SPM via {$labelTrigger} untuk Order #{$order['nomor_order']} {$order['nama_perusahaan']} telah dicatat oleh {$namaPetugas}. Target penyelesaian: {$deadlineFormatted}.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-box-seam-fill',
                     'link_url'       => "/order/{$id}",
@@ -5760,7 +5817,7 @@ class OrderController extends Controller {
                     'target_role'    => 'ketua_tim',
                     'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
                     'judul'          => 'Aktivasi SPM / Sampel Diterima',
-                    'pesan'          => "Aktivasi SPM via {$labelTrigger} untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}) telah dicatat. Batas waktu resmi: {$deadlineFormatted}.",
+                    'pesan'          => "Aktivasi SPM via {$labelTrigger} untuk Order #{$order['nomor_order']} {$order['nama_perusahaan']} telah dicatat. Batas waktu resmi: {$deadlineFormatted}.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-box-seam-fill',
                     'link_url'       => "/order/{$id}",
@@ -5867,7 +5924,7 @@ class OrderController extends Controller {
                             'target_role'    => 'tim_mitra',
                             'target_layanan' => 'semua',
                             'judul'          => 'Pencatatan Surat Kesanggupan Bayar',
-                            'pesan'          => "Order {$nomorOrderStr} ({$namaPt}) telah dikonfirmasi oleh Bagian Keuangan via Surat Kesanggupan Bayar.",
+                            'pesan'          => "Order {$nomorOrderStr} {$namaPt} telah dikonfirmasi oleh Bagian Keuangan via Surat Kesanggupan Bayar.",
                             'tipe'           => 'info',
                             'icon'           => 'bi-file-earmark-check',
                             'link_url'       => "/order/{$id}",
@@ -5880,7 +5937,7 @@ class OrderController extends Controller {
                             'target_role'    => 'ketua_tim',
                             'target_layanan' => $layananOpti,
                             'judul'          => 'Pencatatan Surat Kesanggupan Bayar',
-                            'pesan'          => "Order {$nomorOrderStr} ({$namaPt}) telah dikonfirmasi oleh Bagian Keuangan via Surat Kesanggupan Bayar. Pelaksanaan pengujian dapat diproses.",
+                            'pesan'          => "Order {$nomorOrderStr} {$namaPt} telah dikonfirmasi oleh Bagian Keuangan via Surat Kesanggupan Bayar. Pelaksanaan pengujian dapat diproses.",
                             'tipe'           => 'info',
                             'icon'           => 'bi-file-earmark-check',
                             'link_url'       => "/order/{$id}",
@@ -6008,8 +6065,8 @@ class OrderController extends Controller {
 
                 $judulNotif = $isLunas ? 'Konfirmasi Pembayaran Lunas' : "Konfirmasi Bukti Pembayaran Termin #{$terminKe}";
                 $pesanMitra = $isLunas
-                    ? "Bukti pembayaran untuk Order {$nomorOrderStr} ({$namaPt}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah diverifikasi lunas oleh {$namaPetugas}."
-                    : "Bukti pembayaran Termin #{$terminKe} untuk Order {$nomorOrderStr} ({$namaPt}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dikonfirmasi dan dicatat oleh {$namaPetugas}.";
+                    ? "Bukti pembayaran order {$nomorOrderStr} {$namaPt} sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah diverifikasi lunas oleh {$namaPetugas}."
+                    : "Bukti pembayaran Termin #{$terminKe} order {$nomorOrderStr} {$namaPt} sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dikonfirmasi dan dicatat oleh {$namaPetugas}.";
 
                 \NotificationService::send($this->db, [
                     'order_id'       => $id,
@@ -6025,8 +6082,8 @@ class OrderController extends Controller {
                 ]);
 
                 $pesanKatim = $isLunas
-                    ? "Bukti pembayaran untuk Order {$nomorOrderStr} ({$namaPt}) telah diverifikasi lunas oleh {$namaPetugas}. Pelaksanaan pengujian laboratorium dapat dimulai/diproses."
-                    : "Bukti pembayaran Termin #{$terminKe} untuk Order {$nomorOrderStr} ({$namaPt}) sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dikonfirmasi dan dicatat oleh {$namaPetugas}.";
+                    ? "Bukti pembayaran order {$nomorOrderStr} {$namaPt} telah diverifikasi lunas oleh {$namaPetugas}. Pelaksanaan pengujian laboratorium dapat dimulai/diproses."
+                    : "Bukti pembayaran Termin #{$terminKe} order {$nomorOrderStr} {$namaPt} sebesar Rp " . number_format($jumlah, 0, ',', '.') . " telah dikonfirmasi dan dicatat oleh {$namaPetugas}.";
 
                 \NotificationService::send($this->db, [
                     'order_id'       => $id,

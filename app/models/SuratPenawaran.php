@@ -70,69 +70,10 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $tahun       = date('Y', $time);
         $bulanRomawi = self::bulanKeRomawi($bulanAngka);
 
-        $maxUrut = 0;
-        $patternBulanTahun = "%/{$bulanRomawi}/{$tahun}%";
-        $firstDay = "{$tahun}-" . str_pad((string)$bulanAngka, 2, '0', STR_PAD_LEFT) . "-01";
-        $lastDay  = date('Y-m-t', $time);
-
-        // 1. Cek dari tb_surat_keluar (database saat ini dan database sekretariat jika terpisah)
-        $f3 = \Base::instance();
-        $targetDbs = [$this->db];
-        if ($f3->exists('DB_SEKRETARIAT')) {
-            $dbSekretariat = $f3->get('DB_SEKRETARIAT');
-            if ($dbSekretariat && $dbSekretariat !== $this->db) {
-                $targetDbs[] = $dbSekretariat;
-            }
-        }
-
-        $allNumbers = [];
-        foreach ($targetDbs as $tDb) {
-            try {
-                $checkTbl = $tDb->exec("SHOW TABLES LIKE 'tb_surat_keluar'");
-                if (!empty($checkTbl)) {
-                    $rows = $tDb->exec(
-                        "SELECT no_surat FROM tb_surat_keluar WHERE no_surat LIKE ? OR (tanggal_surat >= ? AND tanggal_surat <= ?)",
-                        [1 => $patternBulanTahun, 2 => $firstDay, 3 => $lastDay]
-                    );
-                    if (!empty($rows)) {
-                        foreach ($rows as $r) {
-                            if (!empty($r['no_surat'])) {
-                                $allNumbers[] = trim($r['no_surat']);
-                            }
-                        }
-                    }
-                }
-            } catch (\Exception $e) {}
-        }
-
-        // 2. Cek dari tb_surat_penawaran
-        try {
-            $rowsSp = $this->db->exec(
-                "SELECT nomor_surat FROM tb_surat_penawaran WHERE nomor_surat LIKE ? OR (tanggal_surat >= ? AND tanggal_surat <= ?)",
-                [1 => $patternBulanTahun, 2 => $firstDay, 3 => $lastDay]
-            );
-            if (!empty($rowsSp)) {
-                foreach ($rowsSp as $r) {
-                    if (!empty($r['nomor_surat'])) {
-                        $allNumbers[] = trim($r['nomor_surat']);
-                    }
-                }
-            }
-        } catch (\Exception $e) {}
-
-        // Ambil nilai urutan tertinggi pada bulan dan tahun terkait
-        foreach (array_unique($allNumbers) as $no) {
-            if (preg_match('/^(?:B\/)?(\d+)/i', trim($no), $m)) {
-                $val = (int)$m[1];
-                if ($val > $maxUrut) {
-                    $maxUrut = $val;
-                }
-            }
-        }
-
-        $nextUrut = $maxUrut + 1;
-        $nomorUrutPadded = str_pad((string)$nextUrut, 2, '0', STR_PAD_LEFT);
-        return "B/{$nomorUrutPadded}/BBSPJIS/MS/{$bulanRomawi}/{$tahun}";
+        // Format standar balai: B/.../BBSPJIS/MS/{bulan_romawi}/{tahun}
+        // Nomor urut dikosongkan (titik-titik / ...) dan diisi manual oleh Tim Mitra (nomor agenda dari sekretariat balai)
+        // Tetap ada awalan B/ dan bulan/tahun otomatis
+        return "B/.../BBSPJIS/MS/{$bulanRomawi}/{$tahun}";
     }
 
     /**
@@ -142,10 +83,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
     {
         $res = $this->db->exec(
             "SELECT sp.*,
-                    COALESCE(
-                        IF(o.jenis_layanan_opti = 'selulosa' AND pr.file_proposal IS NOT NULL AND pr.file_proposal <> '', pr.file_proposal, NULLIF(sp.file_lampiran_user, '')),
-                        NULLIF(sp.file_lampiran_user, '')
-                    ) AS file_lampiran_user,
+                    sp.file_lampiran_user,
                     c.nmcustomer, c.pt_cv, c.alamatcustomer, c.notelpcustomer, c.emailcustomer,
                     u.nama_user AS pembuat_nama
              FROM tb_surat_penawaran sp
@@ -168,10 +106,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
     {
         $res = $this->db->exec(
             "SELECT sp.*,
-                    COALESCE(
-                        IF(o.jenis_layanan_opti = 'selulosa' AND pr.file_proposal IS NOT NULL AND pr.file_proposal <> '', pr.file_proposal, NULLIF(sp.file_lampiran_user, '')),
-                        NULLIF(sp.file_lampiran_user, '')
-                    ) AS file_lampiran_user,
+                    sp.file_lampiran_user,
                     c.nmcustomer, c.pt_cv, c.alamatcustomer, c.notelpcustomer, c.emailcustomer,
                     u.nama_user AS pembuat_nama
              FROM tb_surat_penawaran sp
@@ -193,10 +128,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
     {
         return $this->db->exec(
             "SELECT sp.*,
-                    COALESCE(
-                        IF(o.jenis_layanan_opti = 'selulosa' AND pr.file_proposal IS NOT NULL AND pr.file_proposal <> '', pr.file_proposal, NULLIF(sp.file_lampiran_user, '')),
-                        NULLIF(sp.file_lampiran_user, '')
-                    ) AS file_lampiran_user,
+                    sp.file_lampiran_user,
                     c.nmcustomer, c.pt_cv, c.alamatcustomer, c.notelpcustomer, c.emailcustomer,
                     u.nama_user AS pembuat_nama
              FROM tb_surat_penawaran sp
@@ -238,7 +170,8 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $permintaanMelalui = !empty($data['permintaan_melalui']) ? trim($data['permintaan_melalui']) : (!empty($order['media_permohonan']) ? $order['media_permohonan'] : 'email');
         $penjelasan   = !empty($data['penjelasan']) ? trim($data['penjelasan']) : ($order['deskripsi'] ?? '');
         $fileLampiran = !empty($data['file_lampiran']) ? trim($data['file_lampiran']) : '';
-        $fileLampiranUser = !empty($data['file_lampiran_user']) ? trim($data['file_lampiran_user']) : '';
+        $opsiLampiranSumber = $data['opsi_lampiran_sumber'] ?? '';
+        $fileLampiranUser = isset($data['file_lampiran_user']) ? trim((string)$data['file_lampiran_user']) : '';
         $statusRespon = in_array($data['status_respon_klien'] ?? '', ['draft', 'terkirim', 'nego', 'deal', 'batal']) ? $data['status_respon_klien'] : 'draft';
         $catatanNego  = trim($data['catatan_nego'] ?? '');
 
@@ -262,33 +195,38 @@ class SuratPenawaran extends \DB\SQL\Mapper
             }
         }
 
-        // Jika ada proposal selulosa, ambil file lampirannya (halaman 3+) dari proposal riset Tahap 4
-        if ($order['jenis_layanan_opti'] === 'selulosa') {
-            if (!isset($prop)) {
-                $prop = $orderModel->getProposalRiset($orderId);
-            }
-            if (!empty($prop['file_proposal']) && empty($fileLampiranUser)) {
-                $fileLampiranUser = $prop['file_proposal'];
-            }
-        }
-
         $isRevisiBaru = !empty($data['is_revisi_baru']) || (($data['mode'] ?? '') === 'baru');
         $penawaranIdInput = (int)($data['penawaran_id'] ?? 0);
         $existing = $this->getByOrderId($orderId);
 
-        if (empty($fileLampiranUser) && !empty($existing['file_lampiran_user'])) {
-            $fileLampiranUser = $existing['file_lampiran_user'];
-        }
-        if (empty($fileLampiranUser) && ($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+        // Penentuan berkas lampiran berdasarkan opsi sumber yang dipilih
+        if ($opsiLampiranSumber === 'tanpa') {
+            $fileLampiranUser = null;
+        } elseif ($opsiLampiranSumber === 'proposal') {
             if (!isset($prop)) {
                 $prop = $orderModel->getProposalRiset($orderId);
             }
             if (!empty($prop['file_proposal'])) {
                 $fileLampiranUser = $prop['file_proposal'];
             }
+        } elseif ($opsiLampiranSumber === 'upload') {
+            if (empty($fileLampiranUser) && !empty($existing['file_lampiran_user'])) {
+                $fileLampiranUser = $existing['file_lampiran_user'];
+            }
+        } else {
+            // Fallback jika tidak ditentukan
+            if (empty($fileLampiranUser) && !empty($existing['file_lampiran_user'])) {
+                $fileLampiranUser = $existing['file_lampiran_user'];
+            }
+            if (empty($fileLampiranUser) && ($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+                if (!isset($prop)) {
+                    $prop = $orderModel->getProposalRiset($orderId);
+                }
+                if (!empty($prop['file_proposal'])) {
+                    $fileLampiranUser = $prop['file_proposal'];
+                }
+            }
         }
-
-        // Deteksi apakah penawaran yang ada sebelumnya berstatus ditolak / batal
         $isExistingDitolak = $existing && in_array(strtolower($existing['status_respon_klien'] ?? ''), ['batal', 'tolak', 'ditolak']);
 
         // KASUS UPDATE (Bukan revisi baru):
