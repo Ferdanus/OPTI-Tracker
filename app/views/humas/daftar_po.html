@@ -608,7 +608,6 @@
             <div class="d-flex align-items-center gap-2 flex-wrap" id="hmTabs">
                 <button type="button" class="po-tab filter-tab-pill" data-tab="semua"><i class="bi bi-list-ul"></i>Semua <span class="count-chip" id="countSemua">0</span></button>
                 <button type="button" class="po-tab filter-tab-pill active" data-tab="baru"><span class="hm-dot sm" id="dotBaru" hidden></span><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <span class="count-chip chip-danger" id="countBaru">0</span></button>
-                <button type="button" class="po-tab filter-tab-pill" data-tab="kontrak"><i class="bi bi-file-earmark-text"></i>Menunggu Kontrak <span class="count-chip chip-danger" id="countKontrak">0</span></button>
                 <button type="button" class="po-tab filter-tab-pill" data-tab="selesai"><i class="bi bi-hourglass-split"></i>Sedang Berjalan <span class="count-chip" id="countSelesai">0</span></button>
                 <button type="button" class="po-tab filter-tab-pill" data-tab="po_selesai"><i class="bi bi-check2-circle"></i>PO Aktif <span class="count-chip" id="countPoSelesai">0</span></button>
             </div>
@@ -770,7 +769,7 @@
     var PER_HAL = 5;   // sama dengan Daftar PO lain: 5 baris per halaman
 
     var TAB_AWAL = '{{ @tab_awal }}';
-    var tab = (TAB_AWAL === 'kontrak' ? 'kontrak' : 'baru'), q = '', divisi = '', baca = '', statusF = '', periodeDiubah = false, hal = 1;
+    var tab = (TAB_AWAL === 'kontrak' ? 'semua' : 'baru'), q = '', divisi = '', baca = '', statusF = '', periodeDiubah = false, hal = 1;
     // Periode: tab Perlu Tindakan = semua data (yang belum diverifikasi jangan sampai tersembunyi), tab lain = bulan berjalan.
     // semuaEks = pilihan eksplisit saklar "Tampilkan semua data" (null = ikut bawaan tab).
     var bulan = String(BULAN_INI), tahun = String(TAHUN_INI), semuaEks = null;
@@ -961,8 +960,6 @@
         // chip di tab ikut semua filter (pencarian, layanan, periode)
         $('countSemua').textContent = dasar.semua.length;
         $('countBaru').textContent = dasar.baru.length;
-        $('countKontrak').textContent = dasar.kontrak.length;
-        $('countKontrak').classList.toggle('chip-danger', dasar.kontrak.length > 0);
         $('countBaru').classList.toggle('chip-danger', dasar.baru.length > 0);
         $('countSelesai').textContent = dasar.selesai.length;
         $('countPoSelesai').textContent = dasar.po_selesai.length;
@@ -1602,6 +1599,14 @@
         $('hmFv').hidden = false;
         var n = ++fvSeq;
         var aktif = function () { return n === fvSeq && !$('hmFv').hidden; };
+        if (judul === 'Kontrak (PKS)') {   // PKS: pratinjau per halaman (batas halaman + "n dari N"), sama dengan halaman Kontrak
+            var idPks = current;
+            if (idPks) {
+                var uPks = BASE + '/pks/' + idPks + '/form?lihat=1';
+                $('hmFvTab').href = uPks; $('hmFvDoc').style.display = 'none'; $('hmFvDoc').innerHTML = ''; $('hmFvFrame').style.display = ''; $('hmFvFrame').src = uPks + '&embed=1';
+                return;
+            }
+        }
         if (window.optiTampilkanBerkas) {
             // PDF/gambar lewat iframe (toolbar bawaan disembunyikan), Word dirender di dalam modal
             window.optiTampilkanBerkas(url, $('hmFvFrame'), $('hmFvDoc'), aktif);
@@ -1816,6 +1821,7 @@
     }
     window.addEventListener('resize', function () { if (current !== null) { fitDoc(); } });
 
+    if (!TAB_AWAL && !SOLO && tab === 'baru' && !dasarTab('baru').length) { tab = 'semua'; }   // tidak ada yang perlu ditindak: langsung buka tab Semua
     isiOpsiFilter();
     render();
     if (tab !== 'baru') {   // dibuka dari notifikasi (?tab=kontrak)

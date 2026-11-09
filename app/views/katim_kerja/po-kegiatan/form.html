@@ -6060,9 +6060,11 @@ function isFlatMode() { return groups.length === 1 && groups[0].nama_tahap === '
 
 function tambahTahap() {
     if (isFlatMode()) {
+        jadwalSimpanSnap();
         groups[0].nama_tahap = 'Tahap 1';
         jadwalTahapAktif = 0;
         renderJadwal();
+        jadwalTampilToast('Jadwal dibagi per tahap. Kegiatan yang tadi sudah masuk ke Tahap 1.', true);
         return;
     }
     groups.push({ nama_tahap: 'Tahap ' + (groups.length + 1), kegiatan: [] });
@@ -6078,6 +6080,159 @@ function hapusTahap(gIdx) {
     if (jadwalTahapAktif >= groups.length) jadwalTahapAktif = groups.length - 1;
     if (jadwalTahapAktif < 0) jadwalTahapAktif = 0;
     renderJadwal();
+}
+
+/* ---- Balik dari jadwal per tahap ke jadwal biasa (tanpa tahap) ---- */
+var jadwalUndoSnap = null, jadwalToastTimer = null;
+
+function jadwalKegiatanIsi(k) { return (k.nama || '').trim() !== '' || (k.tanda && k.tanda.length > 0); }
+
+function jadwalSimpanSnap() { jadwalUndoSnap = JSON.stringify({ g: groups, a: jadwalTahapAktif, p: jadwalPeriodeAktif }); }
+
+function jadwalSegarkanPratinjau() { if (typeof window.triggerLivePreviewRefresh === 'function') window.triggerLivePreviewRefresh(); }
+
+function jadwalUrungkan() {
+    if (!jadwalUndoSnap) return;
+    var o = JSON.parse(jadwalUndoSnap);
+    jadwalUndoSnap = null;
+    groups = o.g; jadwalTahapAktif = o.a; jadwalPeriodeAktif = o.p;
+    renderJadwal();
+    jadwalSegarkanPratinjau();
+    jadwalTampilToast('Dikembalikan seperti sebelumnya.', false);
+}
+
+function jadwalTutupToast() {
+    clearTimeout(jadwalToastTimer);
+    var t = document.getElementById('jadwalToast');
+    if (t && t.parentNode) t.parentNode.removeChild(t);
+}
+
+function jadwalTampilToast(pesan, bisaUrungkan) {
+    jadwalTutupToast();
+    var t = document.createElement('div');
+    t.id = 'jadwalToast';
+    t.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:2000;background:#0f172a;color:#fff;border-radius:12px;padding:11px 14px;display:flex;gap:14px;align-items:center;max-width:min(560px,calc(100vw - 32px));box-shadow:0 10px 30px rgba(15,23,42,.3);font-size:13px;';
+    var sp = document.createElement('span');
+    sp.textContent = pesan;
+    t.appendChild(sp);
+    if (bisaUrungkan) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = 'Urungkan';
+        b.style.cssText = 'background:transparent;border:1px solid rgba(255,255,255,.55);color:#fff;border-radius:8px;padding:4px 10px;font-weight:700;font-size:12.5px;white-space:nowrap;cursor:pointer;';
+        b.addEventListener('click', jadwalUrungkan);
+        t.appendChild(b);
+    }
+    document.body.appendChild(t);
+    jadwalToastTimer = setTimeout(jadwalTutupToast, 9000);
+}
+
+function jadwalSegarkanTombolTahap() {
+    var b = document.getElementById('btnTambahTahap');
+    if (!b) return;
+    var flat = isFlatMode();
+    var ic = b.querySelector('i'), sp = b.querySelector('span');
+    if (ic) ic.className = flat ? 'bi bi-diagram-3' : 'bi bi-arrow-return-left';
+    if (sp) sp.textContent = flat ? 'Tambah Tahap' : 'Tanpa Tahap';
+    b.title = flat ? 'Bagi jadwal jadi beberapa tahap' : 'Balik ke jadwal biasa, tanpa tahap';
+}
+
+function jadwalKeTanpaTahap(pakaiIdx) {
+    // pakaiIdx: daftar nomor tahap yang kegiatannya dipakai; null = semua tahap
+    jadwalSimpanSnap();
+    var rows = [], dibuang = 0, nama = [];
+    groups.forEach(function (g, i) {
+        var isi = g.kegiatan.filter(jadwalKegiatanIsi);
+        if (!pakaiIdx || pakaiIdx.indexOf(i) !== -1) {
+            rows = rows.concat(isi);
+            if (isi.length) nama.push(g.nama_tahap || ('Tahap ' + (i + 1)));
+        } else {
+            dibuang += isi.length;
+        }
+    });
+    if (!rows.length) rows = [{ nama: '', tanda: [] }];
+    rows.forEach(function (r) { delete r.bagian; });
+    groups = [{ nama_tahap: '', kegiatan: rows }];
+    jadwalTahapAktif = 0; jadwalPeriodeAktif = 0;
+    renderJadwal();
+    jadwalSegarkanPratinjau();
+    var n = rows.filter(jadwalKegiatanIsi).length;
+    jadwalTampilToast(dibuang
+        ? 'Sekarang tanpa tahap. Pakai ' + nama.join(' + ') + ' (' + n + ' kegiatan), ' + dibuang + ' kegiatan dari tahap lain dibuang.'
+        : 'Sekarang tanpa tahap. ' + n + ' kegiatan jadi satu daftar.', true);
+}
+
+function jadwalMintaTanpaTahap() {
+    var terisi = [];
+    groups.forEach(function (g, i) {
+        var n = g.kegiatan.filter(jadwalKegiatanIsi).length;
+        if (n > 0) terisi.push({ i: i, g: g, n: n });
+    });
+    if (terisi.length <= 1) { jadwalKeTanpaTahap(null); return; }
+    jadwalBukaDialogTanpaTahap(terisi);
+}
+
+function jadwalBukaDialogTanpaTahap(terisi) {
+    var total = terisi.reduce(function (a, x) { return a + x.n; }, 0);
+    var ov = document.createElement('div');
+    ov.id = 'jadwalDialogTanpaTahap';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:2100;background:rgba(15,23,42,.38);display:flex;align-items:center;justify-content:center;padding:16px;';
+    var optCss = 'display:flex;gap:10px;border:1px solid #cbd5e1;border-radius:12px;padding:12px;cursor:pointer;align-items:flex-start;margin:0;';
+    var aktifCss = 'border-color:#0f172a;box-shadow:0 0 0 1px #0f172a;';
+    var barisCss = 'display:flex;gap:10px;align-items:center;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;cursor:pointer;margin:0;';
+    var daftar = terisi.map(function (x) {
+        return '<label style="' + barisCss + '"><input type="checkbox" class="jdTahap" value="' + x.i + '" checked disabled style="accent-color:#0f172a;width:16px;height:16px;flex:none;">' +
+            '<span style="flex:1;min-width:0;font-size:13px;font-weight:600;">' + escHtmlRab(x.g.nama_tahap || ('Tahap ' + (x.i + 1))) + '</span>' +
+            '<span style="color:#64748b;font-size:12.5px;white-space:nowrap;">' + x.n + ' kegiatan</span></label>';
+    }).join('');
+    ov.innerHTML =
+        '<div role="dialog" aria-modal="true" style="background:#fff;border-radius:16px;max-width:460px;width:100%;max-height:calc(100vh - 32px);overflow-y:auto;padding:22px;border:1px solid #e2e8f0;box-shadow:0 20px 50px rgba(15,23,42,.25);display:flex;flex-direction:column;gap:14px;color:#0f172a;">' +
+        '<h5 style="margin:0;font-size:17px;font-weight:700;">Balik ke jadwal tanpa tahap?</h5>' +
+        '<p style="margin:0;color:#64748b;font-size:14px;">Ada ' + terisi.length + ' tahap yang sudah berisi kegiatan (' + total + ' kegiatan). Mau diapakan?</p>' +
+        '<label id="jdOptGabung" style="' + optCss + aktifCss + '"><input type="radio" name="jdCara" value="gabung" checked style="margin-top:3px;accent-color:#0f172a;"><div><b style="display:block;font-size:13.5px;">Gabungkan semua kegiatan</b><span style="display:block;color:#64748b;font-size:12.5px;margin-top:2px;">' + total + ' kegiatan dari semua tahap jadi satu daftar, urutan ikut tahap. Centang jadwal tidak berubah.</span></div></label>' +
+        '<label id="jdOptPilih" style="' + optCss + '"><input type="radio" name="jdCara" value="pilih" style="margin-top:3px;accent-color:#0f172a;"><div style="flex:1;min-width:0;"><b style="display:block;font-size:13.5px;">Pilih tahap yang dipakai</b><span id="jdPilihTeks" style="display:block;color:#64748b;font-size:12.5px;margin-top:2px;">Bisa pilih satu, beberapa, atau semua. Yang tidak dicentang dibuang.</span>' +
+        '<div id="jdPilihBox" style="display:none;margin-top:10px;flex-direction:column;gap:8px;">' +
+        '<label style="display:flex;gap:8px;align-items:center;margin:0;font-size:12.5px;font-weight:600;cursor:pointer;"><input type="checkbox" id="jdSemua" checked style="accent-color:#0f172a;width:15px;height:15px;"> Pilih semua</label>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;">' + daftar + '</div></div></div></label>' +
+        '<div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px;">' +
+        '<button type="button" id="jdBatal" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Batal</button>' +
+        '<button type="button" id="jdOk" class="btn btn-sm btn-dark rounded-pill px-3">Balik ke Tanpa Tahap</button></div></div>';
+    document.body.appendChild(ov);
+
+    var kotak = [].slice.call(ov.querySelectorAll('.jdTahap')), semua = ov.querySelector('#jdSemua'), teks = ov.querySelector('#jdPilihTeks'), box = ov.querySelector('#jdPilihBox'), ok = ov.querySelector('#jdOk');
+    function cara() { return ov.querySelector('input[name=jdCara]:checked').value; }
+    function terpilih() { return kotak.filter(function (k) { return k.checked; }).map(function (k) { return parseInt(k.value, 10); }); }
+    function sinkron() {
+        var pilih = cara() === 'pilih';
+        ov.querySelector('#jdOptGabung').style.cssText = optCss + (pilih ? '' : aktifCss);
+        ov.querySelector('#jdOptPilih').style.cssText = optCss + (pilih ? aktifCss : '');
+        box.style.display = pilih ? 'flex' : 'none';
+        kotak.forEach(function (k) { k.disabled = !pilih; });
+        semua.disabled = !pilih;
+        ok.disabled = false;
+        if (!pilih) { teks.textContent = 'Bisa pilih satu, beberapa, atau semua. Yang tidak dicentang dibuang.'; teks.style.color = '#64748b'; return; }
+        var dipilih = terpilih();
+        var pakai = terisi.filter(function (x) { return dipilih.indexOf(x.i) !== -1; }).reduce(function (a, x) { return a + x.n; }, 0);
+        semua.checked = dipilih.length === kotak.length;
+        if (!dipilih.length) { teks.textContent = 'Pilih minimal satu tahap.'; teks.style.color = '#dc2626'; ok.disabled = true; }
+        else if (pakai < total) { teks.textContent = 'Kegiatan dari tahap yang tidak dicentang (' + (total - pakai) + ') akan dibuang.'; teks.style.color = '#dc2626'; }
+        else { teks.textContent = 'Semua tahap dicentang, jadi semua kegiatan dipakai.'; teks.style.color = '#64748b'; }
+    }
+    function tutup() { if (ov.parentNode) ov.parentNode.removeChild(ov); }
+    ov.addEventListener('change', function (e) {
+        if (e.target === semua) { kotak.forEach(function (k) { k.checked = semua.checked; }); }
+        sinkron();
+    });
+    ov.addEventListener('click', function (e) { if (e.target === ov) tutup(); });
+    ov.querySelector('#jdBatal').addEventListener('click', tutup);
+    ok.addEventListener('click', function () {
+        if (cara() === 'gabung') { tutup(); jadwalKeTanpaTahap(null); return; }
+        var dipilih = terpilih();
+        if (!dipilih.length) return;
+        tutup();
+        jadwalKeTanpaTahap(dipilih.length === kotak.length ? null : dipilih);
+    });
+    sinkron();
 }
 
 function tambahKegiatan(gIdx) {
@@ -6120,15 +6275,57 @@ function buatTabTahapJadwal() {
     return bar;
 }
 
+/* ---- Kegiatan per bagian (jadwal tanpa tahap yang terbagi jadi beberapa bagian) ---- */
+var jadwalModeBagian = false, jadwalMenuBagian = -1;
+
+function jadwalKegAdaTanda(keg, chunk) {
+    return (keg.tanda || []).some(function (key) { return chunk.kolom.some(function (c) { return c.key === key; }); });
+}
+
+function jadwalKegDiBagian(keg, cIdx, chunks) {
+    return (keg.bagian || []).indexOf(cIdx) !== -1 || jadwalKegAdaTanda(keg, chunks[cIdx]);
+}
+
+function jadwalBagianKeg(keg, chunks) {   // nomor bagian (mulai 1) tempat kegiatan ini tampil
+    var o = [];
+    chunks.forEach(function (ch, i) { if (jadwalKegDiBagian(keg, i, chunks)) o.push(i + 1); });
+    return o;
+}
+
+function jadwalRapikanBagian(group, chunks) {   // kunci tempat tampil tiap kegiatan; yang belum punya tempat ditaruh di Bagian 1
+    group.kegiatan.forEach(function (keg) {
+        var ada = jadwalBagianKeg(keg, chunks).map(function (n) { return n - 1; });
+        keg.bagian = ada.length ? ada : [0];
+    });
+}
+
+function tambahKegiatanDiBagian(gIdx, cIdx) {
+    groups[gIdx].kegiatan.push({ nama: '', tanda: [], bagian: [cIdx] });
+    renderJadwal();
+    var daftar = groups[gIdx].kegiatan, el = document.querySelector('.jadwal-keg-input-' + gIdx + '-' + (daftar.length - 1));
+    if (el) el.focus();
+    jadwalSegarkanPratinjau();
+}
+
+function jadwalHapusDariBagian(gIdx, kIdx, cIdx, chunks) {
+    var keg = groups[gIdx].kegiatan[kIdx], ch = chunks[cIdx];
+    keg.tanda = (keg.tanda || []).filter(function (key) { return !ch.kolom.some(function (c) { return c.key === key; }); });
+    keg.bagian = (keg.bagian || []).filter(function (i) { return i !== cIdx; });
+    if (!jadwalBagianKeg(keg, chunks).length) groups[gIdx].kegiatan.splice(kIdx, 1);
+}
+
 function renderJadwal() {
     var container = document.getElementById('jadwalContainer');
     if (!container) return;
     container.innerHTML = '';
+    jadwalSegarkanTombolTahap();
 
     var chunks = getJadwalChunks(jadwalKolomCache, 16);
 
     // Mode bertahap: Tahap jadi tab dan hanya satu periode tampil sekali waktu. Mode kegiatan langsung (tanpa tahap) tidak berubah.
     var tabMode = !isFlatMode();
+    jadwalModeBagian = !tabMode && chunks.length > 1;
+    if (!jadwalModeBagian) jadwalMenuBagian = -1;
     if (jadwalTahapAktif >= groups.length) jadwalTahapAktif = groups.length - 1;
     if (jadwalTahapAktif < 0) jadwalTahapAktif = 0;
     if (jadwalPeriodeAktif >= chunks.length) jadwalPeriodeAktif = Math.max(0, chunks.length - 1);
@@ -6136,6 +6333,7 @@ function renderJadwal() {
 
     groups.forEach(function (group, gIdx) {
         if (tabMode && gIdx !== jadwalTahapAktif) return;
+        if (jadwalModeBagian) jadwalRapikanBagian(group, chunks);
         var block = document.createElement('div');
         block.className = isFlatMode() ? '' : 'tahap-block mb-3';
 
@@ -6166,6 +6364,7 @@ function renderJadwal() {
             btnHapusTahap.type = 'button'; btnHapusTahap.className = 'btn btn-xs btn-outline-danger rounded-pill px-2.5 py-1 shadow-2xs ms-auto d-inline-flex align-items-center gap-1';
             btnHapusTahap.innerHTML = '<i class="bi bi-trash"></i> Hapus Tahap';
             btnHapusTahap.addEventListener('click', function () { hapusTahap(gIdx); });
+            if (groups.length < 2) { btnHapusTahap.disabled = true; btnHapusTahap.title = 'Minimal 1 tahap. Pakai tombol "Tanpa Tahap" di atas untuk balik ke jadwal biasa.'; }
 
             header.appendChild(numBadge);
             header.appendChild(inNama);
@@ -6202,7 +6401,9 @@ function renderJadwal() {
                     var chunkHead = document.createElement('div');
                     chunkHead.className = 'jadwal-chunk-header';
                     chunkHead.innerHTML = '<div class="fw-bold small text-dark"><i class="bi bi-calendar-range text-primary me-1.5"></i> Bagian ' + (cIdx + 1) + ': ' + chunk.label + '</div>' +
-                        '<span class="badge bg-secondary-subtle text-secondary border small font-monospace">' + chunk.kolom.length + ' Kolom</span>';
+                        '<div class="d-flex align-items-center gap-2"><span class="badge bg-secondary-subtle text-secondary border small font-monospace">' + chunk.kolom.length + ' Kolom</span>' +
+                        '<button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-1 shadow-2xs d-inline-flex align-items-center gap-1 jadwal-tambah-bagian"><i class="bi bi-plus-lg"></i> Tambah Kegiatan</button></div>';
+                    chunkHead.querySelector('.jadwal-tambah-bagian').addEventListener('click', function () { tambahKegiatanDiBagian(gIdx, cIdx); });
                     block.appendChild(chunkHead);
                 }
 
@@ -6214,16 +6415,22 @@ function renderJadwal() {
                 table.innerHTML = '<thead>' + buatTheadChunkHtml(chunk) + '</thead>';
                 var tbody = document.createElement('tbody');
 
-                if (group.kegiatan.length === 0) {
+                var adaTampil = jadwalModeBagian
+                    ? group.kegiatan.some(function (kg) { return jadwalKegDiBagian(kg, cIdx, chunks); })
+                    : group.kegiatan.length > 0;
+                if (!adaTampil) {
                     var trEmpty = document.createElement('tr');
                     var tdEmpty = document.createElement('td');
                     tdEmpty.colSpan = chunk.kolom.length + 2;
                     tdEmpty.className = 'text-center text-muted py-3.5 small';
-                    tdEmpty.innerHTML = '<i class="bi bi-info-circle me-1"></i> Belum ada kegiatan pada tahap ini. <button type="button" class="btn btn-xs btn-link text-primary p-0 ms-1 fw-semibold" onclick="tambahKegiatan(' + gIdx + ')">+ Tambah Kegiatan</button>';
+                    tdEmpty.innerHTML = jadwalModeBagian
+                        ? '<i class="bi bi-info-circle me-1"></i> Belum ada kegiatan di bagian ini. <button type="button" class="btn btn-xs btn-link text-primary p-0 ms-1 fw-semibold" onclick="tambahKegiatanDiBagian(' + gIdx + ', ' + cIdx + ')">+ Tambah Kegiatan</button>'
+                        : '<i class="bi bi-info-circle me-1"></i> Belum ada kegiatan pada tahap ini. <button type="button" class="btn btn-xs btn-link text-primary p-0 ms-1 fw-semibold" onclick="tambahKegiatan(' + gIdx + ')">+ Tambah Kegiatan</button>';
                     trEmpty.appendChild(tdEmpty);
                     tbody.appendChild(trEmpty);
                 } else {
                     group.kegiatan.forEach(function (keg, kIdx) {
+                        if (jadwalModeBagian && !jadwalKegDiBagian(keg, cIdx, chunks)) return;
                         var tr = document.createElement('tr');
 
                         // Kolom 1: Nama Kegiatan
@@ -6242,6 +6449,16 @@ function renderJadwal() {
                             if (typeof window.triggerLivePreviewRefresh === 'function') window.triggerLivePreviewRefresh();
                         });
                         tdNama.appendChild(inputNama);
+                        if (jadwalModeBagian) {
+                            var lainBagian = jadwalBagianKeg(keg, chunks).filter(function (n) { return n !== cIdx + 1; });
+                            if (lainBagian.length) {
+                                var capBagian = document.createElement('div');
+                                capBagian.className = 'text-muted';
+                                capBagian.style.cssText = 'font-size:11px;margin-top:2px;';
+                                capBagian.textContent = 'Juga ada di Bagian ' + lainBagian.join(', ');
+                                tdNama.appendChild(capBagian);
+                            }
+                        }
                         tr.appendChild(tdNama);
 
                         // Kolom Matriks Checkbox (Gantt) untuk chunk ini
@@ -6313,10 +6530,10 @@ function renderJadwal() {
                         var btnHapus = document.createElement('button');
                         btnHapus.type = 'button';
                         btnHapus.className = 'btn btn-xs btn-link text-danger p-0 text-decoration-none';
-                        btnHapus.title = 'Hapus baris kegiatan ini';
+                        btnHapus.title = jadwalModeBagian ? 'Hapus kegiatan dari bagian ini' : 'Hapus baris kegiatan ini';
                         btnHapus.innerHTML = '<i class="bi bi-trash-fill fs-6"></i>';
                         btnHapus.addEventListener('click', function () {
-                            groups[gIdx].kegiatan.splice(kIdx, 1);
+                            if (jadwalModeBagian) { jadwalHapusDariBagian(gIdx, kIdx, cIdx, chunks); } else { groups[gIdx].kegiatan.splice(kIdx, 1); }
                             renderJadwal();
                             if (typeof window.triggerLivePreviewRefresh === 'function') window.triggerLivePreviewRefresh();
                         });
@@ -6330,6 +6547,46 @@ function renderJadwal() {
                 table.appendChild(tbody);
                 tableWrap.appendChild(table);
                 block.appendChild(tableWrap);
+
+                // Sambungkan kegiatan dari bagian lain ke bagian ini
+                if (jadwalModeBagian) {
+                    var sisaKeg = [];
+                    group.kegiatan.forEach(function (kg, ki) { if (!jadwalKegDiBagian(kg, cIdx, chunks)) sisaKeg.push(ki); });
+                    if (sisaKeg.length) {
+                        if (jadwalMenuBagian === cIdx) {
+                            var menuBagian = document.createElement('div');
+                            menuBagian.className = 'list-group border rounded-3 mb-2';
+                            menuBagian.style.maxWidth = '360px';
+                            var judulMenu = document.createElement('div');
+                            judulMenu.className = 'list-group-item small fw-bold text-muted text-uppercase';
+                            judulMenu.style.fontSize = '11px';
+                            judulMenu.textContent = 'Sambungkan ke Bagian ' + (cIdx + 1);
+                            menuBagian.appendChild(judulMenu);
+                            sisaKeg.forEach(function (ki) {
+                                var kg = group.kegiatan[ki];
+                                var opsi = document.createElement('button');
+                                opsi.type = 'button';
+                                opsi.className = 'list-group-item list-group-item-action d-flex justify-content-between gap-3 small';
+                                opsi.innerHTML = '<span>' + escHtmlRab(kg.nama || '(belum diberi nama)') + '</span><span class="text-muted">dari Bagian ' + jadwalBagianKeg(kg, chunks).join(', ') + '</span>';
+                                opsi.addEventListener('click', function () {
+                                    if (!kg.bagian) kg.bagian = [];
+                                    if (kg.bagian.indexOf(cIdx) === -1) kg.bagian.push(cIdx);
+                                    jadwalMenuBagian = -1;
+                                    renderJadwal();
+                                });
+                                menuBagian.appendChild(opsi);
+                            });
+                            block.appendChild(menuBagian);
+                        } else {
+                            var linkSambung = document.createElement('button');
+                            linkSambung.type = 'button';
+                            linkSambung.className = 'btn btn-xs btn-link text-muted p-0 mb-2 d-block small fw-semibold';
+                            linkSambung.textContent = 'Sambungkan kegiatan dari bagian lain (' + sisaKeg.length + ')';
+                            linkSambung.addEventListener('click', function () { jadwalMenuBagian = cIdx; renderJadwal(); });
+                            block.appendChild(linkSambung);
+                        }
+                    }
+                }
             });
 
             // Ringkasan seluruh periode (hanya mode bertahap dan jadwal terbagi beberapa periode)
@@ -6385,7 +6642,7 @@ document.addEventListener('mouseup', function () {
     isDraggingJadwal = false;
     document.body.classList.remove('jadwal-dragging');
     // selesai mencentang: segarkan penanda periode dan ringkasan (mode bertahap)
-    if (tadiDrag && !isFlatMode()) renderJadwal();
+    if (tadiDrag && (!isFlatMode() || jadwalModeBagian)) renderJadwal();
 });
 /* ============================================================ */
 /* INIT (dijalankan setelah seluruh HTML siap)                   */
@@ -6520,7 +6777,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnKat) btnKat.addEventListener('click', function () { tambahKategori(); hitungRabLive(); });
 
     var btnTahap = document.getElementById('btnTambahTahap');
-    if (btnTahap) btnTahap.addEventListener('click', function () { tambahTahap(); });
+    if (btnTahap) btnTahap.addEventListener('click', function () { if (isFlatMode()) { tambahTahap(); } else { jadwalMintaTanpaTahap(); } });
 
     var btnHitungUlang = document.getElementById('btnHitungUlangJadwal');
     if (btnHitungUlang) {
@@ -6973,6 +7230,10 @@ document.getElementById('formPo').addEventListener('submit', function (e) {
             var inpNama = document.createElement('input');
             inpNama.type = 'hidden'; inpNama.name = 'jadwal_kegiatan_nama[' + gIdx + '][]'; inpNama.value = keg.nama;
             container.appendChild(inpNama);
+
+            var inpBagian = document.createElement('input');
+            inpBagian.type = 'hidden'; inpBagian.name = 'jadwal_kegiatan_bagian[' + gIdx + '][]'; inpBagian.value = (keg.bagian || []).join(',');
+            container.appendChild(inpBagian);
 
             keg.tanda.forEach(function (key) {
                 var t = document.createElement('input');

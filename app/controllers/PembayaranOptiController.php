@@ -189,7 +189,7 @@ class PembayaranOptiController extends Controller {
         $orderId = (int)($f3->get('GET.order_id') ?? 0);
 
         // Isian form yang tersimpan saat simpan() gagal (mis. file bukti kegedean) -- dipakai buat ngisi ulang form
-        $old = ['order_id' => 0, 'termin_ke' => '', 'tanggal_bayar' => '', 'jumlah' => 0, 'keterangan' => ''];
+        $old = ['order_id' => 0, 'termin_ke' => '', 'tanggal_bayar' => '', 'tanggal_pengesahan' => '', 'jumlah' => 0, 'keterangan' => ''];
         if (!empty($_SESSION['pembayaran_old']) && is_array($_SESSION['pembayaran_old'])) {
             if ($orderId > 0 && (int)($_SESSION['pembayaran_old']['order_id'] ?? 0) === $orderId) {
                 $old = array_merge($old, $_SESSION['pembayaran_old']);
@@ -372,6 +372,8 @@ if ($isKesanggupan) {
 // ===== JALUR NORMAL (pembayaran beneran) =====
 $terminKe     = (int)($post['termin_ke'] ?? 1);
 $tanggalBayar = $post['tanggal_bayar'] ?? date('Y-m-d');
+$tglSahRaw    = trim((string)($post['tanggal_pengesahan'] ?? ''));
+$tanggalPengesahan = preg_match('/^\d{4}-\d{2}-\d{2}$/', $tglSahRaw) ? $tglSahRaw : '';   // opsional
 $jumlah       = (float)($post['jumlah'] ?? 0);
 $metode       = trim($post['metode_pembayaran'] ?? 'transfer_bank');
 $noTransaksi  = trim($post['nomor_transaksi_ntpn'] ?? '');
@@ -385,6 +387,7 @@ $_SESSION['pembayaran_old'] = [
     'tanggal_bayar' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$tanggalBayar) ? $tanggalBayar : '',
     'jumlah'        => (int)round($jumlah),
     'keterangan'    => $keterangan,
+    'tanggal_pengesahan' => $tanggalPengesahan,
 ];
 
 if ($jumlah <= 0) {
@@ -434,6 +437,10 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
             $pembayaran->verifikator_id       = $this->getUserId() ?? null;
             $pembayaran->created_at           = date('Y-m-d H:i:s');
             $pembayaran->save();
+            if ($tanggalPengesahan !== '') {   // kolom tanggal_pengesahan hanya disentuh bila diisi
+                $idBaru = (int)$this->db->exec("SELECT LAST_INSERT_ID() AS id")[0]['id'];
+                $this->db->exec("UPDATE opti_pembayaran SET tanggal_pengesahan = ? WHERE id = ?", array(1 => $tanggalPengesahan, 2 => $idBaru));
+            }
             unset($_SESSION['pembayaran_old']);   // tersimpan -- isian lama gak perlu dipakai lagi
 
             // [PENTING] ini yang nge-update order_layanan.status_keuangan otomatis

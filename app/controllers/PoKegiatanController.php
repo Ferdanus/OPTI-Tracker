@@ -476,6 +476,7 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) 
 $tahapNamaList    = $post['tahap_nama'] ?? [];
 $kegiatanNamaAll  = $post['jadwal_kegiatan_nama'] ?? [];
 $kegiatanTandaAll = $post['jadwal_kegiatan_tanda'] ?? [];
+$kegiatanBagianAll = $post['jadwal_kegiatan_bagian'] ?? [];   // tempat tampil tiap kegiatan di jadwal yang terbagi beberapa bagian ("0,1")
 
 $groups = [];
 foreach ($tahapNamaList as $gIdx => $namaTahap) {
@@ -483,10 +484,13 @@ $kegiatanList = [];
 $namaList = $kegiatanNamaAll[$gIdx] ?? [];
 foreach ($namaList as $kIdx => $namaKeg) {
     if (trim($namaKeg) === '') continue;
-    $kegiatanList[] = [
+    $itemKeg = [
         'nama'  => trim($namaKeg),
         'tanda' => array_map('strval', $kegiatanTandaAll[$gIdx][$kIdx] ?? []),
     ];
+    $bagianKeg = array_values(array_unique(array_map('intval', array_filter(explode(',', (string) ($kegiatanBagianAll[$gIdx][$kIdx] ?? '')), 'strlen'))));
+    if ($bagianKeg) { $itemKeg['bagian'] = $bagianKeg; }
+    $kegiatanList[] = $itemKeg;
 }
 $groups[] = ['nama_tahap' => trim($namaTahap), 'kegiatan' => $kegiatanList];
 }
@@ -501,10 +505,12 @@ if (empty($groups) && isset($post['jadwal_groups']) && is_string($post['jadwal_g
             $kegiatanList = [];
             foreach (($g['kegiatan'] ?? []) as $keg) {
                 if (!is_array($keg) || trim((string) ($keg['nama'] ?? '')) === '') continue;
-                $kegiatanList[] = [
+                $itemKeg = [
                     'nama'  => trim((string) $keg['nama']),
                     'tanda' => array_map('strval', is_array($keg['tanda'] ?? null) ? $keg['tanda'] : []),
                 ];
+                if (is_array($keg['bagian'] ?? null) && $keg['bagian']) { $itemKeg['bagian'] = array_values(array_unique(array_map('intval', $keg['bagian']))); }
+                $kegiatanList[] = $itemKeg;
             }
             $groups[] = ['nama_tahap' => trim((string) ($g['nama_tahap'] ?? '')), 'kegiatan' => $kegiatanList];
         }

@@ -5866,6 +5866,8 @@ class OrderController extends Controller {
         }
 
         $tanggalBayar = !empty($post['tanggal_bayar']) ? $post['tanggal_bayar'] : date('Y-m-d');
+        $tglSahRaw    = trim((string)($post['tanggal_pengesahan'] ?? ''));
+        $tanggalPengesahan = preg_match('/^\d{4}-\d{2}-\d{2}$/', $tglSahRaw) ? $tglSahRaw : null;   // opsional
         $keterangan   = trim($post['keterangan'] ?? 'Pembayaran lunas via tagihan balai');
         $rawJumlah    = str_replace(['.', ',', ' '], '', (string)($post['jumlah'] ?? ''));
         $jumlah       = is_numeric($rawJumlah) ? (float)$rawJumlah : (float)($order['estimasi_biaya'] ?: 0);
@@ -5978,7 +5980,7 @@ class OrderController extends Controller {
         }
 
         if (empty($buktiBayarPath) && empty($post['is_edit'])) {
-            $this->setFlashError('Harap lampirkan berkas bukti pembayaran pelanggan.');
+            $this->setFlashError('Harap lampirkan berkas bukti pembayaran/invoice pelanggan.');
             $f3->reroute("/order/{$id}");
             return;
         }
@@ -5997,6 +5999,7 @@ class OrderController extends Controller {
                     "UPDATE opti_pembayaran SET tanggal_bayar = ?, bukti_bayar = ?, keterangan = ?, verifikator_id = ? WHERE id = ?",
                     array(1 => $tanggalBayar, 2 => $buktiBayarPath, 3 => ($ketBaru !== '' ? $ketBaru : ($existing[0]['keterangan'] ?? null)), 4 => $userId, 5 => $payId)
                 );
+                if ($tanggalPengesahan !== null) { $this->db->exec("UPDATE opti_pembayaran SET tanggal_pengesahan = ? WHERE id = ?", array(1 => $tanggalPengesahan, 2 => $payId)); }
                 $this->logActivity($id, 'pembayaran', 'perbarui_bukti_bayar', "Perbarui berkas bukti pembayaran Termin #" . (int)($existing[0]['termin_ke'] ?? 1));
                 $this->setFlashSuccess("Berkas bukti pembayaran berhasil diperbarui.");
                 $f3->reroute("/order/{$id}");
@@ -6014,6 +6017,7 @@ class OrderController extends Controller {
                     'keterangan'           => $keterangan,
                     'bukti_bayar'          => $buktiBayarPath,
                     'status_verifikasi'    => 'terverifikasi',
+                    'tanggal_pengesahan'   => $tanggalPengesahan,
                     'verifikator_id'       => $userId
                 ]);
             }

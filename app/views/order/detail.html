@@ -1225,6 +1225,18 @@
             opacity: 0.65;
         }
 
+        /* Layar lebar: semua tahap (kini 10, termasuk BAST) selalu satu baris; jumlah kolom mengikuti jumlah tahap */
+        @media (min-width: 992px) {
+            .stage-nav-grid {
+                grid-template-columns: none;
+                grid-auto-flow: column;
+                grid-auto-columns: minmax(0, 1fr);
+            }
+        }
+        @media (min-width: 992px) and (max-width: 1399.98px) {
+            .stage-nav-text { font-size: 0.66rem; }
+            .stage-nav-title-row { gap: 3px; }
+        }
         @media (max-width: 991.98px) {
             .stage-nav-grid {
                 grid-template-columns: repeat(3, 1fr);
@@ -5375,7 +5387,7 @@
                                     <!-- FIELD PEMBAYARAN NORMAL -->
                                     <div class="form-fields-normal-detail {{ !empty(@draf_kesanggupan) ? 'd-none' : 'active' }}" id="fieldsNormalDetail">
                                         <div class="row g-3 mb-3">
-                                            <div class="col-md-6">
+                                            <div class="col-md-4">
                                                 <label class="form-label fw-bold text-dark">Tahap Termin Ke- <span class="text-danger">*</span></label>
                                                 <select name="termin_ke" id="selectTerminDetail" class="form-select" style="height: 42px;">
                                                     <check if="{{ (@order.termin_berikutnya ?: 1) <= 1 }}">
@@ -5397,9 +5409,13 @@
                                                 </select>
                                                 <div class="form-text small text-muted">Otomatis terpilih (Termin {{ @order.termin_berikutnya ?: 1 }}), tetap bisa disesuaikan jika perlu.</div>
                                             </div>
-                                            <div class="col-md-6">
+                                            <div class="col-md-4">
                                                 <label class="form-label fw-bold text-dark">Tanggal Bayar <span class="text-danger">*</span></label>
                                                 <input type="date" name="tanggal_bayar" id="tanggal_bayar_input" class="form-control" value="{{ date('Y-m-d') }}" required style="height: 42px;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-dark">Tanggal Pengesahan <span class="text-muted fw-normal small">(opsional)</span></label>
+                                                <input type="date" name="tanggal_pengesahan" id="tanggal_pengesahan_input" class="form-control" value="" style="height: 42px;">
                                             </div>
                                         </div>
 
@@ -5425,7 +5441,7 @@
                                                 <div class="small mt-1" id="nominalHintDetail"></div>
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-bold text-dark">Upload Bukti Pembayaran <span class="text-danger">*</span></label>
+                                                <label class="form-label fw-bold text-dark">Upload Bukti Pembayaran/Invoice <span class="text-danger">*</span></label>
                                                 <input type="file" name="bukti_bayar" id="bukti_bayar_input" class="form-control" accept=".pdf,.jpg,.jpeg,.png" style="height: 42px;">
                                                 <div class="form-text small text-muted">Format PDF, JPG, PNG. Maksimal 5MB.</div>
                                             </div>
@@ -6354,7 +6370,6 @@
                                                             <div><small>Nomor PO</small><span>{{ @po_kegiatan.nomor_po }}</span></div>
                                                             <check if="{{ @po_alur.ttd.asal }}"><div><small>Format</small><span>{{ @po_alur.ttd.asal }} diubah otomatis ke PDF</span></div></check>
                                                         </div>
-                                                        <div class="kt-acts"><a href="{{ @po_alur.ttd.url_lihat }}" target="_blank" rel="noopener" class="kt-btn pri"><i class="bi bi-eye"></i>Lihat PO</a></div>
                                                     </div>
                                                 </div>
                                                 <check if="{{ !@po_alur.ttd.kontrak_ada }}">
@@ -11028,7 +11043,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (hint) hint.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Melebihi sisa tagihan (' + rupiah(sisaTagihan) + ')</span>';
             if (group) group.classList.add('border', 'border-danger');
         } else if (angka === sisaTagihan && sisaTagihan > 0) {
-            if (hint) hint.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Pas! Pembayaran ini akan MELUNASI tagihan order.</span>';
+            if (hint) hint.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Pembayaran Lunas</span>';
             if (group) group.classList.remove('border', 'border-danger');
         } else {
             if (hint) hint.innerHTML = '<span class="text-primary fw-medium"><i class="bi bi-info-circle me-1"></i>Pembayaran termin sebesar ' + rupiah(angka) + ' (sisa tagihan ' + rupiah(Math.max(0, sisaTagihan - angka)) + ')</span>';
