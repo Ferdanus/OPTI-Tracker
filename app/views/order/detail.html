@@ -1082,9 +1082,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 3px;
-            padding: 0.45rem 0.15rem;
-            min-height: 52px;
+            gap: 6px;
+            padding: 0.5rem 0.15rem;
+            min-height: 54px;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
             background: #f8fafc;
@@ -1153,6 +1153,7 @@
             align-items: center;
             justify-content: center;
             width: 100%;
+            margin-top: 1px;
         }
 
         .stage-status-badge {
@@ -4730,9 +4731,6 @@
                                                    class="btn btn-sm btn-white border border-primary-subtle text-primary d-inline-flex align-items-center gap-1.5 btn-preview-pdf fw-semibold shadow-xs" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/dokumen-deal/penawaran_ttd/preview" data-title="Surat Penawaran Bertanda Tangan" data-subtitle="Order: {{ @order.nomor_order }}">
                                                     <i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Dokumen
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-white border text-secondary d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaModalKlaimSuratKeluar()" title="Ganti surat dari arsip sekretariat">
-                                                    <i class="bi bi-arrow-repeat"></i> Ganti Surat
-                                                </button>
                                                 <button type="button" class="btn btn-sm btn-white border border-danger-subtle text-danger d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="batalKlaimSuratKeluar()" title="Batalkan klaim surat ini">
                                                     <i class="bi bi-x-circle"></i> Batal Klaim
                                                 </button>
@@ -4756,62 +4754,6 @@
                                             <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
                                                 <button type="button" class="btn btn-primary btn-sm fw-semibold px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2" onclick="bukaModalKlaimSuratKeluar()">
                                                     <i class="bi bi-box-arrow-in-down fs-6"></i> Ambil Surat dari Arsip
-                                                </button>
-                                                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2" onclick="toggleManualUploadDeal1()">
-                                                    <i class="bi bi-upload me-1"></i> Upload Manual (Alternatif)
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Form Upload Berkas 1 Manual (Fallback tersembunyi) -->
-                                    <div class="p-4 pt-3 pb-4 d-none bg-light-subtle border-top" id="dealFormWrap_penawaran_ttd">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <span class="small fw-semibold text-secondary"><i class="bi bi-info-circle me-1"></i> Unggah Manual Berkas Surat Penawaran TTD</span>
-                                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="toggleManualUploadDeal1()">Tutup Upload Manual</button>
-                                        </div>
-                                        <div class="mx-auto my-1" style="max-width: 680px;">
-                                            <div class="px-4 py-4 bg-white rounded-3 border border-2 border-dashed text-center position-relative transition-all shadow-2xs deal-drop-zone d-flex flex-column align-items-center justify-content-center" id="dealDropZone_penawaran_ttd" data-jenis="penawaran_ttd" style="cursor: pointer; border-color: #cbd5e1 !important; min-height: 140px;">
-                                                <input type="file" id="dealFileInput_penawaran_ttd" data-jenis="penawaran_ttd" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="cursor: pointer; z-index: 1;">
-                                                <div id="dealDropPrompt_penawaran_ttd" class="py-2 w-100">
-                                                    <div class="bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-2 flex-shrink-0" style="width: 44px; height: 44px; min-width: 44px; min-height: 44px; max-width: 44px; max-height: 44px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
-                                                        <i class="bi bi-cloud-arrow-up-fill fs-5" style="line-height: 1;"></i>
-                                                    </div>
-                                                    <span class="fw-bold text-dark d-block small mb-1">Pilih Berkas Surat Penawaran Bertanda Tangan</span>
-                                                    <span class="text-muted d-block mb-2.5" style="font-size: 0.75rem;">Klik di sini atau seret file &bull; PDF, JPG, PNG, atau DOCX (Maks. 10MB)</span>
-                                                    <span class="btn btn-xs btn-white border px-3 py-1.5 text-primary fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.72rem; pointer-events: none;">
-                                                        <i class="bi bi-folder2-open"></i> Telusuri File...
-                                                    </span>
-                                                </div>
-                                                <div id="dealSelectedWrap_penawaran_ttd" class="py-2.5 w-100 d-none" style="position: relative; z-index: 10;">
-                                                    <div class="d-inline-flex align-items-center gap-3 px-4 py-2.5 bg-white border border-primary-subtle rounded-pill shadow-xs" style="max-width: 96%; background-color: #f0f7ff !important;">
-                                                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 1rem;">
-                                                            <i class="bi bi-file-earmark-check-fill"></i>
-                                                        </div>
-                                                        <div class="text-start text-truncate" style="max-width: 360px;">
-                                                            <span class="fw-semibold text-dark small d-inline-block text-truncate align-middle" id="dealSelectedName_penawaran_ttd" style="font-size: 0.85rem; max-width: 100%;">nama_file.pdf</span>
-                                                        </div>
-                                                        <span class="text-muted small fw-normal flex-shrink-0" id="dealSelectedSize_penawaran_ttd" style="font-size: 0.78rem;">(1.2 MB)</span>
-                                                        <button type="button" class="btn btn-link text-danger p-0 ms-1 d-inline-flex align-items-center justify-content-center btn-deal-clear flex-shrink-0" data-jenis="penawaran_ttd" title="Hapus pilihan berkas" style="text-decoration: none; width: 24px; height: 24px; position: relative; z-index: 20; cursor: pointer;">
-                                                            <i class="bi bi-x-circle-fill fs-5" style="line-height: 1;"></i>
-                                                        </button>
-                                                    </div>
-                                                    <div class="mt-2 text-muted" style="font-size: 0.76rem;">
-                                                        <span class="text-success fw-medium"><i class="bi bi-check-circle-fill me-1"></i>Berkas siap diunggah</span>
-                                                        <span class="mx-1.5 text-muted">&bull;</span>
-                                                        <span class="text-primary fw-medium text-decoration-underline btn-deal-reselect" data-jenis="penawaran_ttd" style="cursor: pointer; position: relative; z-index: 15;">Ganti berkas</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 pt-2 mb-1">
-                                            <div class="small text-danger d-none" id="dealErrorMsg_penawaran_ttd"></div>
-                                            <div class="d-flex gap-2 ms-auto">
-                                                <button type="button" class="btn btn-sm btn-white border shadow-xs px-3.5 py-2" onclick="toggleManualUploadDeal1()">Batal</button>
-                                                <button type="button" class="btn btn-sm btn-dark d-inline-flex align-items-center gap-2 fw-semibold shadow-sm px-4 py-2 btn-deal-simpan" data-jenis="penawaran_ttd" id="dealSimpanBtn_penawaran_ttd" disabled>
-                                                    <span class="spinner-border spinner-border-sm d-none" id="dealSpinner_penawaran_ttd" role="status"></span>
-                                                    <span><i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan &amp; Unggah Berkas</span>
                                                 </button>
                                             </div>
                                         </div>
