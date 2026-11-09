@@ -1687,7 +1687,6 @@
                                 <span class="input-group-text bg-light text-muted"><i class="bi bi-hash"></i></span>
                                 <input type="text" name="nomor_surat" id="input_nomor_surat" class="form-control form-control-sm font-monospace fw-bold" value="{{ @is_revisi_baru ? @nomor_surat_otomatis : (@sp_existing.nomor_surat ?: @nomor_surat_otomatis) }}" data-nomor-lama="{{ @nomor_surat_lama ?: (@sp_existing.nomor_surat ?? '') }}" data-nomor-baru="{{ @nomor_surat_baru ?: @nomor_surat_otomatis }}" placeholder="Contoh: B/.../BBSPJIS/MS/XI/2026 atau B/12/BBSPJIS/MS/XI/2026" required {{ !@can_edit ? 'disabled' : '' }}>
                             </div>
-                            <small class="text-muted" style="font-size: 0.72rem;">Format: <strong>B/…/BBSPJIS/MS/{bulan_romawi}/{tahun}</strong>. Wajib ganti tanda titik-titik (<strong>...</strong>) dengan nomor agenda surat keluar resmi dari sekretariat sebelum diterbitkan.</small>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label small fw-semibold text-dark mb-1">
@@ -2196,6 +2195,10 @@
                 </div>
                 <check if="{{ @can_edit }}">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div id="infoWajibNomorSurat" class="small fw-semibold text-danger d-inline-flex align-items-center gap-1.5 px-2.5 py-1.5 bg-danger-subtle border border-danger-subtle rounded-2 {{ @is_nomor_surat_lengkap ? 'd-none' : '' }}" style="font-size: 0.78rem; cursor: pointer;" onclick="var elN = document.getElementById('input_nomor_surat'); if(elN) { elN.focus(); elN.scrollIntoView({behavior:'smooth', block:'center'}); }" title="Klik untuk langsung mengisi nomor surat">
+                            <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+                            <span>Nomor surat belum diisi (ganti <strong>...</strong> dengan nomor agenda resmi)</span>
+                        </div>
                         <check if="{{ @is_locked_deal || (@sp_existing && @sp_existing.status_respon_klien == 'deal') || (@order.status_penawaran == 'deal') }}">
                             <input type="hidden" name="action_status" id="inputActionStatus" value="deal">
                             <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft'; var sr = document.getElementById('select_status_respon_klien'); if (sr) sr.value='draft';">
@@ -4185,6 +4188,15 @@ function updateSubmitButtonState() {
         reason = "Nomor surat penawaran wajib diisi nomor agenda lengkap dari sekretariat (tidak boleh masih mengandung '...')";
     } else if (!isLampiranValid) {
         reason = "Pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu";
+    }
+
+    var infoNomor = document.getElementById('infoWajibNomorSurat');
+    if (infoNomor) {
+        if (!isNomorValid) {
+            infoNomor.classList.remove('d-none');
+        } else {
+            infoNomor.classList.add('d-none');
+        }
     }
 
     [btnTerbit, btnSimpan].forEach(function(btn) {
