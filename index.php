@@ -37,7 +37,7 @@ date_default_timezone_set('Asia/Jakarta');
 if (PHP_SAPI !== 'cli' && isset($_SERVER['REQUEST_URI'])) {
     $rawUri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
     $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
-    if (!empty($scriptDir) && strpos($rawUri, $scriptDir) === 0) {
+    if (!empty($scriptDir) && stripos($rawUri, $scriptDir) === 0) {
         $realPath = substr($rawUri, strlen($scriptDir)) ?: '/';
         $f3->set('BASE', $scriptDir);
         $f3->set('PATH', $realPath);
