@@ -1945,8 +1945,8 @@
                                 <!-- 4. Kontrak -->
                                 <check if="{{ @is_superadmin || @is_admin_kontrak }}">
                                     <li>
-                                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Kontrak (Perjanjian Kerja Sama)">
-                                            <i class="bi bi-file-earmark-ruled"></i> <span>Kontrak</span>
+                                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Perjanjian Kerja Sama (PKS)">
+                                            <i class="bi bi-file-earmark-ruled"></i> <span>PKS</span>
                                         </a>
                                     </li>
                                 </check>
@@ -1972,6 +1972,9 @@
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_humas' ? 'active' : '' }}" href="{{ @BASE }}/po-humas" title="Daftar PO Humas">
                             <i class="bi bi-journal-check"></i> <span>Daftar PO</span>
+                            <check if="{{ @jumlah_notif_po_humas > 0 }}">
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_po_humas }}</span>
+                            </check>
                         </a>
                     </li>
                 </check>
@@ -2107,10 +2110,10 @@
                     
                     <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Superadmin) -->
                     <li>
-                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/pks" title="Perjanjian Kerja Sama">
-                            <i class="bi bi-journal-code"></i> <span>Kontrak</span>
+                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/pks" title="Perjanjian Kerja Sama (PKS)">
+                            <i class="bi bi-journal-code"></i> <span>PKS</span>
                             <check if="{{ @jumlah_notif_kontrak > 0 }}">
-                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_proposal }}</span>
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_kontrak }}</span>
                             </check>
                         </a>
                     </li>

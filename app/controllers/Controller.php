@@ -205,6 +205,7 @@ class Controller {
         // - Untuk Ketua Tim OPTI: Notifikasi order yang menunggu evaluasi kelayakan / persetujuan proposal biaya sesuai divisinya.
         // - Untuk Superadmin: Total order masuk / tugas yang perlu ditindaklanjuti.
         $notifOrderCount = 0;
+        $notifPoHumas = 0;
         try {
             if ($isTimMitra) {
                 // Notifikasi Tim Mitra: Order yang benar-benar membutuhkan aksi dari Tim Mitra
@@ -302,7 +303,9 @@ class Controller {
                       WHERE p.status IN ('terkirim','disetujui_mitra','disetujui') AND p.status_review = 'disetujui'
                         AND p.verifikasi_humas_at IS NULL"
                 );
-                $notifOrderCount = (int)($resHumas[0]['c'] ?? 0);
+                $notifPoHumas = (int)($resHumas[0]['c'] ?? 0);
+                // + kontrak yang menunggu dibuat Humas (PO bertanda tangan sudah di-upload) -- sama dengan tugas "Buat Kontrak" di Daftar Order
+                $notifOrderCount = $notifPoHumas + $this->hitungKontrakMenunggu();
             } elseif (in_array($role, array('ppk', 'ppk_blu', 'pejabat'), true)) {
                 // PPK BLU: PO yang sudah diverifikasi Tim Mitra dan menunggu verifikasi PPK BLU (sama dengan "Verifikasi PO" di Daftar Order)
                 $resPpk = $this->db->exec(
@@ -334,6 +337,9 @@ class Controller {
         }
         $this->f3->set('jumlah_notif_order', $notifOrderCount);
         $this->f3->set('jumlah_notif_katim', $notifOrderCount);
+        // Badge menu Daftar PO (Humas) = PO yang menunggu verifikasi; badge menu Kontrak = kontrak yang menunggu dibuat
+        $this->f3->set('jumlah_notif_po_humas', $notifPoHumas);
+        $this->f3->set('jumlah_notif_kontrak', ($role === 'humas' || $role === 'admin_kontrak' || $role === 'superadmin') ? $this->hitungKontrakMenunggu() : 0);
 
         // Hitung notifikasi Surat Penawaran:
         // Menampilkan surat penawaran aktif (draft / negosiasi / terkirim menunggu respon) yang ada di daftar surat penawaran
@@ -742,6 +748,33 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
     /**
      * Ambil role user dari session
      */
+    /**
+     * Jumlah order yang kontraknya menunggu dibuat Humas: PO sudah disetujui PPK BLU, PO bertanda tangan sudah di-upload,
+     * kontrak belum ditandai selesai, belum ada BAST dan order belum selesai (sama dengan posisi "PO Aktif - Menunggu Kontrak").
+     * Dipakai badge sidebar Daftar Order dan Kontrak. Kolom belum ada / query gagal = 0.
+     */
+    protected function hitungKontrakMenunggu(): int {
+        static $cache = null;
+        if ($cache !== null) { return $cache; }
+        $cache = 0;
+        try {
+            $res = $this->db->exec(
+                "SELECT COUNT(DISTINCT o.id) AS c FROM po_kegiatan p
+                   JOIN order_layanan o ON o.id = p.order_id
+                  WHERE p.validasi_keuangan_at IS NOT NULL
+                    AND p.po_ttd_file IS NOT NULL AND p.po_ttd_file <> ''
+                    AND p.kontrak_dibuat_at IS NULL
+                    AND (o.status IS NULL OR o.status NOT IN ('selesai', 'batal', 'ditolak'))
+                    AND NOT EXISTS (SELECT 1 FROM opti_bast b WHERE b.order_id = o.id)"
+                . \PoSchema::bukanSertifikasi('p')
+            );
+            $cache = (int) ($res[0]['c'] ?? 0);
+        } catch (\Throwable $e) {
+            $cache = 0;
+        }
+        return $cache;
+    }
+
     public function getUserRole(): string {
         return $_SESSION['role'] ?? 'guest';
     }

@@ -448,6 +448,7 @@ $f3->route('GET /po-kegiatan/daftar/data', 'PoReviewController->data');         
 $f3->route('GET /po-kegiatan/notif', 'PoReviewController->notifJson');
 $f3->route('GET /po-kegiatan/@id/review', 'PoReviewController->detail');        // rincian + catatan
 $f3->route('POST /po-kegiatan/@id/baca', 'PoReviewController->baca');          // tandai kiriman terbaca (dipanggil saat PO dibuka)
+$f3->route('GET /debug-riwayat/@id', 'PoReviewController->debugRiwayat');   // SEMENTARA: telusuri Riwayat Aktivitas yang tidak tercatat (superadmin saja); hapus setelah selesai
 $f3->route('POST /po-kegiatan/@id/dibuka', 'PoReviewController->baca');          // alias route lama
 $f3->route('POST /po-kegiatan/@id/catatan', 'PoReviewController->catatanTambah'); // Ketua Tim: tambah catatan (draf)
 $f3->route('POST /po-kegiatan/@id/catatan/@nid', 'PoReviewController->catatanAksi');   // hapus / selesai / batalselesai / buka / batalbuka
@@ -586,6 +587,7 @@ $f3->route('POST /push/unsubscribe', 'PushController->unsubscribe');
 // ==========================================
 $f3->route('GET /pks',               'PksKontrakController->index');
 $f3->route('GET /pks/@id/form',      'PksKontrakController->form');
+$f3->route('GET /pks/@id/po-ttd',    'PksKontrakController->poTtd');       // slide "Lihat PO": PO bertanda tangan milik kontrak ini
 $f3->route('POST /pks/@id/simpan',   'PksKontrakController->simpan');
 $f3->route('POST /pks/@id/selesai',  'PksKontrakController->selesai');
 $f3->route('GET /pks/@id/unduh',     'PksKontrakController->unduh');

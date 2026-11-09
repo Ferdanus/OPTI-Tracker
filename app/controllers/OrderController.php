@@ -1218,7 +1218,31 @@ class OrderController extends Controller {
         $kontrakAlur = ($kontrakPoId > 0);                                  // PO versi baru: ada langkah Kontrak di antara PO dan BAST
         $kontrakAkses = ($kontrakAlur && $poTtdAda && $poKegiatanAktif);   // kartu Kontrak terbuka setelah PO bertanda tangan di-upload
         $kontrakMenunggu = ($kontrakAkses && !$poKontrakAda && empty($bast) && ($order['status'] ?? '') !== 'selesai');
+        $kontrakProg = array('persen' => 0, 'terisi' => 0, 'total' => 0, 'draft' => false);
+        if ($kontrakMenunggu && !$this->isSuperadmin() && !in_array((string) $this->getUserRole(), array('humas', 'admin_kontrak'), true)) {
+            $kontrakProg = \PksKontrakController::progresPengisian($this->db, $kontrakPoId);
+        }
+        // Data slide "Lihat PO" (tombol di bar bingkai Tahap 9): PO bertanda tangan + riwayat
+        $poSlideJson = '';
+        if ($kontrakAlur) {
+            $poSlideJson = json_encode(array(
+                'nomor'     => (string) (isset($poKegiatan['nomor_po']) ? $poKegiatan['nomor_po'] : ''),
+                'sub'       => trim((string) (isset($order['nama_perusahaan']) ? $order['nama_perusahaan'] : '') . ' · ' . (string) (isset($order['nomor_order']) ? $order['nomor_order'] : ''), ' ·'),
+                'urlDokumen'      => !empty($poKegiatan['id']) ? ($f3->get('BASE') . '/po-kegiatan/' . (int) $poKegiatan['id'] . '/cetak') : '',
+                'urlDokumenUnduh' => !empty($poKegiatan['id']) ? ($f3->get('BASE') . '/po-kegiatan/' . (int) $poKegiatan['id'] . '/unduh') : '',
+                'infoTtd'   => \PksKontrakController::infoTtd((array) $poKegiatan),
+                'urlDoc'    => !empty($poKegiatan['po_ttd_file']) ? ($f3->get('BASE') . '/order/' . (int) $order['id'] . '/po-ttd') : '',
+                'urlUnduh'  => !empty($poKegiatan['po_ttd_file']) ? ($f3->get('BASE') . '/order/' . (int) $order['id'] . '/po-ttd?unduh=1') : '',
+                'riwayat'   => \PksKontrakController::riwayatPo((array) $poKegiatan),
+            ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+        $kontrakDibuka = (!empty($poKegiatan['kontrak_dibaca_at']) && strpos((string) $poKegiatan['kontrak_dibaca_at'], '0000') !== 0);
         $f3->set('kontrak_panel', array(
+            'po_json'   => $poSlideJson,
+            'persen'    => (int) $kontrakProg['persen'],
+            'terisi'    => (int) $kontrakProg['terisi'],
+            'total'     => (int) $kontrakProg['total'],
+            'dibuka'    => ($kontrakDibuka || $kontrakProg['draft']),
             'alur'      => $kontrakAlur,
             'akses'     => $kontrakAkses,
             'menunggu'  => $kontrakMenunggu,
@@ -1544,8 +1568,8 @@ class OrderController extends Controller {
                 $langkahBerikutnya['role_icon'] = 'bi-people-fill';
                 $langkahBerikutnya['tombol_teks'] = 'Catat Rapat Kick-Off';
             } elseif ($triggerTipe === 'tanda_tangan_pks') {
-                $langkahBerikutnya['judul'] = 'Catat Tanggal Penandatanganan Kontrak / PKS';
-                $langkahBerikutnya['deskripsi'] = 'Pembayaran pelanggan telah dikonfirmasi. Untuk layanan kerjasama/litbang, catat tanggal penandatanganan PKS/kontrak untuk mengaktifkan durasi SPM.';
+                $langkahBerikutnya['judul'] = 'Catat Tanggal Penandatanganan PKS';
+                $langkahBerikutnya['deskripsi'] = 'Pembayaran pelanggan telah dikonfirmasi. Untuk layanan kerjasama/litbang, catat tanggal penandatanganan PKS untuk mengaktifkan durasi SPM.';
                 $langkahBerikutnya['penanggung_jawab'] = 'Tim Mitra / Ketua Tim';
                 $langkahBerikutnya['role_icon'] = 'bi-pen-fill';
                 $langkahBerikutnya['tombol_teks'] = 'Catat Tanggal PKS';
@@ -1603,12 +1627,12 @@ class OrderController extends Controller {
                 $langkahBerikutnya['deskripsi'] = 'Petunjuk Operasional (' . (!empty($order['nomor_po']) ? $order['nomor_po'] : (isset($poKegiatan['nomor_po']) ? $poKegiatan['nomor_po'] : '-')) . ') aktif. Tim pelaksana sedang menjalankan kegiatan teknis sesuai standar mutu dan target waktu SPM.';
                 $langkahBerikutnya['penanggung_jawab'] = 'Tim Pelaksana Teknis';
                 if (!$poTtdAda && $poTtdWajib) {
-                    $langkahBerikutnya['judul'] = 'PO Aktif, Menunggu TTD';
-                    $langkahBerikutnya['deskripsi'] = 'Cetak PO, tanda tangani, lalu upload PO yang sudah ditandatangani di Tahap 8. Setelah itu PO diteruskan ke Humas untuk dibuatkan kontrak, lalu Tahap 9 (BAST) terbuka.';
+                    $langkahBerikutnya['judul'] = 'Menunggu Penandatanganan PO';
+                    $langkahBerikutnya['deskripsi'] = 'Cetak PO, tanda tangani, lalu upload PO yang sudah ditandatangani di Tahap 8. Setelah itu PO diteruskan ke Humas untuk dibuatkan PKS, lalu Tahap 9 (BAST) terbuka.';
                     $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI';
                 } elseif ($poTtdAda && $poTtdWajib && empty($poKegiatan['kontrak_dibuat_at'])) {
-                    $langkahBerikutnya['judul'] = 'PO Aktif, Menunggu Kontrak';
-                    $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah di-upload dan diteruskan ke Humas. Humas membuat kontrak di Tahap 9; BAST (Tahap 10) terbuka setelah kontrak selesai.';
+                    $langkahBerikutnya['judul'] = 'PO Aktif, Menunggu PKS';
+                    $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah di-upload dan diteruskan ke Humas. Humas membuat PKS di Tahap 9; BAST (Tahap 10) terbuka setelah PKS selesai.';
                     $langkahBerikutnya['penanggung_jawab'] = 'Humas';
                 }
                 $langkahBerikutnya['role_icon'] = 'bi-gear-wide-connected';
@@ -1631,15 +1655,26 @@ class OrderController extends Controller {
             $langkahBerikutnya['tombol_class'] = 'btn-primary';
             $langkahBerikutnya['target_card'] = '#cardBast';
             if ($kontrakMenunggu) {
-                $langkahBerikutnya['judul'] = 'Menunggu Kontrak (PKS) dari Humas';
-                $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah di-upload. Humas membuat kontrak di Tahap 9; BAST (Tahap 10) terbuka setelah kontrak selesai.';
+                $langkahBerikutnya['judul'] = 'Menunggu PKS dari Humas';
+                $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah di-upload. Humas membuat PKS di Tahap 9; BAST (Tahap 10) terbuka setelah PKS selesai.';
                 $langkahBerikutnya['penanggung_jawab'] = 'Humas';
                 $langkahBerikutnya['role_icon'] = 'bi-file-earmark-text-fill';
-                $langkahBerikutnya['tombol_teks'] = 'Buka Kontrak';
+                $langkahBerikutnya['tombol_teks'] = 'Buka PKS';
                 $langkahBerikutnya['tombol_url'] = '#cardKontrak';
                 $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-text';
                 $langkahBerikutnya['tombol_class'] = 'btn-dark';
                 $langkahBerikutnya['target_card'] = '#cardKontrak';
+                // Jejak terbit + dibaca Humas untuk kartu atas, sama dengan kartu atas Tahap 8. Dibuka sebelum PO bertanda tangan di-upload tidak dihitung.
+                $kaTerbit = trim((string) (isset($poKegiatan['po_ttd_at']) ? $poKegiatan['po_ttd_at'] : ''));
+                $kaBaca = trim((string) (isset($poKegiatan['kontrak_dibaca_at']) ? $poKegiatan['kontrak_dibaca_at'] : ''));
+                if ($kaBaca !== '' && ($kaBaca === '0000-00-00 00:00:00' || !strtotime($kaBaca))) { $kaBaca = ''; }
+                if ($kaBaca !== '' && $kaTerbit !== '' && strtotime($kaTerbit) && strtotime($kaBaca) < strtotime($kaTerbit)) { $kaBaca = ''; }
+                $f3->set('kontrak_audit', array(
+                    'terbit'      => ($kaTerbit !== '' && strtotime($kaTerbit)) ? date('d M Y, H:i', strtotime($kaTerbit)) : '',
+                    'terbit_oleh' => (string) (isset($poKegiatan['po_ttd_oleh_nama']) ? $poKegiatan['po_ttd_oleh_nama'] : ''),
+                    'dibaca'      => $kaBaca !== '' ? date('d M Y, H:i', strtotime($kaBaca)) : '',
+                    'dibaca_oleh' => (string) (!empty($poKegiatan['kontrak_dibaca_oleh_nama']) ? $poKegiatan['kontrak_dibaca_oleh_nama'] : 'Humas'),
+                ));
             }
         }
 
@@ -3056,15 +3091,15 @@ class OrderController extends Controller {
             'url_cetak' => $base . '/po-kegiatan/' . $poId . '/cetak',
         );
 
-        $namaLangkah = array('Penyusunan', 'Peninjauan Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU', 'PO Aktif', 'Penandatanganan PO');
-        $aktorLangkah = array('Ketua Pelaksana', 'Ketua Tim OPTI', 'Humas', 'Tim Mitra', 'PPK BLU', 'Pelaksanaan pengujian di laboratorium dimulai', 'Ketua Tim OPTI');
+        $namaLangkah = array('Penyusunan', 'Peninjauan Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU', 'Penandatanganan PO', 'PO Aktif');
+        $aktorLangkah = array('Ketua Pelaksana', 'Ketua Tim OPTI', 'Humas', 'Tim Mitra', 'PPK BLU', 'Ketua Tim OPTI', 'Pelaksanaan pengujian di laboratorium dimulai');
         $waktu = array(
             $po ? $fmt(!empty($po['dikirim_at']) ? $po['dikirim_at'] : ($po['created_at'] ?? null)) : '',
             $po ? $fmt($po['disetujui_at'] ?? null) : '',
             $po ? $fmt($po['verifikasi_humas_at'] ?? null) : '',
             $po ? $fmt($po['tervalidasi_mitra_at'] ?? null) : '',
             $po ? $fmt($po['validasi_keuangan_at'] ?? null) : '',
-            $po ? $fmt($po['validasi_keuangan_at'] ?? null) : '',
+            $ttd['at'],
             $ttd['at'],
         );
         $tagRev = array(
@@ -3100,10 +3135,11 @@ class OrderController extends Controller {
             if ($state === 'aktif' || $n < $cur) { $cls = 'done'; }
             elseif ($n === $cur) { $cls = $rev ? 'rev' : 'cur'; }
             else { $cls = ''; }
-            if ($n === 6) { $cls = $ttdAda ? 'done' : ($state === 'aktif' ? 'cur' : ''); }
+            if ($n === 5) { $cls = $ttdAda ? 'done' : ($state === 'aktif' ? 'cur' : ''); }   // Penandatanganan PO
+            if ($n === 6) { $cls = $ttdAda ? 'done' : ''; }   // PO Aktif: baru aktif setelah PO bertanda tangan di-upload
             $tg = '';
             if ($cls === 'done') { $tg = $waktu[$n]; }
-            elseif ($cls === 'cur') { $tg = ($n === 6) ? 'Menunggu unggahan' : 'Sedang berlangsung'; }
+            elseif ($cls === 'cur') { $tg = ($n === 5) ? 'Menunggu unggahan' : 'Sedang berlangsung'; }
             elseif ($cls === 'rev') { $tg = isset($tagRev[$state]) ? $tagRev[$state] : 'Perlu revisi'; }
             $tg2 = ''; $tg2c = '';
             if ($baca && $n === $cur && ($cls === 'cur' || $cls === 'rev')) {
@@ -3251,7 +3287,7 @@ class OrderController extends Controller {
                 if ($ttdAda && $kontrakAda) {
                     $info = $bidang('info', '');   // kontrak sudah dibuat: tidak perlu banner, statusnya tampil di kartu Kontrak
                 } elseif ($ttdAda) {
-                    $info = $bidang('info', 'PO bertanda tangan telah diunggah dan diteruskan kepada Humas untuk pembuatan kontrak. Tahap 9 (BAST) terbuka setelah kontrak dibuat.');
+                    $info = $bidang('info', 'PO bertanda tangan telah diunggah dan diteruskan kepada Humas untuk pembuatan PKS. Tahap 9 (BAST) terbuka setelah PKS dibuat.');
                 } elseif ($isKatim) {
                     $info = $bidang('warning', 'Silakan cetak PO, tandatangani, kemudian unggah PO yang telah ditandatangani.');
                 } else {
@@ -3291,7 +3327,7 @@ class OrderController extends Controller {
             'verif_humas' => array('Giliran Anda untuk Memverifikasi PO', 'Sedang Diverifikasi oleh Humas'),
             'verif_mitra' => array('Giliran Anda untuk Memverifikasi PO', 'Sedang Diverifikasi oleh Tim Mitra'),
             'verif_ppk' => array('Giliran Anda untuk Memverifikasi PO', 'Sedang Diverifikasi oleh PPK BLU'),
-            'aktif' => array('PO Aktif, Menunggu Penandatanganan', 'PO Telah Aktif'),
+            'aktif' => array('Menunggu Penandatanganan PO', 'PO Telah Aktif'),
         );
         if ($putKatim > 0) {
             $judulKartu['ppk_ketupel_kerja'] = array('Perbaikan Ketua Tim Menunggu Anda', 'Perbaikan Ketua Tim Sedang Dikerjakan');
@@ -3306,9 +3342,9 @@ class OrderController extends Controller {
         elseif (in_array($state, array('verif_humas', 'verif_mitra', 'verif_ppk'), true)) { $info['scene'] = $adaGiliran ? 'giliran' : 'periksa'; }
         elseif (in_array($state, array('perlu_revisi', 'ppk_katim_kerja', 'ppk_ketupel_kerja'), true)) { $info['scene'] = 'revisi'; }
         else { $info['scene'] = $adaGiliran ? 'giliran' : 'tunggu'; }
-        if ($state === 'aktif') { $info['pihak'] = $ttdAda ? 'Berikutnya: Humas (pembuatan kontrak)' : 'Menunggu: Ketua Tim OPTI'; }
+        if ($state === 'aktif') { $info['pihak'] = $ttdAda ? 'Berikutnya: Humas (pembuatan PKS)' : 'Menunggu: Ketua Tim OPTI'; }
         else { $info['pihak'] = $adaGiliran ? 'Tindakan oleh: Anda' : 'Menunggu: ' . $pj; }
-        $info['langkah'] = 'Langkah ' . ($state === 'aktif' ? 7 : ($cur + 1)) . ' dari 7';
+        $info['langkah'] = 'Langkah ' . ($state === 'aktif' ? ($ttdAda ? 7 : 6) : ($cur + 1)) . ' dari 7';
         $info['menunggu'] = in_array($info['scene'], array('tunggu', 'periksa'), true);
 
         // badge kepala kartu + label tab tahap 8: array(kelas bootstrap, teks panjang, teks pendek)
@@ -3327,7 +3363,7 @@ class OrderController extends Controller {
             'ppk_katim_review' => array('po-bdg', 'Review Hasil Revisi', 'Review'),
             'aktif' => array('po-bdg', 'PO Aktif', 'PO Aktif'),
         );
-        if (!$ttdAda) { $lab['aktif'] = array('po-bdg po-bdg-red', "PO Aktif \u{00B7} Menunggu TTD", 'PO Aktif'); }
+        if (!$ttdAda) { $lab['aktif'] = array('po-bdg po-bdg-red', 'Menunggu Tanda Tangan', 'Menunggu Tanda Tangan'); }   // PO Aktif baru setelah PO bertanda tangan di-upload
         if ($putKatim > 0) {
             $lab['ppk_ketupel_kerja'] = array('po-bdg po-bdg-red', 'Perbaikan Ketua Tim', 'Perbaikan');
             $lab['ppk_katim_review'] = array('po-bdg', 'Review Hasil Perbaikan', 'Review');
@@ -3501,7 +3537,7 @@ class OrderController extends Controller {
         );
         if ($lama !== '' && $lama !== $disimpan && basename($lama) === $lama) { @unlink($dir . $lama); }
 
-        $this->logActivity($id, 'po', 'upload_po_ttd', 'Upload PO bertanda tangan. PO Aktif penuh dan diteruskan ke Humas untuk dibuatkan kontrak');
+        $this->logActivity($id, 'po', 'upload_po_ttd', 'Upload PO bertanda tangan. PO Aktif penuh dan diteruskan ke Humas untuk dibuatkan PKS');
         $this->kabariHumasKontrak($order, $po, $unama);
         return $this->poTtdBalas($f3, true, $pesan, $back);
     }
@@ -3517,9 +3553,9 @@ class OrderController extends Controller {
                 'po_id'           => (int) ($po['id'] ?? 0),
                 'target_role'     => 'humas',
                 'target_layanan'  => 'semua',
-                'judul'           => 'PO Menunggu Dibuatkan Kontrak',
+                'judul'           => 'PO Menunggu Dibuatkan PKS',
                 'pesan'           => 'PO ' . (string) ($po['nomor_po'] ?? '') . ' untuk Order #' . (string) ($order['nomor_order'] ?? '-')
-                                   . ' sudah Aktif penuh (PO bertanda tangan di-upload ' . $pengunggah . '). Silakan buatkan kontraknya.',
+                                   . ' sudah Aktif penuh (PO bertanda tangan di-upload ' . $pengunggah . '). Silakan buatkan PKS-nya.',
                 'tipe'            => 'primary',
                 'icon'            => 'bi-file-earmark-check',
                 'link_url'        => '/po-humas?tab=kontrak',
@@ -5714,7 +5750,7 @@ class OrderController extends Controller {
             $labelTrigger = [
                 'sampel_diterima' => 'Penerimaan Fisik Sampel',
                 'kick_off' => 'Rapat Kick-Off',
-                'tanda_tangan_pks' => 'Penandatanganan Kontrak / PKS'
+                'tanda_tangan_pks' => 'Penandatanganan PKS'
             ][$triggerTipe] ?? 'Aktivasi Titik Awal SPM';
 
             if ($isDraft) {
@@ -5753,7 +5789,7 @@ class OrderController extends Controller {
             $labelTrigger = [
                 'sampel_diterima' => 'Penerimaan Fisik Sampel',
                 'kick_off' => 'Rapat Kick-Off',
-                'tanda_tangan_pks' => 'Penandatanganan Kontrak / PKS'
+                'tanda_tangan_pks' => 'Penandatanganan PKS'
             ][$triggerTipe] ?? 'Aktivasi Titik Awal SPM';
 
             // Jejak Audit Activity Log

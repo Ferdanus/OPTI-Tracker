@@ -73,6 +73,9 @@ class PoSchema
         'kontrak_dibuat_at'        => 'DATETIME NULL',
         'kontrak_dibuat_oleh_id'   => 'INT NULL',
         'kontrak_dibuat_oleh_nama' => 'VARCHAR(150) NULL',
+        // penanda "sudah dibuka Humas" untuk antrean kontrak (sama dengan humas_dibaca_at di antrean verifikasi PO)
+        'kontrak_dibaca_at'        => 'DATETIME NULL',
+        'kontrak_dibaca_oleh_nama' => 'VARCHAR(150) NULL',
     );
     protected static $dbRef = null;
 

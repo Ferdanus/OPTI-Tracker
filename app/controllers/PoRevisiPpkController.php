@@ -508,7 +508,7 @@ class PoRevisiPpkController extends Controller {
         try { $po = $this->ambilPo((int) $poId); } catch (\Exception $e) { $po = null; }
         if (!$po) { return null; }
         $uid = (int) $this->getUserId();
-        $pembuat = ($uid > 0 && $uid === (int) $po['ketua_pelaksana_id']);
+        $pembuat = ($uid > 0 && $uid === (int) $po['ketua_pelaksana_id']) || $this->isSuperadmin();   // superadmin boleh menggantikan Ketua Pelaksana
         $id = (int) $po['id'];
         if ($konteks === 'review') {
             return $pembuat ? ['url' => '/po-kegiatan/' . $id . '/kirim-revisi', 'label' => 'Kirim revisi ke Ketua Tim'] : null;
@@ -954,7 +954,10 @@ class PoRevisiPpkController extends Controller {
         $po = $this->muatPo($poId);
         $mode = $this->modeRevisi();
         $sisi = null;
-        if ($mode === 'katim') {
+        if ($this->isSuperadmin()) {
+            // Superadmin menggantikan siapa pun yang sedang mengerjakan: kalau PO ada di Ketua Pelaksana, bertindak sebagai Ketua Pelaksana; selain itu sebagai Ketua Tim
+            $sisi = ($this->stateDari($po) === 'ketupel_kerja') ? 'pembuat' : 'katim';
+        } elseif ($mode === 'katim') {
             $div = $this->divisiKatim();
             $sisi = ($div === '' || $div === $po['jenis_layanan_opti']) ? 'katim' : null;
         } elseif ($mode === 'pembuat') {

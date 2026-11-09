@@ -98,17 +98,26 @@
 
     /* tabel */
     .dpk-tw { overflow-x: auto; }
-    table.dpk-table { width: 100%; border-collapse: collapse; min-width: 1060px; }
-    .dpk-table th { text-align: left; font-size: .72rem; font-weight: 700; color: var(--dpk-muted); padding: 11px 12px; background: #f1f5f9; border-bottom: 1px solid var(--dpk-border); white-space: nowrap; }
-    .dpk-table td { padding: 14px 12px; border-bottom: 1px solid #eef2f6; vertical-align: middle; }
+    table.dpk-table { width: 100%; border-collapse: collapse; min-width: 0; }
+    .dpk-table th { text-align: left; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; font-weight: 700; color: var(--dpk-muted); padding: 11px 12px; background: #f8fafc; border-bottom: 1px solid var(--dpk-border); white-space: nowrap; }
+    .dpk-table td { padding: 14px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: .82rem; }
     .dpk-table tbody tr { transition: background .15s; }
     .dpk-table tbody tr:hover { background: #f8fafc; }
     .dpk-table tr:last-child td { border-bottom: 0; }
     .dpk-c { text-align: center; }
     .dpk-no { font-family: 'Courier New', monospace; font-weight: 700; font-size: .8rem; white-space: nowrap; }
     .dpk-sub { font-size: .75rem; color: var(--dpk-muted); }
-    .dpk-mitra { font-weight: 600; }
-    .dpk-judul { font-size: .8rem; min-width: 240px; max-width: 340px; }
+    /* Penanda sudah/belum dibuka Humas (sama dengan Daftar PO) */
+    .dpk-table tbody tr.dpk-unread td { background: #f8fbff; }
+    .dpk-table tbody tr.dpk-unread .dpk-mitra, .dpk-table tbody tr.dpk-unread .dpk-judul { font-weight: 700; }
+    .dpk-dot { width: 8px; height: 8px; border-radius: 50%; background: #2563eb; display: inline-block; margin-right: 6px; vertical-align: 1px; flex: none; }
+    /* Keterangan sudah/belum dibuka: sama dengan Daftar PO (.po-baca) */
+    .dpk-baca { font-size: .73rem; font-weight: 600; margin-top: 4px; }
+    .dpk-baca.belum { color: #b45309; }
+    .dpk-baca.sudah { color: #047857; }
+    .dpk-btn.ic { width: 34px; height: 34px; padding: 0; justify-content: center; font-size: .95rem; }
+    .dpk-mitra { font-weight: 700; font-size: .82rem; }
+    .dpk-judul { font-size: .82rem; line-height: 1.35; min-width: 150px; max-width: 340px; }
     .dpk-tag { font-size: .72rem; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: #f1f5f9; border: 1px solid var(--dpk-border); white-space: nowrap; }
     .dpk-sp { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 600; padding: 4px 11px; border-radius: 99px; border: 1px solid var(--dpk-border); white-space: nowrap; }
     .dpk-sp i { width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; }
@@ -127,6 +136,9 @@
     .dpk-btn.pri:hover { background: var(--dpk-primary-hover); color: #fff; }
     .dpk-btn[disabled] { opacity: .65; cursor: progress; }
     .dpk-acts { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+    .dpk-table .dpk-acts { flex-wrap: nowrap; justify-content: flex-start; gap: 4px; }
+    .dpk-table .dpk-acts .dpk-btn:not(.ic) { min-width: 104px; padding-left: .6rem; padding-right: .6rem; }
+    .dpk-acts .dpk-btn.ic { flex: none; }
     .dpk-empty { text-align: center; padding: 52px 16px; color: #94a3b8; font-size: .85rem; }
     .dpk-empty i { display: block; font-size: 30px; margin-bottom: 6px; }
     .dpk-rise { opacity: 0; transform: translateY(7px); animation: dpkRise .4s ease-out forwards; }
@@ -391,7 +403,7 @@
     </style>
 
     <div class="dpk-root" id="dpkRoot">
-        <div class="dpk-head"><i class="bi bi-file-earmark-text"></i><h1>Kontrak (PKS)</h1></div>
+        <div class="dpk-head"><i class="bi bi-file-earmark-text"></i><h1>Perjanjian Kerja Sama (PKS)</h1></div>
 
         <check if="{{ @error_message }}">
             <div class="dpk-alert" role="alert">{{ @error_message }}</div>
@@ -401,7 +413,7 @@
 
         <div class="dpk-card dpk-filter">
             <div class="dpk-frow">
-                <label class="dpk-sbox"><span><i class="bi bi-search"></i></span><input type="search" id="dpkCari" placeholder="Cari nomor kontrak, mitra, atau judul kegiatan" aria-label="Cari kontrak" autocomplete="off"></label>
+                <label class="dpk-sbox"><span><i class="bi bi-search"></i></span><input type="search" id="dpkCari" placeholder="Cari nomor PKS, mitra, atau judul kegiatan" aria-label="Cari PKS" autocomplete="off"></label>
                 <div class="dpk-sa"><span class="ic"><i class="bi bi-grid"></i></span><select id="dpkLay" aria-label="Filter divisi"></select></div>
                 <div class="dpk-per" id="dpkPerWrap">
                     <button type="button" class="dpk-sa dpk-btn-per" id="dpkPerBtn" aria-expanded="false" aria-controls="dpkPerPanel" aria-haspopup="true"><span class="ic"><i class="bi bi-calendar3"></i></span><span class="k">Periode</span><span class="v" id="dpkPerLbl"></span><i class="bi bi-chevron-down c"></i></button>
@@ -422,7 +434,7 @@
                             <div class="err" id="dpkRentangErr" hidden>Bulan awal tidak boleh setelah bulan akhir.</div>
                         </div>
                         <div class="note" data-pp="semua">Semua data ditampilkan tanpa batas bulan.</div>
-                        <div class="note">Berlaku untuk kontrak Selesai. Baru dan Draft selalu tampil semua.</div>
+                        <div class="note">Berlaku untuk PKS Selesai. Baru dan Draft selalu tampil semua.</div>
                     </div>
                 </div>
                 <button type="button" class="dpk-rst" id="dpkReset" title="Reset filter" aria-label="Reset filter" hidden><i class="bi bi-arrow-counterclockwise"></i></button>
@@ -432,10 +444,10 @@
         <div class="dpk-card" style="overflow:hidden;">
             <div class="dpk-tabs" id="dpkTabs"></div>
             <div id="dpkList"></div>
-            <div class="dpk-foot dpk-pager-container d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2" id="dpkFoot"></div>
         </div>
 
         <div class="dpk-scrim" id="dpkScrim"></div>
+        <include href="kontrak/_slide_po.html" />
         <aside class="dpk-sl" id="dpkSl" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dpkSlNo">
             <div class="dpk-sl-head">
                 <div style="min-width:0;">
@@ -515,7 +527,7 @@
         var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
         var TAB_LABEL = { semua: 'Semua', baru: 'Baru', draft: 'Draft', selesai: 'Selesai' };
         var TAB_IKON = { semua: 'bi-list-ul', baru: 'bi-exclamation-circle', draft: 'bi-pencil-square', selesai: 'bi-check2-circle' };
-        var PER = 5;   // sama dengan daftar PO: 5 baris per halaman
+        var PER = 100000;   // semua baris dirender; halaman diatur pager atas dan bawah tabel milik layout (sama dengan Daftar PO)
         var NOW = new Date();
         var BLN0 = NOW.getMonth() + 1, THN0 = NOW.getFullYear();
         var S = { q: '', lay: '', mode: 'bulan', bln: BLN0, thn: THN0, db: BLN0, dt: THN0, sb: BLN0, st: THN0, hal: 1 };
@@ -561,17 +573,36 @@
         function statusHtml(p) {
             var t = p.status === 'baru' ? 'Belum dibuat' : (p.status === 'draft' ? 'Draft' : 'Selesai');
             var h = '<span class="dpk-sp ' + esc(p.status) + '"><i></i>' + t + '</span>';
+            if (p.status === 'baru' && p.baca_lacak) {
+                h += p.baca_at ? '<div class="dpk-baca sudah"><i class="bi bi-envelope-open me-1"></i>Dibuka ' + tglJam(p.baca_at) + '</div>'
+                               : '<div class="dpk-baca belum"><i class="bi bi-envelope me-1"></i>Belum dibuka Humas</div>';
+            }
             return h;
         }
+        function tglJam(s) { var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(s || ''); return m ? (+m[3]) + ' ' + BULAN_PENDEK[+m[2] - 1] + ' ' + m[1] + ' ' + m[4] + ':' + m[5] : ''; }
+        function belumDibuka(p) { return p.status === 'baru' && !!p.baca_lacak && !p.baca_at; }
         /* Kolom nomor: hanya nomor kontrak (PKS). Belum ada nomor sebelum kontrak disimpan. */
         function nomorKontrakHtml(p) { return p.nomor_pks ? '<div class="dpk-no">' + esc(p.nomor_pks) + '</div>' : '<div class="dpk-sub">Belum ada nomor</div>'; }
         function aksiHtml(p) {
             var form = BASE + '/pks/' + p.id + '/form';
+            // dua tombol ikon di semua status: Lihat PO (slide) dan Detail order, sama dengan Daftar PO
+            var ikon = '<button type="button" class="dpk-btn ic" data-po-lihat="' + p.id + '" title="Lihat PO" aria-label="Lihat PO"><i class="bi bi-eye"></i></button>' +
+                (p.url_detail ? '<a class="dpk-btn ic" href="' + esc(p.url_detail) + '" title="Detail order" aria-label="Detail order"><i class="bi bi-box-arrow-up-right"></i></a>' : '');
             if (p.status === 'selesai') {
-                return '<div class="dpk-acts"><button type="button" class="dpk-btn pri" data-lihat="' + p.id + '"><i class="bi bi-eye"></i>Lihat</button></div>';
+                return '<div class="dpk-acts"><button type="button" class="dpk-btn pri" data-lihat="' + p.id + '"><i class="bi bi-file-earmark-text"></i>PKS</button>' + ikon + '</div>';
             }
-            if (p.status === 'draft') { return '<div class="dpk-acts"><a class="dpk-btn" href="' + form + '"><i class="bi bi-pencil"></i>Lanjutkan</a></div>'; }
-            return '<div class="dpk-acts"><a class="dpk-btn pri" href="' + form + '"><i class="bi bi-file-earmark-plus"></i>Buat PKS</a></div>';
+            if (p.status === 'draft') { return '<div class="dpk-acts"><a class="dpk-btn" href="' + form + '"><i class="bi bi-pencil"></i>Lanjutkan</a>' + ikon + '</div>'; }
+            return '<div class="dpk-acts"><a class="dpk-btn pri" href="' + form + '"><i class="bi bi-file-earmark-plus"></i>Buat PKS</a>' + ikon + '</div>';
+        }
+        function bukaPoSlide(id) {
+            var p = DATA.filter(function (x) { return String(x.id) === String(id); })[0];
+            if (!p || !window.PoSlide) { return; }
+            window.PoSlide.buka({
+                nomor: p.nomor, sub: p.mitra + (p.layanan ? ' \u00B7 ' + namaLayanan(p) : ''),
+                urlDokumen: p.url_dok || '', urlDokumenUnduh: p.url_dok_unduh || '', infoTtd: p.info_ttd || '',
+                urlDoc: p.url_po || '', urlUnduh: p.url_po ? p.url_po + '?unduh=1' : '', urlDetail: p.url_detail || '',
+                riwayat: p.riwayat_po || []
+            });
         }
 
         var angkaAwal = {};
@@ -591,8 +622,8 @@
         }
         function gambarKartu(d) {
             var M = [
-                { k: 'semua', l: 'Total Kontrak', h: 'Semua PO yang masuk ke Humas', ik: 'bi-file-earmark-text', cls: '' },
-                { k: 'baru', l: 'Baru', h: 'Menunggu dibuatkan kontrak', ik: 'bi-exclamation-circle-fill', cls: 'red' },
+                { k: 'semua', l: 'Total PKS', h: 'Semua PO yang masuk ke Humas', ik: 'bi-file-earmark-text', cls: '' },
+                { k: 'baru', l: 'Baru', h: 'Menunggu dibuatkan PKS', ik: 'bi-exclamation-circle-fill', cls: 'red' },
                 { k: 'draft', l: 'Draft', h: 'Sedang diisi, belum selesai', ik: 'bi-pencil-square', cls: '' },
                 { k: 'selesai', l: 'Selesai', h: 'Siap dilihat dan diunduh', ik: 'bi-check-circle-fill', cls: 'dk' }
             ];
@@ -612,7 +643,7 @@
         }
         function gambarTab(d) {
             $('dpkTabs').innerHTML = ['semua', 'baru', 'draft', 'selesai'].map(function (k) {
-                return '<button type="button" class="dpk-pill' + (tab === k ? ' on' : '') + '" data-tab="' + k + '"><i class="bi ' + TAB_IKON[k] + '"></i>' + TAB_LABEL[k] +
+                return '<button type="button" class="dpk-pill' + (tab === k ? ' on' : '') + '" data-tab="' + k + '">' + (k === 'baru' && d.some(belumDibuka) ? '<span class="dpk-dot" title="Ada yang belum dibuka" style="margin-right:0"></span>' : '') + '<i class="bi ' + TAB_IKON[k] + '"></i>' + TAB_LABEL[k] +
                     ' <span class="dpk-chip' + (k === 'baru' && jml(d, 'baru') > 0 ? ' dg' : '') + '">' + jml(d, k) + '</span></button>';
             }).join('');
         }
@@ -624,17 +655,16 @@
 
             if (!rs.length) {
                 var polos = !filterAktif() && DATA.length === 0;
-                var pesan = polos ? 'Belum ada PO yang didisposisikan ke Humas.' : ((tab === 'baru' && !filterAktif()) ? 'Semua PO sudah dibuatkan kontrak.' : 'Tidak ada kontrak yang cocok dengan filter ini.');
+                var pesan = polos ? 'Belum ada PO yang didisposisikan ke Humas.' : ((tab === 'baru' && !filterAktif()) ? 'Semua PO sudah dibuatkan PKS.' : 'Tidak ada PKS yang cocok dengan filter ini.');
                 $('dpkList').innerHTML = '<div class="dpk-empty"><i class="bi bi-inbox"></i>' + pesan + '</div>';
-                $('dpkFoot').innerHTML = '<div class="dpk-foot-info d-flex align-items-center gap-1"><i class="bi bi-layers-half text-secondary opacity-75"></i><span>Menampilkan <strong>0</strong> dari <strong>0</strong> kontrak</span></div>';
                 return;
             }
 
-            var tabel = '<div class="dpk-desk dpk-tw"><table class="dpk-table"><thead><tr><th class="dpk-c" style="width:48px;">No</th><th style="width:230px;">Nomor Kontrak</th><th style="width:210px;">Mitra Industri</th><th style="width:130px;">Layanan</th><th>Judul Kegiatan</th><th style="width:130px;">Nilai</th><th style="width:190px;">Status Kontrak</th><th class="dpk-c" style="width:200px;">Aksi</th></tr></thead><tbody>' +
+            var tabel = '<div class="dpk-desk dpk-tw"><table class="dpk-table"><thead><tr><th class="dpk-c" style="width:44px;">No</th><th style="width:176px;">Nomor PKS</th><th style="width:160px;">Mitra Industri</th><th style="width:100px;">Layanan</th><th>Judul Kegiatan</th><th style="width:112px;">Nilai</th><th style="width:130px;">Status PKS</th><th style="width:206px;">Aksi</th></tr></thead><tbody>' +
                 pg.map(function (p, i) {
-                    return '<tr class="dpk-rise" style="animation-delay:' + (40 + i * 55) + 'ms"><td class="dpk-c dpk-sub">' + (mulai + i + 1) + '</td>' +
+                    return '<tr class="dpk-rise' + (belumDibuka(p) ? ' dpk-unread' : '') + '" style="animation-delay:' + (40 + i * 55) + 'ms"><td class="dpk-c dpk-sub">' + (mulai + i + 1) + '</td>' +
                         '<td>' + nomorKontrakHtml(p) + '</td>' +
-                        '<td><div class="dpk-mitra">' + esc(p.mitra) + '</div></td>' +
+                        '<td><div class="dpk-mitra">' + (belumDibuka(p) ? '<span class="dpk-dot" title="Belum dibuka"></span>' : '') + esc(p.mitra) + '</div></td>' +
                         '<td><span class="dpk-tag">' + esc(namaLayanan(p)) + '</span></td>' +
                         '<td><div class="dpk-judul">' + esc(p.judul) + '</div></td>' +
                         '<td style="white-space:nowrap;font-variant-numeric:tabular-nums;">Rp ' + rp(p.biaya) + '</td>' +
@@ -661,8 +691,9 @@
             return out;
         }
         function renderFoot(total, awal, akhir, jmlHal) {
+            return;   // footer lama dihapus (dobel dengan pager atas-bawah)
             var cur = S.hal;
-            var h = '<div class="dpk-foot-info d-flex align-items-center gap-1"><i class="bi bi-layers-half text-secondary opacity-75"></i><span>Menampilkan <strong>' + awal + ' - ' + akhir + '</strong> dari <strong>' + total + '</strong> kontrak</span></div>';
+            var h = '<div class="dpk-foot-info d-flex align-items-center gap-1"><i class="bi bi-layers-half text-secondary opacity-75"></i><span>Menampilkan <strong>' + awal + ' - ' + akhir + '</strong> dari <strong>' + total + '</strong> PKS</span></div>';
             h += '<nav aria-label="Navigasi halaman" class="d-flex align-items-center flex-wrap justify-content-center gap-2">' +
                 '<ul class="pagination pagination-sm mb-0 align-items-center">' +
                 '<li class="page-item' + (cur <= 1 ? ' disabled' : '') + '"><a class="page-link shadow-none" role="button" data-hal="' + (cur - 1) + '" title="Halaman sebelumnya">&laquo;</a></li>' +
@@ -1038,7 +1069,7 @@
             return tungguIframe(60).then(function () { return new Promise(function (r) { setTimeout(r, 250); }); }).then(function () {
                 var fr = $('dpkSlFrame'), d = fr.contentDocument;
                 var hal = Array.prototype.slice.call(d.querySelectorAll('#dpkPages .dpk-sheet:not(.dpk-printflow):not(.dpk-measure)'));
-                if (!hal.length) { throw new Error('Halaman kontrak belum tampil. Coba lagi sebentar lagi.'); }
+                if (!hal.length) { throw new Error('Halaman PKS belum tampil. Coba lagi sebentar lagi.'); }
                 var pdf = new JsPdf({ unit: 'pt', format: [612, 792], orientation: 'portrait', compress: true });
                 var k = cariKontrak(slId);
                 var tunggu = (d.fonts && d.fonts.ready) ? d.fonts.ready : Promise.resolve();
@@ -1126,6 +1157,7 @@
             if ((el = e.target.closest('.dpk-jump-go'))) { lompatHalaman(el.closest('.dpk-jump')); return; }
             if ((el = e.target.closest('[data-hal]'))) { if (!el.closest('.page-item.disabled')) { S.hal = +el.getAttribute('data-hal'); render(); } return; }
             if (!e.target.closest('#dpkDl')) { tutupMenu(); }
+            if ((el = e.target.closest('[data-po-lihat]'))) { bukaPoSlide(el.getAttribute('data-po-lihat')); return; }
             if ((el = e.target.closest('[data-lihat]'))) { bukaSlide(el.getAttribute('data-lihat')); return; }
             if ((el = e.target.closest('[data-slt]'))) { setSlTab(el.getAttribute('data-slt')); return; }
             if ((el = e.target.closest('[data-kertas]'))) { kertas = el.getAttribute('data-kertas'); try { localStorage.setItem('siloptiPksKertas', kertas); } catch (x) {} terapkanKertas(); return; }

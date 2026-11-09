@@ -502,7 +502,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $pkKolom = '';
         foreach (array('status', 'status_review', 'ppk_status', 'disetujui_at', 'verifikasi_humas_at', 'tervalidasi_mitra_at', 'validasi_keuangan_at',
                        'reviewed_at', 'minta_dibaca_at', 'revisi_dibaca_at', 'humas_dibaca_at', 'disposisi_humas_at', 'ppk_dibaca_at', 'mitra_dibaca_at',
-                       'ronde_ppk', 'ppk_status_at', 'po_ttd_file', 'kontrak_dibuat_at') as $kcol) {
+                       'ronde_ppk', 'ppk_status_at', 'po_ttd_file', 'po_ttd_at', 'kontrak_dibuat_at', 'kontrak_dibaca_at') as $kcol) {
             if (isset($pkAda[$kcol])) { $pkKolom .= ' pk.' . $kcol . ' AS pk_' . $kcol . ','; }
         }
         // Nomor putaran perbaikan dari Ketua Tim (catatan asal 'katim') pada ronde PPK BLU yang berjalan; kolomnya baru ada setelah fitur dipakai
@@ -827,16 +827,16 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     return $r('Review Hasil Revisi PPK', 'Menunggu review Ketua Tim', 'katim', true, $baca('ppk_dibaca_at', 'Ketua Tim'));
             }
             if (!empty($o['pk_validasi_keuangan_at'])) {
-                // PO Aktif dibedakan: menunggu PO bertanda tangan (Ketua Tim) -> menunggu kontrak (Humas) -> lengkap (BAST terbuka).
+                // Disetujui PPK BLU belum berarti aktif: menunggu PO bertanda tangan (Ketua Tim) -> PO Aktif menunggu kontrak (Humas) -> lengkap (BAST terbuka).
                 // Order lama yang kolomnya belum ada (kunci pk_po_ttd_file tidak ada) tetap tampil 'PO Aktif'.
                 if (array_key_exists('pk_po_ttd_file', $o)) {
                     if (empty($o['pk_po_ttd_file'])) {
-                        return $r("PO Aktif \u{00B7} Menunggu TTD", 'Ketua Tim meng-upload PO bertanda tangan', 'katim_ttd', true);
+                        return $r('Menunggu Tanda Tangan', 'Ketua Tim mencetak PO, menandatangani, lalu meng-upload PO bertanda tangan', 'katim_ttd', true);
                     }
                     if (array_key_exists('pk_kontrak_dibuat_at', $o) && empty($o['pk_kontrak_dibuat_at'])) {
-                        return $r("PO Aktif \u{00B7} Menunggu Kontrak", 'PO bertanda tangan sudah di-upload, Humas membuat kontrak', 'humas_kontrak', true);
+                        return $r("PO Aktif \u{00B7} Menunggu PKS", 'PO bertanda tangan sudah di-upload, Humas membuat PKS', 'humas_kontrak', true, $baca('kontrak_dibaca_at', 'Humas', 'po_ttd_at'));
                     }
-                    return $r('PO Aktif', 'PO bertanda tangan & kontrak lengkap, BAST terbuka', '');
+                    return $r('PO Aktif', 'PO bertanda tangan & PKS lengkap, BAST terbuka', '');
                 }
                 return $r('PO Aktif', 'Pengerjaan lab dimulai', '');
             }
@@ -2290,6 +2290,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
                     // 5. PO Kegiatan sedang di meja Ketua Tim
                     $perluPoKatim = ((string) ($r['po_pemegang'] ?? '') === 'katim');
+                    // 6. PO sudah disetujui PPK BLU: Ketua Tim mencetak dan meng-upload PO bertanda tangan
+                    $perluUploadTtd = ((string) ($r['po_pemegang'] ?? '') === 'katim_ttd');
 
                     if ($perluKajiKelayakan) {
                         $isTask = true;
@@ -2311,6 +2313,10 @@ class OrderLayanan extends \DB\SQL\Mapper {
                         $isTask = true;
                         $reason = 'PO Kegiatan menunggu tindakan Anda (review atau revisi)';
                         $badge = 'Review PO';
+                    } elseif ($perluUploadTtd) {
+                        $isTask = true;
+                        $reason = 'PO sudah disetujui PPK BLU, menunggu Anda mencetak dan meng-upload PO bertanda tangan';
+                        $badge = 'Upload PO';
                     }
                 }
             } elseif (in_array($userRole, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra'])) {
@@ -2365,10 +2371,15 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     $badge = 'Perlu Pembayaran';
                 }
             } elseif ($userRole === 'humas') {
-                if ((string) ($r['po_pemegang'] ?? '') === 'humas') {
+                $pmHumas = (string) ($r['po_pemegang'] ?? '');
+                if ($pmHumas === 'humas') {
                     $isTask = true;
                     $reason = 'PO Kegiatan menunggu verifikasi Humas';
                     $badge = 'Verifikasi PO';
+                } elseif ($pmHumas === 'humas_kontrak') {
+                    $isTask = true;
+                    $reason = 'PO bertanda tangan sudah di-upload, menunggu Humas membuat PKS';
+                    $badge = 'Buat PKS';
                 }
             } elseif (in_array($userRole, ['ppk', 'ppk_blu', 'pejabat'], true)) {
                 if ((string) ($r['po_pemegang'] ?? '') === 'ppk') {

@@ -389,6 +389,12 @@
     .hm-shtabs { position: relative; gap: 4px; padding: 0 12px; }
     .hm-shtab { border-bottom: 0 !important; padding: 10px 14px; font-weight: 600; font-size: .85rem; transition: color .2s; }
     .hm-shtab.on { color: #0f172a; }
+    .hm-shtabs .hm-tabdl { margin-left: auto; align-self: center; flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #cbd5e1; background: #fff; color: #0f172a; border-radius: 8px; padding: 6px 12px; font-size: .8rem; font-weight: 600; font-family: var(--hm-display); cursor: pointer; transition: background .15s, border-color .15s, transform .15s; }
+    .hm-shtabs .hm-tabdl:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .hm-shtabs .hm-tabdl:active { transform: scale(.97); }
+    .hm-shtabs .hm-tabdl:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
+    .hm-shtabs .hm-shtab { flex: none; white-space: nowrap; }
+    @media (max-width: 575.98px) { .hm-shtabs .hm-tabdl { padding: 7px 9px; } .hm-shtabs .hm-tabdl .tx { display: none; } }
     .hm-ind { position: absolute; bottom: 0; left: 0; height: 2px; width: 0; background: #334155; transition: left .3s cubic-bezier(.3,.8,.3,1), width .3s cubic-bezier(.3,.8,.3,1); pointer-events: none; }
     @keyframes hmRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     #hmPanePo, #hmPaneBerkas { animation: hmRise .35s ease-out both; }
@@ -406,12 +412,7 @@
     .hm-fzm button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
     .hm-fzm .zl { width: auto; min-width: 56px; padding: 0 8px; border-radius: 999px; font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
     .hm-fzm .sep { width: 1px; height: 18px; background: rgba(255,255,255,.22); margin: 0 3px; }
-    .hm-float .hm-pobar { right: 12px; display: flex; margin: 0; max-width: none; animation: hmZmIn .35s ease both; }
-    .hm-float .hm-pobar .sp { display: none; }
-    .hm-float .hm-pobar button { box-shadow: 0 8px 22px rgba(15,23,42,.35); padding: .5rem .95rem; font-size: .82rem; transition: transform .15s, background .2s, box-shadow .2s; }
-    .hm-float .hm-pobar button:hover { transform: translateY(-2px); }
-    .hm-float .hm-pobar button:active { transform: scale(.97); }
-    @media (max-width: 575.98px) { .hm-float > * { bottom: 14px; } .hm-float .hm-fzm { left: 4px; } .hm-float .hm-pobar { right: 4px; } }
+    @media (max-width: 575.98px) { .hm-float > * { bottom: 14px; } .hm-float .hm-fzm { left: 4px; } }
     /* pratinjau berkas: dibuka di dalam slide, seperti slide Kontrak */
     .hm-fv { top: 0; right: 0; bottom: 0; left: auto; width: calc(100vw - var(--sidebar-expanded-width, 264px)); padding: 0; background: #fff; align-items: stretch; justify-content: stretch; animation: hmFvIn .25s ease both; }
     body.sidebar-collapsed .hm-fv { width: calc(100vw - var(--sidebar-mini-width, 74px)); }
@@ -587,6 +588,7 @@
                             <option value="mitra">Verifikasi Tim Mitra</option>
                             <option value="ppk">Verifikasi PPK BLU</option>
                             <option value="revisi">Sedang Direvisi</option>
+                            <option value="ttd">Menunggu Tanda Tangan</option>
                         </select></div>
                     </div>
                     <div class="col-12 col-sm-auto">
@@ -613,7 +615,6 @@
             </div>
         </div>
         <div id="hmList"></div>
-        <div class="card-footer bg-white border-top px-3 py-3 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2 dpo-pager-container" id="hmFoot"></div>
     </div>
 
     <div class="hm-scrim" id="hmScrim"></div>
@@ -644,7 +645,6 @@
                     <span class="sep"></span>
                     <button type="button" id="hmZoomFit" title="Pas lebar layar" aria-label="Pas lebar layar"><i class="bi bi-arrows-angle-expand"></i></button>
                 </div>
-                <div class="hm-pobar"><span class="sp"></span><button type="button" class="hm-btn pri sm" id="hmUnduhPo" data-unduh-po><i class="bi bi-download"></i>Unduh PO</button></div>
             </div></div>
             <div id="hmPaneBerkas" hidden></div>
         </div>
@@ -766,7 +766,7 @@
     var BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
     var BULAN_PANJANG = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
     var DIVISI_LABEL = { selulosa: 'Selulosa', lingkungan: 'Lingkungan', sertifikasi: 'Sertifikasi', pengujian: 'Pengujian', kalibrasi: 'Kalibrasi', pendampingan_teknis: 'Pendampingan Teknis', konsultansi: 'Konsultansi', inspeksi: 'Inspeksi', uji_profesiensi: 'Uji Profesiensi' };
-    var PER_HAL = 5;   // sama dengan Daftar PO lain: 5 baris per halaman
+    var PER_HAL = 100000;   // semua baris dirender; 5 per halaman diatur table-pagination.js (data-page-size)
 
     var TAB_AWAL = '{{ @tab_awal }}';
     var tab = (TAB_AWAL === 'kontrak' ? 'semua' : 'baru'), q = '', divisi = '', baca = '', statusF = '', periodeDiubah = false, hal = 1;
@@ -807,18 +807,18 @@
     }
     function tabAsal(p, t) {
         if (t !== 'semua') { return t; }
-        if (p.ppk_valid_at) { return 'po_selesai'; }
+        if (p.ppk_valid_at && p.ttd_at) { return 'po_selesai'; }
         return DATA_BARU.indexOf(p) !== -1 ? 'baru' : 'selesai';
     }
     function dataTab(t) {
         if (t === 'semua') { return gabungSemua(); }
         if (t === 'baru') { return DATA_BARU; }
-        if (t === 'selesai') { return DATA_SELESAI.filter(function (p) { return !p.ppk_valid_at; }); }
+        if (t === 'selesai') { return DATA_SELESAI.filter(function (p) { return !(p.ppk_valid_at && p.ttd_at); }); }   // termasuk PO yang menunggu tanda tangan
         if (t === 'kontrak') { return DATA_BARU.concat(DATA_SELESAI).filter(perluKontrak); }   // PO bertanda tangan sudah di-upload, kontrak belum dibuat
-        return DATA_BARU.concat(DATA_SELESAI).filter(function (p) { return !!p.ppk_valid_at; });   // PO Selesai = sudah diverifikasi PPK BLU
+        return DATA_BARU.concat(DATA_SELESAI).filter(function (p) { return !!(p.ppk_valid_at && p.ttd_at); });   // PO Aktif = PO bertanda tangan sudah di-upload
     }
     // Tanggal acuan bulan/tahun per tab: masuk Humas (baru), diverifikasi Humas (sudah diverifikasi), diverifikasi PPK BLU (PO selesai)
-    function tglAcuan(p, t) { t = tabAsal(p, t); return (t === 'baru' ? p.dikirim : (t === 'selesai' ? p.tgl_verifikasi : (t === 'kontrak' ? p.ttd_at : p.ppk_valid_at))) || ''; }
+    function tglAcuan(p, t) { t = tabAsal(p, t); return (t === 'baru' ? p.dikirim : (t === 'selesai' ? p.tgl_verifikasi : (t === 'kontrak' ? p.ttd_at : (p.ttd_at || p.ppk_valid_at)))) || ''; }
     // PO diteruskan ke Humas setelah PO bertanda tangan di-upload Ketua Tim; antreannya hilang saat Humas menandai kontrak dibuat
     function perluKontrak(p) { return !!p.ttd_at && !p.kontrak_at; }
     function bulanTahun(s) { var m = /^(\d{4})-(\d{2})/.exec(s || ''); return m ? { b: String(+m[2]), t: m[1] } : null; }
@@ -885,8 +885,8 @@
         if (ps === 'katim_review') { return { key: 'revisi', teks: 'Review hasil revisi PPK BLU', oleh: 'Ketua Tim', cls: 'rose' }; }
         if (!p.mitra_valid_at) { return { key: 'mitra', teks: 'Verifikasi Tim Mitra', oleh: 'Tim Mitra', cls: 'blue', baca: p.mitra_baca_at, nama: 'Tim Mitra' }; }
         if (!p.ppk_valid_at) { return { key: 'ppk', teks: 'Verifikasi PPK BLU', oleh: 'PPK BLU', cls: 'blue', baca: p.ppk_baca_at, nama: 'PPK BLU' }; }
-        if (!p.ttd_at) { return { key: 'aktif', teks: 'PO Aktif', oleh: 'PO belum di TTD', cls: 'emerald' }; }
-        if (!p.kontrak_at) { return { key: 'kontrak', teks: 'PO Aktif', oleh: 'PO sudah di TTD', cls: 'emerald' }; }
+        if (!p.ttd_at) { return { key: 'ttd', teks: 'Menunggu Tanda Tangan', oleh: 'Ketua Tim', cls: 'rose' }; }   // disetujui PPK BLU tetapi PO bertanda tangan belum di-upload: belum PO Aktif
+        if (!p.kontrak_at) { return { key: 'kontrak', teks: 'PO Aktif', oleh: 'PO sudah ditandatangani', cls: 'emerald' }; }
         return { key: 'aktif', teks: 'PO Aktif', oleh: 'PKS telah dibuat', cls: 'emerald' };
     }
     function subLine(ikon, teks) { return '<div class="text-muted small d-flex align-items-center gap-1" style="font-size: 0.73rem;"><i class="bi ' + ikon + '"></i><span>' + teks + '</span></div>'; }
@@ -946,7 +946,7 @@
                                  : '<li class="page-item"><a class="page-link shadow-none" data-hal="' + n + '">' + n + '</a></li>';
             }).join('') +
             '<li class="page-item' + (hal >= jmlHal ? ' disabled' : '') + '"><a class="page-link shadow-none" data-hal="' + (hal + 1) + '" title="Halaman Berikutnya">&raquo;</a></li></ul></nav>';
-        $('hmFoot').innerHTML = h;
+        var ft = $('hmFoot'); if (ft) { ft.innerHTML = ''; }   /* paginasi: ditangani table-pagination.js (5 baris per halaman, bar di atas dan bawah tabel); footer lama dihapus karena dobel */
     }
     function render() {
         var n = unreadCount();
@@ -971,9 +971,9 @@
         $('hmReset').hidden = !filterAktif();
         $('hmSemua').checked = semuaAktif(tab);
         if (tab === 'selesai') {   // jumlah per posisi ditampilkan di pilihan filter, supaya Humas bisa memantau sekilas
-            var hit = { mitra: 0, ppk: 0, revisi: 0 };
+            var hit = { mitra: 0, ppk: 0, revisi: 0, ttd: 0 };
             dasar.selesai.forEach(function (p) { var c = posisiRinci(p).key; if (hit[c] !== undefined) { hit[c]++; } });
-            var nama = { '': 'Semua Posisi (' + dasar.selesai.length + ')', mitra: 'Verifikasi Tim Mitra (' + hit.mitra + ')', ppk: 'Verifikasi PPK BLU (' + hit.ppk + ')', revisi: 'Sedang Direvisi (' + hit.revisi + ')' };
+            var nama = { '': 'Semua Posisi (' + dasar.selesai.length + ')', mitra: 'Verifikasi Tim Mitra (' + hit.mitra + ')', ppk: 'Verifikasi PPK BLU (' + hit.ppk + ')', revisi: 'Sedang Direvisi (' + hit.revisi + ')', ttd: 'Menunggu Tanda Tangan (' + hit.ttd + ')' };
             Array.prototype.forEach.call($('hmStatus').options, function (o) { o.textContent = nama[o.value]; });
         }
         var rows = dasar[tab].filter(tab === 'baru' ? cocokBaca : function () { return true; }).filter(tab === 'selesai' ? cocokStatus : function () { return true; });
@@ -999,7 +999,7 @@
                 '<h6 class="fw-bold text-dark mt-2 mb-1">Tidak Ada Data PO</h6><p class="text-muted small mb-0">' + pesan + '</p></div>';
             return;
         }
-        var tbl = '<div class="table-responsive"><table class="table table-hover align-middle mb-0 hm-idx-table"><thead class="table-light"><tr>' +
+        var tbl = '<div class="table-responsive"><table class="table table-hover align-middle mb-0 hm-idx-table" data-page-size="5"><thead class="table-light"><tr>' +
             '<th class="text-center" style="width: 45px;">No</th><th style="width: 190px;">Dokumen PO</th><th style="width: 150px;">No. Order</th><th style="width: 195px;">Mitra Industri &amp; Pelaksana</th>' +
             '<th style="width: 120px;">Divisi</th><th>Judul Kegiatan</th><th style="width: 200px;">Status PO</th>' +
             '<th class="text-center" style="width: 190px;">Aksi</th></tr></thead><tbody>' +
@@ -1008,9 +1008,7 @@
                 var tombol = ta === 'baru'
                     ? '<button type="button" class="btn btn-sm btn-primary py-1 px-2" data-open="' + p.id + '" title="Review PO (buka panel)"><i class="bi bi-eye me-1"></i>Review</button>'
                     : '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" data-open="' + p.id + '" title="Lihat PO (hanya lihat)"><i class="bi bi-eye me-1"></i>Lihat</button>';
-                if (perluKontrak(p)) {
-                    tombol += '<button type="button" class="btn btn-sm btn-dark py-1 px-2" data-kontrak="' + p.id + '" title="Tandai kontrak sudah dibuat"><i class="bi bi-file-earmark-check me-1"></i>Kontrak dibuat</button>';
-                }
+                // Kontrak (PKS) dibuat di menu Kontrak, bukan dari Daftar PO.
                 var detail = (p.order_id && p.layanan !== 'sertifikasi') ? '<a href="' + BASE + '/order/' + p.order_id + '" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>' : '';
                 return '<tr class="' + (ta === 'baru' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
                     '<td class="text-center text-muted small fw-semibold">' + (awal + i + 1) + '</td>' +
@@ -1208,8 +1206,6 @@
         $('hmFitBar').classList.remove('on');
         $('hmDocHost').innerHTML = '<div class="hm-loading">Memuat dokumen PO...</div>';
         var sert = p.layanan === 'sertifikasi';
-        var pobar = document.querySelector('#hmPanePo .hm-pobar');
-        if (pobar) { pobar.style.display = sert ? 'none' : ''; }   // Unduh PO (PDF) baru tersedia untuk PO OPTI
         renderChrome();
         $('hmScrim').classList.add('open'); $('hmSheet').classList.add('open'); $('hmSheet').setAttribute('aria-hidden', 'false');
         setTimeout(function () { $('hmShClose').focus(); }, 60);
@@ -1298,7 +1294,8 @@
     function renderShTabs() {
         var t = [['po', 'PO'], ['berkas', 'Berkas']];   // tab Alur dihapus (riwayat ada di detail order); Map Kendali kini kartu di tab Berkas
         if (shTab !== 'po' && shTab !== 'berkas') { shTab = 'po'; }
-        $('hmShTabs').innerHTML = t.map(function (x) { return '<button type="button" class="hm-shtab' + (shTab === x[0] ? ' on' : '') + '" data-shtab="' + x[0] + '">' + x[1] + '</button>'; }).join('');
+        $('hmShTabs').innerHTML = t.map(function (x) { return '<button type="button" class="hm-shtab' + (shTab === x[0] ? ' on' : '') + '" data-shtab="' + x[0] + '">' + x[1] + '</button>'; }).join('') +
+            (shTab === 'po' && (cariItem(current) || {}).layanan !== 'sertifikasi' ? '<button type="button" class="hm-tabdl" id="hmUnduhPo" data-unduh-po title="Unduh PO (PDF)" aria-label="Unduh PO"><i class="bi bi-download"></i><span class="tx">Unduh PO</span></button>' : '');   // Unduh PO (PDF) baru tersedia untuk PO OPTI
     }
     function renderBody() {
         var p = cariItem(current); if (!p) { return; }
@@ -1390,11 +1387,11 @@
         if (p.kontrak_oleh) { mk.push(['Dibuat oleh', p.kontrak_oleh, 'n']); }
         if (p.kontrak_at) { mk.push(['Tanggal selesai', f(p.kontrak_at), 'n']); }
         return dokKartu({ kunci: 'po_ttd', ikon: 'bi-pen-fill', warna: 'success', label: 'PO Bertanda Tangan', sub: 'PO yang sudah ditandatangani Ketua Tim, diunggah dari Tahap 8 detail order',
-                ada: adaTtd, badge: 'Sudah di TTD', kosong: 'Belum di TTD', bukaAwal: true, url: adaTtd ? (p.url_ttd || '') : '',
+                ada: adaTtd, badge: 'Sudah ditandatangani', kosong: 'Belum ditandatangani', bukaAwal: true, url: adaTtd ? (p.url_ttd || '') : '',
                 ket: adaTtd ? '' : 'Menunggu Ketua Tim meng-upload PO yang sudah ditandatangani (Tahap 8 detail order). Setelah itu PO diteruskan ke Humas untuk dibuatkan kontrak.', meta: mt }) +
             dokKartu({ kunci: 'pks', ikon: 'bi-journal-text', warna: 'primary', label: 'Kontrak (PKS)', sub: 'Perjanjian Kerja Sama yang dibuat Humas dari PO ini',
                 ada: adaKon, badge: 'PKS Telah Dibuat', kosong: 'Belum Dibuat', bukaAwal: true, url: adaKon ? (p.kontrak_url || '') : '',
-                ket: adaKon ? '' : (adaTtd ? 'PO sudah di-TTD. Menunggu Humas membuat kontrak (PKS).' : 'Kontrak baru bisa dibuat Humas setelah PO bertanda tangan diunggah.'), meta: adaKon ? mk : [] });
+                ket: adaKon ? '' : (adaTtd ? 'PO sudah ditandatangani. Menunggu Humas membuat kontrak (PKS) di menu Kontrak.' : 'Kontrak baru bisa dibuat Humas setelah PO bertanda tangan diunggah.'), meta: adaKon ? mk : [] });
     }
     function mapKartu(p) {
         return dokKartu({ kunci: 'mapkendali', ikon: 'bi-diagram-3-fill', warna: 'indigo', label: 'Map Kendali', sub: 'Form F.PJT-12-03/1: lembar kendali tahap proses (verifikasi dan validasi) untuk PO ini',

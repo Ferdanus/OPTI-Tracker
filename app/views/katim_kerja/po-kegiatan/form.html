@@ -7951,6 +7951,52 @@ setTimeout(function () {
                     });
                 });
             }
+            // Halaman edit biasa (bukan di Tahap 8 detail order): tambahkan "Simpan draft" di samping "Simpan perubahan".
+            // Draft tersimpan lewat fetch, form tetap terbuka dan status review / revisi PPK BLU tidak berubah.
+            if (!dalamTahap8 && bk) {
+                var bd2 = document.createElement('button');
+                bd2.type = 'button'; bd2.id = 'rvDraftBtn';
+                bd2.className = 'btn btn-outline-secondary px-4 py-2 rounded-pill shadow-xs fw-semibold';
+                bd2.innerHTML = '<i class="bi bi-save me-1"></i> Simpan draft';
+                bk.insertAdjacentElement('beforebegin', bd2);
+                setInterval(function () { bd2.disabled = !!bk.disabled; bd2.style.opacity = bk.disabled ? '.45' : ''; bd2.title = bk.title || ''; }, 500);
+                var simpanDraftHal = false;
+                function toastDraft(teks, galat) {
+                    var t = document.getElementById('rvToast');
+                    if (!t) {
+                        t = document.createElement('div'); t.id = 'rvToast'; t.setAttribute('role', 'status');
+                        t.style.cssText = 'position:fixed;top:12px;right:14px;max-width:calc(100% - 28px);z-index:2200;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:8px;font-size:.85rem;font-weight:700;background:#fff;box-shadow:0 10px 28px rgba(15,23,42,.25);pointer-events:none;opacity:0;transform:translateY(-140%);transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .3s;font-family:inherit';
+                        document.body.appendChild(t);
+                    }
+                    var warna = galat ? '#be123c' : '#059669';
+                    t.style.color = galat ? '#9f1239' : '#065f46';
+                    t.style.border = '1px solid ' + (galat ? '#fecdd3' : '#a7f3d0');
+                    t.style.borderLeft = '4px solid ' + warna;
+                    t.innerHTML = '<i class="bi ' + (galat ? 'bi-x-circle-fill' : 'bi-check-circle-fill') + '" style="color:' + warna + '"></i><span></span>';
+                    t.lastChild.textContent = teks;
+                    clearTimeout(t._tm);
+                    t.style.opacity = '0'; t.style.transform = 'translateY(-140%)';
+                    void t.offsetWidth;
+                    t.style.opacity = '1'; t.style.transform = 'none';
+                    t._tm = setTimeout(function () { t.style.opacity = '0'; t.style.transform = 'translateY(-140%)'; }, galat ? 6000 : 2500);
+                }
+                bd2.addEventListener('click', function () {
+                    var form = document.getElementById('formPo');
+                    if (!form || simpanDraftHal || bd2.disabled) { return; }
+                    if (typeof window.poValidasiSebelumKirim === 'function' && !window.poValidasiSebelumKirim()) { return; }
+                    var ev = new Event('submit', { cancelable: true, bubbles: true });
+                    if (!form.dispatchEvent(ev)) { return; }
+                    simpanDraftHal = true; bd2.disabled = true; bk.disabled = true;
+                    var htmlAsli = bd2.innerHTML;
+                    bd2.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...';
+                    var fd = new FormData(form); fd.set('kirim_setelah', '1'); fd.set('aksi', 'kirim');
+                    fetch(form.getAttribute('action'), { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                        .then(bacaJson)
+                        .then(function () { toastDraft('Draft tersimpan'); })
+                        .catch(function (e) { toastDraft('Gagal menyimpan: ' + e.message, true); })
+                        .then(function () { bd2.innerHTML = htmlAsli; simpanDraftHal = false; bd2.disabled = false; bk.disabled = false; if (window.finishLoading) { window.finishLoading(); } });
+                });
+            }
             return;
         }
         var URL_AKSI = KONTEKS === 'ppk' ? BASE + '/po-revisi-ppk/' + PO_ID + '/catatan/' : BASE + '/po-kegiatan/' + PO_ID + '/catatan/';
@@ -8033,7 +8079,11 @@ setTimeout(function () {
             });
         }
     
-        function galat(m) { var e = document.getElementById('rvErr'); e.textContent = m; e.hidden = !m; }
+        function galat(m) {
+            var e = document.getElementById('rvErr'); e.textContent = m; e.hidden = !m;
+            // pesan galat di bar atas bisa tidak terlihat saat form digulir; munculkan juga sebagai notifikasi
+            if (m && window.Swal) { try { Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: m, showConfirmButton: false, timer: 6000, timerProgressBar: true }); } catch (x) {} }
+        }
     
         function ubah(id, cek) {
             var c = data.filter(function (x) { return x.id === id; })[0]; if (!c) { return; }

@@ -81,7 +81,7 @@
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">PO Aktif</span>
                     <h3 class="fw-bold mb-0 mt-1" style="color: #059669;">{{ @total_disetujui ?: 0 }}</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Diverifikasi &amp; siap jalan</span>
+                    <span class="small text-muted" style="font-size: 0.75rem;">Sudah ditandatangani</span>
                 </div>
                 <div class="metric-icon-box" style="background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
                     <i class="bi bi-check-circle-fill"></i>
@@ -166,7 +166,7 @@
                                 <div class="small fw-semibold text-danger d-none" id="poRentangErr">Bulan awal tidak boleh setelah bulan akhir.</div>
                             </div>
                             <div class="small text-muted" data-periode="semua">Semua data ditampilkan tanpa batas bulan.</div>
-                            <div class="small text-muted">Berlaku untuk Sedang Berjalan dan PO Aktif. PO Masuk, Draft, Revisi, dan Perlu Tindakan selalu tampil semua.</div>
+                            <div class="small text-muted">Berlaku untuk Sedang Berjalan dan PO Aktif. PO Masuk, Draft, Revisi, Perlu Tindakan, dan Menunggu Tanda Tangan selalu tampil semua.</div>
                         </div>
                     </div>
                     <div class="col-6 col-sm-auto {{ @tab_aktif == 'berjalan' ? '' : 'd-none' }}" data-filter-tab="berjalan">
@@ -225,6 +225,7 @@
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'tindakan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <i class="bi bi-lock-fill po-kunci" title="Tugas Anda: selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip chip-danger">{{ @tab_counts.tindakan ?: 0 }}</span></a>
                 </check>
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'berjalan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=berjalan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-hourglass-split"></i>Sedang Berjalan <span class="count-chip">{{ @tab_counts.berjalan ?: 0 }}</span></a>
+                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'ttd' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=ttd&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-pen"></i>Menunggu Tanda Tangan <i class="bi bi-lock-fill po-kunci" title="Selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip chip-danger">{{ @tab_counts.ttd ?: 0 }}</span></a>
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'disetujui' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=disetujui&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-check2-circle"></i>PO Aktif <span class="count-chip">{{ @tab_counts.disetujui ?: 0 }}</span></a>
             </div>
         </div>
@@ -235,7 +236,7 @@
             </check>
             <check if="{{ @daftar_po && count(@daftar_po) > 0 }}">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 po-idx-table">
+                    <table class="table table-hover align-middle mb-0 po-idx-table" data-page-size="5">
                         <thead class="table-light">
                             <tr>
                                 <th class="text-center" style="width: 45px;">No</th>
@@ -292,7 +293,7 @@
                                         <check if="{{ @p.status_revisi }}"><span class="status-pill status-pill-rose"><i class="bi bi-arrow-repeat"></i> Revisi</span></check>
                                         <check if="{{ !@p.status_revisi && @p.po_status == 'terkirim' }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
                                         <check if="{{ !@p.status_revisi && @p.po_status == 'disetujui_mitra' }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
-                                        <check if="{{ @p.po_status == 'disetujui' && @p.aktif_ket == 'ttd' }}"><span class="status-pill status-pill-rose"><i class="bi bi-hourglass-split"></i> PO Aktif &middot; Menunggu TTD</span></check>
+                                        <check if="{{ @p.po_status == 'disetujui' && @p.aktif_ket == 'ttd' }}"><span class="status-pill status-pill-rose"><i class="bi bi-pen"></i> Menunggu Tanda Tangan</span></check>
                                         <check if="{{ @p.po_status == 'disetujui' && @p.aktif_ket == 'kontrak' }}"><span class="status-pill status-pill-rose"><i class="bi bi-hourglass-split"></i> PO Aktif &middot; Menunggu Kontrak</span></check>
                                         <check if="{{ @p.po_status == 'disetujui' && @p.aktif_ket != 'ttd' && @p.aktif_ket != 'kontrak' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> PO Aktif</span></check>
                                     </td>
@@ -380,7 +381,7 @@
                                         <check if="{{ @p.po_id && @p.po_status == 'draft' }}"><span class="status-pill status-pill-slate"><i class="bi bi-pencil-square"></i> Draft PO</span></check>
                                         <check if="{{ @p.po_id && @p.status_revisi }}"><span class="status-pill status-pill-rose"><i class="bi bi-arrow-repeat"></i> Revisi</span></check>
                                         <check if="{{ @p.po_id && !@p.status_revisi && (@p.po_status == 'terkirim' || @p.po_status == 'disetujui_mitra') }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
-                                        <check if="{{ @p.po_id && !@p.status_revisi && @p.po_status == 'disetujui' && @p.aktif_ket == 'ttd' }}"><span class="status-pill status-pill-rose"><i class="bi bi-hourglass-split"></i> PO Aktif &middot; Menunggu TTD</span></check>
+                                        <check if="{{ @p.po_id && !@p.status_revisi && @p.po_status == 'disetujui' && @p.aktif_ket == 'ttd' }}"><span class="status-pill status-pill-rose"><i class="bi bi-pen"></i> Menunggu Tanda Tangan</span></check>
                                         <check if="{{ @p.po_id && !@p.status_revisi && @p.po_status == 'disetujui' && @p.aktif_ket == 'kontrak' }}"><span class="status-pill status-pill-rose"><i class="bi bi-hourglass-split"></i> PO Aktif &middot; Menunggu Kontrak</span></check>
                                         <check if="{{ @p.po_id && !@p.status_revisi && @p.po_status == 'disetujui' && @p.aktif_ket != 'ttd' && @p.aktif_ket != 'kontrak' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> PO Aktif</span></check>
                                     </td>
@@ -412,19 +413,19 @@
                                             </check>
                                             <check if="{{ @p.ringkas && @p.po_id }}">
                                                 <!-- Tab Perlu Tindakan / Revisi / Sedang Berjalan / PO Aktif: aksi dibuat ringkas dan berlabel. Panel slide sudah memuat dokumen, PDF, dan berkas. -->
+                                                <check if="{{ @bisa_upload_ttd && @p.aktif_ket == 'ttd' }}">
+                                                    <button type="button" class="btn btn-sm btn-dark py-1 px-2" onclick="bukaUploadTtd({{ @p.order_id }}, '{{ @p.nomor_po }}')" title="Upload PO yang sudah ditandatangani"><i class="bi bi-cloud-arrow-up me-1"></i>Upload</button>
+                                                </check>
                                                 <check if="{{ @p.aksi_mode == 'review' }}">
-                                                    <button type="button" class="btn btn-sm btn-primary py-1 px-2" onclick="bukaPanelReviewPo({{ @p.po_id }}, '{{ @p.panel_jenis }}', {{ @p.order_id }}, this)" title="{{ @p.panel_label }} (buka panel)"><i class="bi bi-eye me-1"></i>{{ @p.panel_label }}</button>
+                                                    <button type="button" class="btn btn-sm btn-primary py-1 px-2{{ (@bisa_upload_ttd && @p.aktif_ket == 'ttd') ? ' aksi-ikon' : '' }}" onclick="bukaPanelReviewPo({{ @p.po_id }}, '{{ @p.panel_jenis }}', {{ @p.order_id }}, this)" title="{{ @p.panel_label }} (buka panel)"><i class="bi bi-eye me-1"></i><span class="aksi-lbl">{{ @p.panel_label }}</span></button>
                                                 </check>
                                                 <check if="{{ @p.aksi_mode == 'lihat' }}">
-                                                    <button type="button" class="btn btn-sm btn-primary py-1 px-2" onclick="bukaPanelReviewPo({{ @p.po_id }}, 'lihat{{ @p.lihat_n }}', {{ @p.order_id }}, this)" title="Lihat PO (hanya lihat)"><i class="bi bi-eye me-1"></i>Lihat</button>
+                                                    <button type="button" class="btn btn-sm btn-primary py-1 px-2{{ (@bisa_upload_ttd && @p.aktif_ket == 'ttd') ? ' aksi-ikon' : '' }}" onclick="bukaPanelReviewPo({{ @p.po_id }}, 'lihat{{ @p.lihat_n }}', {{ @p.order_id }}, this)" title="Lihat PO (hanya lihat)"><i class="bi bi-eye me-1"></i><span class="aksi-lbl">Lihat</span></button>
                                                 </check>
                                                 <check if="{{ @p.aksi_mode != 'review' && @p.aksi_mode != 'lihat' }}">
-                                                    <button type="button" class="btn btn-sm btn-primary py-1 px-2" onclick="bukaPreviewPo({{ @p.po_id }}, '{{ @p.po_status }}')" title="Lihat dokumen PO"><i class="bi bi-eye me-1"></i>Lihat</button>
+                                                    <button type="button" class="btn btn-sm btn-primary py-1 px-2{{ (@bisa_upload_ttd && @p.aktif_ket == 'ttd') ? ' aksi-ikon' : '' }}" onclick="bukaPreviewPo({{ @p.po_id }}, '{{ @p.po_status }}')" title="Lihat dokumen PO"><i class="bi bi-eye me-1"></i><span class="aksi-lbl">Lihat</span></button>
                                                 </check>
-                                                <a href="{{ @BASE }}/order/{{ @p.order_id }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>
-                                                <check if="{{ @bisa_upload_ttd && @p.aktif_ket == 'ttd' }}">
-                                                    <button type="button" class="btn btn-sm btn-dark py-1 px-2" onclick="bukaUploadTtd({{ @p.order_id }}, '{{ @p.nomor_po }}')" title="Upload PO yang sudah ditandatangani"><i class="bi bi-cloud-arrow-up me-1"></i>Upload PO TTD</button>
-                                                </check>
+                                                <a href="{{ @BASE }}/order/{{ @p.order_id }}" class="btn btn-sm btn-outline-secondary py-1 px-2 aksi-ikon" title="Buka detail order" aria-label="Detail"><i class="bi bi-box-arrow-up-right me-1"></i><span class="aksi-lbl">Detail</span></a>
                                             </check>
                                             <check if="{{ !@p.ringkas }}">
                                                 <check if="{{ @p.po_id }}">
@@ -456,40 +457,6 @@
                 </div>
             </check>
 
-            <div class="card-footer bg-white border-top px-3 py-3 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2 dpo-pager-container">
-                <div class="small text-muted d-flex align-items-center gap-1">
-                    <i class="bi bi-layers-half text-secondary opacity-75"></i>
-                    <span>Menampilkan <strong>{{ @baris_awal }} - {{ @baris_akhir }}</strong> dari <strong>{{ @total_baris ?: 0 }}</strong> dokumen</span>
-                </div>
-                <nav aria-label="Navigasi halaman" class="d-flex align-items-center flex-wrap justify-content-center gap-2">
-                    <ul class="pagination pagination-sm mb-0 align-items-center">
-                        <li class="page-item {{ @halaman_saat_ini <= 1 ? 'disabled' : '' }}">
-                            <a data-no-loader="true" class="page-link shadow-none" href="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}{{ @filter_param }}&amp;page={{ @halaman_saat_ini - 1 }}" title="Halaman Sebelumnya">&laquo;</a>
-                        </li>
-                        <repeat group="{{ @daftar_halaman }}" value="{{ @hl }}">
-                            <check if="{{ @hl.n == 0 }}">
-                                <true><li class="page-item disabled"><span class="page-link border-0 text-muted shadow-none bg-transparent">&hellip;</span></li></true>
-                                <false>
-                                    <check if="{{ @hl.aktif }}">
-                                        <true><li class="page-item active" aria-current="page"><span class="page-link shadow-none fw-bold">{{ @hl.n }}</span></li></true>
-                                        <false><li class="page-item"><a data-no-loader="true" class="page-link shadow-none" href="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}{{ @filter_param }}&amp;page={{ @hl.n }}">{{ @hl.n }}</a></li></false>
-                                    </check>
-                                </false>
-                            </check>
-                        </repeat>
-                        <li class="page-item {{ @halaman_saat_ini >= @total_halaman ? 'disabled' : '' }}">
-                            <a data-no-loader="true" class="page-link shadow-none" href="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}{{ @filter_param }}&amp;page={{ @halaman_saat_ini + 1 }}" title="Halaman Berikutnya">&raquo;</a>
-                        </li>
-                    </ul>
-                    <div class="d-flex align-items-center gap-1 ms-sm-2 ps-sm-2 border-start dpo-jump" data-total="{{ @total_halaman }}" data-url="{{ @BASE }}/po-kegiatan?tab={{ @tab_aktif }}&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}{{ @filter_param }}&amp;page=">
-                        <span class="small text-muted" style="font-size: 0.78rem;">Ke Hal:</span>
-                        <div class="input-group input-group-sm" style="width: 105px;">
-                            <input type="number" min="1" max="{{ @total_halaman }}" value="{{ @halaman_saat_ini }}" class="form-control form-control-sm text-center dpo-jump-input shadow-none" style="font-size: 0.78rem; height: 32px; padding: 2px 6px;" placeholder="{{ @halaman_saat_ini }}" aria-label="Nomor halaman">
-                            <button class="btn dpo-jump-go btn-sm px-2 shadow-none d-flex align-items-center justify-content-center" type="button" style="height: 32px; font-size: 0.75rem;" title="Lompat ke halaman"><i class="bi bi-arrow-right-short fs-6"></i></button>
-                        </div>
-                    </div>
-                </nav>
-            </div>
         </div>
     </div>
 
@@ -499,7 +466,13 @@
 <div id="poModals"></div>
 </div><!-- /dpoRoot -->
 
-<!-- Upload PO bertanda tangan dari Daftar PO (tab PO Aktif, status Menunggu TTD). Satu alur dengan Tahap 8 detail order: validasi saat pilih file, konfirmasi, lalu upload ke route yang sama. -->
+<style>
+    /* Kolom Aksi daftar PO: tombol utama bertulisan, sisanya ikon (tooltip lewat title). */
+    .aksi-ikon .aksi-lbl { display:none; }
+    .aksi-ikon { width:32px; height:32px; padding:0 !important; display:inline-flex; align-items:center; justify-content:center; }
+    .aksi-ikon i { margin-right:0 !important; }
+</style>
+<!-- Upload PO bertanda tangan dari Daftar PO (tab PO Aktif, status Menunggu Tanda Tangan). Satu alur dengan Tahap 8 detail order: validasi saat pilih file, konfirmasi, lalu upload ke route yang sama. -->
 <style>
     @keyframes utFade { from { opacity:0; } to { opacity:1; } }
     @keyframes utRise { from { opacity:0; transform:translateY(12px) scale(.98); } to { opacity:1; transform:none; } }
@@ -1693,7 +1666,7 @@ function bukaPanelReviewPo(poId, jenis, orderId, tombol) {
     f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:1080;background:transparent;color-scheme:normal;';
     var draftJ = /^draft(e)?$/.exec(jenis);   // PO draft: slide Daftar PO dalam mode lihat + tombol Edit PO (drafte = boleh edit)
     var lihat = /^lihat([12])(ro)?$/.exec(jenis);   // lihat1 = tanpa catatan revisi, lihat2 = dengan catatan revisi; keduanya tanpa tombol tindakan
-    f.src = (jenis === 'revisi' ? '{{ @BASE }}/po-revisi-ppk?embed=1&buka=' : (jenis === 'sert' ? '{{ @BASE }}/petunjuk-operasional/sertifikasi/review?embed=1&buka=' : '{{ @BASE }}/po-kegiatan/daftar?embed=1&buka=')) + encodeURIComponent(poId) + (lihat ? '&lihat=' + lihat[1] + (lihat[2] ? '&ro=1' : '') : '') + (draftJ ? '&lihat=1&draft=1' + (draftJ[1] ? '&edit=1' : '') : '') + ((jenis === 'revisi' || jenis === 'sert') ? '' : '&ph=1') + sc;   // ph=1: slide langsung tampil tanpa animasi masuk ulang (penanda memuat sudah berbentuk slide)
+    f.src = (jenis === 'revisi' ? '{{ @BASE }}/po-revisi-ppk?embed=1&buka=' : (jenis === 'sert' ? '{{ @BASE }}/petunjuk-operasional/sertifikasi/review?embed=1&buka=' : '{{ @BASE }}/po-kegiatan/daftar?embed=1&buka=')) + encodeURIComponent(poId) + (lihat ? '&lihat=' + lihat[1] + (lihat[2] ? '&ro=1' : '') : '') + (draftJ ? '&lihat=1&draft=1' + (draftJ[1] ? '&edit=1' : '') : '') + (jenis === 'sert' ? '' : '&ph=1') + sc;   // ph=1: slide langsung tampil tanpa animasi masuk ulang (penanda memuat sudah berbentuk slide)
     document.body.appendChild(f);
     window.__poPanelOrder = orderId;
     window.__poPanelId = poId;

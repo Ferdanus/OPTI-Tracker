@@ -113,6 +113,41 @@ class PoReviewController extends Controller {
     }
 
     /**
+     * SEMENTARA (hapus setelah selesai): GET /debug-riwayat/@id (id = ID ORDER). Hanya superadmin.
+     * Menampilkan isi Riwayat Aktivitas + chat alur PO order itu, struktur kolom, dan hasil uji tulis (dibatalkan lewat rollback)
+     * supaya terlihat PERSIS kenapa kejadian alur PO tidak tercatat di Riwayat.
+     */
+    public function debugRiwayat($f3, $params) {
+        $this->requireAuth();
+        if ($this->getUserRole() !== 'superadmin') { $f3->error(403); return; }
+        $oid = (int) $params['id'];
+        $out = ['order_id' => $oid];
+        $try = function ($k, $fn) use (&$out) { try { $out[$k] = $fn(); } catch (\Throwable $e) { $out[$k] = 'GALAT: ' . $e->getMessage(); } };
+        $try('po', function () use ($oid) { return $this->db->exec("SELECT id, nomor_po, status, status_review, ppk_status, ppk_dibaca_at, minta_dibaca_at FROM po_kegiatan WHERE order_id = ?", [1 => $oid]); });
+        $try('riwayat_terbaru', function () use ($oid) { return $this->db->exec("SELECT id, modul, aksi, deskripsi, user_id, user_nama, user_role, created_at FROM opti_activity_log WHERE order_id = ? ORDER BY id DESC LIMIT 15", [1 => $oid]); });
+        $try('riwayat_modul_po_kegiatan', function () use ($oid) { return $this->db->exec("SELECT id, aksi, deskripsi, user_nama, user_role, created_at FROM opti_activity_log WHERE order_id = ? AND modul = 'po_kegiatan' ORDER BY id DESC LIMIT 15", [1 => $oid]); });
+        $try('chat_alur_terbaru', function () use ($oid) { return $this->db->exec("SELECT c.id, c.sisi, c.pesan, c.sistem, c.created_at FROM po_chat c JOIN po_kegiatan p ON p.id = c.po_id WHERE p.order_id = ? ORDER BY c.id DESC LIMIT 15", [1 => $oid]); });
+        $try('kolom_opti_activity_log', function () { return $this->db->exec("SHOW COLUMNS FROM opti_activity_log"); });
+        $try('kolom_po_chat', function () { return $this->db->exec("SHOW COLUMNS FROM po_chat"); });
+        $try('mbstring', function () { return function_exists('mb_substr') && function_exists('mb_strtoupper') ? 'ada' : 'TIDAK ADA'; });
+        // uji tulis ke Riwayat persis seperti catatRiwayatOrder (lalu dibatalkan)
+        $try('uji_tulis_riwayat', function () use ($oid) {
+            $this->db->begin();
+            try {
+                $this->db->exec(
+                    "INSERT INTO opti_activity_log (order_id, modul, aksi, deskripsi, user_id, user_nama, user_role, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                    [1 => $oid, 2 => 'po_kegiatan', 3 => 'minta_revisi', 4 => 'UJI (dibatalkan)', 5 => (int) $this->getUserId(), 6 => 'uji', 7 => (string) $this->getUserRole(), 8 => '127.0.0.1']
+                );
+                $this->db->rollback();
+                return 'BERHASIL (dibatalkan)';
+            } catch (\Throwable $e) { $this->db->rollback(); return 'GALAT: ' . $e->getMessage(); }
+        });
+        // uji ringkasan teks seperti yang dikirim PPK BLU
+        $try('uji_ringkas', function () { return \PoReviewController::ringkasRiwayat('Nama Uji (PPK BLU) meminta revisi (2 catatan). Menunggu keputusan Ketua Tim.'); });
+        $this->keluarkanJson($out);
+    }
+
+    /**
      * POST /po-kegiatan/@id/baca (alias /dibuka) -- dipanggil saat PO dibuka.
      * Penerima kiriman yang sedang berlaku dicatat "sudah dibaca" (sekali saja per kiriman):
      *   Ketua Tim      : PO baru (reviewed_at) atau revisi masuk (revisi_dibaca_at)
@@ -207,6 +242,8 @@ class PoReviewController extends Controller {
         $uid  = (int) $this->getUserId();
         $nid  = (int) $params['nid'];
         $aksi = trim((string) $f3->get('POST.aksi'));
+        // Superadmin boleh menggantikan Ketua Pelaksana yang sedang mengerjakan revisi (centang / batal centang catatan)
+        if ($this->isSuperadmin() && ($aksi === 'selesai' || $aksi === 'batalselesai')) { $sisi = 'pembuat'; }
 
         try {
             $rows = $this->db->exec(
@@ -320,6 +357,7 @@ class PoReviewController extends Controller {
     public function kirimRevisi($f3, $params) {
         list($po, $sisi) = $this->akses((int) $params['id']);
         $uid = (int) $this->getUserId();
+        if ($this->isSuperadmin()) { $sisi = 'pembuat'; }   // superadmin boleh mengirim revisi menggantikan Ketua Pelaksana
         $this->wajibSisi($sisi, 'pembuat', 'Hanya Ketua Pelaksana yang dapat mengirim revisi.');
         $this->wajibStatus($po, ['perlu_revisi'], 'Revisi hanya bisa dikirim saat PO berstatus Perlu revisi.');
 
@@ -941,10 +979,11 @@ class PoReviewController extends Controller {
                 "INSERT INTO po_chat (po_id, pengirim_id, sisi, pesan, sistem, created_at) VALUES (?, ?, ?, ?, 1, NOW())",
                 [1 => (int) $poId, 2 => (int) $pengirimId, 3 => $sisi, 4 => $teks]
             );
-            self::catatRiwayatOrder($db, $poId, $pengirimId, $teks);   // salin juga ke Riwayat Aktivitas detail order
-        } catch (\Exception $e) {
-            // catatan sistem bersifat pelengkap
+        } catch (\Throwable $e) {
+            // catatan sistem bersifat pelengkap; gagalnya chat tidak boleh ikut menggagalkan Riwayat Aktivitas di bawah
+            error_log('[catatPesanSistem] po_chat gagal (PO ' . (int) $poId . '): ' . $e->getMessage());
         }
+        self::catatRiwayatOrder($db, $poId, $pengirimId, $teks);   // salin juga ke Riwayat Aktivitas detail order
     }
 
     /**
@@ -978,7 +1017,8 @@ class PoReviewController extends Controller {
                 [1 => $orderId, 2 => 'po_kegiatan', 3 => $aksi, 4 => $desk, 5 => $uid, 6 => (string) $nama, 7 => (string) $role, 8 => (string) $ip]
             );
         } catch (\Throwable $e) {
-            // riwayat bersifat pelengkap
+            // riwayat bersifat pelengkap; alasan gagal dicatat di log PHP supaya bisa ditelusuri
+            error_log('[catatRiwayatOrder] gagal (PO ' . (int) $poId . '): ' . $e->getMessage());
         }
     }
 

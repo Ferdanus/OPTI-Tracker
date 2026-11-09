@@ -563,7 +563,7 @@ public function index($f3) {
     // Revisi, Sedang Berjalan (SEMUA PO yang sedang berjalan, termasuk yang direvisi; dengan kolom Posisi PO), PO Aktif.
     // Tab lama "Terkirim" / "Disetujui Mitra" dilebur ke Sedang Berjalan; tautan lama tetap jalan lewat alias di bawah.
     // Kunci tab 'disetujui' dipertahankan untuk tab PO Aktif supaya tautan lama tidak putus.
-    $tabsValid = ['semua', 'masuk', 'draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'];   // 'semua' = gabungan semua tab yang tampil untuk peran ini
+    $tabsValid = ['semua', 'masuk', 'draft', 'tindakan', 'revisi', 'berjalan', 'ttd', 'disetujui'];   // 'semua' = gabungan semua tab yang tampil untuk peran ini; 'ttd' = disetujui PPK BLU, menunggu PO bertanda tangan
     $tab = strtolower(trim((string) $f3->get('GET.tab')));
     $aliasTab = ['terkirim' => 'berjalan', 'disetujui_mitra' => 'berjalan', 'review' => 'berjalan', 'aktif' => 'disetujui'];
     if (isset($aliasTab[$tab])) { $tab = $aliasTab[$tab]; }
@@ -619,7 +619,7 @@ public function index($f3) {
     $modePeriode = strtolower(trim((string) $f3->get('GET.mode')));
     if (!in_array($modePeriode, ['bulan', 'rentang', 'semua'], true)) { $modePeriode = ((string) $f3->get('GET.semua') === '1') ? 'semua' : 'bulan'; }
     // Tab tugas (PO Masuk, Draft, Revisi, Perlu Tindakan) TIDAK PERNAH kena filter periode: PO yang masih jadi tugas tidak boleh hilang saat bulan berganti.
-    $tabTugas = ['masuk', 'draft', 'revisi', 'tindakan'];
+    $tabTugas = ['masuk', 'draft', 'revisi', 'tindakan', 'ttd'];
     // Perlu/tidaknya filter periode per tab (dipakai juga untuk angka di tiap tab, supaya angka tab = isi tab kalau diklik)
     $semuaUntukTab = function ($t) use ($modePeriode, $tabTugas) {
         if ($t === 'semua') { return true; }   // tab Semua memakai aturan tiap tab penyusunnya (lihat $tabGabungan), bukan satu aturan sendiri
@@ -661,6 +661,7 @@ public function index($f3) {
         'tindakan'        => 'p.updated_at',
         'revisi'          => 'p.updated_at',
         'berjalan'        => 'p.updated_at',
+        'ttd'             => 'p.validasi_keuangan_at',
         'disetujui'       => 'p.validasi_keuangan_at',
     ];
     $kolomTanggal = $kolomTanggalPerTab[$tab];
@@ -674,6 +675,9 @@ public function index($f3) {
         $kolomPo[strtolower((string) $rKol['nama'])] = true;
     }
     $kolomOpsi = function ($nama) use ($kolomPo) { return isset($kolomPo[$nama]) ? 'p.' . $nama : 'NULL'; };
+    // PO Aktif = PO bertanda tangan sudah di-upload. Filter periode PO Aktif memakai tanggal upload TTD (kalau kolomnya ada).
+    $sudahTtd = isset($kolomPo['po_ttd_file']) ? "(p.po_ttd_file IS NOT NULL AND p.po_ttd_file <> '')" : "1 = 1";
+    if (isset($kolomPo['po_ttd_at'])) { $kolomTanggalPerTab['disetujui'] = 'COALESCE(p.po_ttd_at, p.validasi_keuangan_at)'; $kolomTanggal = $kolomTanggalPerTab[$tab]; }
     $exPpkStatus = $kolomOpsi('ppk_status');
     $exVerifHumas = $kolomOpsi('verifikasi_humas_at');
     // Jejak "sudah dibuka penerima" (sama dengan yang dipakai Daftar Review PO): dipakai untuk penanda baris belum dibaca
@@ -708,7 +712,9 @@ public function index($f3) {
         'revisi'          => "{$stEf} IN ('terkirim', 'disetujui_mitra', 'disetujui') AND {$kondisiRevisi}",
         // Sedang Berjalan = semua PO yang sudah dikirim dan belum aktif, termasuk yang sedang direvisi
         'berjalan'        => "({$stEf} IN ('terkirim', 'disetujui_mitra') OR ({$stEf} = 'disetujui' AND {$kondisiRevisi}))",
-        'disetujui'       => "{$stEf} = 'disetujui' AND NOT {$kondisiRevisi}",
+        // Menunggu TTD = sudah disetujui PPK BLU tetapi PO bertanda tangan belum di-upload; PO Aktif = PO bertanda tangan sudah di-upload
+        'ttd'             => "{$stEf} = 'disetujui' AND NOT {$kondisiRevisi} AND NOT {$sudahTtd}",
+        'disetujui'       => "{$stEf} = 'disetujui' AND NOT {$kondisiRevisi} AND {$sudahTtd}",
     ];
     // Ketua Tim: PO yang masih menunggu tindakan Ketua Tim (termasuk revisi PPK BLU yang dikerjakan sendiri / masih draf) hanya muncul di Perlu Tindakan.
     // Baru setelah dikirim (ke PPK BLU, atau didisposisikan ke Ketua Pelaksana) PO pindah ke Sedang Berjalan, jadi tidak ada PO yang tampil dobel.
@@ -746,7 +752,7 @@ public function index($f3) {
         $tabGabungan[] = 'draft'; $tabGabungan[] = 'revisi';
     }
     if ($katimUi || $isSuperadmin) { $tabGabungan[] = 'tindakan'; }
-    $tabGabungan[] = 'berjalan'; $tabGabungan[] = 'disetujui';
+    $tabGabungan[] = 'berjalan'; $tabGabungan[] = 'ttd'; $tabGabungan[] = 'disetujui';
     $bagianSemua = [];
     foreach ($tabGabungan as $kG) {
         $cG0 = $kondisiTabPerTab[$kG];
@@ -832,7 +838,7 @@ public function index($f3) {
     $totalBaris = (int) ($resCount[0]['c'] ?? 0);
 
     // [BARU] Gabungan: ambil juga PO layanan lain. Dari tiap sumber diambil N baris teratas (N = halaman x 10), lalu digabung & diurutkan.
-    $perHalaman = 5;   // jumlah baris per halaman (dikunci 5; sisanya lewat pagination)
+    $perHalaman = 500;   // semua baris (maks. 500) dimuat sekali; 5 baris per halaman diatur table-pagination.js (data-page-size), footer paginasi server dihapus
     $lain = null;
     $sert = null;
     if ($gabung) {
@@ -847,7 +853,7 @@ public function index($f3) {
             $nolL = ['draft' => 0, 'terkirim' => 0, 'disetujui_mitra' => 0, 'disetujui' => 0];
             $lain = ['total' => 0, 'rows' => [], 'counts' => $nolL + ['semua' => 0], 'counts_semua' => $nolL, 'peringatan' => ''];
         } else {
-        $lain = $ctrlLain->ambilGabungan($tab === 'berjalan' ? 'terkirim' : $tab, $layananFilter, $q, $tampilkanSemua, $bulan, $tahun, min(500, $halamanDiminta * $perHalaman), $semuaPerTab, $sembunyikanDrafLain);
+        $lain = $ctrlLain->ambilGabungan(($tab === 'berjalan' || $tab === 'ttd') ? 'terkirim' : $tab, $layananFilter, $q, $tampilkanSemua, $bulan, $tahun, min(500, $halamanDiminta * $perHalaman), $semuaPerTab, $sembunyikanDrafLain);
         if ($tab === 'berjalan') {
             // Tab Sedang Berjalan juga memuat PO layanan lain yang berstatus 'disetujui_mitra' (tab itu sudah dilebur ke sini)
             $lain2 = $ctrlLain->ambilGabungan('disetujui_mitra', $layananFilter, $q, $tampilkanSemua, $bulan, $tahun, min(500, $halamanDiminta * $perHalaman), $semuaPerTab);
@@ -865,7 +871,7 @@ public function index($f3) {
             $semuaTabSert = [];
             foreach (['semua', 'draft', 'tindakan', 'revisi', 'berjalan', 'disetujui'] as $kT1) { $semuaTabSert[$kT1] = $semuaUntukTab($kT1); }
             $sert = $ctrlLain->ambilSertifikasiUi([
-                'tab' => $tab, 'q' => $q, 'bulan' => $bulan, 'tahun' => $tahun, 'limit' => min(500, $halamanDiminta * $perHalaman),
+                'tab' => ($tab === 'ttd' ? 'berjalan' : $tab), 'q' => $q, 'bulan' => $bulan, 'tahun' => $tahun, 'limit' => min(500, $halamanDiminta * $perHalaman),
                 'semuaPerTab' => $semuaTabSert,
                 'peran' => $isSuperadmin ? 'superadmin' : ($katimSert ? 'katim' : ($timSert ? 'tim' : 'lain')),
                 'sembunyiDraft' => $sembunyikanDrafLain,
@@ -875,6 +881,7 @@ public function index($f3) {
             $lain['rows'] = array_merge($lain['rows'], $sert['rows']);
             if ($lain['peringatan'] === '' && $sert['peringatan'] !== '') { $lain['peringatan'] = $sert['peringatan']; }
         }
+        if ($tab === 'ttd') { $lain['total'] = 0; $lain['rows'] = []; }   // PO layanan lain / Sertifikasi tidak punya tahap TTD ini
         $totalBaris += (int) $lain['total'];
     }
 
@@ -1026,8 +1033,8 @@ $daftarPo = $this->safeQuery($sql, $params);
                 elseif ($adaWaktu($pPos['validasi_ppk_at'] ?? '')) {
                     // PO sudah aktif: posisi akhir mengikuti TTD dan kontrak (sama dengan Tahap 8 detail order)
                     if ($adaWaktu($pPos['kontrak_dibuat_at'] ?? '')) { $pos = $set('PO Aktif', 'PKS telah dibuat', 'emerald'); }
-                    elseif (trim((string) ($pPos['po_ttd_file'] ?? '')) !== '' || $adaWaktu($pPos['po_ttd_at'] ?? '')) { $pos = $set('PO Aktif', 'PO sudah di TTD', 'emerald'); }
-                    else { $pos = $set('PO Aktif', 'PO belum di TTD', 'emerald'); }
+                    elseif (trim((string) ($pPos['po_ttd_file'] ?? '')) !== '' || $adaWaktu($pPos['po_ttd_at'] ?? '')) { $pos = $set('PO Aktif', 'PO sudah ditandatangani', 'emerald'); }
+                    else { $pos = $set('Menunggu Tanda Tangan', 'Ketua Tim', 'rose'); }   // disetujui PPK BLU, belum di-upload PO bertanda tangan: belum PO Aktif
                 }
                 elseif ($adaWaktu($pPos['verif_mitra_at'] ?? '')) { $pos = $set('Verifikasi PPK BLU', 'PPK BLU', 'blue'); }
                 elseif ($adaWaktu($pPos['verif_humas_at'] ?? '')) { $pos = $set('Verifikasi Tim Mitra', 'Tim Mitra', 'blue'); }
@@ -1050,7 +1057,7 @@ $daftarPo = $this->safeQuery($sql, $params);
         }
         // Keterangan "dibuka / belum dibuka" penerima di langkah yang sedang berjalan (aturan sama dengan Tahap 8 detail order)
         $pos['baca_teks'] = ''; $pos['baca_status'] = '';
-        if ($pos['posisi_teks'] !== '' && !in_array($pos['posisi_teks'], ['PO Aktif'], true)) {
+        if ($pos['posisi_teks'] !== '' && !in_array($pos['posisi_teks'], ['PO Aktif', 'Menunggu Tanda Tangan'], true)) {
             $sr2 = (string) ($pPos['status_review'] ?? ''); $ps2 = (string) ($pPos['ppk_status'] ?? '');
             $b = null;   // [kolom jejak baca, penerima, kolom waktu masuk (baca sebelum itu tidak dihitung)]
             if ($sr2 === 'disetujui') {
@@ -1080,7 +1087,7 @@ $daftarPo = $this->safeQuery($sql, $params);
         $bisaLihatPanel = !empty($pPos['po_id']) && in_array($stPo, ['terkirim', 'disetujui_mitra', 'disetujui'], true)
             && ($stPo === 'terkirim' || (string) ($pPos['status_review'] ?? '') === 'disetujui')
             && ($isSuperadmin || $role === 'ketua_tim' || ($role === 'tim_kerja' && (int) ($pPos['ketua_pelaksana_id'] ?? 0) === (int) $this->getUserId()));
-        if ($pos['panel_jenis'] !== '' && !in_array($tab, ['berjalan', 'disetujui'], true)) { $pos['aksi_mode'] = 'review'; }
+        if ($pos['panel_jenis'] !== '' && !in_array($tab, ['berjalan', 'ttd', 'disetujui'], true)) { $pos['aksi_mode'] = 'review'; }
         elseif ($bisaLihatPanel) { $pos['aksi_mode'] = 'lihat'; }
         else { $pos['aksi_mode'] = 'modal'; }
         // Divisi lain (non-superadmin) = hanya lihat: tanpa tombol review / buat PO / edit / PDF / berkas, hanya ikon mata
@@ -1093,7 +1100,7 @@ $daftarPo = $this->safeQuery($sql, $params);
         }
         $pos['po_dikirim_at'] = ($adaWaktu($pPos['po_dikirim_at'] ?? '') && strtotime((string) $pPos['po_dikirim_at'])) ? (string) $pPos['po_dikirim_at'] : '';
         // Aksi ringkas (tombol berlabel Lihat / Review / Detail): tab Perlu Tindakan, Revisi, Sedang Berjalan, PO Aktif. Di tab Semua ditentukan per baris: semua PO yang sudah dikirim.
-        $pos['ringkas'] = ($tab === 'semua') ? ($stPo !== '' && $stPo !== 'draft') : in_array($tab, ['tindakan', 'revisi', 'berjalan', 'disetujui'], true);
+        $pos['ringkas'] = ($tab === 'semua') ? ($stPo !== '' && $stPo !== 'draft') : in_array($tab, ['tindakan', 'revisi', 'berjalan', 'ttd', 'disetujui'], true);
         $pidTtd = (int) ($pPos['po_id'] ?? 0);
         if ($pidTtd > 0 && (string) ($pPos['po_status'] ?? '') === 'disetujui' && isset($infoTtd[$pidTtd])) {
             $pos['aktif_ket'] = empty($infoTtd[$pidTtd]['po_ttd_file']) ? 'ttd' : (empty($infoTtd[$pidTtd]['kontrak_at']) ? 'kontrak' : 'lengkap');
@@ -1223,7 +1230,7 @@ $daftarPo = $this->safeQuery($sql, $params);
     $labelPeriode = ($modePeriode === 'semua') ? 'Semua data'
         : (($modePeriode === 'rentang' && $rDariB === $rSampaiB && $rDariT === $rSampaiT) ? $namaBln[$rDariB] . ' ' . $rDariT : (($modePeriode === 'rentang') ? substr($namaBln[$rDariB], 0, 3) . ' ' . $rDariT . ' - ' . substr($namaBln[$rSampaiB], 0, 3) . ' ' . $rSampaiT : $namaBln[$bulan] . ' ' . $tahun));
     $f3->set('label_periode', $labelPeriode);
-    $f3->set('info_periode', 'Periode: ' . $labelPeriode . '. Berlaku untuk Sedang Berjalan dan PO Aktif; PO Masuk, Draft, Revisi, dan Perlu Tindakan selalu tampil semua.');
+    $f3->set('info_periode', 'Periode: ' . $labelPeriode . '. Berlaku untuk Sedang Berjalan dan PO Aktif; PO Masuk, Draft, Revisi, Perlu Tindakan, dan Menunggu Tanda Tangan selalu tampil semua.');
     $f3->set('bulan_default', (int) date('n'));
     $f3->set('tahun_default', (int) date('Y'));
     $f3->set('halaman_saat_ini', $halamanSaatIni);
@@ -1245,7 +1252,7 @@ $daftarPo = $this->safeQuery($sql, $params);
     $f3->set('baris_akhir', $totalBaris > 0 ? $offset + count($daftarPo) : 0);
     $f3->set('total_baris', $totalBaris);
     // Ketua Tim hanya melihat Perlu Tindakan + Sedang Berjalan + PO Aktif (tanpa PO Masuk / Draft), jadi Total Dokumen = jumlah ketiganya (sama dengan tab Semua)
-    if ($katimUi) { $totalPoSemua = (int) $tabGlobal['tindakan'] + (int) $tabGlobal['berjalan'] + (int) $tabGlobal['disetujui']; }
+    if ($katimUi) { $totalPoSemua = (int) $tabGlobal['tindakan'] + (int) $tabGlobal['berjalan'] + (int) $tabGlobal['ttd'] + (int) $tabGlobal['disetujui']; }
     $f3->set('total_po', $totalPoSemua);
     // Angka 4 kartu ringkasan di atas daftar (ikut filter divisi, gak kena filter bulan)
     // Kotak "Perlu Tindakan": Ketua Pelaksana / Superadmin = PO Masuk + Draft + Revisi; Ketua Tim = PO yang menunggu review / keputusan Anda
@@ -1259,8 +1266,8 @@ $daftarPo = $this->safeQuery($sql, $params);
     $f3->set('total_berjalan',       $tabGlobal['berjalan']);
     $f3->set('tampil_tab_tindakan',  $katimUi || $isSuperadmin);   // tab Perlu Tindakan hanya untuk Ketua Tim / Superadmin
     $f3->set('tindakan_di_awal',     $katimUi);                    // Ketua Tim: tab pertama; Superadmin: sesudah Revisi
-    $f3->set('tampil_posisi', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan', 'disetujui'], true));
-    $f3->set('aksi_ringkas', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan', 'disetujui'], true));
+    $f3->set('tampil_posisi', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan', 'ttd', 'disetujui'], true));
+    $f3->set('aksi_ringkas', in_array($tab, ['semua', 'tindakan', 'revisi', 'berjalan', 'ttd', 'disetujui'], true));
     $f3->set('filter_posisi', $posisiFilter);
     $f3->set('filter_jenis', $jenisFilter);
     $f3->set('filter_tindak', $tindakFilter);
@@ -1480,6 +1487,21 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
                     [1 => (int) $po->id, 2 => (int) $this->getUserId()]
                 );
             } catch (\Throwable $eBaca) { /* kolom jejak baca belum ada: abaikan */ }
+        }
+        // Ketua Pelaksana membuka form revisi hasil disposisi Ketua Tim (revisi PPK BLU): tercatat "sudah dibuka" (ppk_dibaca_at), sekali per kiriman
+        if ($konteksRevisi === 'ppk' && $po->exists('ppk_status') && (string) $po->ppk_status === 'ketupel_kerja') {
+            try {
+                $uidBaca = (int) $this->getUserId();
+                $diubahBaca = $this->db->exec(
+                    "UPDATE po_kegiatan p JOIN order_layanan o ON o.id = p.order_id SET p.ppk_dibaca_at = NOW()
+                      WHERE p.id = ? AND p.ppk_status = 'ketupel_kerja' AND p.ppk_dibaca_at IS NULL AND p.validasi_keuangan_at IS NULL AND o.ketua_pelaksana_id = ?",
+                    [1 => (int) $po->id, 2 => $uidBaca]
+                );
+                if ((int) $diubahBaca > 0 && class_exists('PoReviewController')) {
+                    $namaBaca = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : (isset($_SESSION['nama_user']) ? $_SESSION['nama_user'] : 'Ketua Pelaksana');
+                    \PoReviewController::catatPesanSistem($this->db, (int) $po->id, $uidBaca, 'pembuat', $namaBaca . ' (Ketua Pelaksana) membaca disposisi revisi dari Ketua Tim.');
+                }
+            } catch (\Throwable $eBacaPpk) { /* kolom jejak baca belum ada: abaikan */ }
         }
         $f3->set('revisi_konteks', $konteksRevisi);
         // Ketua Tim mengedit saat mereview hasil revisi PPK BLU (bukan review PO biasa): tombol "Simpan dan setujui" tidak berlaku

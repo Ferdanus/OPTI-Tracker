@@ -426,6 +426,12 @@
     .hm-shtabs { position: relative; gap: 4px; padding: 0 12px; }
     .hm-shtab { border-bottom: 0 !important; padding: 10px 14px; font-weight: 600; font-size: .85rem; transition: color .2s; }
     .hm-shtab.on { color: #0f172a; }
+    .hm-shtabs .hm-tabdl { margin-left: auto; align-self: center; flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #cbd5e1; background: #fff; color: #0f172a; border-radius: 8px; padding: 6px 12px; font-size: .8rem; font-weight: 600; font-family: var(--hm-display); cursor: pointer; transition: background .15s, border-color .15s, transform .15s; }
+    .hm-shtabs .hm-tabdl:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .hm-shtabs .hm-tabdl:active { transform: scale(.97); }
+    .hm-shtabs .hm-tabdl:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
+    .hm-shtabs .hm-shtab { flex: none; white-space: nowrap; }
+    @media (max-width: 575.98px) { .hm-shtabs .hm-tabdl { padding: 7px 9px; } .hm-shtabs .hm-tabdl .tx { display: none; } }
     .hm-ind { position: absolute; bottom: 0; left: 0; height: 2px; width: 0; background: #334155; transition: left .3s cubic-bezier(.3,.8,.3,1), width .3s cubic-bezier(.3,.8,.3,1); pointer-events: none; }
     @keyframes hmRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     #hmPanePo, #hmPaneBerkas { animation: hmRise .35s ease-out both; }
@@ -443,12 +449,7 @@
     .hm-fzm button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
     .hm-fzm .zl { width: auto; min-width: 56px; padding: 0 8px; border-radius: 999px; font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
     .hm-fzm .sep { width: 1px; height: 18px; background: rgba(255,255,255,.22); margin: 0 3px; }
-    .hm-float .hm-pobar { right: 12px; display: flex; margin: 0; max-width: none; animation: hmZmIn .35s ease both; }
-    .hm-float .hm-pobar .sp { display: none; }
-    .hm-float .hm-pobar button { box-shadow: 0 8px 22px rgba(15,23,42,.35); padding: .5rem .95rem; font-size: .82rem; transition: transform .15s, background .2s, box-shadow .2s; }
-    .hm-float .hm-pobar button:hover { transform: translateY(-2px); }
-    .hm-float .hm-pobar button:active { transform: scale(.97); }
-    @media (max-width: 575.98px) { .hm-float > * { bottom: 14px; } .hm-float .hm-fzm { left: 4px; } .hm-float .hm-pobar { right: 4px; } }
+    @media (max-width: 575.98px) { .hm-float > * { bottom: 14px; } .hm-float .hm-fzm { left: 4px; } }
     /* pratinjau berkas: dibuka di dalam slide, seperti slide Kontrak */
     .hm-fv { top: 0; right: 0; bottom: 0; left: auto; width: calc(100vw - var(--sidebar-expanded-width, 264px)); padding: 0; background: #fff; align-items: stretch; justify-content: stretch; animation: hmFvIn .25s ease both; }
     body.sidebar-collapsed .hm-fv { width: calc(100vw - var(--sidebar-mini-width, 74px)); }
@@ -650,7 +651,6 @@
             </div>
         </div>
         <div id="hmList"></div>
-        <div class="card-footer bg-white border-top px-3 py-3 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2 dpo-pager-container" id="hmFoot"></div>
     </div>
 
     <div class="hm-scrim" id="hmScrim"></div>
@@ -682,7 +682,6 @@
                     <span class="sep"></span>
                     <button type="button" id="hmZoomFit" title="Pas lebar layar" aria-label="Pas lebar layar"><i class="bi bi-arrows-angle-expand"></i></button>
                 </div>
-                <div class="hm-pobar"><span class="sp"></span><button type="button" class="hm-btn pri sm" id="hmUnduhPo" data-unduh-po><i class="bi bi-download"></i>Unduh PO</button></div>
             </div></div>
             <div id="hmPaneBerkas" hidden></div>
         </div>
@@ -795,7 +794,7 @@
     var BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
     var BULAN_PANJANG = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
     var DIVISI_LABEL = { selulosa: 'Selulosa', lingkungan: 'Lingkungan', sertifikasi: 'Sertifikasi', pengujian: 'Pengujian', kalibrasi: 'Kalibrasi', pendampingan_teknis: 'Pendampingan Teknis', konsultansi: 'Konsultansi', inspeksi: 'Inspeksi', uji_profesiensi: 'Uji Profesiensi' };
-    var PER_HAL = 5;   // sama dengan Daftar PO lain: 5 baris per halaman
+    var PER_HAL = 100000;   // semua baris dirender; 5 per halaman diatur table-pagination.js (data-page-size)
     // Halaman ini dipakai semua layanan (lingkungan, selulosa, kalibrasi, uji profisiensi, dst.), jadi daftar divisi diambil dari data.
     function divisiLabel(d) {
         if (!d) { return ''; }
@@ -994,7 +993,7 @@
                                  : '<li class="page-item"><a class="page-link shadow-none" data-hal="' + n + '">' + n + '</a></li>';
             }).join('') +
             '<li class="page-item' + (hal >= jmlHal ? ' disabled' : '') + '"><a class="page-link shadow-none" data-hal="' + (hal + 1) + '" title="Halaman Berikutnya">&raquo;</a></li></ul></nav>';
-        $('hmFoot').innerHTML = h;
+        var ft = $('hmFoot'); if (ft) { ft.innerHTML = ''; }   /* paginasi: ditangani table-pagination.js (5 baris per halaman, bar di atas dan bawah tabel); footer lama dihapus karena dobel */
     }
     function render() {
         var n = unreadCount();
@@ -1047,7 +1046,7 @@
                 '<h6 class="fw-bold text-dark mt-2 mb-1">Tidak Ada Data PO</h6><p class="text-muted small mb-0">' + pesan + '</p></div>';
             return;
         }
-        var tbl = '<div class="table-responsive"><table class="table table-hover align-middle mb-0 hm-idx-table"><thead class="table-light"><tr>' +
+        var tbl = '<div class="table-responsive"><table class="table table-hover align-middle mb-0 hm-idx-table" data-page-size="5"><thead class="table-light"><tr>' +
             '<th class="text-center" style="width: 45px;">No</th><th style="width: 190px;">Dokumen PO</th><th style="width: 150px;">No. Order</th><th style="width: 195px;">Mitra Industri &amp; Pelaksana</th>' +
             '<th style="width: 120px;">Divisi</th><th>Judul Kegiatan</th><th style="width: 200px;">Status PO</th>' +
             '<th class="text-center" style="width: 190px;">Aksi</th></tr></thead><tbody>' +
@@ -1309,7 +1308,8 @@
     function renderShTabs() {
         var t = [['po', 'PO'], ['berkas', 'Berkas']];   // tab Alur dihapus (riwayat ada di detail order); Map Kendali kini kartu di tab Berkas
         if (shTab !== 'po' && shTab !== 'berkas') { shTab = 'po'; }
-        $('hmShTabs').innerHTML = t.map(function (x) { return '<button type="button" class="hm-shtab' + (shTab === x[0] ? ' on' : '') + '" data-shtab="' + x[0] + '">' + x[1] + '</button>'; }).join('');
+        $('hmShTabs').innerHTML = t.map(function (x) { return '<button type="button" class="hm-shtab' + (shTab === x[0] ? ' on' : '') + '" data-shtab="' + x[0] + '">' + x[1] + '</button>'; }).join('') +
+            (shTab === 'po' ? '<button type="button" class="hm-tabdl" id="hmUnduhPo" data-unduh-po title="Unduh PO (PDF)" aria-label="Unduh PO"><i class="bi bi-download"></i><span class="tx">Unduh PO</span></button>' : '');
     }
     function renderBody() {
         var p = cariItem(current); if (!p) { return; }

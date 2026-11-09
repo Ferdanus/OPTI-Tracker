@@ -335,7 +335,7 @@
             if (!cfg || !cfg.id) { return; }
             clearTimeout(slTimer);
             cur = cfg; slId = cfg.id; tunda = aksi || null;
-            $('dpkSlNo').textContent = cfg.nomor_pks || 'Kontrak (PKS)';
+            $('dpkSlNo').textContent = cfg.nomor_pks || 'Perjanjian Kerja Sama (PKS)';
             $('dpkSlSub').textContent = cfg.sub || cfg.mitra || '';
             gambarBerkas(cfg);
             tutupMenu();
@@ -444,7 +444,7 @@
             return tungguIframe(60).then(function () { return new Promise(function (r) { setTimeout(r, 250); }); }).then(function () {
                 var fr = $('dpkSlFrame'), d = fr.contentDocument;
                 var hal = Array.prototype.slice.call(d.querySelectorAll('#dpkPages .dpk-sheet:not(.dpk-printflow):not(.dpk-measure)'));
-                if (!hal.length) { throw new Error('Halaman kontrak belum tampil. Coba lagi sebentar lagi.'); }
+                if (!hal.length) { throw new Error('Halaman PKS belum tampil. Coba lagi sebentar lagi.'); }
                 var pdf = new JsPdf({ unit: 'pt', format: [612, 792], orientation: 'portrait', compress: true });
                 var k = cur;
                 var tunggu = (d.fonts && d.fonts.ready) ? d.fonts.ready : Promise.resolve();
