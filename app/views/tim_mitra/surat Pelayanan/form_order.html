@@ -3667,6 +3667,86 @@ document.addEventListener('DOMContentLoaded', function() {
         inputNomorSurat.addEventListener('change', function() {
             updateSubmitButtonState();
         });
+
+        // Sekali pencet hapus (Backspace / Delete) langsung menghapus ketiga titik "..." sekaligus
+        inputNomorSurat.addEventListener('keydown', function(e) {
+            var val = this.value;
+            var start = this.selectionStart;
+            var end = this.selectionEnd;
+
+            if (start === end) {
+                if (e.key === 'Backspace') {
+                    // Kursor tepat di belakang "..."
+                    if (start >= 3 && val.substring(start - 3, start) === '...') {
+                        e.preventDefault();
+                        this.value = val.substring(0, start - 3) + val.substring(start);
+                        this.setSelectionRange(start - 3, start - 3);
+                        this.dispatchEvent(new Event('input', { bubbles: true }));
+                    } else if (start >= 2 && start < val.length && val.substring(start - 2, start + 1) === '...') {
+                        // Kursor di antara titik ke-2 dan ke-3
+                        e.preventDefault();
+                        this.value = val.substring(0, start - 2) + val.substring(start + 1);
+                        this.setSelectionRange(start - 2, start - 2);
+                        this.dispatchEvent(new Event('input', { bubbles: true }));
+                    } else if (start >= 1 && start <= val.length - 2 && val.substring(start - 1, start + 2) === '...') {
+                        // Kursor di antara titik ke-1 dan ke-2
+                        e.preventDefault();
+                        this.value = val.substring(0, start - 1) + val.substring(start + 2);
+                        this.setSelectionRange(start - 1, start - 1);
+                        this.dispatchEvent(new Event('input', { bubbles: true }));
+                    } else if (start >= 2 && val.substring(start - 2, start) === '..') {
+                        e.preventDefault();
+                        this.value = val.substring(0, start - 2) + val.substring(start);
+                        this.setSelectionRange(start - 2, start - 2);
+                        this.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                } else if (e.key === 'Delete') {
+                    // Kursor tepat di depan "..."
+                    if (start <= val.length - 3 && val.substring(start, start + 3) === '...') {
+                        e.preventDefault();
+                        this.value = val.substring(0, start) + val.substring(start + 3);
+                        this.setSelectionRange(start, start);
+                        this.dispatchEvent(new Event('input', { bubbles: true }));
+                    } else if (start >= 1 && start <= val.length - 2 && val.substring(start - 1, start + 2) === '...') {
+                        e.preventDefault();
+                        this.value = val.substring(0, start - 1) + val.substring(start + 2);
+                        this.setSelectionRange(start - 1, start - 1);
+                        this.dispatchEvent(new Event('input', { bubbles: true }));
+                    } else if (start >= 2 && start <= val.length - 1 && val.substring(start - 2, start + 1) === '...') {
+                        e.preventDefault();
+                        this.value = val.substring(0, start - 2) + val.substring(start + 1);
+                        this.setSelectionRange(start - 2, start - 2);
+                        this.dispatchEvent(new Event('input', { bubbles: true }));
+                    } else if (start <= val.length - 2 && val.substring(start, start + 2) === '..') {
+                        e.preventDefault();
+                        this.value = val.substring(0, start) + val.substring(start + 2);
+                        this.setSelectionRange(start, start);
+                        this.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+            }
+        });
+
+        // Saat fokus atau diklik pada area "...", otomatis blok/seleksi "..." agar langsung bisa diganti saat mengetik
+        inputNomorSurat.addEventListener('focus', function() {
+            var self = this;
+            setTimeout(function() {
+                var idx = self.value.indexOf('...');
+                if (idx !== -1) {
+                    self.setSelectionRange(idx, idx + 3);
+                }
+            }, 60);
+        });
+
+        inputNomorSurat.addEventListener('click', function() {
+            var idx = this.value.indexOf('...');
+            if (idx !== -1) {
+                var start = this.selectionStart;
+                if (start >= idx && start <= idx + 3) {
+                    this.setSelectionRange(idx, idx + 3);
+                }
+            }
+        });
     }
     if (selectStatus && inputNomorSurat) {
         selectStatus.addEventListener('change', function() {
