@@ -1197,6 +1197,21 @@
             border-color: #ffffff !important;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
+        .stage-status-badge.bg-danger,
+        .stage-nav-btn.active .stage-status-badge.bg-danger {
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            border: 1px solid #dc2626 !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+        }
+        .action-guide-card.type-danger {
+            background: #fef2f2 !important;
+            border-color: #fecaca !important;
+        }
+        .action-guide-card.type-danger .action-guide-step-badge {
+            background: #dc2626 !important;
+            color: #ffffff !important;
+        }
 
         .stage-nav-btn:disabled,
         .stage-nav-btn.disabled {
@@ -2120,7 +2135,7 @@
             </li>
             <!-- Tahap 3 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @active_step == 3 ? 'active' : '' }} {{ 3 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-3" {{ 3 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-3"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-3" aria-selected="{{ @active_step == 3 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 3 ? 'active' : '' }} {{ (@is_tinjauan_ditolak || @order.status == 'ditolak' || @order.status_tinjauan == 'tidak_layak' || (!empty(@tinjauan) && empty(@tinjauan.is_draft) && @tinjauan.keputusan == 'tidak_dapat_dilaksanakan')) ? 'is-rejected' : '' }} {{ 3 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-3" {{ 3 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-3"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-3" aria-selected="{{ @active_step == 3 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">3</span>
                         <span class="stage-nav-text">Kelayakan</span>
@@ -2129,12 +2144,17 @@
                         <check if="{{ !empty(@tinjauan) && !empty(@tinjauan.is_draft) }}">
                             <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                             <false>
-                                <check if="{{ @stepper[3].state == 'done' }}">
-                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
+                                <check if="{{ @is_tinjauan_ditolak || @order.status == 'ditolak' || @order.status_tinjauan == 'tidak_layak' || (!empty(@tinjauan) && empty(@tinjauan.is_draft) && @tinjauan.keputusan == 'tidak_dapat_dilaksanakan') || @stepper[3].state == 'rejected' }}">
+                                    <true><span class="badge bg-danger text-white stage-status-badge"><i class="bi bi-x-circle me-0.5"></i>Ditolak</span></true>
                                     <false>
-                                        <check if="{{ @stepper[3].state == 'current' }}">
-                                            <true><span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span></true>
-                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                        <check if="{{ @stepper[3].state == 'done' }}">
+                                            <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
+                                            <false>
+                                                <check if="{{ @stepper[3].state == 'current' }}">
+                                                    <true><span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span></true>
+                                                    <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                                </check>
+                                            </false>
                                         </check>
                                     </false>
                                 </check>
@@ -2200,10 +2220,15 @@
                                                 <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'draft' }}">
                                                     <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                                                     <false>
-                                                        <check if="{{ @stepper[5].state == 'done' }}">
-                                                            <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
+                                                        <check if="{{ !empty(@penawaran) && in_array(@penawaran.status_respon_klien, ['tolak', 'batal', 'ditolak']) }}">
+                                                            <true><span class="badge bg-danger text-white stage-status-badge"><i class="bi bi-x-circle me-0.5"></i>Ditolak</span></true>
                                                             <false>
-                                                                <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
+                                                                <check if="{{ @stepper[5].state == 'done' }}">
+                                                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
+                                                                    <false>
+                                                                        <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
+                                                                    </false>
+                                                                </check>
                                                             </false>
                                                         </check>
                                                     </false>
@@ -4223,7 +4248,8 @@
                                                             Durasi Pelaksanaan <span class="text-danger">*</span>
                                                         </label>
                                                         <div class="input-group input-group-sm">
-                                                            <input type="number" min="1" max="365" name="durasi_hari" id="inputDurasiHariDetail" class="form-control fw-semibold font-monospace" 
+                                                            <input type="number" min="1" max="365" name="durasi_hari" id="inputDurasiHariDetail" class="form-control fw-semibold font-monospace" 
+
                                                                    value="{{ @durasi_hari ?: '' }}" placeholder="Isi jumlah hari" oninput="checkKirimButtonStateDetail()" required {{ !@can_edit_proposal ? 'disabled' : '' }}>
                                                             <span class="input-group-text bg-light text-secondary">Hari Kerja</span>
                                                         </div>

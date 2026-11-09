@@ -1272,13 +1272,15 @@ class OrderController extends Controller {
             $currentStep = 9;
         }
 
+        $isTinjauanDitolak = (($order['status'] ?? '') === 'ditolak' || ($order['status_tinjauan'] ?? '') === 'tidak_layak' || (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'tidak_dapat_dilaksanakan'));
+
         // Bangun state stepper: Hanya tahap SEBELUM currentStep yang berstatus done!
         $stepper = [];
         for ($s = 1; $s <= 9; $s++) {
             if ($s < $currentStep) {
                 $stepper[$s] = ['state' => 'done'];
             } elseif ($s === $currentStep) {
-                $stepper[$s] = ['state' => ($s === 9 && $isBastDone) ? 'done' : 'current'];
+                $stepper[$s] = ['state' => ($s === 9 && $isBastDone) ? 'done' : (($s === 3 && $isTinjauanDitolak) ? 'rejected' : 'current')];
             } else {
                 $stepper[$s] = ['state' => 'waiting'];
             }
@@ -1331,7 +1333,8 @@ class OrderController extends Controller {
         }
         $f3->set('active_step', $activeStep);
         $f3->set('is_form_pelayanan_done', $isFormPelayananDone);
-        $f3->set('is_tinjauan_done', $isTinjauanDone);
+        $f3->set('is_tinjauan_done', $isTinjauanDone);
+        $f3->set('is_tinjauan_ditolak', $isTinjauanDitolak);
         $canKoreksiPelayanan = $isSuperadmin || $isUnlockedOrder || (!$isTinjauanDone && ($this->isTimMitra() || $this->hasPermission('order:form_pelayanan')));
         $f3->set('can_koreksi_pelayanan', $canKoreksiPelayanan);
         $f3->set('is_step4_done', $isStep4Done);
@@ -1360,7 +1363,18 @@ class OrderController extends Controller {
             'target_card' => '#cardPelayanan',
         ];
 
-        if ($isFinished) {
+        if ($isTinjauanDitolak) {
+            $langkahBerikutnya['judul'] = 'Permohonan Ditolak (Tidak Dapat Dilaksanakan)';
+            $langkahBerikutnya['deskripsi'] = 'Kaji kelayakan teknis ISO 17025 menyatakan permohonan ini TIDAK DAPAT DILAKSANAKAN' . (!empty($tinjauan['alasan_penolakan']) ? ': "' . $tinjauan['alasan_penolakan'] . '".' : '.');
+            $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI ' . ($isSelulosa ? 'Selulosa' : ($isLingkungan ? 'Lingkungan' : ''));
+            $langkahBerikutnya['role_icon'] = 'bi-x-circle-fill';
+            $langkahBerikutnya['tipe_badge'] = 'danger';
+            $langkahBerikutnya['tombol_teks'] = 'Lihat Evaluasi Teknis';
+            $langkahBerikutnya['tombol_url'] = '#cardKajiKelayakan';
+            $langkahBerikutnya['tombol_icon'] = 'bi-clipboard-x-fill';
+            $langkahBerikutnya['tombol_class'] = 'btn-danger';
+            $langkahBerikutnya['target_card'] = '#cardKajiKelayakan';
+        } elseif ($isFinished) {
             $langkahBerikutnya['judul'] = 'Layanan Selesai & Berita Acara (BAST) Telah Diterbitkan';
             $langkahBerikutnya['deskripsi'] = 'Seluruh siklus pengujian dari pendaftaran surat, kaji kelayakan, penawaran harga, pembayaran, pengujian laboratorium, hingga penyerahan dokumen BAST dan Laporan Hasil Uji (LHU) telah tuntas diselesaikan.';
             $langkahBerikutnya['penanggung_jawab'] = 'Layanan Selesai (Tuntas)';
