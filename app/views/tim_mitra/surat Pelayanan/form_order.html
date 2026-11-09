@@ -2044,23 +2044,30 @@
                     <div id="panelLampiran_proposal" class="{{ @sumber_lampiran_default == 'proposal' ? '' : 'd-none' }}">
                         <check if="{{ @proposal_file_exists }}">
                             <div class="p-3 bg-white border border-success-subtle rounded-3 shadow-2xs d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3">
-                                <div class="d-flex align-items-center gap-2.5">
-                                    <div class="p-2 bg-success-subtle text-success rounded-2 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
-                                        <i class="bi bi-file-earmark-check fs-5"></i>
+                                <div class="d-flex align-items-center gap-3 min-w-0">
+                                    <div class="p-2.5 bg-success-subtle text-success rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                        <i class="bi bi-file-earmark-check fs-4"></i>
                                     </div>
-                                    <div>
-                                        <strong class="d-block text-dark small text-break">{{ basename(@proposal_file) }}</strong>
-                                        <span class="text-muted d-block" style="font-size: 0.72rem;">
-                                            Tersambung otomatis dari Berkas Proposal Riset / Teknis (Tahap 4) &bull; Menyatu di Halaman 3+
-                                        </span>
+                                    <div class="min-w-0">
+                                        <strong class="d-block text-dark fw-semibold text-break" style="font-size: 0.88rem; line-height: 1.35;">{{ basename(@proposal_file) }}</strong>
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 500;">
+                                                <i class="bi bi-check-circle me-1"></i>Tahap 4 (Riset &amp; Teknis)
+                                            </span>
+                                            <span class="text-muted" style="font-size: 0.73rem;">
+                                                Menyatu di Halaman 3+ Surat Penawaran
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
-                                    <a href="{{ @BASE }}/{{ @proposal_file }}" target="_blank" class="btn btn-sm btn-outline-secondary px-2.5 py-1.5" style="font-size: 0.75rem;" title="Buka berkas proposal di tab baru">
-                                        <i class="bi bi-box-arrow-up-right me-1"></i> Buka File
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto ms-sm-0">
+                                    <a href="{{ @BASE }}/{{ @proposal_file }}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5" style="font-size: 0.78rem;" title="Buka berkas proposal di tab baru">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                        <span>Buka File</span>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1.5" style="font-size: 0.75rem;" onclick="bukaPratinjauLampiranHal3()" title="Lihat lembar lampiran pada pratinjau naskah">
-                                        <i class="bi bi-eye-fill me-1"></i> Pratinjau Hal 3
+                                    <button type="button" class="btn btn-sm btn-outline-primary px-3 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @proposal_file }}" data-title="Proposal Teknis (Lampiran)" data-subtitle="Order #{{ @order.nomor_permintaan ?: @order.nomor_order }} &bull; {{ @order.nama_perusahaan }}" onclick="bukaPratinjauLampiranHal3('{{ @BASE }}/{{ @proposal_file }}')" style="font-size: 0.78rem;" title="Pratinjau Dokumen">
+                                        <i class="bi bi-eye"></i>
+                                        <span>Pratinjau Hal 3</span>
                                     </button>
                                 </div>
                             </div>
@@ -2090,29 +2097,38 @@
                         <!-- Tampilan berkas kustom terunggah -->
                         <div id="cardCustomLampiranUploaded" class="{{ (@sumber_lampiran_default == 'upload' && !empty(@lampiran_user_existing) && @lampiran_user_existing != @proposal_file) ? '' : 'd-none' }}">
                             <div class="p-3 bg-white border border-primary-subtle rounded-3 shadow-2xs d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3">
-                                <div class="d-flex align-items-center gap-2.5">
-                                    <div class="p-2 bg-primary-subtle text-primary rounded-2 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
-                                        <i class="bi bi-paperclip fs-5"></i>
+                                <div class="d-flex align-items-center gap-3 min-w-0">
+                                    <div class="p-2.5 bg-primary-subtle text-primary rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                        <i class="bi bi-file-earmark-arrow-up fs-4"></i>
                                     </div>
-                                    <div>
-                                        <strong class="d-block text-dark small text-break" id="labelNamaFileCustom">{{ (!empty(@lampiran_user_existing) && @lampiran_user_existing != @proposal_file) ? basename(@lampiran_user_existing) : '' }}</strong>
-                                        <span class="text-muted d-block" style="font-size: 0.72rem;">
-                                            Berkas Lampiran Kustom &bull; Menyatu di Halaman 3+ Surat Penawaran
-                                        </span>
+                                    <div class="min-w-0">
+                                        <strong class="d-block text-dark fw-semibold text-break" id="labelNamaFileCustom" style="font-size: 0.88rem; line-height: 1.35;">{{ (!empty(@lampiran_user_existing) && @lampiran_user_existing != @proposal_file) ? basename(@lampiran_user_existing) : '' }}</strong>
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 0.68rem; font-weight: 500;">
+                                                <i class="bi bi-paperclip me-1"></i>Lampiran Kustom
+                                            </span>
+                                            <span class="text-muted" style="font-size: 0.73rem;">
+                                                Menyatu di Halaman 3+ Surat Penawaran
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
-                                    <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1.5" style="font-size: 0.75rem;" onclick="document.getElementById('inputFileLampiranUser').click()" title="Ganti berkas">
-                                        <i class="bi bi-arrow-repeat me-1"></i> Ganti File
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto ms-sm-0">
+                                    <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5" style="font-size: 0.78rem;" onclick="document.getElementById('inputFileLampiranUser').click()" title="Ganti berkas">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                        <span>Ganti File</span>
                                     </button>
-                                    <a href="{{ @BASE }}/{{ @lampiran_user_existing }}" target="_blank" id="btnBukaCustomLampiran" class="btn btn-sm btn-outline-secondary px-2.5 py-1.5 {{ empty(@lampiran_user_existing) ? 'd-none' : '' }}" style="font-size: 0.75rem;" title="Buka berkas di tab baru">
-                                        <i class="bi bi-box-arrow-up-right me-1"></i> Buka File
+                                    <a href="{{ @BASE }}/{{ @lampiran_user_existing }}" target="_blank" id="btnBukaCustomLampiran" class="btn btn-sm btn-outline-secondary px-2.5 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5 {{ empty(@lampiran_user_existing) ? 'd-none' : '' }}" style="font-size: 0.78rem;" title="Buka berkas di tab baru">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                        <span>Buka File</span>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1.5" style="font-size: 0.75rem;" onclick="bukaPratinjauLampiranHal3()" title="Lihat lembar lampiran pada pratinjau naskah">
-                                        <i class="bi bi-eye-fill me-1"></i> Pratinjau Hal 3
+                                    <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5 btn-preview-pdf" id="btnPreviewCustomLampiran" data-preview-pdf="{{ @BASE }}/{{ @lampiran_user_existing }}" data-title="Berkas Lampiran Penawaran" data-subtitle="Order #{{ @order.nomor_permintaan ?: @order.nomor_order }} &bull; {{ @order.nama_perusahaan }}" onclick="bukaPratinjauLampiranHal3()" style="font-size: 0.78rem;" title="Pratinjau Dokumen">
+                                        <i class="bi bi-eye"></i>
+                                        <span>Pratinjau Hal 3</span>
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger px-2.5 py-1.5" style="font-size: 0.75rem;" onclick="hapusLampiranUser(false)" title="Lepas berkas ini">
-                                        <i class="bi bi-trash3 me-1"></i> Hapus
+                                    <button type="button" class="btn btn-sm btn-outline-danger px-2.5 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5" style="font-size: 0.78rem;" onclick="hapusLampiranUser(false)" title="Lepas berkas ini">
+                                        <i class="bi bi-trash3"></i>
+                                        <span>Hapus</span>
                                     </button>
                                 </div>
                             </div>
@@ -4209,7 +4225,27 @@ function pilihLampiranProposal() {
     });
 }
 
-function bukaPratinjauLampiranHal3() {
+function bukaPratinjauLampiranHal3(targetUrl) {
+    var fileUrl = targetUrl || '';
+    if (!fileUrl) {
+        var sumber = document.getElementById('opsiLampiranSumber') ? document.getElementById('opsiLampiranSumber').value : 'proposal';
+        if (sumber === 'proposal') {
+            fileUrl = '{{ @BASE }}/{{ @proposal_file }}';
+        } else if (sumber === 'upload') {
+            var curUpload = document.getElementById('currentCustomLampiranPath') ? document.getElementById('currentCustomLampiranPath').value : '';
+            if (curUpload) {
+                fileUrl = (curUpload.indexOf('http') === 0 || curUpload.indexOf('/') === 0) ? curUpload : ('{{ @BASE }}/' + curUpload.replace(/^\/+/, ''));
+            }
+        }
+    }
+
+    if (fileUrl && typeof openPdfPreviewModal === 'function') {
+        var title = (fileUrl.indexOf('Proposal') !== -1 || fileUrl.indexOf('proposal') !== -1) ? 'Proposal Teknis (Lampiran)' : 'Berkas Lampiran Penawaran';
+        var subtitle = 'Order #{{ @order.nomor_permintaan ?: @order.nomor_order }} &bull; {{ @order.nama_perusahaan }}';
+        openPdfPreviewModal(fileUrl, title, subtitle);
+        return;
+    }
+
     if ('{{ @order.jenis_layanan_opti }}' === 'lingkungan') {
         switchLingPage(3);
     } else {
@@ -4299,9 +4335,14 @@ function handleLampiranUserChange(input) {
 
             if (labelNama) labelNama.textContent = data.file_name || file.name;
             if (curCustomPath) curCustomPath.value = data.file_path;
+            var finalFilePath = (data.file_path.indexOf('http') === 0 || data.file_path.indexOf('/') === 0) ? data.file_path : ('{{ @BASE }}/' + data.file_path.replace(/^\/+/, ''));
             if (btnBuka) {
-                btnBuka.href = (data.file_path.indexOf('http') === 0 || data.file_path.indexOf('/') === 0) ? data.file_path : ('{{ @BASE }}/' + data.file_path.replace(/^\/+/, ''));
+                btnBuka.href = finalFilePath;
                 btnBuka.classList.remove('d-none');
+            }
+            var btnPrevCustom = document.getElementById('btnPreviewCustomLampiran');
+            if (btnPrevCustom) {
+                btnPrevCustom.setAttribute('data-preview-pdf', finalFilePath);
             }
             if (customCard) customCard.classList.remove('d-none');
             if (emptyDrop) emptyDrop.classList.add('d-none');
