@@ -340,6 +340,8 @@ class Controller {
         // Badge menu Daftar PO (Humas) = PO yang menunggu verifikasi; badge menu Kontrak = kontrak yang menunggu dibuat
         $this->f3->set('jumlah_notif_po_humas', $notifPoHumas);
         $this->f3->set('jumlah_notif_kontrak', ($role === 'humas' || $role === 'admin_kontrak' || $role === 'superadmin') ? $this->hitungKontrakMenunggu() : 0);
+        // Badge menu PKS Tim Mitra = PKS dari Humas yang belum dibuka dan belum ada PKS bertanda tangan
+        $this->f3->set('jumlah_notif_pks_mitra', $isTimMitra ? \PksMitraController::hitungBelumDibuka($this->db) : 0);
 
         // Hitung notifikasi Surat Penawaran:
         // Menampilkan surat penawaran aktif (draft / negosiasi / terkirim menunggu respon) yang ada di daftar surat penawaran

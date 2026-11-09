@@ -1965,6 +1965,15 @@
                             </check>
                         </a>
                     </li>
+                    <!-- PKS dari Humas: dicetak, diserahkan ke klien, lalu PKS bertanda tangan di-upload -->
+                    <li>
+                        <a class="sidebar-link {{ @active_menu == 'pks_mitra' ? 'active' : '' }}" href="{{ @BASE }}/pks-mitra" title="Perjanjian Kerja Sama (PKS)">
+                            <i class="bi bi-journal-code"></i> <span>PKS</span>
+                            <check if="{{ @jumlah_notif_pks_mitra > 0 }}">
+                                <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_pks_mitra }}</span>
+                            </check>
+                        </a>
+                    </li>
                 </check>
 
                 <!-- Daftar PO Humas (verifikasi PO + Map Kendali) -- Sub Tim Humas (superadmin lewat menu Daftar PO di Pelaksanaan Teknis) -->
@@ -2117,6 +2126,14 @@
                             </check>
                         </a>
                     </li>
+                    <!-- Superadmin: melihat menu PKS sebagaimana Tim Mitra (cetak, tanda tangan klien, upload) -->
+                    <check if="{{ @is_superadmin }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'pks_mitra' ? 'active' : '' }}" href="{{ @BASE }}/pks-mitra" title="PKS sisi Tim Mitra (cetak, tanda tangan klien, upload)">
+                                <i class="bi bi-person-check"></i> <span>PKS Tim Mitra</span>
+                            </a>
+                        </li>
+                    </check>
                 
                 </check>
 

@@ -596,6 +596,13 @@ $f3->route('GET /pks/@id/unduh',     'PksKontrakController->unduh');
 $f3->route('GET /pks/@id/pdf',       'PksKontrakController->pdf');
 $f3->route('GET /pks/@id/logo',      'PksKontrakController->logo');
 
+// pks-mitra (menu PKS untuk Tim Mitra: lihat/cetak PKS dari Humas, upload PKS bertanda tangan klien)
+$f3->route('GET /pks-mitra',                'PksMitraController->index');
+$f3->route('POST /pks-mitra/@id/baca',      'PksMitraController->baca');      // PKS dibuka (sekali)
+$f3->route('POST /pks-mitra/@id/cetak',     'PksMitraController->cetak');     // PKS dicetak / diunduh (sekali)
+$f3->route('POST /pks-mitra/@id/upload',    'PksMitraController->upload');    // PKS bertanda tangan klien (PDF, atau foto digabung jadi PDF)
+$f3->route('GET /pks-mitra/@id/ttd',        'PksMitraController->ttd');       // buka / unduh PKS bertanda tangan
+
 // Alamat lama /kontrak diarahkan ke /pks (query string ikut dibawa: ?tab=..., ?pesan=...).
 // Hanya rute milik halaman PKS; rute KontrakController lama (/kontrak/tambah, /kontrak/@id/edit, dst.) tidak disentuh.
 $f3->route('GET /kontrak', function ($f3) {

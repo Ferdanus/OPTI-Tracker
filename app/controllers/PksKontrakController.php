@@ -92,6 +92,7 @@ class PksKontrakController extends Controller {
         $kontrak = [];
         try {
             $rows = $this->db->exec($this->sqlPoDisposisi() . " ORDER BY COALESCE(p.disposisi_humas_at, p.disetujui_at, p.updated_at) DESC");
+            try { \PksMitraController::pastikanKolom($this->db); } catch (\Throwable $e) {}   // kolom PKS bertanda tangan (menu PKS Mitra)
             foreach ($this->db->exec("SELECT * FROM pks_kontrak") as $k) {
                 $kontrak[(int) $k['po_id']] = $k;
             }
@@ -117,8 +118,16 @@ class PksKontrakController extends Controller {
                 }
             }
 
-            $ekstra = ['selesai_at' => '', 'file_word' => '', 'logo_url' => '', 'logo_kb' => 0];
+            $ekstra = ['selesai_at' => '', 'file_word' => '', 'logo_url' => '', 'logo_kb' => 0, 'pks_ttd_lacak' => false, 'pks_ttd_at' => '', 'url_pks_ttd' => ''];
             if ($k && $k['status'] === 'selesai') {
+                // PKS bertanda tangan klien (di-upload Tim Mitra). Kolomnya dibuat otomatis oleh PksMitraController::pastikanKolom.
+                if (array_key_exists('pks_ttd_file', $k)) {
+                    $ekstra['pks_ttd_lacak'] = true;
+                    if ((string) $k['pks_ttd_file'] !== '') {
+                        $ekstra['pks_ttd_at'] = (string) $k['pks_ttd_at'];
+                        $ekstra['url_pks_ttd'] = $f3->get('BASE') . '/pks-mitra/' . $id . '/ttd';
+                    }
+                }
                 $ekstra['selesai_at'] = substr((string) $k['selesai_at'], 0, 10);
                 $ekstra['file_word'] = $this->namaBerkas($k, $vals, 'docx');
                 if (!empty($k['logo_file'])) {
@@ -167,9 +176,8 @@ class PksKontrakController extends Controller {
 
     /** GET /pks/@id/form */
     public function form($f3, $params) {
-        $this->izinkan();
-
         $poId = (int) $params['id'];
+        $this->izinkanBaca($poId, true);
         $po = $this->ambilPo($poId);
         if (!$po) {
             $f3->error(404, 'PO tidak ditemukan, atau belum disetujui dan didisposisikan ke Humas.');
@@ -355,9 +363,8 @@ class PksKontrakController extends Controller {
 
     /** GET /pks/@id/unduh */
     public function unduh($f3, $params) {
-        $this->izinkan();
-
         $poId = (int) $params['id'];
+        $this->izinkanBaca($poId, false, true);
         $k = $this->ambilKontrak($poId);
         if (!$k || $k['status'] !== 'selesai') {
             $f3->error(404, 'PKS belum berstatus selesai, jadi belum bisa diunduh.');
@@ -385,9 +392,8 @@ class PksKontrakController extends Controller {
 
     /** GET /pks/@id/pdf : Word -> PDF lewat LibreOffice (kalau terpasang). Kalau tidak ada, balas 501 supaya halaman memakai dialog cetak browser. */
     public function pdf($f3, $params) {
-        $this->izinkan();
-
         $poId = (int) $params['id'];
+        $this->izinkanBaca($poId, false, true);
         $k = $this->ambilKontrak($poId);
         if (!$k || $k['status'] !== 'selesai') {
             $f3->error(404, 'PKS belum berstatus selesai, jadi belum bisa diunduh.');
@@ -536,6 +542,8 @@ class PksKontrakController extends Controller {
                 } catch (\Throwable $e) {
                     // riwayat dan notifikasi bersifat pelengkap
                 }
+                // Tim Mitra: ada PKS baru untuk dicetak, diserahkan ke klien, lalu di-upload setelah ditandatangani (menu PKS Mitra)
+                \PksMitraController::kabariMitraPksBaru($this->db, ['order_id' => (int) $po['order_id'], 'po_id' => (int) $poId, 'nomor_po' => isset($po['nomor_po']) ? $po['nomor_po'] : ''], $nomorPks, $unama);
             } elseif ((string) $r[0]['kontrak_nomor'] !== (string) $nomorPks) {
                 $this->db->exec("UPDATE po_kegiatan SET kontrak_nomor = ? WHERE id = ?", [1 => (string) $nomorPks, 2 => (int) $poId]);
             }
@@ -546,7 +554,7 @@ class PksKontrakController extends Controller {
 
     /** GET /pks/@id/logo */
     public function logo($f3, $params) {
-        $this->izinkan();
+        $this->izinkanBaca((int) $params['id'], false, (string) $f3->get('GET.unduh') === '1');   // tampil: semua user; ?unduh=1: hanya yang boleh mengunduh
 
         $k = $this->ambilKontrak((int) $params['id']);
         if (!$k || empty($k['logo_file'])) {
@@ -1263,6 +1271,29 @@ class PksKontrakController extends Controller {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Anda tidak punya akses ke modul PKS.'], 403);
         }
         $this->f3->error(403, 'Modul PKS hanya untuk Humas, Admin PKS, dan Superadmin.');
+        exit;
+    }
+
+    /**
+     * Akses BACA PKS yang sudah SELESAI dibuat Humas.
+     *  - Melihat (halaman form hanya dengan ?lihat=1, logo untuk tampilan): semua user yang sudah login.
+     *  - Mengunduh / mencetak ($unduh = true: Word, PDF, unduh logo): Humas, Admin PKS, Superadmin, dan Tim Mitra.
+     *    Ketua Tim belum diputuskan, jadi sementara hanya boleh melihat.
+     * Menyimpan / menyelesaikan PKS tetap hanya untuk Humas, Admin PKS, dan Superadmin (lihat izinkan()).
+     * $halamanForm = true untuk GET /pks/@id/form.
+     */
+    protected function izinkanBaca($poId, $halamanForm = false, $unduh = false) {
+        $this->requireAuth();
+        if ($this->isSuperadmin() || in_array((string) $this->getUserRole(), self::ROLE_BOLEH, true)) { return; }   // Humas / Admin PKS: akses penuh seperti sebelumnya
+        $k = $this->ambilKontrak((int) $poId);
+        $selesai = ($k && $k['status'] === 'selesai');
+        if ($unduh) {
+            if ($selesai && $this->isTimMitra()) { return; }
+            $this->f3->error(403, 'Mengunduh PKS hanya untuk Tim Mitra, Humas, dan Superadmin. Anda masih bisa melihatnya lewat tombol Lihat PKS.');
+            exit;
+        }
+        if ($selesai && (!$halamanForm || (string) $this->f3->get('GET.lihat') === '1')) { return; }
+        $this->f3->error(403, 'PKS ini belum selesai dibuat Humas, atau hanya bisa dibuka lewat tombol Lihat PKS.');
         exit;
     }
 

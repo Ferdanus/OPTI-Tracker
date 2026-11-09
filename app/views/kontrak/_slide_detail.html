@@ -330,14 +330,22 @@
             $('dpkFv').hidden = true; $('dpkFvFrame').src = 'about:blank'; $('dpkFvFrame').style.display = '';
             $('dpkFvDoc').innerHTML = ''; $('dpkFvDoc').style.display = 'none';
         }
-        /* cfg: { id (id PO), nomor_pks, mitra, layanan, sub } ; aksi: 'word' | 'pdf' | 'print' | 'menu' dijalankan setelah dokumen termuat */
+        /* Izin tampilan: semua user boleh melihat PKS; menu Unduh/Cetak hanya bila cfg.unduh !== false; tab Berkas (endpoint khusus Humas) hanya bila cfg.berkas !== false */
+        function bolehUnduh() { return !cur || cur.unduh !== false; }
+        function terapkanIzin(cfg) {
+            var u = cfg.unduh !== false, b = cfg.berkas !== false;
+            document.querySelector('#dpkSl .dpk-sl-foot').style.display = u ? '' : 'none';
+            $('dpkSlTabs').style.display = b ? '' : 'none';
+        }
+        /* cfg: { id (id PO), nomor_pks, mitra, layanan, sub, unduh, berkas } ; aksi: 'word' | 'pdf' | 'print' | 'menu' dijalankan setelah dokumen termuat */
         function bukaSlide(cfg, aksi) {
             if (!cfg || !cfg.id) { return; }
             clearTimeout(slTimer);
-            cur = cfg; slId = cfg.id; tunda = aksi || null;
+            cur = cfg; slId = cfg.id; tunda = (cfg.unduh === false) ? null : (aksi || null);
+            terapkanIzin(cfg);
             $('dpkSlNo').textContent = cfg.nomor_pks || 'Perjanjian Kerja Sama (PKS)';
             $('dpkSlSub').textContent = cfg.sub || cfg.mitra || '';
-            gambarBerkas(cfg);
+            if (cfg.berkas !== false) { gambarBerkas(cfg); }
             tutupMenu();
             $('dpkSlLoad').classList.remove('off');
             $('dpkSlFrame').src = BASE + '/pks/' + cfg.id + '/form?embed=1&lihat=1';
@@ -477,7 +485,7 @@
         }
         function aksiUnduh(fmt) {
             tutupMenu();
-            if (slId === null) { return; }
+            if (slId === null || !bolehUnduh()) { return; }
             if (fmt === 'print') { cetak(); return; }
             var nama = fmt === 'pdf' ? 'PDF' : 'Word';
             sibuk(true, nama);
@@ -499,7 +507,7 @@
         function cfgDariKartu() {
             var k = document.getElementById('ktDoc');
             if (!k) { return null; }
-            return { id: k.getAttribute('data-po'), nomor_pks: k.getAttribute('data-nomor'), mitra: k.getAttribute('data-mitra'), layanan: k.getAttribute('data-layanan'),
+            return { id: k.getAttribute('data-po'), nomor_pks: k.getAttribute('data-nomor'), mitra: k.getAttribute('data-mitra'), layanan: k.getAttribute('data-layanan'), unduh: k.getAttribute('data-unduh') !== '0', berkas: k.getAttribute('data-berkas') !== '0',
                 sub: (k.getAttribute('data-mitra') || '') + (k.getAttribute('data-at') ? ' · Dibuat ' + k.getAttribute('data-at') : '') };
         }
         function tutupMenuKartu() {
@@ -507,7 +515,7 @@
         }
         function unduhDariKartu(fmt) {
             var c = cfgDariKartu();
-            if (!c) { return; }
+            if (!c || c.unduh === false) { return; }
             if (fmt === 'word') {
                 toast('Menyiapkan Word...');
                 unduhBerkas(c.id, 'word').catch(function (e) { toast(e.message, true); });

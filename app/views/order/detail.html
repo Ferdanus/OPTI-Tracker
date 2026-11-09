@@ -6836,6 +6836,8 @@
                     @media (prefers-reduced-motion:reduce) { .kp-ring::after { animation:none; } .kp-ring .kp-fg { transition:none; } }
                     .kt-frame { margin:12px -1.5rem 0; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; background:#fff; }   /* sama dengan bingkai form PO: selebar kartu */
                     .system-section-card:has(#ktWrap) { overflow:clip; }
+                    #cardKontrak:has(#ktDoc) { overflow:visible; position:relative; z-index:5; }   /* kartu PKS jadi: menu Unduh boleh keluar dari tepi kartu (tidak kepotong) */
+                    #cardKontrak:has(#ktDoc) .system-section-header { border-radius:11px 11px 0 0; }
                     .kt-frame:not(.kt-full) { position:sticky; top:75px; z-index:40; }
                     .kt-fh { background:#f1f5f9; border-bottom:1px solid #cbd5e1; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#1e293b; }
                     .kt-frame iframe { display:block; width:100%; height:calc(100vh - 75px - 46px); min-height:420px; border:0; background:#fff; }
@@ -6880,8 +6882,8 @@
                         <check if="{{ @kontrak_panel.ada }}">
                             <true>
                                 <include href="order/_kartu_dokumen_css.html" />
-                                <div class="kt-doc" id="ktDoc" data-po="{{ @kontrak_panel.po_id }}" data-nomor="{{ @kontrak_panel.nomor }}" data-mitra="{{ @order.nama_perusahaan }}" data-layanan="{{ @order.jenis_layanan_opti }}" data-at="{{ @kontrak_panel.at }}">
-                                    <check if="{{ @kontrak_panel.boleh }}">
+                                <div class="kt-doc" id="ktDoc" data-po="{{ @kontrak_panel.po_id }}" data-nomor="{{ @kontrak_panel.nomor }}" data-mitra="{{ @order.nama_perusahaan }}" data-layanan="{{ @order.jenis_layanan_opti }}" data-at="{{ @kontrak_panel.at }}" data-unduh="{{ @kontrak_panel.unduh ? 1 : 0 }}" data-berkas="{{ @kontrak_panel.boleh ? 1 : 0 }}">
+                                    <check if="{{ @kontrak_panel.lihat }}">
                                         <true>
                                             <div class="kt-th" id="ktTh" data-kt-lihat role="button" tabindex="0" aria-label="Lihat PKS" title="Lihat PKS">
                                                 <div class="kt-th-mock" aria-hidden="true"><div class="lg"><i></i><i></i></div><div class="t"></div><div class="n"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div><div class="l"></div></div>
@@ -6901,9 +6903,9 @@
                                             <div><small>Mitra</small><span>{{ @order.nama_perusahaan }}</span></div>
                                             <div><small>Nomor PO</small><span>{{ @po_kegiatan.nomor_po }}</span></div>
                                         </div>
-                                        <check if="{{ @kontrak_panel.boleh }}">
-                                            <div class="kt-acts">
-                                                <button type="button" class="kt-btn pri" data-kt-lihat><i class="bi bi-eye"></i>Lihat PKS</button>
+                                        <div class="kt-acts">
+                                            <button type="button" class="kt-btn pri" data-kt-lihat><i class="bi bi-eye"></i>Lihat PKS</button>
+                                            <check if="{{ @kontrak_panel.unduh }}">
                                                 <div class="kt-dd">
                                                     <button type="button" class="kt-btn" data-kt-menu aria-haspopup="true" aria-expanded="false"><i class="bi bi-download"></i>Unduh<i class="bi bi-chevron-down kt-chev"></i></button>
                                                     <div class="kt-menu" role="menu">
@@ -6912,7 +6914,9 @@
                                                         <button type="button" class="kt-mi" role="menuitem" data-kt-unduh="cetak"><span class="ic"><i class="bi bi-printer"></i></span><span><b>Cetak langsung</b><small>Pilih ukuran kertas di panel</small></span></button>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </check>
+                                        </div>
+                                        <check if="{{ @kontrak_panel.boleh }}">
                                             <a class="kt-menu-link" href="{{ @BASE }}/kontrak?tab=selesai"><i class="bi bi-box-arrow-up-right"></i>Buka di menu PKS</a>
                                         </check>
                                     </div>

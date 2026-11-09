@@ -1,0 +1,592 @@
+<!--
+    app/views/pks_mitra/_slide.html
+    Slide "PKS" untuk Tim Mitra: tab Dokumen PKS (tampilan PKS buatan Humas + zoom melayang + Unduh Word / PDF / Cetak dengan pilihan kertas)
+    dan tab PKS Ditandatangani (PDF yang di-upload Tim Mitra, digambar dengan PDF.js dengan zoom melayang; kosong = tombol Upload).
+    Dipakai lewat include di pks_mitra/index.html. JANGAN menulis tag include di komentar ini: Fat-Free ikut memprosesnya dan jadi loop.
+    Pemakaian: PksMitraSlide.buka(baris, { tab: 'dok' | 'ttd', aksi: 'word' | 'pdf' | 'print' | 'menu' }), PksMitraSlide.perbarui(baris), PksMitraSlide.tutup().
+    Memberi tahu halaman lewat event di document: pksmitra:dibuka, pksmitra:dicetak, pksmitra:upload (detail: { id }).
+    Kelas berawalan "mps-", id berawalan "mps". Id berawalan "dpk" di bawah ini milik halaman PKS Humas yang dimuat di iframe (bukan milik slide ini).
+-->
+<style>
+    .mps-root *, .mps-root *::before, .mps-root *::after { box-sizing: border-box; }
+    .mps-root [hidden] { display: none !important; }
+    .mps-root button { font-family: inherit; cursor: pointer; }
+    .mps-root :focus-visible { outline: 2px solid #334155; outline-offset: 2px; }
+    .mps-scrim { position: fixed; inset: 0; background: rgba(15,23,42,.45); opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 1054; }
+    .mps-scrim.on { opacity: 1; pointer-events: auto; }
+    .mps-sl { position: fixed; top: 0; right: 0; bottom: 0; width: calc(100vw - var(--sidebar-expanded-width, 264px)); background: #fff; z-index: 1055; display: flex; flex-direction: column; transform: translateX(104%); visibility: hidden; transition: transform .42s cubic-bezier(.22,.9,.25,1), width .24s ease, visibility 0s .42s; box-shadow: -14px 0 40px rgba(15,23,42,.2); color: #0f172a; }
+    .mps-sl.on { transform: none; visibility: visible; transition: transform .42s cubic-bezier(.22,.9,.25,1), width .24s ease, visibility 0s; }
+    body.sidebar-collapsed .mps-sl { width: calc(100vw - var(--sidebar-mini-width, 74px)); }
+    .mps-sl.wide, body.sidebar-collapsed .mps-sl.wide { width: 100vw; }
+    @media (max-width: 991.98px) { .mps-sl, body.sidebar-collapsed .mps-sl { width: 100vw; } }
+    @media (max-width: 1300px) { #mpsWide { display: none; } }
+    .mps-head { display: flex; gap: 12px; align-items: flex-start; padding: 18px 20px 12px; }
+    .mps-head .k { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #64748b; }
+    .mps-head h2 { margin: 2px 0 2px; font-size: 1.05rem; font-family: 'Courier New', monospace; font-weight: 700; overflow-wrap: anywhere; }
+    .mps-sub { font-size: .75rem; color: #64748b; }
+    .mps-tools { margin-left: auto; display: flex; gap: 8px; flex: none; }
+    .mps-x { flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #f1f5f9; color: #0f172a; display: grid; place-items: center; transition: transform .3s cubic-bezier(.3,.8,.3,1), background .2s; }
+    .mps-x:hover { transform: rotate(90deg); background: #e2e8f0; }
+    .mps-x:active { transform: rotate(90deg) scale(.92); }
+    .mps-x.wd:hover { transform: scale(1.1); }
+    .mps-x.wd:active { transform: scale(.92); }
+    .mps-tabs { display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid #e2e8f0; position: relative; overflow-x: auto; }
+    .mps-tab { border: 0; background: none; padding: 10px 14px; color: #64748b; font-size: .85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; transition: color .2s; }
+    .mps-tab[aria-selected="true"] { color: #0f172a; }
+    .mps-ind { position: absolute; bottom: 0; left: 0; height: 2px; width: 0; background: #334155; transition: left .3s cubic-bezier(.3,.8,.3,1), width .3s cubic-bezier(.3,.8,.3,1); }
+    .mps-tg { font-size: .62rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; background: #fffbeb; color: #92400e; border: 1px solid #fde68a; letter-spacing: .02em; }
+    .mps-info { display: flex; align-items: center; gap: 10px; padding: 8px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: .78rem; color: #64748b; flex-wrap: wrap; }
+    .mps-info b { color: #0f172a; font-weight: 700; }
+    .mps-info .r { margin-left: auto; font-variant-numeric: tabular-nums; }
+    .mps-body { flex: 1; position: relative; background: #e2e8f0; min-height: 0; }
+    .mps-pane { position: absolute; inset: 0; animation: mpsRise .35s ease-out both; }
+    @keyframes mpsRise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+    .mps-pane iframe { width: 100%; height: 100%; border: 0; display: block; background: #e2e8f0; }
+    .mps-load { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; background: #e2e8f0; color: #64748b; font-size: .85rem; transition: opacity .25s; z-index: 4; }
+    .mps-load.off { opacity: 0; pointer-events: none; }
+    .mps-spin { width: 22px; height: 22px; border: 2.5px solid #94a3b8; border-right-color: transparent; border-radius: 50%; animation: mpsRot .7s linear infinite; }
+    @keyframes mpsRot { to { transform: rotate(1turn); } }
+    /* PKS bertanda tangan (PDF.js) */
+    .mps-tscroll { position: absolute; inset: 0; overflow: auto; background: #e5e7eb; }
+    .mps-tpages { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 22px 24px 96px; width: max-content; min-width: 100%; }
+    .mps-pg { background: #fff; box-shadow: 0 2px 14px rgba(15,23,42,.18); position: relative; flex: none; }
+    .mps-pg canvas { display: block; }
+    .mps-fr { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #e5e7eb; }
+    .mps-kos { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: #64748b; background: #f8fafc; z-index: 3; }
+    .mps-kos .c { width: 66px; height: 66px; border-radius: 50%; background: #fff; border: 1px dashed #cbd5e1; display: grid; place-items: center; margin: 0 auto 12px; font-size: 1.6rem; }
+    .mps-kos b { display: block; color: #0f172a; margin-bottom: 4px; font-size: .95rem; }
+    .mps-kos p { margin: 0 auto 14px; font-size: .84rem; max-width: 400px; }
+    .mps-kos a { color: #1e293b; font-weight: 700; }
+    .mps-kos.err .c { color: #b91c1c; border-color: #fecaca; background: #fff1f2; }
+    /* zoom melayang (sama dengan slide PKS Humas dan slide PO) */
+    .mps-zm { position: absolute; left: 30px; bottom: 22px; z-index: 6; display: flex; align-items: center; gap: 2px; background: #0f172a; color: #fff; border-radius: 999px; padding: 4px; box-shadow: 0 8px 22px rgba(15,23,42,.35); animation: mpsZmIn .3s ease-out both; }
+    .mps-zm button { border: 0; background: transparent; color: #fff; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: .95rem; transition: background .15s, transform .15s; }
+    .mps-zm button:hover { background: rgba(255,255,255,.16); }
+    .mps-zm button:active { transform: scale(.9); }
+    .mps-zm button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+    .mps-zm .zl { width: auto; min-width: 56px; padding: 0 8px; border-radius: 999px; font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .mps-zm .sep { width: 1px; height: 18px; background: rgba(255,255,255,.22); margin: 0 3px; }
+    .mps-zm button.on { background: rgba(255,255,255,.2); }
+    @keyframes mpsZmIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (max-width: 575.98px) { .mps-zm { left: 14px; bottom: 14px; } .mps-foot { right: 14px; bottom: 14px; } }
+    /* tombol melayang kanan bawah */
+    .mps-foot { position: absolute; right: 30px; bottom: 22px; z-index: 7; display: flex; justify-content: flex-end; gap: 8px; align-items: center; }
+    .mps-btn { border: 1.5px solid #e2e8f0; background: #fff; color: #334155; border-radius: 9px; padding: .5rem .95rem; font-size: .82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; text-decoration: none; transition: border-color .15s, color .15s, background .15s, transform .15s; box-shadow: 0 8px 22px rgba(15,23,42,.18); }
+    .mps-btn:hover { border-color: #334155; color: #1e293b; }
+    .mps-btn:active { transform: scale(.97); }
+    .mps-btn.pri { background: #334155; border-color: #334155; color: #fff; box-shadow: 0 8px 22px rgba(15,23,42,.35); }
+    .mps-btn.pri:hover { background: #1e293b; color: #fff; transform: translateY(-2px); }
+    .mps-btn[disabled] { opacity: .65; cursor: progress; }
+    .mps-kos .mps-btn { box-shadow: none; }
+    .mps-dl { position: relative; }
+    .mps-dl .mps-btn { position: relative; overflow: hidden; }
+    .mps-dl .chev { transition: transform .25s; font-size: .7rem; }
+    .mps-dl.open .chev { transform: rotate(180deg); }
+    .mps-prog { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: rgba(255,255,255,.85); }
+    .mps-dl.run .mps-prog { animation: mpsProg 7s cubic-bezier(.1,.7,.3,1) forwards; }
+    @keyframes mpsProg { to { width: 92%; } }
+    .mps-menu { position: absolute; bottom: calc(100% + 8px); right: 0; min-width: 280px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 18px 44px rgba(15,23,42,.22); padding: 6px; z-index: 5; opacity: 0; transform: translateY(6px); pointer-events: none; transition: opacity .16s, transform .16s; }
+    .mps-dl.open .mps-menu { opacity: 1; transform: none; pointer-events: auto; }
+    .mps-paper { padding: 8px 10px 10px; border-bottom: 1px solid #e2e8f0; margin-bottom: 4px; }
+    .mps-paper .lb { font-size: .72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .mps-seg { display: grid; grid-template-columns: repeat(5, auto); gap: 4px; background: #f1f5f9; border-radius: 9px; padding: 3px; }
+    .mps-seg button { border: 0; background: transparent; border-radius: 7px; padding: 6px 4px; font-size: .76rem; font-weight: 600; color: #475569; transition: background .15s, color .15s, box-shadow .15s; white-space: nowrap; }
+    .mps-seg button:hover { background: #e2e8f0; }
+    .mps-seg button.on { background: #0f172a; color: #fff; box-shadow: 0 2px 6px rgba(15,23,42,.25); }
+    .mps-paper .ket { font-size: .72rem; color: #64748b; margin-top: 6px; }
+    .mps-mi { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: center; width: 100%; text-align: left; border: 0; background: none; padding: 9px 10px; border-radius: 8px; color: inherit; }
+    .mps-mi:hover, .mps-mi:focus-visible { background: #f1f5f9; }
+    .mps-mi .ic { width: 32px; height: 32px; border-radius: 8px; background: #f1f5f9; display: grid; place-items: center; transition: background .15s, color .15s; }
+    .mps-mi:hover .ic { background: #334155; color: #fff; }
+    .mps-mi b { display: block; font-size: .85rem; }
+    .mps-mi small { color: #64748b; font-size: .75rem; }
+    .mps-toast { position: fixed; left: 50%; top: 16px; transform: translate(-50%, -14px); background: #1e293b; color: #fff; padding: 11px 16px; border-radius: 12px; font-size: .82rem; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1090; max-width: min(92vw, 520px); box-shadow: 0 12px 30px rgba(15,23,42,.3); }
+    .mps-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .mps-toast.err { background: #b91c1c; }
+    @media (prefers-reduced-motion: reduce) { .mps-root * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="mps-root" id="mpsRoot">
+    <div class="mps-scrim" id="mpsScrim"></div>
+    <aside class="mps-sl" id="mpsSl" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mpsNo">
+        <div class="mps-head">
+            <div style="min-width:0;">
+                <div class="k">Perjanjian Kerja Sama (PKS)</div>
+                <h2 id="mpsNo"></h2>
+                <div class="mps-sub" id="mpsSub"></div>
+            </div>
+            <div class="mps-tools">
+                <button type="button" class="mps-x wd" id="mpsWide" aria-label="Lebarkan panel" aria-pressed="false" title="Lebarkan panel (sembunyikan sidebar)"><i class="bi bi-arrows-angle-expand"></i></button>
+                <button type="button" class="mps-x" id="mpsTutup" aria-label="Tutup" title="Tutup"><i class="bi bi-x-lg"></i></button>
+            </div>
+        </div>
+        <div class="mps-tabs" id="mpsTabs" role="tablist">
+            <button type="button" class="mps-tab" role="tab" data-mpt="dok" aria-selected="true">Dokumen PKS</button>
+            <button type="button" class="mps-tab" role="tab" data-mpt="ttd" aria-selected="false">PKS Ditandatangani <span class="mps-tg" id="mpsTg" hidden>Belum</span></button>
+            <span class="mps-ind" id="mpsInd"></span>
+        </div>
+        <div class="mps-info" id="mpsInfo"><span id="mpsInfoT"></span><span class="r" id="mpsInfoR"></span></div>
+        <div class="mps-body">
+            <div class="mps-pane" id="mpsPaneDok">
+                <iframe id="mpsFrame" title="Dokumen PKS"></iframe>
+                <div class="mps-load off" id="mpsLoad"><span class="mps-spin"></span>Memuat dokumen PKS...</div>
+            </div>
+            <div class="mps-pane" id="mpsPaneTtd" hidden>
+                <div class="mps-tscroll" id="mpsTScroll"><div class="mps-tpages" id="mpsTPages"></div></div>
+                <div class="mps-kos" id="mpsKos" hidden></div>
+                <div class="mps-load off" id="mpsTLoad"><span class="mps-spin"></span>Memuat PKS bertanda tangan...</div>
+            </div>
+            <div class="mps-zm" id="mpsZm" role="group" aria-label="Zoom dokumen">
+                <button type="button" data-zm="out" title="Perkecil" aria-label="Perkecil"><i class="bi bi-zoom-out"></i></button>
+                <button type="button" class="zl" id="mpsZl" data-zm="reset" title="Klik untuk kembali ke 100%">100%</button>
+                <button type="button" data-zm="in" title="Perbesar" aria-label="Perbesar"><i class="bi bi-zoom-in"></i></button>
+                <span class="sep"></span>
+                <button type="button" id="mpsZf" data-zm="fit" title="Pas lebar layar" aria-label="Pas lebar layar"><i class="bi bi-arrows-angle-expand"></i></button>
+            </div>
+            <div class="mps-foot" id="mpsFoot">
+                <div class="mps-dl" id="mpsDl">
+                    <button type="button" class="mps-btn pri" id="mpsDlBtn" aria-haspopup="true" aria-expanded="false"><i class="bi bi-printer"></i><span id="mpsDlLbl">Cetak</span><i class="bi bi-chevron-down chev"></i><span class="mps-prog"></span></button>
+                    <div class="mps-menu" id="mpsMenu" role="menu">
+                        <div class="mps-paper" id="mpsPaper">
+                            <div class="lb"><i class="bi bi-file-earmark-text"></i>Ukuran kertas (untuk Cetak)</div>
+                            <div class="mps-seg" role="radiogroup" aria-label="Ukuran kertas cetak">
+                                <button type="button" role="radio" data-kertas="letter">Letter</button>
+                                <button type="button" role="radio" data-kertas="a4">A4</button>
+                                <button type="button" role="radio" data-kertas="legal">Legal</button>
+                                <button type="button" role="radio" data-kertas="f4">F4</button>
+                                <button type="button" role="radio" data-kertas="auto">Bebas</button>
+                            </div>
+                            <div class="ket" id="mpsKertasKet"></div>
+                        </div>
+                        <button type="button" class="mps-mi" role="menuitem" data-fmt="pdf"><span class="ic"><i class="bi bi-file-earmark-pdf"></i></span><span><b>Unduh PDF</b><small>Siap dicetak</small></span></button>
+                        <button type="button" class="mps-mi" role="menuitem" data-fmt="word"><span class="ic"><i class="bi bi-file-earmark-word"></i></span><span><b>Unduh Word (.docx)</b><small>Bisa disunting bila perlu</small></span></button>
+                        <button type="button" class="mps-mi" role="menuitem" data-fmt="print"><span class="ic"><i class="bi bi-printer"></i></span><span><b>Cetak langsung</b><small>Buka dialog printer</small></span></button>
+                    </div>
+                </div>
+                <a class="mps-btn pri" id="mpsTUnduh" href="#" hidden><i class="bi bi-download"></i>Unduh</a>
+                <button type="button" class="mps-btn" id="mpsTUlang" hidden><i class="bi bi-arrow-repeat"></i>Upload ulang</button>
+            </div>
+        </div>
+    </aside>
+    <div class="mps-toast" id="mpsToast" role="status"></div>
+</div>
+
+<script>
+(function () {
+    var BASE = '{{ @BASE }}';
+    var root = document.getElementById('mpsRoot');
+    if (!root) { return; }
+    /* Slide dipindah ke <body> supaya position:fixed tidak terjebak di dalam konten halaman */
+    document.body.appendChild(root);
+
+    var WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    var STEPS = [50, 67, 80, 90, 100, 110, 125, 150, 175, 200, 250];
+    var CSS_PER_PT = 96 / 72;
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function kabari(nama, id) { try { document.dispatchEvent(new CustomEvent(nama, { detail: { id: id } })); } catch (e) {} }
+
+    var toastTimer;
+    function toast(text, galat) {
+        var t = $('mpsToast');
+        t.textContent = text;
+        t.classList.toggle('err', !!galat);
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { t.classList.remove('show'); }, galat ? 7000 : 4200);
+    }
+
+    var cur = null, tabNow = 'dok', aktif = false, tunda = null, frameTimer = null, slWide = false;
+    try { slWide = localStorage.getItem('siloptiPksWide') === '1'; } catch (e) {}
+
+    /* ---------- kerangka slide ---------- */
+    function terapkanWide() {
+        var b = $('mpsWide');
+        $('mpsSl').classList.toggle('wide', slWide);
+        b.innerHTML = '<i class="bi ' + (slWide ? 'bi-arrows-angle-contract' : 'bi-arrows-angle-expand') + '"></i>';
+        b.title = slWide ? 'Kecilkan panel (tampilkan sidebar)' : 'Lebarkan panel (sembunyikan sidebar)';
+        b.setAttribute('aria-label', b.title); b.setAttribute('aria-pressed', slWide ? 'true' : 'false');
+    }
+    function geserInd() {
+        var b = $('mpsTabs').querySelector('[aria-selected="true"]'), ind = $('mpsInd');
+        if (b) { ind.style.left = b.offsetLeft + 'px'; ind.style.width = b.offsetWidth + 'px'; }
+    }
+    function tutupMenu() { $('mpsDl').classList.remove('open'); $('mpsDlBtn').setAttribute('aria-expanded', 'false'); }
+
+    /* ---------- Unduh Word dari server ---------- */
+    function unduhWord(id) {
+        return fetch(BASE + '/pks/' + id + '/unduh', { credentials: 'same-origin' }).then(function (r) {
+            var tipe = r.headers.get('Content-Type') || '';
+            if (!r.ok || tipe.indexOf('wordprocessingml') === -1) {
+                throw new Error('Server membalas ' + r.status + '. Dokumen Word gagal dibuat: cek template di storage/templates, ekstensi zip PHP, dan log server.');
+            }
+            var m = /filename="?([^";]+)"?/.exec(r.headers.get('Content-Disposition') || '');
+            var nama = m ? m[1] : 'PKS.docx';
+            return r.blob().then(function (blob) {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url; a.download = nama;
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+                toast('Mengunduh ' + nama);
+            });
+        });
+    }
+    function unduhPdfServer(id) {
+        return fetch(BASE + '/pks/' + id + '/pdf', { credentials: 'same-origin' }).then(function (r) {
+            if (r.status === 501) { var e = new Error('PDF otomatis belum tersedia'); e.kode = 'tanpa_pdf'; throw e; }
+            if (!r.ok || (r.headers.get('Content-Type') || '').indexOf('pdf') === -1) { throw new Error('Server membalas ' + r.status + '. PDF gagal dibuat: cek LibreOffice dan log server.'); }
+            var m = /filename="?([^";]+)"?/.exec(r.headers.get('Content-Disposition') || '');
+            var nama = m ? m[1] : 'PKS.pdf';
+            return r.blob().then(function (blob) {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url; a.download = nama;
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+                toast('Mengunduh ' + nama);
+            });
+        });
+    }
+
+    /* ---------- Tab Dokumen PKS: iframe tampilan PKS + zoom ---------- */
+    var ZM_ID = { out: 'dpkZo', 'in': 'dpkZi', fit: 'dpkZf', reset: 'dpkZl' };
+    function labelZoomDok() {
+        try {
+            var t = $('mpsFrame').contentDocument.getElementById('dpkZl').textContent || '100%';
+            $('mpsZl').textContent = t.replace(/^Fit \(/, '').replace(/\)$/, '');
+            $('mpsZf').classList.toggle('on', /^Fit/.test(t));
+        } catch (e) {}
+    }
+    function zoomDok(a) {
+        try { var b = $('mpsFrame').contentDocument.getElementById(ZM_ID[a]); if (b) { b.click(); } } catch (e) {}
+        setTimeout(labelZoomDok, 40);
+    }
+    function pasangZoomIframe() {
+        try {
+            var d = $('mpsFrame').contentDocument, w = $('mpsFrame').contentWindow;
+            if (!d || d.__zmOk) { return; }
+            d.__zmOk = true;
+            d.addEventListener('wheel', function (e) { if (e.ctrlKey || e.metaKey) { e.preventDefault(); zoomDok(e.deltaY < 0 ? 'in' : 'out'); } }, { passive: false });
+            d.addEventListener('keydown', function (e) { if (e.key === 'Escape') { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); } });
+            w.addEventListener('resize', function () { setTimeout(labelZoomDok, 200); });
+        } catch (e) {}
+    }
+    $('mpsFrame').addEventListener('load', function () {
+        if (!aktif || !cur || $('mpsFrame').getAttribute('src') === 'about:blank' || !$('mpsFrame').getAttribute('src')) { return; }
+        $('mpsLoad').classList.add('off'); pasangZoomIframe(); setTimeout(labelZoomDok, 350);
+        if (tunda) {
+            var a = tunda; tunda = null;
+            setTimeout(function () {
+                if (!aktif) { return; }
+                if (a === 'menu') { $('mpsDl').classList.add('open'); $('mpsDlBtn').setAttribute('aria-expanded', 'true'); }
+                else { aksiUnduh(a); }
+            }, 700);
+        }
+    });
+
+    function sibuk(nyala, nama) {
+        $('mpsDlBtn').disabled = nyala;
+        $('mpsDlLbl').textContent = nyala ? 'Menyiapkan ' + nama + '...' : 'Cetak';
+        $('mpsDl').classList.toggle('run', nyala);
+    }
+    /* Ukuran kertas cetak dipasang ke halaman PKS di dalam iframe sebelum dialog cetak dibuka. "Bebas" = ikut pilihan di dialog cetak. */
+    var KERTAS = { letter: ['8.5in 11in', 'Letter 21,6 x 27,9 cm (sama dengan Word)'], a4: ['210mm 297mm', 'A4 21 x 29,7 cm'], legal: ['8.5in 14in', 'Legal 21,6 x 35,6 cm'], f4: ['215mm 330mm', 'F4 / Folio 21,5 x 33 cm'], auto: ['', 'Ukuran kertas dipilih di dialog cetak'] };
+    var kertas = 'letter';
+    try { var kk = localStorage.getItem('siloptiPksKertas'); if (kk && KERTAS[kk]) { kertas = kk; } } catch (x) {}
+    function terapkanKertas() {
+        Array.prototype.forEach.call($('mpsPaper').querySelectorAll('[data-kertas]'), function (b) { var on = b.getAttribute('data-kertas') === kertas; b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+        $('mpsKertasKet').textContent = KERTAS[kertas][1];
+    }
+    function pasangKertasKeIframe() {
+        var d = $('mpsFrame').contentDocument, st = d.getElementById('dpkKertasCss');
+        if (!st) { st = d.createElement('style'); st.id = 'dpkKertasCss'; d.head.appendChild(st); }
+        st.textContent = KERTAS[kertas][0] ? '@page { size: ' + KERTAS[kertas][0] + '; }' : '';
+    }
+    function cetak() {
+        setTab('dok');
+        if (!$('mpsLoad').classList.contains('off')) { toast('Tunggu dokumen selesai dimuat, lalu coba lagi.', true); return; }
+        setTimeout(function () {
+            try { pasangKertasKeIframe(); var w = $('mpsFrame').contentWindow; w.focus(); w.print(); kabari('pksmitra:dicetak', cur.id); }
+            catch (e) { toast('Dialog cetak tidak bisa dibuka. Coba unduh PDF atau Word.', true); }
+        }, 220);
+    }
+    function namaPdf(k) {
+        var no = String((k && k.nomor_pks) || '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        var per = String((k && k.mitra) || '').replace(/^\s*(PT|CV|UD)\.?\s+/i, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        return 'PKS' + (no ? '_' + no : '') + (per ? '_' + per : '') + '.pdf';
+    }
+    function tungguIframe(coba) {
+        return new Promise(function (ok, gagal) {
+            (function cek(n) {
+                if ($('mpsLoad').classList.contains('off')) { ok(); }
+                else if (n <= 0) { gagal(new Error('Dokumen belum selesai dimuat. Tunggu sebentar lalu coba lagi.')); }
+                else { setTimeout(function () { cek(n - 1); }, 150); }
+            })(coba);
+        });
+    }
+    /* PDF langsung dari tampilan PKS: tiap halaman pratinjau difoto lalu dirangkai jadi PDF Letter (sama dengan Word). Tanpa LibreOffice. */
+    function unduhPdfLangsung() {
+        var JsPdf = window.jspdf && window.jspdf.jsPDF, h2c = window.html2canvas;
+        if (!JsPdf || !h2c) { var e0 = new Error('Pembuat PDF belum termuat (butuh koneksi internet).'); e0.kode = 'tanpa_lib'; return Promise.reject(e0); }
+        setTab('dok');
+        return tungguIframe(60).then(function () { return new Promise(function (r) { setTimeout(r, 250); }); }).then(function () {
+            var d = $('mpsFrame').contentDocument;
+            var hal = Array.prototype.slice.call(d.querySelectorAll('#dpkPages .dpk-sheet:not(.dpk-printflow):not(.dpk-measure)'));
+            if (!hal.length) { throw new Error('Halaman PKS belum tampil. Coba lagi sebentar lagi.'); }
+            var pdf = new JsPdf({ unit: 'pt', format: [612, 792], orientation: 'portrait', compress: true });
+            var k = cur;
+            var tunggu = (d.fonts && d.fonts.ready) ? d.fonts.ready : Promise.resolve();
+            return tunggu.then(function () {
+                var rantai = Promise.resolve();
+                hal.forEach(function (el, i) {
+                    rantai = rantai.then(function () {
+                        $('mpsDlLbl').textContent = 'Menyiapkan PDF ' + (i + 1) + '/' + hal.length + '...';
+                        return h2c(el, {
+                            scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false,
+                            onclone: function (doc) {
+                                var pg = doc.getElementById('dpkPages');
+                                if (pg) { pg.style.setProperty('--dpk-zoom', '1'); pg.classList.remove('dpk-hl'); }
+                                Array.prototype.forEach.call(doc.querySelectorAll('#dpkPages .dpk-sheet'), function (s) { s.style.boxShadow = 'none'; s.style.margin = '0'; });
+                                Array.prototype.forEach.call(doc.querySelectorAll('.flash'), function (x) { x.classList.remove('flash'); });
+                            }
+                        }).then(function (cv) {
+                            if (i > 0) { pdf.addPage([612, 792], 'portrait'); }
+                            pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 612, 792, undefined, 'FAST');
+                        });
+                    });
+                });
+                return rantai;
+            }).then(function () {
+                var nama = namaPdf(k);
+                pdf.save(nama);
+                toast('Mengunduh ' + nama);
+            });
+        });
+    }
+    function aksiUnduh(fmt) {
+        tutupMenu();
+        if (!aktif || !cur) { return; }
+        if (fmt === 'print') { cetak(); return; }
+        var id = cur.id, nama = fmt === 'pdf' ? 'PDF' : 'Word';
+        sibuk(true, nama);
+        var proses = fmt === 'pdf'
+            ? unduhPdfLangsung().catch(function (e) {
+                if (e && e.kode === 'tanpa_lib') { return unduhPdfServer(id); }
+                throw e;
+            })
+            : unduhWord(id);
+        proses.then(function () { kabari('pksmitra:dicetak', id); }).catch(function (e) {
+            if (e.kode === 'tanpa_pdf') {
+                toast('PDF otomatis belum aktif di server ini. Dialog cetak dibuka: pilih "Simpan sebagai PDF" di pilihan printer.');
+                cetak();
+            } else { toast(e.message, true); }
+        }).then(function () { sibuk(false); });
+    }
+
+    /* ---------- Tab PKS Ditandatangani: PDF.js ---------- */
+    var V = null;   // { url, pdf, pages, zoom (null = pas lebar), gen, bw, state, io }
+    function pdfjs() { var p = window.pdfjsLib; if (p && p.getDocument) { if (p.GlobalWorkerOptions && !p.GlobalWorkerOptions.workerSrc) { p.GlobalWorkerOptions.workerSrc = WORKER; } return p; } return null; }
+    function hancur() { if (!V) { return; } V.gen++; if (V.io) { try { V.io.disconnect(); } catch (e) {} } if (V.pdf) { try { V.pdf.destroy(); } catch (e) {} } V = null; $('mpsTPages').innerHTML = ''; }
+    function skala(ptW) {
+        if (V.zoom == null) { var cw = $('mpsTScroll').clientWidth - 48; return Math.max(.3, Math.min(cw / ptW, 1.6)); }
+        return V.zoom / 100 * CSS_PER_PT;
+    }
+    function pctNow() { if (!V || !V.pages.length) { return 100; } var b = V.pages[0].getViewport({ scale: 1 }); return Math.round(skala(b.width) / CSS_PER_PT * 100); }
+    function labelZoomTtd() {
+        if (!V) { return; }
+        $('mpsZl').textContent = pctNow() + '%';
+        $('mpsZf').classList.toggle('on', V.zoom == null);
+        $('mpsInfoR').textContent = V.pages.length ? (V.pages.length + ' halaman') : '';
+    }
+    function susun() {
+        var v = V, box = $('mpsTPages'), scr = $('mpsTScroll');
+        var rasio = scr.scrollHeight > 0 ? scr.scrollTop / scr.scrollHeight : 0;
+        v.gen++; var g = v.gen;
+        if (v.io) { try { v.io.disconnect(); } catch (e) {} v.io = null; }
+        box.innerHTML = '';
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var obs = ('IntersectionObserver' in window) ? new IntersectionObserver(function (es) {
+            es.forEach(function (e) { if (e.isIntersecting) { obs.unobserve(e.target); gambar(v, e.target, g, dpr); } });
+        }, { root: scr, rootMargin: '800px 0px' }) : null;
+        v.io = obs;
+        v.pages.forEach(function (pg, i) {
+            var b = pg.getViewport({ scale: 1 });
+            var vp = pg.getViewport({ scale: skala(b.width) });
+            var d = document.createElement('div');
+            d.className = 'mps-pg'; d.style.width = Math.floor(vp.width) + 'px'; d.style.height = Math.floor(vp.height) + 'px';
+            d._i = i; d._vp = vp;
+            box.appendChild(d);
+            if (obs) { obs.observe(d); } else { gambar(v, d, g, dpr); }
+        });
+        v.bw = scr.clientWidth;
+        scr.scrollTop = rasio * scr.scrollHeight;
+        labelZoomTtd();
+    }
+    function gambar(v, d, g, dpr) {
+        if (g !== v.gen || d._ok) { return; }
+        d._ok = true;
+        var pg = v.pages[d._i], vp = d._vp;
+        var c = document.createElement('canvas');
+        c.width = Math.floor(vp.width * dpr); c.height = Math.floor(vp.height * dpr);
+        c.style.width = Math.floor(vp.width) + 'px'; c.style.height = Math.floor(vp.height) + 'px';
+        var prm = { canvasContext: c.getContext('2d'), viewport: vp };
+        if (dpr !== 1) { prm.transform = [dpr, 0, 0, dpr, 0, 0]; }
+        pg.render(prm).promise.then(function () { if (g === v.gen) { d.appendChild(c); } }, function () {});
+    }
+    function kosong(html, galat) { var k = $('mpsKos'); k.className = 'mps-kos' + (galat ? ' err' : ''); k.innerHTML = html; k.hidden = false; $('mpsTScroll').style.visibility = 'hidden'; $('mpsTLoad').classList.add('off'); }
+    function kosongTutup() { $('mpsKos').hidden = true; $('mpsTScroll').style.visibility = ''; }
+
+    function muatTtd() {
+        var url = cur && cur.url_ttd;
+        $('mpsTLoad').classList.add('off');
+        kosongTutup();
+        if (!url) {
+            hancur();
+            kosong('<div><div class="c"><i class="bi bi-hourglass-split"></i></div><b>Menunggu PKS bertanda tangan klien</b><p>Cetak PKS, serahkan ke klien untuk ditandatangani, lalu upload hasilnya (satu PDF, atau foto yang digabung otomatis jadi satu PDF).</p><button type="button" class="mps-btn pri" data-mps-upload="1"><i class="bi bi-upload"></i>Upload PKS bertanda tangan</button></div>');
+            return;
+        }
+        if (V && V.url === url && V.state === 'ok') { susunSiap(); return; }
+        hancur();
+        V = { url: url, pdf: null, pages: [], zoom: null, gen: 0, bw: 0, state: 'load', io: null };
+        var v = V, P = pdfjs();
+        if (!P) {
+            v.state = 'iframe';
+            kosongTutup(); $('mpsTScroll').style.visibility = 'hidden';
+            var k = $('mpsKos'); k.className = 'mps-kos'; k.style.padding = '0'; k.hidden = false;
+            k.innerHTML = '<iframe class="mps-fr" title="PKS bertanda tangan" src="' + esc(url) + '#toolbar=0&navpanes=0&view=FitH"></iframe>';
+            return;
+        }
+        $('mpsKos').style.padding = '';
+        $('mpsTLoad').classList.remove('off');
+        P.getDocument({ url: url, withCredentials: true }).promise.then(function (pdf) {
+            v.pdf = pdf;
+            var ps = []; for (var i = 1; i <= pdf.numPages; i++) { ps.push(pdf.getPage(i)); }
+            return Promise.all(ps);
+        }).then(function (pages) {
+            if (V !== v) { return; }
+            v.pages = pages; v.state = 'ok';
+            $('mpsTLoad').classList.add('off');
+            if (tabNow === 'ttd') { $('mpsZm').hidden = false; susunSiap(); infoTeks(); }
+        }).catch(function () {
+            if (V !== v) { return; }
+            v.state = 'err';
+            kosong('<div><div class="c"><i class="bi bi-exclamation-triangle"></i></div><b>Dokumen tidak bisa dimuat</b><p><a href="' + esc(url) + '" target="_blank" rel="noopener">Buka di tab baru</a></p></div>', true);
+        });
+    }
+    function susunSiap() { if (V && V.state === 'ok' && tabNow === 'ttd') { susun(); } }
+
+    function ubahZoomTtd(aksi) {
+        if (!V || V.state !== 'ok') { return; }
+        var cur0 = pctNow(), nxt = cur0, i;
+        if (aksi === 'fit') { V.zoom = null; }
+        else if (aksi === 'reset') { V.zoom = 100; }
+        else if (aksi === 'in') { for (i = 0; i < STEPS.length; i++) { if (STEPS[i] > cur0 + 1) { nxt = STEPS[i]; break; } } if (nxt === cur0) { nxt = STEPS[STEPS.length - 1]; } V.zoom = nxt; }
+        else if (aksi === 'out') { for (i = STEPS.length - 1; i >= 0; i--) { if (STEPS[i] < cur0 - 1) { nxt = STEPS[i]; break; } } if (nxt === cur0) { nxt = STEPS[0]; } V.zoom = nxt; }
+        $('mpsZl').textContent = (V.zoom == null ? cur0 : V.zoom) + '%';
+        $('mpsZf').classList.toggle('on', V.zoom == null);
+        clearTimeout(ubahZoomTtd.tm); ubahZoomTtd.tm = setTimeout(function () { if (V && V.state === 'ok') { susun(); } }, 90);
+    }
+    $('mpsTScroll').addEventListener('wheel', function (e) { if (e.ctrlKey || e.metaKey) { e.preventDefault(); ubahZoomTtd(e.deltaY < 0 ? 'in' : 'out'); } }, { passive: false });
+    var tmRs = null;
+    window.addEventListener('resize', function () {
+        if (!aktif) { return; }
+        geserInd();
+        clearTimeout(tmRs); tmRs = setTimeout(function () { if (tabNow === 'ttd' && V && V.state === 'ok' && V.zoom == null) { susun(); } }, 200);
+    });
+
+    /* ---------- tab, info, tombol ---------- */
+    function infoTeks() {
+        var sudah = !!(cur && cur.url_ttd);
+        if (tabNow === 'dok') {
+            $('mpsInfoT').innerHTML = '<b>Dokumen PKS</b> dari sistem' + (cur && cur.dibuat ? ' &middot; dibuat Humas ' + esc(cur.dibuat) : '');
+            $('mpsInfoR').textContent = '';
+        } else {
+            $('mpsInfoT').innerHTML = sudah ? ('<b>PKS bertanda tangan</b> &middot; ' + esc(cur.info_ttd || '')) : '<b>PKS bertanda tangan</b> &middot; belum di-upload';
+            $('mpsInfoR').textContent = (V && V.pages.length) ? (V.pages.length + ' halaman') : '';
+        }
+    }
+    function setTab(t) {
+        tabNow = t;
+        Array.prototype.forEach.call($('mpsTabs').querySelectorAll('[data-mpt]'), function (b) { b.setAttribute('aria-selected', b.getAttribute('data-mpt') === t ? 'true' : 'false'); });
+        var sudah = !!(cur && cur.url_ttd);
+        $('mpsTg').hidden = sudah;
+        $('mpsPaneDok').hidden = t !== 'dok';
+        $('mpsPaneTtd').hidden = t !== 'ttd';
+        $('mpsDl').hidden = t !== 'dok';
+        $('mpsTUnduh').hidden = !(t === 'ttd' && sudah);
+        $('mpsTUlang').hidden = !(t === 'ttd' && sudah);
+        if (sudah) { $('mpsTUnduh').href = cur.url_ttd_unduh; }
+        $('mpsZm').hidden = (t === 'ttd' && !(sudah && V && V.state === 'ok'));
+        tutupMenu();
+        infoTeks();
+        geserInd();
+        if (t === 'ttd') { muatTtd(); $('mpsZm').hidden = !(sudah && V && V.state === 'ok'); if (V && V.state === 'ok') { labelZoomTtd(); } }
+        else { setTimeout(labelZoomDok, 30); }
+    }
+
+    function buka(baris, opsi) {
+        if (!baris || !baris.id) { return; }
+        opsi = opsi || {};
+        clearTimeout(frameTimer);
+        var sama = cur && cur.id === baris.id && aktif;
+        cur = baris; aktif = true; tunda = opsi.aksi || null;
+        $('mpsNo').textContent = baris.nomor_pks || 'Perjanjian Kerja Sama (PKS)';
+        $('mpsSub').textContent = baris.mitra + (baris.layanan_label ? ' · ' + baris.layanan_label : '');
+        tutupMenu();
+        if (!sama || !$('mpsFrame').getAttribute('src') || $('mpsFrame').getAttribute('src') === 'about:blank') {
+            $('mpsLoad').classList.remove('off');
+            $('mpsFrame').src = BASE + '/pks/' + baris.id + '/form?embed=1&lihat=1';
+        } else if (tunda) {
+            var a = tunda; tunda = null;
+            setTimeout(function () { if (a === 'menu') { $('mpsDl').classList.add('open'); $('mpsDlBtn').setAttribute('aria-expanded', 'true'); } else { aksiUnduh(a); } }, 200);
+        }
+        $('mpsSl').classList.add('on'); $('mpsSl').setAttribute('aria-hidden', 'false');
+        $('mpsScrim').classList.add('on');
+        document.body.style.overflow = 'hidden';
+        hancur();
+        setTab(opsi.tab === 'ttd' ? 'ttd' : 'dok');
+        setTimeout(function () { geserInd(); $('mpsTutup').focus(); }, 80);
+        kabari('pksmitra:dibuka', baris.id);
+    }
+    function perbarui(baris, tab) {
+        if (!aktif || !cur || !baris || baris.id !== cur.id) { return; }
+        var ganti = (cur.url_ttd !== baris.url_ttd);
+        cur = baris;
+        if (ganti) { hancur(); }
+        setTab(tab || tabNow);
+    }
+    function tutup() {
+        if (!aktif) { return; }
+        aktif = false; tunda = null;
+        tutupMenu();
+        $('mpsSl').classList.remove('on'); $('mpsSl').setAttribute('aria-hidden', 'true');
+        $('mpsScrim').classList.remove('on');
+        document.body.style.overflow = '';
+        hancur();
+        frameTimer = setTimeout(function () { $('mpsFrame').src = 'about:blank'; }, 480);
+    }
+    terapkanWide();
+    terapkanKertas();
+
+    root.addEventListener('click', function (e) {
+        var el;
+        if (!e.target.closest('#mpsDl')) { tutupMenu(); }
+        if ((el = e.target.closest('[data-mpt]'))) { setTab(el.getAttribute('data-mpt')); return; }
+        if ((el = e.target.closest('[data-kertas]'))) { kertas = el.getAttribute('data-kertas'); try { localStorage.setItem('siloptiPksKertas', kertas); } catch (x) {} terapkanKertas(); return; }
+        if ((el = e.target.closest('[data-zm]'))) { if (tabNow === 'ttd') { ubahZoomTtd(el.getAttribute('data-zm')); } else { zoomDok(el.getAttribute('data-zm')); } return; }
+        if ((el = e.target.closest('[data-fmt]'))) { aksiUnduh(el.getAttribute('data-fmt')); return; }
+        if (e.target.closest('#mpsDlBtn')) { var b = $('mpsDl').classList.toggle('open'); $('mpsDlBtn').setAttribute('aria-expanded', b ? 'true' : 'false'); return; }
+        if (e.target.closest('[data-mps-upload]') || e.target.closest('#mpsTUlang')) { if (cur) { kabari('pksmitra:upload', cur.id); } return; }
+        if (e.target.closest('#mpsWide')) { slWide = !slWide; try { localStorage.setItem('siloptiPksWide', slWide ? '1' : '0'); } catch (x) {} terapkanWide(); return; }
+        if (e.target.closest('#mpsTutup') || e.target.closest('#mpsScrim')) { tutup(); }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || !aktif) { return; }
+        if (document.getElementById('mpkDlg') && !document.getElementById('mpkDlg').hidden) { return; }   // dialog upload menutup dirinya dulu
+        if ($('mpsDl').classList.contains('open')) { tutupMenu(); } else { tutup(); }
+    });
+
+    window.PksMitraSlide = { buka: buka, perbarui: perbarui, tutup: tutup, unduhWord: function (id) { return unduhWord(id); }, toast: toast };
+})();
+</script>

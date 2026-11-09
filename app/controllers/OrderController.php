@@ -1337,6 +1337,9 @@ class OrderController extends Controller {
             'menunggu'  => $kontrakMenunggu,
             'tampil'    => $kontrakAkses,
             'boleh'     => ($this->isSuperadmin() || in_array((string) $this->getUserRole(), array('humas', 'admin_kontrak'), true)),
+            // Semua user boleh MELIHAT PKS yang sudah selesai; mengunduh / mencetak hanya Tim Mitra, Humas, Admin PKS, dan Superadmin. Ketua Tim: belum diputuskan (sementara lihat saja).
+            'lihat'     => true,
+            'unduh'     => ($this->isSuperadmin() || $this->isTimMitra() || in_array((string) $this->getUserRole(), array('humas', 'admin_kontrak'), true)),
             'ada'       => $poKontrakAda,
             'nomor'     => $poKontrakAda ? (string) (isset($poKegiatan['kontrak_nomor']) ? $poKegiatan['kontrak_nomor'] : '') : '',
             'oleh'      => $poKontrakAda ? (string) (isset($poKegiatan['kontrak_dibuat_oleh_nama']) ? $poKegiatan['kontrak_dibuat_oleh_nama'] : '') : '',
@@ -5269,7 +5272,7 @@ class OrderController extends Controller {
                 $statusProposalBiaya = 'draft_disimpan';
             }
             $orderUpdateSql = "UPDATE order_layanan SET estimasi_biaya = ?, status_proposal_biaya = ?, spm_layanan = ?, durasi_hari_kerja = ?, spm_durasi_nilai = ?, spm_durasi_satuan = 'Hari Kerja'";
-            $orderUpdateParams = [1 => $estimasiBiaya, 2 => $statusProposalBiaya, 3 => $durasiKegiatan, 4 => $durasiHari, 5 => $durasiHari, 6 => $durasiHari];
+            $orderUpdateParams = [1 => $estimasiBiaya, 2 => $statusProposalBiaya, 3 => $durasiKegiatan, 4 => $durasiHari, 5 => $durasiHari];   // 5 tanda tanya di SQL (satuan sudah literal 'Hari Kerja'); parameter ke-6 dulu berlebih -> HY093
             if (!empty($judulProposal)) {
                 $orderUpdateSql .= ", judul_kegiatan = ?";
                 $orderUpdateParams[] = $judulProposal;
