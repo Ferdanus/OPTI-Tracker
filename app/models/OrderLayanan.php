@@ -203,8 +203,8 @@ class OrderLayanan extends \DB\SQL\Mapper {
             !empty($r['tanggal_terima_sampel'])
         );
 
-        $durasiTotalNilai = 30;
-        $durasiSatuan = 'Hari Kerja';
+        $durasiTotalNilai = 0;
+        $durasiSatuan = (($r['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 'Bulan' : 'Hari Kerja';
 
         if (!empty($r['spm_durasi_nilai']) && (!empty($r['tanggal_spm_mulai']) || !empty($r['tanggal_terima_sampel']))) {
             $durasiTotalNilai = (int)$r['spm_durasi_nilai'];
@@ -226,12 +226,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
         } elseif (!empty($r['spm_durasi_nilai']) && (int)$r['spm_durasi_nilai'] > 0) {
             $durasiTotalNilai = (int)$r['spm_durasi_nilai'];
             $durasiSatuan = !empty($r['spm_durasi_satuan']) ? $r['spm_durasi_satuan'] : 'Hari Kerja';
-        } elseif (!empty($r['durasi_hari_kerja']) && (int)$r['durasi_hari_kerja'] > 0) {
+        } elseif (($r['jenis_layanan_opti'] ?? '') !== 'selulosa' && !empty($r['durasi_hari_kerja']) && (int)$r['durasi_hari_kerja'] > 0) {
             $durasiTotalNilai = (int)$r['durasi_hari_kerja'];
             $durasiSatuan = 'Hari Kerja';
         }
 
-        $durasiAwalLabel = "{$durasiTotalNilai} {$durasiSatuan}";
+        $durasiAwalLabel = $durasiTotalNilai > 0 ? "{$durasiTotalNilai} {$durasiSatuan}" : '-';
 
         $isOrderSelesai = (
             (!empty($r['bast_id']) && in_array($r['status_bast'] ?? '', ['disetujui', 'selesai', 'terbit'])) ||
@@ -500,7 +500,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
             } catch (\Exception $e) { $pkAda = array(); }
         }
         $pkKolom = '';
-        foreach (array('status', 'status_review', 'ppk_status', 'disetujui_at', 'verifikasi_humas_at', 'tervalidasi_mitra_at', 'validasi_keuangan_at',
+        foreach (array('judul_kegiatan', 'status', 'status_review', 'ppk_status', 'disetujui_at', 'verifikasi_humas_at', 'tervalidasi_mitra_at', 'validasi_keuangan_at',
                        'reviewed_at', 'minta_dibaca_at', 'revisi_dibaca_at', 'humas_dibaca_at', 'disposisi_humas_at', 'ppk_dibaca_at', 'mitra_dibaca_at',
                        'ronde_ppk', 'ppk_status_at', 'po_ttd_file', 'po_ttd_at', 'kontrak_dibuat_at', 'kontrak_dibaca_at') as $kcol) {
             if (isset($pkAda[$kcol])) { $pkKolom .= ' pk.' . $kcol . ' AS pk_' . $kcol . ','; }
@@ -530,7 +530,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        sp.id AS surat_penawaran_id, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
                        sp.tanggal_surat AS penawaran_tanggal_surat, sp.updated_at AS penawaran_updated_at,
                        sp.file_penawaran_ttd, sp.file_bukti_persetujuan, sp.surat_kesanggupan_bayar,
-                       pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
+                       pr.judul_proposal, pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
                        pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
                        b.id AS bast_id, b.status_bast,
                        COALESCE(u_tolak.nama_user, u_tinjau.nama_user, '-') AS nama_penolak,
@@ -677,6 +677,18 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
             $r['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($r['nmcustomer'] ?? ($r['nama_perusahaan'] ?? ''), $r['pt_cv'] ?? '');
             $r['nama_perusahaan'] = Customer::formatNamaPerusahaan($r['pt_cv'] ?? '', $r['nama_perusahaan'] ?? '');
+
+            // Resolusi judul kegiatan: prioritas dari judul proposal, kemudian PO kegiatan, lalu permohonan/order awal
+            $judulKegiatanTampil = !empty(trim((string)($r['judul_proposal'] ?? '')))
+                ? trim((string)$r['judul_proposal'])
+                : (!empty(trim((string)($r['pk_judul_kegiatan'] ?? '')))
+                    ? trim((string)$r['pk_judul_kegiatan'])
+                    : trim((string)($r['judul_kegiatan'] ?? '')));
+            $r['judul_kegiatan_tampil'] = $judulKegiatanTampil;
+            if (!empty($judulKegiatanTampil) && ($filterTab === 'berlangsung' || $filterTab === 'selesai' || in_array($r['status'] ?? '', ['aktif', 'berjalan', 'proses', 'selesai']))) {
+                $r['judul_kegiatan'] = $judulKegiatanTampil;
+            }
+
             $st = self::resolveStageStatus($r);
             $r['stage_label']        = $st['label'];
             $labelWords              = preg_split('/\s+/', trim($st['label']));
@@ -1266,7 +1278,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     sp.id AS surat_penawaran_id, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
                     sp.tanggal_surat AS penawaran_tanggal_surat, sp.updated_at AS penawaran_updated_at,
                     sp.file_penawaran_ttd, sp.file_bukti_persetujuan, sp.surat_kesanggupan_bayar,
-                    pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
+                    pr.judul_proposal, pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
                     pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
                     b.id AS bast_id, b.status_bast,
                     COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
@@ -1319,6 +1331,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         $detail['nmcustomer_murni'] = Customer::cleanNamaPerusahaan($detail['nmcustomer'] ?? ($detail['nama_perusahaan'] ?? ''), $detail['pt_cv'] ?? '');
         $detail['nama_perusahaan'] = Customer::formatNamaPerusahaan($detail['pt_cv'] ?? '', $detail['nama_perusahaan'] ?? '');
+
+        $judulKegiatanTampil = !empty(trim((string)($detail['judul_proposal'] ?? '')))
+            ? trim((string)$detail['judul_proposal'])
+            : trim((string)($detail['judul_kegiatan'] ?? ''));
+        $detail['judul_kegiatan_tampil'] = $judulKegiatanTampil;
+        if (!empty($judulKegiatanTampil) && in_array($detail['status'] ?? '', ['aktif', 'berjalan', 'proses', 'selesai'])) {
+            $detail['judul_kegiatan'] = $judulKegiatanTampil;
+        }
         // Evaluasi status unlock per-order dan countdown auto-lock
         $detail['is_unlocked_edit'] = ((int)($detail['is_unlocked_edit'] ?? 0) === 1);
         $detail['unlocked_remaining_seconds'] = 0;

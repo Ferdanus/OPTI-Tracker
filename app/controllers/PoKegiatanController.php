@@ -260,8 +260,18 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) 
     $post = $f3->get('POST');
 
     if (!$isUpdate) {
-        $po->order_id = (int) ($post['order_id'] ?? 0);
+        $orderIdBaru = (int) ($post['order_id'] ?? 0);
+        $po->order_id = $orderIdBaru;
         $po->created_by = (int) $this->getUserId();
+
+        // Validasi otoritas Ketua Pelaksana
+        if ($orderIdBaru > 0 && $this->isTimKerja() && !$this->isSuperadmin()) {
+            $ordRow = $this->safeQuery('SELECT ketua_pelaksana_id FROM order_layanan WHERE id = ? LIMIT 1', [1 => $orderIdBaru]);
+            $ketupelId = !empty($ordRow[0]['ketua_pelaksana_id']) ? (int) $ordRow[0]['ketua_pelaksana_id'] : 0;
+            if ($ketupelId > 0 && (int) $this->getUserId() !== $ketupelId) {
+                throw new \Exception('Akses Ditolak: Anda bukan Ketua Pelaksana yang ditugaskan untuk menyusun PO Kegiatan order ini.');
+            }
+        }
     }
     if (empty($po->pic_po_id)) {
         $po->pic_po_id = (int) $this->getUserId();
@@ -1370,6 +1380,18 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
         if (!$orderData) {
             $this->setFlashError('Order tidak ditemukan.');
             $f3->reroute('/po-kegiatan/pilih?jenis=opti');
+            return;
+        }
+
+        // Strict PIC User ID Binding:
+        // Jika user adalah Tim Kerja dan ada Ketua Pelaksana yang ditunjuk:
+        // HANYA Ketua Pelaksana tersebut yang berhak menyusun PO Kegiatan!
+        $roleUser = (string) $this->getUserRole();
+        $userIdAktif = (int) $this->getUserId();
+        $ketupelId = (int) ($orderData['ketua_pelaksana_id'] ?? 0);
+        if ($roleUser === 'tim_kerja' && !$this->isSuperadmin() && $ketupelId > 0 && $userIdAktif !== $ketupelId) {
+            $this->setFlashError('Akses Ditolak: Anda bukan Ketua Pelaksana yang ditugaskan untuk menyusun PO Kegiatan order ini.');
+            $f3->reroute('/order/' . $orderId);
             return;
         }
 

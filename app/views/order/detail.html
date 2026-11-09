@@ -1082,9 +1082,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 3px;
-            padding: 0.45rem 0.15rem;
-            min-height: 52px;
+            gap: 6px;
+            padding: 0.5rem 0.15rem;
+            min-height: 54px;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
             background: #f8fafc;
@@ -1153,6 +1153,7 @@
             align-items: center;
             justify-content: center;
             width: 100%;
+            margin-top: 1px;
         }
 
         .stage-status-badge {
@@ -1196,6 +1197,21 @@
             color: #15803d !important;
             border-color: #ffffff !important;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        .stage-status-badge.bg-danger,
+        .stage-nav-btn.active .stage-status-badge.bg-danger {
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            border: 1px solid #dc2626 !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+        }
+        .action-guide-card.type-danger {
+            background: #fef2f2 !important;
+            border-color: #fecaca !important;
+        }
+        .action-guide-card.type-danger .action-guide-step-badge {
+            background: #dc2626 !important;
+            color: #ffffff !important;
         }
 
         .stage-nav-btn:disabled,
@@ -2131,7 +2147,7 @@
             </li>
             <!-- Tahap 3 -->
             <li class="stage-nav-item" role="presentation">
-                <button class="stage-nav-btn {{ @active_step == 3 ? 'active' : '' }} {{ 3 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-3" {{ 3 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-3"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-3" aria-selected="{{ @active_step == 3 ? 'true' : 'false' }}">
+                <button class="stage-nav-btn {{ @active_step == 3 ? 'active' : '' }} {{ (@is_tinjauan_ditolak || @order.status == 'ditolak' || @order.status_tinjauan == 'tidak_layak' || (!empty(@tinjauan) && empty(@tinjauan.is_draft) && @tinjauan.keputusan == 'tidak_dapat_dilaksanakan')) ? 'is-rejected' : '' }} {{ 3 > @max_accessible_step ? 'disabled' : '' }}" id="tab-stage-3" {{ 3 <= @max_accessible_step ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-3"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-3" aria-selected="{{ @active_step == 3 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
                         <span class="stage-nav-badge">3</span>
                         <span class="stage-nav-text">Kelayakan</span>
@@ -2140,12 +2156,17 @@
                         <check if="{{ !empty(@tinjauan) && !empty(@tinjauan.is_draft) }}">
                             <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                             <false>
-                                <check if="{{ @stepper[3].state == 'done' }}">
-                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
+                                <check if="{{ @is_tinjauan_ditolak || @order.status == 'ditolak' || @order.status_tinjauan == 'tidak_layak' || (!empty(@tinjauan) && empty(@tinjauan.is_draft) && @tinjauan.keputusan == 'tidak_dapat_dilaksanakan') || @stepper[3].state == 'rejected' }}">
+                                    <true><span class="badge bg-danger text-white stage-status-badge"><i class="bi bi-x-circle me-0.5"></i>Ditolak</span></true>
                                     <false>
-                                        <check if="{{ @stepper[3].state == 'current' }}">
-                                            <true><span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span></true>
-                                            <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                        <check if="{{ @stepper[3].state == 'done' }}">
+                                            <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
+                                            <false>
+                                                <check if="{{ @stepper[3].state == 'current' }}">
+                                                    <true><span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span></true>
+                                                    <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                                </check>
+                                            </false>
                                         </check>
                                     </false>
                                 </check>
@@ -2211,10 +2232,15 @@
                                                 <check if="{{ !empty(@penawaran) && @penawaran.status_respon_klien == 'draft' }}">
                                                     <true><span class="badge bg-light text-dark border stage-status-badge">Draft</span></true>
                                                     <false>
-                                                        <check if="{{ @stepper[5].state == 'done' }}">
-                                                            <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
+                                                        <check if="{{ !empty(@penawaran) && in_array(@penawaran.status_respon_klien, ['tolak', 'batal', 'ditolak']) }}">
+                                                            <true><span class="badge bg-danger text-white stage-status-badge"><i class="bi bi-x-circle me-0.5"></i>Ditolak</span></true>
                                                             <false>
-                                                                <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
+                                                                <check if="{{ @stepper[5].state == 'done' }}">
+                                                                    <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
+                                                                    <false>
+                                                                        <span class="badge text-white stage-status-badge" style="background-color: #1e293b !important;">Aktif</span>
+                                                                    </false>
+                                                                </check>
                                                             </false>
                                                         </check>
                                                     </false>
@@ -2631,6 +2657,11 @@
                             <i class="bi bi-hourglass-split me-1"></i> Perlu Dilengkapi
                         </span>
                     </check>
+                    <check if="{{ !@is_form_pelayanan_done && @order.status != 'draft_disimpan' && @order.status != 'permintaan_masuk' }}">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold">
+                            <i class="bi bi-hourglass-split me-1"></i> Perlu Dilengkapi
+                        </span>
+                    </check>
                     <check if="{{ @is_form_pelayanan_done }}">
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold">
                             <i class="bi bi-check-circle-fill me-1"></i> Diteruskan ke Ka. Tim {{ @order.jenis_layanan_opti == 'selulosa' ? 'Selulosa' : (@order.jenis_layanan_opti == 'lingkungan' ? 'Lingkungan' : 'OPTI') }}
@@ -2657,7 +2688,7 @@
                                     </div>
                                 </div>
                                 <check if="{{ @is_admin_order || @is_superadmin }}">
-                                    <check if="{{ @can_koreksi }}">
+                                    <check if="{{ @can_koreksi_pelayanan }}">
                                         <true>
                                             <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditInlinePelayanan" aria-expanded="false" aria-controls="collapseEditInlinePelayanan">
                                                 <i class="bi bi-pencil-square"></i>
@@ -2665,7 +2696,7 @@
                                             </button>
                                         </true>
                                         <false>
-                                            <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Koreksi formulir dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                            <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Koreksi formulir dikunci karena kaji kelayakan telah diproses. Hubungi Superadmin untuk membuka izin edit order ini.">
                                                 <i class="bi bi-lock-fill text-muted"></i>
                                                 <span>Koreksi Formulir</span>
                                             </button>
@@ -2899,13 +2930,9 @@
                         <!-- SUBKONDISI 2A: NON-USER / VIEWER (READ-ONLY CALM SUMMARY) -->
                         <check if="{{ !@is_admin_order && !@is_superadmin }}">
                             <div class="p-3 bg-light rounded-3 border">
-                                <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="d-flex align-items-center gap-2 mb-3">
                                     <span class="badge bg-primary-subtle text-primary fw-semibold"><i class="bi bi-clock-history me-1"></i>Menunggu Pengisian Formulir Pelayanan</span>
-                                    <small class="text-muted">Tahap ini ditangani oleh Tim Kemitraan (Tim Mitra)</small>
                                 </div>
-                                <p class="small text-secondary mb-3">
-                                    Formulir spesifikasi pelayanan dan disposisi divisi pelaksana (OPTI Selulosa / OPTI Lingkungan) sedang dalam proses oleh Tim Mitra sebelum diajukan ke Ketua Tim.
-                                </p>
                                 <div class="row g-3">
                                     <div class="col-sm-6">
                                         <div class="p-3 border rounded-3 bg-white h-100" style="border-color: #e2e8f0 !important;">
@@ -3210,8 +3237,8 @@
                                     <div class="d-flex align-items-center gap-2.5">
                                         <i class="bi bi-exclamation-triangle-fill text-warning fs-4"></i>
                                         <div>
-                                            <strong class="text-dark small d-block">Penetapan PIC Proposal Diperlukan (OPTI Selulosa)</strong>
-                                            <span class="text-muted small">Kelayakan teknis telah disetujui, namun Tim Mitra belum memilih personil PIC Peneliti. Silakan tetapkan PIC agar pengerjaan proposal dapat dimulai.</span>
+                                            <strong class="text-dark small d-block">Penetapan PIC Proposal Diperlukan</strong>
+                                            <span class="text-muted small">Silakan tetapkan PIC Proposal agar pengerjaan proposal dapat dimulai.</span>
                                         </div>
                                     </div>
                                     <check if="{{ @is_ketua_tim || @is_superadmin }}">
@@ -3479,8 +3506,8 @@
                             <div class="alert alert-warning border border-warning-subtle shadow-xs rounded-3 p-3.5 mb-3.5 d-flex align-items-start gap-3">
                                 <i class="bi bi-exclamation-triangle-fill text-warning fs-4 flex-shrink-0 mt-0.5"></i>
                                 <div class="flex-grow-1">
-                                    <strong class="d-block text-dark mb-1">Perhatian Ketua Tim OPTI Selulosa: PIC Proposal Belum Ditetapkan!</strong>
-                                    <p class="small text-muted mb-2">Tim Mitra telah menyelesaikan kaji kelayakan untuk order ini, namun belum menunjuk personil PIC Peneliti. Silakan tetapkan PIC Proposal agar dokumen proposal teknis dan rincian biaya dapat mulai disusun.</p>
+                                    <strong class="d-block text-dark mb-1">PIC Proposal Belum Ditetapkan</strong>
+                                    <p class="small text-muted mb-2">Silakan tetapkan PIC Proposal agar penyusunan proposal dapat dimulai.</p>
                                     <check if="{{ @is_ketua_tim || @is_superadmin }}">
                                         <true>
                                             <button type="button" class="btn btn-warning btn-sm fw-bold px-3 shadow-xs" data-bs-toggle="modal" data-bs-target="#modalTunjukPic">
@@ -4234,7 +4261,8 @@
                                                         </label>
                                                         <div class="input-group input-group-sm">
                                                             <input type="number" min="1" max="365" name="durasi_hari" id="inputDurasiHariDetail" class="form-control fw-semibold font-monospace" 
-                                                                   value="{{ @durasi_hari }}" placeholder="Isi jumlah hari" oninput="checkKirimButtonStateDetail()" required {{ !@can_edit_proposal ? 'disabled' : '' }}>
+
+                                                                   value="{{ @durasi_hari ?: '' }}" placeholder="Isi jumlah hari" oninput="checkKirimButtonStateDetail()" required {{ !@can_edit_proposal ? 'disabled' : '' }}>
                                                             <span class="input-group-text bg-light text-secondary">Hari Kerja</span>
                                                         </div>
                                                     </div>
@@ -4350,15 +4378,7 @@
                                                             <div class="small text-muted d-flex align-items-center" style="font-size: 0.8rem; gap: 5px;">
                                                                 <i class="bi bi-info-circle text-primary flex-shrink-0"></i>
                                                                 <span id="hintKirimProposalTextDetail">
-                                                                    <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
-                                                                        Isi estimasi biaya dan unggah berkas Word untuk mengaktifkan tombol kirim.
-                                                                    </check>
-                                                                    <check if="{{ empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) > 0) }}">
-                                                                        Unggah berkas dokumen proposal Word untuk mengaktifkan tombol kirim.
-                                                                    </check>
-                                                                    <check if="{{ !empty(@proposal.file_proposal) && ((float)(@proposal.estimasi_total_biaya ?: (@order.estimasi_biaya ?: 0)) <= 0) }}">
-                                                                        Isi estimasi total biaya untuk mengaktifkan tombol kirim.
-                                                                    </check>
+                                                                    Lengkapi estimasi kerja (durasi pelaksanaan), estimasi biaya (RAB), dan unggah berkas proposal Word (.doc/.docx) untuk mengaktifkan tombol kirim.
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -4423,7 +4443,7 @@
                                                     <check if="{{ !@proposal_has_file_cost }}">
                                                         <div class="alert alert-danger border border-danger-subtle p-2.5 mb-3 rounded-2 small d-flex align-items-center gap-2">
                                                             <i class="bi bi-exclamation-circle text-danger flex-shrink-0"></i>
-                                                            <div>PIC belum melengkapi estimasi biaya atau berkas proposal. Proposal belum dapat disetujui.</div>
+                                                            <div>PIC belum melengkapi estimasi kerja, estimasi biaya (RAB), atau berkas proposal. Proposal belum dapat disetujui.</div>
                                                         </div>
                                                     </check>
                                                     <div class="mb-3">
@@ -4460,12 +4480,15 @@
                                         <div class="alert alert-primary bg-primary-subtle text-primary border border-primary-subtle py-2.5 px-3 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 small rounded-3 shadow-xs">
                                             <div class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-check-circle-fill text-primary fs-5 flex-shrink-0" style="margin-right: 0.65rem;"></i>
-                                                <span><strong>Proposal Teknis Disetujui Ka. Tim</strong> &bull; Siap diterbitkan Surat Penawaran Resmi</span>
+                                                <div>
+                                                    <strong class="d-block">Proposal Teknis &amp; Biaya Telah Disetujui Ka. Tim</strong>
+                                                    <span class="text-secondary small">Alur selanjutnya berpindah ke <strong>Tahap 5: Surat Penawaran Resmi</strong> untuk diterbitkan oleh Tim Mitra BBSPJIS.</span>
+                                                </div>
                                             </div>
                                             <check if="{{ !@penawaran }}">
-                                                <a href="#cardPenawaran" class="btn btn-sm btn-primary fw-bold shadow-xs" onclick="document.getElementById('tab-stage-5').click(); document.getElementById('cardPenawaran').scrollIntoView({behavior: 'smooth'}); return false;">
-                                                    <i class="bi bi-file-earmark-plus me-1"></i> Buat Surat Penawaran
-                                                </a>
+                                                <button type="button" class="btn btn-sm btn-primary fw-bold shadow-xs d-inline-flex align-items-center gap-1.5" onclick="document.getElementById('tab-stage-5').click(); document.getElementById('cardPenawaran').scrollIntoView({behavior: 'smooth'}); return false;">
+                                                    <span>Lanjut ke Tahap 5: Surat Penawaran</span> <i class="bi bi-arrow-right"></i>
+                                                </button>
                                             </check>
                                         </div>
                                     </check>
@@ -4486,7 +4509,7 @@
                     <div>
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">5</span>
-                            <i class="bi bi-file-earmark-text-fill text-primary fs-5"></i> Surat Penawaran Resmi &amp; Respon Klien
+                            <i class="bi bi-file-earmark-text-fill text-primary fs-5"></i> Lembar Surat Penawaran Resmi &amp; Tindak Lanjut Klien
                         </h6>
                         <div class="d-none align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
                             <span id="audit-dibaca-stage-5" class="audit-dibaca-stage-5 me-3 {{ !@audit_stages[5].waktu_dibaca ? 'd-none' : '' }}">Dibaca: <span class="text-dark fw-medium audit-dibaca-time">{{ @audit_stages[5].waktu_dibaca ? date('d M Y, H:i', strtotime(@audit_stages[5].waktu_dibaca)) : '' }}</span> <span class="text-secondary text-nowrap audit-dibaca-name">({{ @audit_stages[5].dibaca_nama ?: @audit_stages[5].dibaca_role }})</span></span>
@@ -4647,35 +4670,41 @@
                                                     </button>
                                                 </true>
                                                 <false>
-                                                    <!-- Tombol Buat Surat Baru (Khusus jika surat dalam negosiasi dan belum deal) -->
-                                                    <check if="{{ !empty(@penawaran) && (@penawaran.status_respon_klien != 'deal') && (@order.status_penawaran != 'deal') && !@is_locked_deal }}">
-                                                        <check if="{{ @can_koreksi }}">
-                                                            <true>
-                                                                <button type="button" class="btn btn-sm btn-white border fw-semibold text-primary px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaFormPenawaranInline('baru')" title="Buat surat penawaran baru dengan nomor surat otomatis berurutan (revisi negosiasi)">
-                                                                    <i class="bi bi-file-earmark-plus"></i>
-                                                                    <span>Buat Surat Baru</span>
-                                                                </button>
-                                                            </true>
-                                                            <false>
-                                                                <button type="button" class="btn btn-sm btn-light border fw-semibold text-muted px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" disabled title="Pembuatan surat penawaran baru dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
-                                                                    <i class="bi bi-lock-fill text-muted"></i>
-                                                                    <span>Buat Surat Baru</span>
-                                                                </button>
-                                                            </false>
-                                                        </check>
-                                                    </check>
-
-                                                    <check if="{{ @penawaran.status_respon_klien == 'draft' || @can_koreksi }}">
+                                                    <check if="{{ (@penawaran.status_respon_klien == 'deal') || (@order.status_penawaran == 'deal') || @is_locked_deal }}">
                                                         <true>
+                                                            <!-- STATUS DEAL: Kunci untuk Tim Mitra, tetapi bisa dibuka kembali oleh Superadmin atau jika order di-unlock -->
+                                                            <check if="{{ @is_superadmin || @can_koreksi }}">
+                                                                <true>
+                                                                    <button type="button" class="btn btn-sm btn-white border fw-semibold text-primary px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaFormPenawaranInline('baru')" title="Buat surat penawaran baru (Akses Superadmin / Unlocked)">
+                                                                        <i class="bi bi-file-earmark-plus"></i>
+                                                                        <span>Buat Surat Baru</span>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" onclick="bukaFormPenawaranInline('edit')" title="Buka dan sunting formulir penawaran (Akses Superadmin / Unlocked)">
+                                                                        <i class="bi bi-pencil-square"></i>
+                                                                        <span>Koreksi Formulir</span>
+                                                                    </button>
+                                                                </true>
+                                                                <false>
+                                                                    <button type="button" class="btn btn-sm btn-light border fw-semibold text-muted px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" disabled title="Surat penawaran telah deal dan dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                                        <i class="bi bi-lock-fill text-muted"></i>
+                                                                        <span>Buat Surat Baru</span>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Surat penawaran telah deal dan dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                                        <i class="bi bi-lock-fill text-muted"></i>
+                                                                        <span>Koreksi Formulir</span>
+                                                                    </button>
+                                                                </false>
+                                                            </check>
+                                                        </true>
+                                                        <false>
+                                                            <!-- STATUS MASIH NEGO / DRAFT: Terbuka untuk Tim Mitra & Pengelola Order -->
+                                                            <button type="button" class="btn btn-sm btn-white border fw-semibold text-primary px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaFormPenawaranInline('baru')" title="Buat surat penawaran baru dengan nomor surat otomatis berurutan (revisi negosiasi)">
+                                                                <i class="bi bi-file-earmark-plus"></i>
+                                                                <span>Buat Surat Baru</span>
+                                                            </button>
                                                             <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" onclick="bukaFormPenawaranInline('edit')" title="Buka dan sunting formulir penawaran langsung di halaman ini">
                                                                 <i class="bi bi-pencil-square"></i>
                                                                 <span>{{ @penawaran.status_respon_klien == 'draft' ? 'Lanjutkan Edit Draf' : 'Koreksi Formulir' }}</span>
-                                                            </button>
-                                                        </true>
-                                                        <false>
-                                                            <button type="button" class="btn btn-light btn-sm border fw-semibold text-muted d-inline-flex align-items-center gap-1.5" disabled title="Koreksi formulir penawaran dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
-                                                                <i class="bi bi-lock-fill text-muted"></i>
-                                                                <span>Koreksi Formulir</span>
                                                             </button>
                                                         </false>
                                                     </check>
@@ -4699,11 +4728,6 @@
                                             <div>
                                                 <div class="fw-bold text-dark small d-flex align-items-center gap-2">
                                                     <span>1. Surat Penawaran Bertanda Tangan <span class="text-danger" title="Wajib">*</span></span>
-                                                    <check if="{{ !empty(@penawaran.file_penawaran_ttd) }}">
-                                                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.72rem;">
-                                                            <i class="bi bi-check2-circle me-1"></i>Terklaim dari Arsip
-                                                        </span>
-                                                    </check>
                                                 </div>
                                             </div>
                                         </div>
@@ -4712,9 +4736,6 @@
                                                 <button type="button"
                                                    class="btn btn-sm btn-white border border-primary-subtle text-primary d-inline-flex align-items-center gap-1.5 btn-preview-pdf fw-semibold shadow-xs" data-preview-pdf="{{ @BASE }}/surat-penawaran/{{ @penawaran.id }}/dokumen-deal/penawaran_ttd/preview" data-title="Surat Penawaran Bertanda Tangan" data-subtitle="Order: {{ @order.nomor_order }}">
                                                     <i class="bi bi-file-earmark-check-fill text-success"></i> Lihat Dokumen
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-white border text-secondary d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="bukaModalKlaimSuratKeluar()" title="Ganti surat dari arsip sekretariat">
-                                                    <i class="bi bi-arrow-repeat"></i> Ganti Surat
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-white border border-danger-subtle text-danger d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="batalKlaimSuratKeluar()" title="Batalkan klaim surat ini">
                                                     <i class="bi bi-x-circle"></i> Batal Klaim
@@ -4739,62 +4760,6 @@
                                             <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
                                                 <button type="button" class="btn btn-primary btn-sm fw-semibold px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2" onclick="bukaModalKlaimSuratKeluar()">
                                                     <i class="bi bi-box-arrow-in-down fs-6"></i> Ambil Surat dari Arsip
-                                                </button>
-                                                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2" onclick="toggleManualUploadDeal1()">
-                                                    <i class="bi bi-upload me-1"></i> Upload Manual (Alternatif)
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Form Upload Berkas 1 Manual (Fallback tersembunyi) -->
-                                    <div class="p-4 pt-3 pb-4 d-none bg-light-subtle border-top" id="dealFormWrap_penawaran_ttd">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <span class="small fw-semibold text-secondary"><i class="bi bi-info-circle me-1"></i> Unggah Manual Berkas Surat Penawaran TTD</span>
-                                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="toggleManualUploadDeal1()">Tutup Upload Manual</button>
-                                        </div>
-                                        <div class="mx-auto my-1" style="max-width: 680px;">
-                                            <div class="px-4 py-4 bg-white rounded-3 border border-2 border-dashed text-center position-relative transition-all shadow-2xs deal-drop-zone d-flex flex-column align-items-center justify-content-center" id="dealDropZone_penawaran_ttd" data-jenis="penawaran_ttd" style="cursor: pointer; border-color: #cbd5e1 !important; min-height: 140px;">
-                                                <input type="file" id="dealFileInput_penawaran_ttd" data-jenis="penawaran_ttd" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="cursor: pointer; z-index: 1;">
-                                                <div id="dealDropPrompt_penawaran_ttd" class="py-2 w-100">
-                                                    <div class="bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-2 flex-shrink-0" style="width: 44px; height: 44px; min-width: 44px; min-height: 44px; max-width: 44px; max-height: 44px; border-radius: 50% !important; aspect-ratio: 1 / 1; line-height: 1; padding: 0;">
-                                                        <i class="bi bi-cloud-arrow-up-fill fs-5" style="line-height: 1;"></i>
-                                                    </div>
-                                                    <span class="fw-bold text-dark d-block small mb-1">Pilih Berkas Surat Penawaran Bertanda Tangan</span>
-                                                    <span class="text-muted d-block mb-2.5" style="font-size: 0.75rem;">Klik di sini atau seret file &bull; PDF, JPG, PNG, atau DOCX (Maks. 10MB)</span>
-                                                    <span class="btn btn-xs btn-white border px-3 py-1.5 text-primary fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" style="font-size: 0.72rem; pointer-events: none;">
-                                                        <i class="bi bi-folder2-open"></i> Telusuri File...
-                                                    </span>
-                                                </div>
-                                                <div id="dealSelectedWrap_penawaran_ttd" class="py-2.5 w-100 d-none" style="position: relative; z-index: 10;">
-                                                    <div class="d-inline-flex align-items-center gap-3 px-4 py-2.5 bg-white border border-primary-subtle rounded-pill shadow-xs" style="max-width: 96%; background-color: #f0f7ff !important;">
-                                                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 1rem;">
-                                                            <i class="bi bi-file-earmark-check-fill"></i>
-                                                        </div>
-                                                        <div class="text-start text-truncate" style="max-width: 360px;">
-                                                            <span class="fw-semibold text-dark small d-inline-block text-truncate align-middle" id="dealSelectedName_penawaran_ttd" style="font-size: 0.85rem; max-width: 100%;">nama_file.pdf</span>
-                                                        </div>
-                                                        <span class="text-muted small fw-normal flex-shrink-0" id="dealSelectedSize_penawaran_ttd" style="font-size: 0.78rem;">(1.2 MB)</span>
-                                                        <button type="button" class="btn btn-link text-danger p-0 ms-1 d-inline-flex align-items-center justify-content-center btn-deal-clear flex-shrink-0" data-jenis="penawaran_ttd" title="Hapus pilihan berkas" style="text-decoration: none; width: 24px; height: 24px; position: relative; z-index: 20; cursor: pointer;">
-                                                            <i class="bi bi-x-circle-fill fs-5" style="line-height: 1;"></i>
-                                                        </button>
-                                                    </div>
-                                                    <div class="mt-2 text-muted" style="font-size: 0.76rem;">
-                                                        <span class="text-success fw-medium"><i class="bi bi-check-circle-fill me-1"></i>Berkas siap diunggah</span>
-                                                        <span class="mx-1.5 text-muted">&bull;</span>
-                                                        <span class="text-primary fw-medium text-decoration-underline btn-deal-reselect" data-jenis="penawaran_ttd" style="cursor: pointer; position: relative; z-index: 15;">Ganti berkas</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 pt-2 mb-1">
-                                            <div class="small text-danger d-none" id="dealErrorMsg_penawaran_ttd"></div>
-                                            <div class="d-flex gap-2 ms-auto">
-                                                <button type="button" class="btn btn-sm btn-white border shadow-xs px-3.5 py-2" onclick="toggleManualUploadDeal1()">Batal</button>
-                                                <button type="button" class="btn btn-sm btn-dark d-inline-flex align-items-center gap-2 fw-semibold shadow-sm px-4 py-2 btn-deal-simpan" data-jenis="penawaran_ttd" id="dealSimpanBtn_penawaran_ttd" disabled>
-                                                    <span class="spinner-border spinner-border-sm d-none" id="dealSpinner_penawaran_ttd" role="status"></span>
-                                                    <span><i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan &amp; Unggah Berkas</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -5044,6 +5009,7 @@
                                         </div>
                                         <button type="button" class="btn-close btn-sm" data-bs-toggle="collapse" data-bs-target="#collapseFormPenawaranInline" aria-label="Tutup"></button>
                                     </div>
+                                    <set is_embedded_in_detail="1" />
                                     <include href="tim_mitra/surat Pelayanan/form_order.html" />
                                 </div>
                             </div>
@@ -5148,22 +5114,11 @@
                             </check>
                         </check>
 
-                        <!-- JIKA BELUM ADA SURAT PENAWARAN: LANGSUNG FORMULIR PEMBUATAN PENAWARAN -->
+                        <!-- JIKA BELUM ADA SURAT PENAWARAN -->
                         <check if="{{ !@penawaran }}">
                             <check if="{{ @is_admin_order || @is_tim_mitra || @is_superadmin || @can_manage_penawaran || @order.jenis_layanan_opti == 'lingkungan' }}">
-                                <div class="card border rounded-3 bg-white shadow-xs p-3 p-md-4">
-                                    <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom flex-wrap gap-2">
-                                        <div>
-                                            <h6 class="fw-bold text-dark mb-1 font-display d-flex align-items-center gap-2">
-                                                <i class="bi bi-file-earmark-plus-fill text-primary"></i> Formulir Pembuatan Surat Penawaran Resmi
-                                            </h6>
-                                            <div class="text-muted small">
-                                                Lengkapi rincian biaya, durasi pelaksanaan, serta data penandatangan untuk menerbitkan Surat Penawaran Resmi kepada pelanggan.
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <include href="tim_mitra/surat Pelayanan/form_order.html" />
-                                </div>
+                                <set is_embedded_in_detail="1" />
+                                <include href="tim_mitra/surat Pelayanan/form_order.html" />
                             </check>
                             <check if="{{ !(@is_admin_order || @is_tim_mitra || @is_superadmin || @can_manage_penawaran || @order.jenis_layanan_opti == 'lingkungan') }}">
                                 <div class="p-4 bg-light rounded-3 border text-center text-muted small">
@@ -5854,14 +5809,32 @@
                                     <check if="{{ @is_ketua_tim || @is_superadmin }}">
                                         <div class="d-flex align-items-center gap-2">
                                             <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && empty(@order.tanggal_spm_mulai) && empty(@order.tanggal_terima_sampel) }}">
-                                                <button type="button" class="btn btn-primary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Konfirmasi atau sesuaikan kembali Ketua Tim Pelaksana">
-                                                    <i class="bi bi-check2-circle"></i> Konfirmasi / Ganti Pelaksana
-                                                </button>
+                                                <check if="{{ @can_koreksi }}">
+                                                    <true>
+                                                        <button type="button" class="btn btn-primary btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs rounded-2" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Konfirmasi atau sesuaikan kembali Ketua Tim Pelaksana">
+                                                            <i class="bi bi-check2-circle"></i> Konfirmasi / Ganti Pelaksana
+                                                        </button>
+                                                    </true>
+                                                    <false>
+                                                        <button type="button" class="btn btn-light btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 border text-muted shadow-xs rounded-2" disabled title="Ganti pelaksana dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                            <i class="bi bi-lock-fill text-muted"></i> Konfirmasi / Ganti Pelaksana
+                                                        </button>
+                                                    </false>
+                                                </check>
                                             </check>
                                             <check if="{{ @order.jenis_layanan_opti != 'lingkungan' || (!empty(@order.tanggal_spm_mulai) || !empty(@order.tanggal_terima_sampel)) }}">
-                                                <button type="button" class="btn btn-outline-secondary btn-xs px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Ganti personil PIC PO">
-                                                    <i class="bi bi-arrow-repeat"></i> Ganti PIC PO
-                                                </button>
+                                                <check if="{{ @can_koreksi }}">
+                                                    <true>
+                                                        <button type="button" class="btn btn-sm btn-outline-primary px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs rounded-2" data-bs-toggle="modal" data-bs-target="#modalTunjukPicPo" title="Ganti personil PIC PO">
+                                                            <i class="bi bi-arrow-repeat"></i> Ganti PIC PO
+                                                        </button>
+                                                    </true>
+                                                    <false>
+                                                        <button type="button" class="btn btn-sm btn-light border text-muted px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs rounded-2" disabled title="Ganti PIC PO dikunci. Hubungi Superadmin untuk membuka izin edit order ini.">
+                                                            <i class="bi bi-lock-fill text-muted"></i> Ganti PIC PO
+                                                        </button>
+                                                    </false>
+                                                </check>
                                             </check>
                                         </div>
                                     </check>
@@ -12508,6 +12481,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (tabStage4) {
         tabStage4.addEventListener('shown.bs.tab', function() {
             adjustAllNamaUjiTextareas();
+            if (typeof checkKirimButtonStateDetail === 'function') {
+                checkKirimButtonStateDetail();
+            }
         });
     }
 });
@@ -12676,6 +12652,9 @@ window.bukaFormPenawaranInline = function(mode) {
     try {
         if (typeof syncLivePreview === 'function') {
             syncLivePreview();
+        }
+        if (typeof updateSubmitButtonState === 'function') {
+            updateSubmitButtonState();
         }
     } catch (eSync) {
         console.warn('Sync live preview error caught in bukaFormPenawaranInline:', eSync);

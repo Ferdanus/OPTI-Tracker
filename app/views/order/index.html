@@ -553,8 +553,8 @@ tr.row-user-task:hover > td {
                                                         </button>
                                                     </check>
                                                 </div>
-                                                <div class="fw-semibold text-dark mb-1" title="{{ @ord.judul_kegiatan }}">
-                                                    {{ @ord.judul_kegiatan }}
+                                                <div class="fw-semibold text-dark mb-1" title="{{ !empty(@ord.judul_kegiatan_tampil) ? @ord.judul_kegiatan_tampil : @ord.judul_kegiatan }}">
+                                                    {{ !empty(@ord.judul_kegiatan_tampil) ? @ord.judul_kegiatan_tampil : @ord.judul_kegiatan }}
                                                 </div>
                                                 <div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">
                                                     <i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>
@@ -644,7 +644,12 @@ tr.row-user-task:hover > td {
                                     <tr>
                                         <th class="text-center" style="width: 40px;">No</th>
                                         <th style="width: 155px;">No. &amp; Tgl Order</th>
-                                        <th style="min-width: 290px;">Judul Permohonan &amp; Klien</th>
+                                        <th style="min-width: 290px;">
+                                            <check if="{{ @filter_tab == 'berlangsung' || @filter_tab == 'selesai' }}">
+                                                <true>Judul Kegiatan &amp; Klien</true>
+                                                <false>Judul Permohonan &amp; Klien</false>
+                                            </check>
+                                        </th>
                                         <th class="text-center" style="width: 110px;">Divisi OPTI</th>
                                         <th class="text-end text-nowrap" style="width: 155px;">Estimasi Biaya</th>
                                         <th class="text-center" style="width: 130px;">Status Alur</th>

@@ -572,7 +572,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
 
         // Notifikasi Terintegrasi (Notification Service) untuk Bell Dropdown & Floating Bubble (hanya menampilkan pesan yang belum dibaca)
         try {
-            $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 30, '', false);   // terbaru dulu: yang belum dibaca tetap tebal, yang sudah dibaca diredupkan (tidak hilang dari lonceng)
+            $userNotifList = \NotificationService::getUserNotifications($this->db, (int)$userId, $role, $layanan, 30, '', true);    // lonceng notifikasi khusus hanya menampilkan pesan yang BELUM dibaca
             $unreadNotifCount = \NotificationService::getUnreadCount($this->db, (int)$userId, $role, $layanan);
         } catch (\Exception $eNotifSys) {
             $userNotifList = [];

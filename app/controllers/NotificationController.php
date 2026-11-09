@@ -14,7 +14,7 @@ class NotificationController extends Controller
 
         $unreadCount = NotificationService::getUnreadCount($this->db, $userId, $role, $layanan);
         $items = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 50, '', true);
-        $recent = NotificationService::getUserNotifications($this->db, $userId, $role, $layanan, 30, '', false);
+        $recent = $items;
 
         header('Content-Type: application/json');
         echo json_encode([
@@ -33,8 +33,9 @@ class NotificationController extends Controller
     public function markRead($f3, $params)
     {
         $notifId = (int)($params['id'] ?? 0);
+        $userId  = (int)($this->getUserId() ?? 0);
         if ($notifId > 0) {
-            NotificationService::markAsRead($this->db, $notifId);
+            NotificationService::markAsRead($this->db, $notifId, $userId);
         }
 
         header('Content-Type: application/json');

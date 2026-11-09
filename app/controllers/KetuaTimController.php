@@ -166,6 +166,21 @@ unset($o);
             return;
         }
 
+        // Cek izin edit jika mengganti pelaksana yang sudah ditunjuk sebelumnya
+        $orderModel = new \OrderLayanan($this->db);
+        $curr = $orderModel->getDetail($orderId);
+        if ($curr && !empty($curr['ketua_pelaksana_id']) && (int)$curr['ketua_pelaksana_id'] !== $pelaksanaId) {
+            $isSuperadmin = $this->isSuperadmin();
+            $isUnlocked = \OrderLayanan::isOrderUnlocked($orderId);
+            if (!$isSuperadmin && !$isUnlocked) {
+                $this->setFlashError('Perubahan PIC PO dikunci. Hubungi Superadmin untuk membuka izin edit order ini.');
+                $redirectUrl = $f3->get('POST.redirect_url');
+                if (!empty($redirectUrl)) { $f3->reroute($redirectUrl); return; }
+                $f3->reroute("/order/{$orderId}#pane-stage-7");
+                return;
+            }
+        }
+
         try {
             $this->db->exec(
                 "UPDATE order_layanan SET ketua_pelaksana_id = ?, ketua_pelaksana_at = NOW() WHERE id = ?",
@@ -182,15 +197,19 @@ unset($o);
             try {
                 $orderModel = new \OrderLayanan($this->db);
                 $order = $orderModel->getDetail($orderId);
-                $userNama = $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI';
+                $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Ketua Tim OPTI');
+                $pelaksanaNama = !empty($u) ? $u[0]['nama_user'] : 'Ketua Pelaksana';
                 if ($order) {
+                    $orderLabel = \NotificationService::formatOrderLabel($order, $orderId);
+                    $ptNama = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
+
                     \NotificationService::send($this->db, [
                         'order_id'        => $orderId,
                         'target_role'     => 'tim_kerja',
                         'target_user_id'  => $pelaksanaId,
                         'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
                         'judul'           => 'Penugasan Ketua Pelaksana PO Kegiatan',
-                        'pesan'           => "Anda telah ditunjuk oleh Ketua Tim OPTI ({$userNama}) sebagai Ketua Pelaksana untuk menyusun Dokumen Petunjuk Operasional (PO) Order #{$order['nomor_order']} ({$order['nama_perusahaan']}).",
+                        'pesan'           => "Anda ({$pelaksanaNama}) ditunjuk jadi Ketua Pelaksana PO order {$orderLabel} {$ptNama} oleh {$userNama}.",
                         'tipe'            => 'primary',
                         'icon'            => 'bi-person-check-fill',
                         'link_url'        => "/po-kegiatan/buat?order_id={$orderId}",
@@ -204,7 +223,7 @@ unset($o);
                         'target_role'     => 'tim_mitra',
                         'target_layanan'  => 'semua',
                         'judul'           => 'Ketua Pelaksana PO Ditunjuk',
-                        'pesan'           => "Ketua Tim OPTI ({$userNama}) telah menunjuk Ketua Pelaksana untuk Order #{$order['nomor_order']} ({$order['nama_perusahaan']}). Penyusunan PO sedang berjalan.",
+                        'pesan'           => "{$pelaksanaNama} ditunjuk jadi Ketua Pelaksana PO order {$orderLabel} {$ptNama} oleh {$userNama}.",
                         'tipe'            => 'info',
                         'icon'            => 'bi-person-check-fill',
                         'link_url'        => "/order/{$orderId}",
@@ -266,7 +285,7 @@ unset($o);
                 'target_role'     => 'ketua_tim',
                 'target_layanan'  => $o['jenis_layanan_opti'] ?? 'semua',
                 'judul'           => 'Order Siap Ditunjuk Pelaksana',
-                'pesan'           => "Order #{$o['nomor_order']} ({$namaPerusahaan}) sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana.",
+                'pesan'           => "Order #{$o['nomor_order']} {$namaPerusahaan} sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana.",
                 'tipe'            => 'success',
                 'icon'            => 'bi-person-check-fill',
                 'link_url'        => '/ketua-tim/siap-po',
@@ -280,7 +299,7 @@ unset($o);
                 'target_role'     => 'tim_mitra',
                 'target_layanan'  => 'semua',
                 'judul'           => 'Order Siap Ditunjuk Pelaksana',
-                'pesan'           => "Order #{$o['nomor_order']} ({$namaPerusahaan}) sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana oleh Ka. Tim OPTI.",
+                'pesan'           => "Order #{$o['nomor_order']} {$namaPerusahaan} sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana oleh Ka. Tim OPTI.",
                 'tipe'            => 'info',
                 'icon'            => 'bi-person-check-fill',
                 'link_url'        => "/order/{$orderId}",

@@ -37,7 +37,7 @@ date_default_timezone_set('Asia/Jakarta');
 if (PHP_SAPI !== 'cli' && isset($_SERVER['REQUEST_URI'])) {
     $rawUri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
     $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
-    if (!empty($scriptDir) && strpos($rawUri, $scriptDir) === 0) {
+    if (!empty($scriptDir) && stripos($rawUri, $scriptDir) === 0) {
         $realPath = substr($rawUri, strlen($scriptDir)) ?: '/';
         $f3->set('BASE', $scriptDir);
         $f3->set('PATH', $realPath);
@@ -410,6 +410,8 @@ $f3->route('GET /surat-penawaran/@id/dokumen-deal/@jenis/preview', 'SuratPenawar
 $f3->route('GET /surat-penawaran/@id/dokumen-deal/@jenis/word', 'SuratPenawaranController->unduhDokumenDealWord');
 $f3->route('POST /surat-penawaran/@id/surat-kesanggupan/upload', 'SuratPenawaranController->uploadKesanggupanBayar');
 $f3->route('GET /surat-penawaran/@id/surat-kesanggupan/preview', 'SuratPenawaranController->previewKesanggupanBayar');
+$f3->route('POST /order/@id/penawaran/set-lampiran-proposal', 'SuratPenawaranController->setLampiranProposal');
+$f3->route('POST /surat-penawaran/@id/set-lampiran-proposal', 'SuratPenawaranController->setLampiranProposal');
 $f3->route('POST /order/@id/penawaran/upload-lampiran', 'SuratPenawaranController->uploadLampiranUser');
 $f3->route('POST /surat-penawaran/@id/upload-lampiran', 'SuratPenawaranController->uploadLampiranUser');
 $f3->route('POST /order/@id/penawaran/hapus-lampiran', 'SuratPenawaranController->hapusLampiranUser');

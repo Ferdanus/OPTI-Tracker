@@ -9,6 +9,32 @@ class NotificationService
      * @param array $data [order_id, po_id, target_role, target_user_id, target_layanan, judul, pesan, tipe, icon, link_url, created_by, created_by_name]
      * @return int ID notifikasi yang dibuat
      */
+        /**
+     * Format label nomor order yang aman dan konsisten (mencegah bug Order # kosong)
+     */
+    public static function formatOrderLabel($order, $orderId = null): string
+    {
+        if (is_object($order)) {
+            $noOrder = !empty($order->nomor_order) ? trim((string)$order->nomor_order) : '';
+            $noReq = !empty($order->nomor_permintaan) ? trim((string)$order->nomor_permintaan) : '';
+        } elseif (is_array($order)) {
+            $noOrder = !empty($order['nomor_order']) ? trim((string)$order['nomor_order']) : '';
+            $noReq = !empty($order['nomor_permintaan']) ? trim((string)$order['nomor_permintaan']) : '';
+        } else {
+            $noOrder = '';
+            $noReq = '';
+        }
+
+        if (!empty($noOrder)) {
+            return '#' . ltrim($noOrder, '#');
+        }
+        if (!empty($noReq)) {
+            return $noReq;
+        }
+        $id = $orderId ?: (is_object($order) ? ($order->id ?? 0) : ($order['id'] ?? 0));
+        return $id ? "REQ-{$id}" : 'order';
+    }
+
     public static function send(\DB\SQL $db, array $data): int
     {
         $orderId       = !empty($data['order_id']) ? (int)$data['order_id'] : null;
@@ -23,6 +49,43 @@ class NotificationService
         $linkUrl       = $data['link_url'] ?? '/order';
         $createdBy     = !empty($data['created_by']) ? (int)$data['created_by'] : ($_SESSION['user_id'] ?? null);
         $createdByName = $data['created_by_name'] ?? ($_SESSION['nama_lengkap'] ?? 'Sistem OPTI');
+        // Safeguard: Perbaiki bug "Order #" tanpa nomor atau "PIC Terpilih"
+        if (!empty($orderId)) {
+            // Otomatis hapus tanda kurung pada nama PT / Perusahaan / Klien (misal "(PT Dumaco Chemicals)" -> "PT Dumaco Chemicals")
+            $pesan = preg_replace('/\(\s*((?:PT\.?|CV\.?|UD\.?|PO\.?|Perum|Koperasi|BUMN|Instansi|Yayasan)\b[^)]+)\)/i', '$1', $pesan);
+            $pesan = preg_replace('/\(\s*(Klien|Pelanggan)\s*\)/i', '$1', $pesan);
+            try {
+                $rCust = $db->exec("SELECT TRIM(CONCAT(COALESCE(o.pt_cv, ''), ' ', COALESCE(c.nmcustomer, ''))) AS nama_perusahaan FROM order_layanan o LEFT JOIN tb_customer c ON o.id_customer = c.id_customer WHERE o.id = ?", [1 => $orderId]);
+                if (!empty($rCust[0]['nama_perusahaan'])) {
+                    $np = trim((string)$rCust[0]['nama_perusahaan']);
+                    if (!empty($np)) {
+                        $pesan = str_replace('(' . $np . ')', $np, $pesan);
+                    }
+                }
+            } catch (\Throwable $eCust) {}
+
+            if (preg_match('/Order\s*#(?![a-zA-Z0-9])/i', $pesan)) {
+                try {
+                    $rowO = $db->exec("SELECT nomor_order, nomor_permintaan FROM order_layanan WHERE id = ?", [1 => $orderId]);
+                    if (!empty($rowO)) {
+                        $fallbackLabel = !empty($rowO[0]['nomor_order']) ? ('#' . ltrim($rowO[0]['nomor_order'], '#')) : (!empty($rowO[0]['nomor_permintaan']) ? $rowO[0]['nomor_permintaan'] : "REQ-{$orderId}");
+                        $pesan = preg_replace('/Order\s*#(?![a-zA-Z0-9])/i', 'order ' . $fallbackLabel, $pesan);
+                    }
+                } catch (\Throwable $eSafe) {}
+            }
+            if (strpos($pesan, 'PIC Terpilih') !== false) {
+                try {
+                    $tUid = $targetUserId ?: (!empty($orderId) ? (int)$db->exec("SELECT pic_proposal_id FROM order_layanan WHERE id = ?", [1 => $orderId])[0]['pic_proposal_id'] : 0);
+                    if ($tUid > 0) {
+                        $rowU = $db->exec("SELECT nama_user FROM tb_arsipuser WHERE id_user = ?", [1 => $tUid]);
+                        if (!empty($rowU[0]['nama_user'])) {
+                            $pesan = str_replace('PIC Terpilih', $rowU[0]['nama_user'], $pesan);
+                        }
+                    }
+                } catch (\Throwable $eSafeU) {}
+            }
+        }
+
 
         $sql = "INSERT INTO `opti_notifikasi` 
                 (`order_id`, `po_id`, `target_role`, `target_user_id`, `target_layanan`, `judul`, `pesan`, `tipe`, `icon`, `link_url`, `created_by`, `created_by_name`, `created_at`)
