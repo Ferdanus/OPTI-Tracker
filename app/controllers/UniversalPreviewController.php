@@ -77,6 +77,16 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
+            // 3b. [BARU] Pola Berkas Proposal Teknis Asli: /order/@id/proposal/file atau /proposal/@id/file
+            if (preg_match('#order/(\d+)/proposal/file#i', $path, $m)) {
+                $this->handleProposalFile((int)$m[1], true);
+                return;
+            }
+            if (preg_match('#proposal/(\d+)/file#i', $path, $m)) {
+                $this->handleProposalFile((int)$m[1], false);
+                return;
+            }
+
             // 3. Pola Proposal Teknis: /order/@id/proposal/preview ATAU /proposal/preview/@id
             if (preg_match('#(?:order/(\d+)/proposal(?:/preview)?|proposal/preview/(\d+))#i', $path, $m)) {
                 $orderId = (int)(!empty($m[1]) ? $m[1] : $m[2]);
@@ -84,10 +94,18 @@ class UniversalPreviewController extends Controller
                 return;
             }
 
-            // 3b. [BARU] Pola Berkas Proposal Teknis Asli (PDF): /order/@id/proposal/file
-            if (preg_match('#(?:order/(\d+)/proposal/file|proposal/(\d+)/file)#i', $path, $m)) {
-                $targetId = (int)(!empty($m[1]) ? $m[1] : $m[2]);
-                $this->handleProposalFile($targetId);
+            // 3c. Pola PO Bertanda Tangan: /order/@id/po-ttd
+            if (preg_match('#order/(\d+)/po-ttd#i', $path, $m)) {
+                $orderId = (int)$m[1];
+                $rowsPo = $this->db->exec("SELECT po_ttd_file FROM po_kegiatan WHERE order_id = ? AND po_ttd_file IS NOT NULL AND po_ttd_file <> '' ORDER BY id DESC LIMIT 1", [1 => $orderId]);
+                if (!empty($rowsPo[0]['po_ttd_file'])) {
+                    $filePath = $this->resolveFilePath($rowsPo[0]['po_ttd_file'], ['storage/po_ttd', 'uploads/po_ttd']);
+                    if ($filePath && is_file($filePath)) {
+                        $this->sendFileAsBase64($filePath, 'PO_TTD_Order_' . $orderId);
+                        return;
+                    }
+                }
+                $this->jsonResponse(['success' => false, 'message' => 'Berkas PO bertanda tangan belum tersedia atau tidak ditemukan di server.']);
                 return;
             }
 
@@ -270,15 +288,34 @@ class UniversalPreviewController extends Controller
     /**
      * Berkas Asli Proposal Teknis (PDF)
      */
-    protected function handleProposalFile($propId)
+    protected function handleProposalFile($propId, $byOrder = false)
     {
-        $rows = $this->db->exec(
-            'SELECT id, order_id, file_proposal, judul_proposal 
-             FROM opti_proposal_riset 
-             WHERE id = ? OR order_id = ? 
-             ORDER BY id DESC LIMIT 1',
-            [1 => $propId, 2 => $propId]
-        );
+        if ($byOrder) {
+            $rows = $this->db->exec(
+                'SELECT id, order_id, file_proposal, judul_proposal 
+                 FROM opti_proposal_riset 
+                 WHERE order_id = ? 
+                 ORDER BY id DESC LIMIT 1',
+                [1 => $propId]
+            );
+        } else {
+            $rows = $this->db->exec(
+                'SELECT id, order_id, file_proposal, judul_proposal 
+                 FROM opti_proposal_riset 
+                 WHERE id = ? 
+                 LIMIT 1',
+                [1 => $propId]
+            );
+            if (empty($rows)) {
+                $rows = $this->db->exec(
+                    'SELECT id, order_id, file_proposal, judul_proposal 
+                     FROM opti_proposal_riset 
+                     WHERE order_id = ? 
+                     ORDER BY id DESC LIMIT 1',
+                    [1 => $propId]
+                );
+            }
+        }
 
         if (empty($rows) || empty($rows[0]['file_proposal'])) {
             $this->jsonResponse(['success' => false, 'message' => 'Berkas PDF Proposal Teknis belum diunggah untuk order ini.']);

@@ -228,6 +228,9 @@ class SuratPenawaran extends \DB\SQL\Mapper
             }
         }
         $isExistingDitolak = $existing && in_array(strtolower($existing['status_respon_klien'] ?? ''), ['batal', 'tolak', 'ditolak']);
+        if (($data['mode'] ?? '') === 'edit' && $existing && !$isExistingDitolak) {
+            $isRevisiBaru = false;
+        }
 
         // KASUS UPDATE (Bukan revisi baru):
         // 1. Jika revisi baru atau penawaran lama sudah ditolak, jangan update dokumen lama melainkan terbitkan baru
@@ -376,7 +379,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
             $spmLayanan = "{$durasiNilai} " . (!empty($durasiSatuan) ? $durasiSatuan : (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Bulan' : 'Hari Kerja'));
         }
 
-        $updateOrderSql = "UPDATE order_layanan SET status_penawaran = ?, surat_penawaran_id = ?, estimasi_biaya = ?, status_proposal_biaya = IF(status_proposal_biaya = 'disetujui', 'disetujui', 'siap_penawaran'), media_permohonan = ?";
+        $updateOrderSql = "UPDATE order_layanan SET status_penawaran = ?, surat_penawaran_id = ?, estimasi_biaya = ?, media_permohonan = ?";
         $orderParams = [1 => $statusPenawaranOrder, 2 => $penawaranId, 3 => $nominal, 4 => $permintaanMelalui];
         $paramIdx = 5;
         if (!empty($spmLayanan)) {

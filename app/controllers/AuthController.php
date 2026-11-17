@@ -69,8 +69,9 @@ class AuthController extends Controller {
         $user = $this->db->exec(
             "SELECT u.*, m.role, m.jenis_layanan AS jenis_layanan_opti, m.is_active AS map_active
              FROM tb_arsipuser u
-             LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show'
-             WHERE u.id_user = ? AND (u.status = 1 OR u.status = '1' OR u.status = 'aktif')",
+             LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show' AND (m.is_active = 1 OR m.is_active = '1')
+             WHERE u.id_user = ? AND (u.status = 1 OR u.status = '1' OR u.status = 'aktif')
+             ORDER BY CASE WHEN m.role LIKE 'ketua_tim%' THEN 1 WHEN m.role LIKE 'tim_kerja%' THEN 2 ELSE 3 END ASC",
             array(1 => $id)
         );
 

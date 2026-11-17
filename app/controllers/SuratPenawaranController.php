@@ -75,6 +75,48 @@ if (!class_exists('SiloptiSuratPenawaranPdf')) {
 
 class SuratPenawaranController extends Controller
 {
+    /**
+     * Cek apakah user aktif berwenang mengelola surat penawaran (Tim Mitra / Admin Order / Superadmin)
+     */
+    private function canManagePenawaran(): bool
+    {
+        return $this->isSuperadmin() || $this->isTimMitra() || $this->isAdminOrder();
+    }
+
+    /**
+     * Cek apakah tahap penawaran/order sudah terkunci (DEAL, Disposisi Keuangan, SPM aktif, atau Selesai)
+     * kecuali dibuka izin koreksi per-order oleh Superadmin.
+     */
+    private function isPenawaranLocked(int $orderId, ?array $sp = null, bool $allowPreDisposisiDeal = false): bool
+    {
+        if ($this->canEditSubmittedData(true, $orderId)) {
+            return false;
+        }
+        if ($sp !== null && ($sp['status_respon_klien'] ?? '') === 'deal' && !$allowPreDisposisiDeal) {
+            return true;
+        }
+        if ($orderId <= 0) {
+            return $sp !== null && (($sp['status'] ?? '') !== 'draft' || ($sp['status_respon_klien'] ?? '') === 'deal');
+        }
+        $orderModel = new \OrderLayanan($this->db);
+        $order = $orderModel->getDetail($orderId);
+        if (!$order) {
+            return false;
+        }
+        if (($order['status'] ?? '') === 'selesai') {
+            return true;
+        }
+        if (in_array($order['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian', 'lunas'], true)) {
+            return true;
+        }
+        if ($orderModel->isTahapSpmReached($orderId)) {
+            return true;
+        }
+        if (!$allowPreDisposisiDeal && $this->isOrderDealOrSelesai($order, $sp)) {
+            return true;
+        }
+        return false;
+    }
 
 
     /**
@@ -363,8 +405,11 @@ $daftarPegawai = $arsipUser->find(
     ['order' => 'nama_user ASC']
 );
 
+        $spCast = !$sp->dry() ? $sp->cast() : null;
+        $orderId = (int)($sp->order_id ?? 0);
         $isSubmitted = !$sp->dry() && !empty($sp->nomor_surat) && ($sp->status !== 'draft');
-        $canEdit = ($this->hasPermission('penawaran:create') || $this->hasPermission('penawaran:edit') || $this->isSuperadmin() || $this->isAdminOrder()) && $this->canEditSubmittedData($isSubmitted);
+        $isLockedSp = $isSubmitted && $this->isPenawaranLocked($orderId, $spCast);
+        $canEdit = $this->canManagePenawaran() && !$isLockedSp;
 
         $f3->set('sp', $sp);
         $f3->set('can_edit', $canEdit);
@@ -408,6 +453,12 @@ $daftarPegawai = $arsipUser->find(
     }
     public function store($f3, $params)
     {
+        if (!$this->canManagePenawaran()) {
+            $this->setFlashError('Akses Ditolak: Hanya Tim Mitra Industri atau Superadmin yang berwenang menyimpan surat penawaran.');
+            $f3->reroute('/surat-penawaran');
+            return;
+        }
+
         $id     = (int) ($params['id'] ?? 0);
         $action = $f3->get('POST.action'); // 'simpan' | 'kirim'
 
@@ -416,6 +467,14 @@ $daftarPegawai = $arsipUser->find(
 
         if ($id > 0) {
             $sp->load(['id = ?', $id]);
+            if (!$sp->dry()) {
+                $existingOrderId = (int)($sp->order_id ?? 0);
+                if ($this->isPenawaranLocked($existingOrderId, $sp->cast())) {
+                    $this->setFlashError('Akses Ditolak: Surat penawaran sudah berstatus DEAL / Disposisi Keuangan / SPM / Selesai dan terkunci. Hubungi Superadmin untuk membuka izin edit.');
+                    $f3->reroute($existingOrderId > 0 ? "/order/{$existingOrderId}" : '/surat-penawaran');
+                    return;
+                }
+            }
         }
 
         $spModel = new SuratPenawaran($db);
@@ -505,9 +564,8 @@ $daftarPegawai = $arsipUser->find(
                 if (!empty($sp->perusahaan)) $order->nama_perusahaan = $sp->perusahaan;
                 if (!empty($sp->penjelasan)) $order->deskripsi = $sp->penjelasan;
                 if (!empty($sp->permintaan_melalui)) $order->media_permohonan = $sp->permintaan_melalui;
-                if ($action === 'kirim') {
-                    $order->status = 'baru';
-                    $order->status_tinjauan = 'belum_ditinjau';
+                if ($action === 'kirim' && empty($order->status)) {
+                    $order->status = 'permintaan_masuk';
                 }
                 $order->save();
             }
@@ -545,11 +603,23 @@ $daftarPegawai = $arsipUser->find(
 
     public function toggleStatus($f3, $params)
     {
+        if (!$this->canManagePenawaran()) {
+            $this->setFlashError('Akses Ditolak: Hanya Tim Mitra Industri atau Superadmin yang berwenang mengubah status surat penawaran.');
+            $f3->reroute('/surat-penawaran');
+            return;
+        }
+
         $db = $f3->get('DB');
         $sp = new DB\SQL\Mapper($db, 'tb_surat_penawaran');
         $sp->load(['id = ?', $params['id']]);
 
         if (!$sp->dry()) {
+            $orderId = (int)($sp->order_id ?? 0);
+            if ($this->isPenawaranLocked($orderId, $sp->cast())) {
+                $this->setFlashError('Akses Ditolak: Surat penawaran telah DEAL / Selesai dan terkunci. Hubungi Superadmin untuk membuka izin edit.');
+                $f3->reroute($orderId > 0 ? "/order/{$orderId}" : '/surat-penawaran');
+                return;
+            }
             $sp->status = $sp->status === 'aktif' ? 'nonaktif' : 'aktif';
             $sp->save();
             $f3->set('SESSION.flash_success', 'Status surat penawaran berhasil diubah.');
@@ -566,6 +636,11 @@ $daftarPegawai = $arsipUser->find(
     public function delete($f3, $params)
     {
         $this->requirePermission('order:edit', '/surat-penawaran');
+        if (!$this->canManagePenawaran()) {
+            $this->setFlashError('Akses Ditolak: Hanya Tim Mitra Industri atau Superadmin yang berwenang menghapus surat penawaran.');
+            $f3->reroute('/surat-penawaran');
+            return;
+        }
 
         $spId = (int)($params['id'] ?? 0);
         $db = $this->db ?? $f3->get('DB');
@@ -575,6 +650,11 @@ $daftarPegawai = $arsipUser->find(
         $orderId = 0;
         if (!$sp->dry()) {
             $orderId = (int)($sp['order_id'] ?? 0);
+            if ($this->isPenawaranLocked($orderId, $sp->cast())) {
+                $this->setFlashError('Akses Ditolak: Surat penawaran yang sudah DEAL, didisposisikan ke Keuangan, aktif SPM, atau Selesai tidak dapat dihapus tanpa izin Superadmin.');
+                $f3->reroute($orderId > 0 ? "/order/{$orderId}" : '/surat-penawaran');
+                return;
+            }
             $nomorSurat = $sp['nomor_surat'] ?? "ID #{$spId}";
 
             // Hapus surat penawaran
@@ -633,6 +713,11 @@ $daftarPegawai = $arsipUser->find(
     public function tambahDariOrder($f3, $params)
     {
         $orderId = (int)($params['id'] ?? 0);
+        if (!$this->canManagePenawaran()) {
+            $this->setFlashError('Akses Ditolak: Hanya Tim Mitra Industri atau Superadmin yang berwenang menerbitkan Surat Penawaran.');
+            $f3->reroute($orderId > 0 ? "/order/{$orderId}" : '/surat-penawaran');
+            return;
+        }
         $orderModel = new OrderLayanan($this->db);
         $order = $orderModel->getDetail($orderId);
 
@@ -642,22 +727,29 @@ $daftarPegawai = $arsipUser->find(
             return;
         }
 
-        // 1. Validasi Prasyarat Tinjauan Permintaan / Kontrak (Tahap 2 - Khusus Selulosa)
-        $tinjauan = $orderModel->getTinjauanKelayakan($orderId);
-        $isSelulosa = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
-        $tinjauanSelesai = (
-            (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
-            (($order['status_tinjauan'] ?? '') === 'layak') ||
-            !$isSelulosa
-        );
-        if (!$tinjauanSelesai) {
-            $this->setFlashError("Gagal: Tinjauan Permintaan / Kontrak (Tahap 2) belum selesai atau tidak memenuhi syarat.");
+        if ($this->isPenawaranLocked($orderId)) {
+            $this->setFlashError('Akses Ditolak: Surat Penawaran sudah berstatus DEAL / Didisposisikan ke Keuangan / Selesai dan terkunci. Hubungi Superadmin untuk membuka izin edit.');
             $f3->reroute("/order/{$orderId}");
             return;
         }
 
-        // 2. Validasi Prasyarat Dokumen Proposal (Khusus OPTI Selulosa)
-        if (($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+        // 1. Validasi Prasyarat Kaji Kelayakan (Tahap 3) untuk SEMUA divisi
+        $tinjauan = $orderModel->getTinjauanKelayakan($orderId);
+        $isSelulosa = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
+        $tinjauanDitolak = (($order['status_tinjauan'] ?? '') === 'tidak_layak')
+            || (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'tidak_dapat_dilaksanakan');
+        $tinjauanSelesai = !$tinjauanDitolak && (
+            (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
+            (($order['status_tinjauan'] ?? '') === 'layak')
+        );
+        if (!$tinjauanSelesai) {
+            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 3) belum selesai atau permohonan dinyatakan tidak dapat dilaksanakan.");
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
+
+        // 2. Validasi Prasyarat Tahap 4 (Proposal Selulosa / Kalkulasi Tarif Lingkungan)
+        if ($isSelulosa) {
             $proposalCheck = $orderModel->getProposalRiset($orderId);
             $proposalValid = !empty($proposalCheck) && 
                 !empty($proposalCheck['file_proposal']) && 
@@ -669,6 +761,16 @@ $daftarPegawai = $arsipUser->find(
 
             if (!$proposalValid || !$proposalApproved) {
                 $this->setFlashError("Gagal: Untuk OPTI Selulosa, dokumen proposal teknis harus diisi, berkas dokumen proposal wajib diunggah, dan telah disetujui (ACC) oleh Ketua Tim OPTI sebelum dapat menerbitkan Surat Penawaran.");
+                $f3->reroute("/order/{$orderId}");
+                return;
+            }
+        } else {
+            $kalkulasiLingkungan = $orderModel->getKalkulasiLingkungan($orderId);
+            $lingkunganApproved = !empty($kalkulasiLingkungan)
+                && (float)($order['estimasi_biaya'] ?? 0) > 0
+                && in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'], true);
+            if (!$lingkunganApproved) {
+                $this->setFlashError("Gagal: Untuk OPTI Lingkungan, kalkulasi parameter dan tarif uji (Tahap 4) wajib disimpan dan disetujui (Siap Penawaran) sebelum menerbitkan Surat Penawaran.");
                 $f3->reroute("/order/{$orderId}");
                 return;
             }
@@ -1007,22 +1109,23 @@ $daftarPegawai = $arsipUser->find(
             return;
         }
 
-        // 1. Validasi Prasyarat Tinjauan Permintaan / Kontrak (Tahap 2 - Khusus Selulosa)
+        // 1. Validasi Prasyarat Kaji Kelayakan (Tahap 3) untuk SEMUA divisi
         $tinjauan = $orderModel->getTinjauanKelayakan($orderId);
         $isSelulosa = (($order['jenis_layanan_opti'] ?? '') === 'selulosa');
-        $tinjauanSelesai = (
-            (!empty($tinjauan) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
-            (($order['status_tinjauan'] ?? '') === 'layak') ||
-            !$isSelulosa
+        $tinjauanDitolak = (($order['status_tinjauan'] ?? '') === 'tidak_layak')
+            || (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'tidak_dapat_dilaksanakan');
+        $tinjauanSelesai = !$tinjauanDitolak && (
+            (!empty($tinjauan) && empty($tinjauan['is_draft']) && ($tinjauan['keputusan'] ?? '') === 'dapat_dilaksanakan') ||
+            (($order['status_tinjauan'] ?? '') === 'layak')
         );
         if (!$tinjauanSelesai) {
-            $this->setFlashError("Gagal: Tinjauan Permintaan / Kontrak (Tahap 2) belum selesai atau tidak memenuhi syarat.");
+            $this->setFlashError("Gagal: Kaji Ulang Kelayakan Teknis (Tahap 3) belum selesai atau permohonan dinyatakan tidak dapat dilaksanakan.");
             $f3->reroute("/order/{$orderId}");
             return;
         }
 
-        // 2. Validasi Prasyarat Dokumen Proposal (Khusus OPTI Selulosa)
-        if (($order['jenis_layanan_opti'] ?? '') === 'selulosa') {
+        // 2. Validasi Prasyarat Tahap 4 (Proposal Selulosa / Kalkulasi Tarif Lingkungan)
+        if ($isSelulosa) {
             $proposalCheck = $orderModel->getProposalRiset($orderId);
             $proposalValid = !empty($proposalCheck) && 
                 !empty($proposalCheck['file_proposal']) && 
@@ -1034,6 +1137,16 @@ $daftarPegawai = $arsipUser->find(
 
             if (!$proposalValid || !$proposalApproved) {
                 $this->setFlashError("Gagal: Dokumen proposal OPTI Selulosa wajib diisi, berkas harus diunggah, dan disetujui Ketua Tim sebelum Surat Penawaran dapat disimpan.");
+                $f3->reroute("/order/{$orderId}");
+                return;
+            }
+        } else {
+            $kalkulasiLingkungan = $orderModel->getKalkulasiLingkungan($orderId);
+            $lingkunganApproved = !empty($kalkulasiLingkungan)
+                && (float)($order['estimasi_biaya'] ?? 0) > 0
+                && in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'], true);
+            if (!$lingkunganApproved) {
+                $this->setFlashError("Gagal: Untuk OPTI Lingkungan, kalkulasi parameter dan tarif uji (Tahap 4) wajib disimpan dan disetujui (Siap Penawaran) sebelum Surat Penawaran dapat disimpan.");
                 $f3->reroute("/order/{$orderId}");
                 return;
             }
@@ -1051,11 +1164,26 @@ $daftarPegawai = $arsipUser->find(
         $spModel = new SuratPenawaran($this->db);
         $spExisting = $spModel->getByOrderId($orderId);
         $isSpDitolak = !empty($spExisting) && in_array(strtolower($spExisting['status_respon_klien'] ?? ''), ['batal', 'tolak', 'ditolak']);
-        $isRevisiBaru = !empty($post['is_revisi_baru']) || $isSpDitolak || (($post['mode'] ?? '') === 'baru');
+        $modePost = strtolower(trim((string)($post['mode'] ?? '')));
+        $nomorInputNorm = trim((string)($post['nomor_surat'] ?? ''));
+        if (preg_match('/^\d+\/BBSPJIS\/MS\//i', $nomorInputNorm) || preg_match('/^\.\.\.\/BBSPJIS\/MS\//i', $nomorInputNorm)) {
+            $nomorInputNorm = 'B/' . $nomorInputNorm;
+        }
+        $sameNomorAsExisting = !empty($spExisting) && !$isSpDitolak && $nomorInputNorm !== '' && strcasecmp(trim((string)($spExisting['nomor_surat'] ?? '')), $nomorInputNorm) === 0;
+        if (($modePost === 'edit' && !empty($spExisting) && !$isSpDitolak) || $sameNomorAsExisting) {
+            $isRevisiBaru = false;
+        } else {
+            $isRevisiBaru = ($modePost === 'baru') || $isSpDitolak || (!empty($post['is_revisi_baru']) && empty($spExisting));
+        }
         $post['is_revisi_baru'] = $isRevisiBaru ? 1 : 0;
         if ($isRevisiBaru) {
             $post['mode'] = 'baru';
             $post['penawaran_id'] = 0;
+        } else {
+            $post['mode'] = 'edit';
+            if (!empty($spExisting['id'])) {
+                $post['penawaran_id'] = (int)$spExisting['id'];
+            }
         }
 
         // Proteksi State Guard:
@@ -1092,10 +1220,16 @@ $daftarPegawai = $arsipUser->find(
             }
         }
 
-        // Simpan Draf murni: jika tombol draf diklik dan alur belum terkunci permanen (belum bayar/PO), simpan sebagai draft
+        // Simpan Draf murni: jika mengedit penawaran yang sudah berstatus 'nego'/'terkirim' (Koreksi Formulir), pertahankan statusnya agar tidak turun jadi draft
         if ($actionStatus === 'draft' && !$isLockedDeal) {
-            $post['status_respon_klien'] = 'draft';
-            $post['action_status'] = 'draft';
+            $existingStatus = strtolower(trim((string)($spExisting['status_respon_klien'] ?? '')));
+            if (!$isRevisiBaru && !empty($spExisting) && in_array($existingStatus, ['nego', 'terkirim'], true)) {
+                $post['status_respon_klien'] = $existingStatus;
+                $post['action_status'] = $existingStatus;
+            } else {
+                $post['status_respon_klien'] = 'draft';
+                $post['action_status'] = 'draft';
+            }
             $isDeal = false;
         } else {
             $isDeal = $orderHasDeal || (($post['status_respon_klien'] ?? '') === 'deal');
@@ -1335,6 +1469,11 @@ $daftarPegawai = $arsipUser->find(
     public function updateStatusKlien($f3, $params)
     {
         $orderId = (int)($params['id'] ?? 0);
+        if (!$this->canManagePenawaran()) {
+            $this->setFlashError('Akses Ditolak: Hanya Tim Mitra Industri atau Superadmin yang berwenang memperbarui respon klien.');
+            $f3->reroute($orderId > 0 ? "/order/{$orderId}" : '/surat-penawaran');
+            return;
+        }
         $post = $f3->get('POST');
         $statusRespon = $post['status_respon_klien'] ?? 'draft';
         $catatanNego  = trim($post['catatan_nego'] ?? '');
@@ -1347,6 +1486,17 @@ $daftarPegawai = $arsipUser->find(
             $f3->reroute("/order/{$orderId}");
             return;
         }
+        $nomorSuratSp = trim((string)($sp['nomor_surat'] ?? ''));
+        if (($sp['status'] ?? 'draft') === 'draft' || $nomorSuratSp === '' || $nomorSuratSp === '...') {
+            $this->setFlashError('Respon klien belum dapat dicatat: Surat Penawaran masih berstatus Draf atau Nomor Surat resmi belum ditetapkan.');
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
+        if ($this->isPenawaranLocked($orderId, $sp)) {
+            $this->setFlashError('Akses Ditolak: Penawaran telah berstatus DEAL / Disposisi Keuangan / SPM / Selesai sehingga dikunci. Hubungi Superadmin untuk membuka izin edit.');
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
 
         try {
             $nominal = (float)($sp['nominal_penawaran'] ?? 0);
@@ -1355,7 +1505,8 @@ $daftarPegawai = $arsipUser->find(
             $orderModel = new \OrderLayanan($this->db);
             $order = $orderModel->getDetail($orderId);
 
-            // Jika status respon adalah DEAL, kirim notifikasi ke Pejabat, Ka Tim, & Tim Keuangan
+            // Jika status respon adalah DEAL, update status_penawaran dan beri notifikasi ke Ka Tim & Tim Mitra
+            // (Nomor Order ORD & notifikasi Tim Keuangan diterbitkan saat tombol Disposisi ke Keuangan diklik setelah berkas Deal lengkap)
             if ($statusRespon === 'deal') {
                 try {
                     $this->db->exec(
@@ -1363,28 +1514,9 @@ $daftarPegawai = $arsipUser->find(
                         [1 => $orderId]
                     );
 
-                    $nomorOrderBaru = $orderModel->terbitkanNomorOrder($orderId);
-                    if (!empty($nomorOrderBaru)) {
-                        $order['nomor_order'] = $nomorOrderBaru;
-                    }
-
                     $ordLblStat = \NotificationService::formatOrderLabel($order, $orderId);
                     $ptStat = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
                     $actorStat = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Mitra');
-
-                    // Notif ke Ketua Tim Keuangan
-                    \NotificationService::send($this->db, [
-                        'order_id'        => $orderId,
-                        'target_role'     => 'ketua_tim_keuangan',
-                        'target_layanan'  => 'semua',
-                        'judul'           => 'Disposisi Pembayaran: Order ' . $ordLblStat,
-                        'pesan'           => "Penawaran {$ptStat} disepakati DEAL (Rp " . number_format($nominal, 0, ',', '.') . ") oleh {$actorStat}. Siap proses pembayaran.",
-                        'tipe'            => 'success',
-                        'icon'            => 'bi-wallet2',
-                        'link_url'        => "/pembayaran/tambah?order_id={$orderId}",
-                        'created_by'      => $this->getUserId() ?? 1,
-                        'created_by_name' => $actorStat
-                    ]);
 
                     // Notif ke Ka Tim OPTI
                     \NotificationService::send($this->db, [
@@ -1458,8 +1590,34 @@ $daftarPegawai = $arsipUser->find(
         $nominalBaru  = (float)($nominalRaw ?: 0);
         $orderId      = (int)($post['order_id'] ?? 0);
 
+        $spModel = new SuratPenawaran($this->db);
+        $spExisting = $spModel->getById($penawaranId);
+        $resolvedOrderId = $orderId > 0 ? $orderId : (int)($spExisting['order_id'] ?? 0);
+
+        if (!$this->canManagePenawaran()) {
+            $this->setFlashError('Akses Ditolak: Hanya Tim Mitra Industri atau Superadmin yang berwenang memperbarui respon penawaran.');
+            $f3->reroute($resolvedOrderId > 0 ? "/order/{$resolvedOrderId}" : '/surat-penawaran');
+            return;
+        }
+
+        if (!$spExisting) {
+            $this->setFlashError('Surat penawaran tidak ditemukan.');
+            $f3->reroute('/surat-penawaran');
+            return;
+        }
+        $nomorSuratResp = trim((string)($spExisting['nomor_surat'] ?? ''));
+        if (($spExisting['status'] ?? 'draft') === 'draft' || $nomorSuratResp === '' || $nomorSuratResp === '...') {
+            $this->setFlashError('Respon penawaran belum dapat dicatat: Surat Penawaran masih berupa Draf atau Nomor Surat resmi belum ditetapkan.');
+            $f3->reroute($resolvedOrderId > 0 ? "/order/{$resolvedOrderId}" : '/surat-penawaran');
+            return;
+        }
+        if ($this->isPenawaranLocked($resolvedOrderId, $spExisting ?: null)) {
+            $this->setFlashError('Akses Ditolak: Penawaran telah berstatus DEAL / Disposisi Keuangan / SPM / Selesai dan terkunci. Hubungi Superadmin untuk membuka izin edit.');
+            $f3->reroute($resolvedOrderId > 0 ? "/order/{$resolvedOrderId}" : '/surat-penawaran');
+            return;
+        }
+
         try {
-            $spModel = new SuratPenawaran($this->db);
             $hasil = $spModel->updateResponKlien($penawaranId, $statusRespon, $catatanNego, $nominalBaru);
 
             if ($statusRespon === 'deal') {
@@ -1472,11 +1630,6 @@ $daftarPegawai = $arsipUser->find(
                             "UPDATE order_layanan SET status_penawaran = 'deal' WHERE id = ?",
                             [1 => $orderId]
                         );
-
-                        $nomorOrderBaru = $orderModel->terbitkanNomorOrder($orderId);
-                        if (!empty($nomorOrderBaru)) {
-                            $order['nomor_order'] = $nomorOrderBaru;
-                        }
 
                         try {
                             // Tim Keuangan baru dinotif saat tombol Disposisi ke Keuangan diklik (disposisiKeuangan)
@@ -1528,6 +1681,11 @@ $daftarPegawai = $arsipUser->find(
     public function disposisiKeuangan($f3, $params)
     {
         $orderId = (int)($params['id'] ?? 0);
+        if (!$this->canManagePenawaran()) {
+            $this->setFlashError('Akses Ditolak: Hanya Tim Mitra Industri atau Superadmin yang berwenang mendisposisikan order ke Tim Keuangan.');
+            $f3->reroute($orderId > 0 ? "/order/{$orderId}" : '/surat-penawaran');
+            return;
+        }
         $userId = (int)($this->getUserId() ?? 1);
         $userNama = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Mitra');
 
@@ -1543,6 +1701,17 @@ $daftarPegawai = $arsipUser->find(
         $sp = $spModel->getByOrderId($orderId);
         if (!$sp) {
             $this->setFlashError("Surat penawaran untuk order ini belum diterbitkan.");
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
+        $nomorSuratDisp = trim((string)($sp['nomor_surat'] ?? ''));
+        if (($sp['status'] ?? 'draft') === 'draft' || $nomorSuratDisp === '' || $nomorSuratDisp === '...') {
+            $this->setFlashError("Gagal mendisposisikan ke Tim Keuangan: Surat Penawaran masih berupa draf atau Nomor Surat resmi belum diterbitkan.");
+            $f3->reroute("/order/{$orderId}");
+            return;
+        }
+        if ($this->isPenawaranLocked($orderId, $sp, true)) {
+            $this->setFlashError('Akses Ditolak: Order telah didisposisikan ke Keuangan / aktif SPM / Selesai dan terkunci. Hubungi Superadmin untuk membuka izin edit.');
             $f3->reroute("/order/{$orderId}");
             return;
         }
@@ -3337,6 +3506,19 @@ $daftarPegawai = $arsipUser->find(
             $f3->reroute($referer);
         };
 
+        if (!$this->canManagePenawaran()) {
+            $gagal('Akses Ditolak: Hanya Tim Mitra Industri atau Superadmin yang berwenang mengunggah dokumen persetujuan penawaran.');
+            return;
+        }
+
+        // Cek order dan status penguncian (disposisi keuangan / SPM / selesai)
+        $spRow = $this->db->exec('SELECT order_id FROM tb_surat_penawaran WHERE id = ?', [1 => $id]);
+        $orderId = (int)($spRow[0]['order_id'] ?? 0);
+        if ($orderId > 0 && $this->isPenawaranLocked($orderId, null, true)) {
+            $gagal('Akses Ditolak: Order telah didisposisikan ke Keuangan / aktif SPM / Selesai. Penggantian berkas dokumen penawaran dikunci dan memerlukan izin Superadmin.');
+            return;
+        }
+
         // Cari file dari berbagai kemungkinan nama input
         $file = $f3->get('FILES.dokumen_file') ?: ($f3->get('FILES.file') ?: ($f3->get('FILES.' . $col) ?: ($f3->get('FILES.' . $jenis) ?: $f3->get('FILES.surat_kesanggupan_bayar'))));
         if (empty($file) && !empty($_FILES)) {
@@ -3753,6 +3935,17 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $orderId = !empty($sp['order_id']) ? (int)$sp['order_id'] : $targetId;
+        if ($this->isPenawaranLocked($orderId, $sp ?: null)) {
+            $msg = 'Akses Ditolak: Surat penawaran telah DEAL / Disposisi Keuangan / SPM / Selesai sehingga lampiran dikunci. Hubungi Superadmin untuk membuka izin edit.';
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            $this->setFlashError($msg);
+            $f3->reroute('/order/' . $orderId);
+            return;
+        }
         $proposal = $orderModel->getProposalRiset($orderId);
 
         if (empty($proposal) || empty($proposal['file_proposal'])) {
@@ -3803,7 +3996,7 @@ $daftarPegawai = $arsipUser->find(
         $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
             || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
 
-        if (!$this->hasPermission('penawaran:create') && !$this->isSuperadmin() && !$this->isAdminOrder()) {
+        if (!$this->canManagePenawaran()) {
             if ($isAjax) {
                 header('Content-Type: application/json');
                 echo json_encode(['success' => false, 'message' => 'Akses ditolak: Hanya Tim Mitra yang dapat mengunggah lampiran penawaran.']);
@@ -3811,6 +4004,31 @@ $daftarPegawai = $arsipUser->find(
             }
             $this->setFlashError('Akses ditolak.');
             $f3->reroute('/order/' . $targetId);
+            return;
+        }
+
+        $spModel = new SuratPenawaran($this->db);
+        $spIdExplicit = (int)($f3->get('POST.sp_id') ?? $f3->get('GET.sp_id') ?? 0);
+        $sp = null;
+        if ($spIdExplicit > 0) {
+            $sp = $spModel->getById($spIdExplicit);
+        }
+        if (!$sp) {
+            $sp = $spModel->getByOrderId($targetId);
+        }
+        if (!$sp) {
+            $sp = $spModel->getById($targetId);
+        }
+        $lockedOrderId = !empty($sp['order_id']) ? (int)$sp['order_id'] : $targetId;
+        if ($this->isPenawaranLocked($lockedOrderId, $sp ?: null)) {
+            $msg = 'Akses Ditolak: Surat penawaran telah DEAL / Disposisi Keuangan / SPM / Selesai sehingga unggah/ubah lampiran dikunci. Hubungi Superadmin untuk membuka izin edit.';
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            $this->setFlashError($msg);
+            $f3->reroute('/order/' . $lockedOrderId);
             return;
         }
 
@@ -3877,19 +4095,6 @@ $daftarPegawai = $arsipUser->find(
             return;
         }
 
-        $spModel = new SuratPenawaran($this->db);
-        $spIdExplicit = (int)($f3->get('POST.sp_id') ?? $f3->get('GET.sp_id') ?? 0);
-        $sp = null;
-        if ($spIdExplicit > 0) {
-            $sp = $spModel->getById($spIdExplicit);
-        }
-        if (!$sp) {
-            $sp = $spModel->getByOrderId($targetId);
-        }
-        if (!$sp) {
-            $sp = $spModel->getById($targetId);
-        }
-
         if ($sp && !empty($sp['id'])) {
             $this->db->exec(
                 "UPDATE tb_surat_penawaran SET file_lampiran_user = ?, updated_at = NOW() WHERE id = ?",
@@ -3928,8 +4133,33 @@ $daftarPegawai = $arsipUser->find(
         $targetId = !empty($params['id']) ? (int)$params['id'] : 0;
         $isAjax = $f3->get('AJAX') || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
 
+        if (!$this->canManagePenawaran()) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Akses ditolak: Hanya Tim Mitra atau Superadmin yang dapat melepas lampiran penawaran.']);
+                exit;
+            }
+            $this->setFlashError('Akses ditolak.');
+            $f3->reroute('/order/' . $targetId);
+            return;
+        }
+
         $spId = (int)($f3->get('POST.sp_id') ?: $f3->get('GET.sp_id') ?: 0);
-        $orderId = $targetId;
+        $spModel = new SuratPenawaran($this->db);
+        $sp = $spId > 0 ? $spModel->getById($spId) : ($spModel->getByOrderId($targetId) ?: $spModel->getById($targetId));
+        $orderId = !empty($sp['order_id']) ? (int)$sp['order_id'] : $targetId;
+
+        if ($this->isPenawaranLocked($orderId, $sp ?: null)) {
+            $msg = 'Akses Ditolak: Surat penawaran telah DEAL / Disposisi Keuangan / SPM / Selesai sehingga lampiran dikunci. Hubungi Superadmin untuk membuka izin edit.';
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            $this->setFlashError($msg);
+            $f3->reroute('/order/' . $orderId);
+            return;
+        }
 
         // Reset session pending lampiran
         unset($_SESSION['pending_lampiran_sp_' . $orderId]);
@@ -4076,6 +4306,11 @@ $daftarPegawai = $arsipUser->find(
      */
     public function klaimSuratKeluar($f3, $params)
     {
+        if (!$this->canManagePenawaran()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Hanya Tim Mitra Industri atau Superadmin yang berwenang mengambil arsip surat keluar.']);
+            exit;
+        }
         $id = (int)($params['id'] ?? 0);
         $idSuratKeluar = (int)($f3->get('POST.id_surat_keluar') ?: $f3->get('REQUEST.id_surat_keluar'));
         $spIdExplicit = (int)($f3->get('POST.sp_id') ?: $f3->get('REQUEST.sp_id') ?: 0);
@@ -4129,6 +4364,15 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $spId = (int)$sp['id'];
+        if ($orderId > 0 && $this->isPenawaranLocked($orderId, $sp, true)) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Akses Ditolak: Order telah didisposisikan ke Keuangan / aktif SPM / Selesai. Penggantian berkas dokumen penawaran dikunci dan memerlukan izin Superadmin.'
+            ]);
+            exit;
+        }
+
         $res = $spModel->klaimSuratKeluar($spId, $idSuratKeluar, $userId);
 
         if (!empty($res['success'])) {
@@ -4150,6 +4394,11 @@ $daftarPegawai = $arsipUser->find(
      */
     public function batalKlaimSuratKeluar($f3, $params)
     {
+        if (!$this->canManagePenawaran()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Hanya Tim Mitra Industri atau Superadmin yang berwenang membatalkan klaim surat keluar.']);
+            exit;
+        }
         $id = (int)($params['id'] ?? 0);
         $userId = (int)($this->getUserId() ?? 1);
         $spIdExplicit = (int)($f3->get('POST.sp_id') ?: $f3->get('REQUEST.sp_id') ?: 0);
@@ -4196,6 +4445,15 @@ $daftarPegawai = $arsipUser->find(
         }
 
         $spId = (int)$sp['id'];
+        if ($orderId > 0 && $this->isPenawaranLocked($orderId, $sp, true)) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Akses Ditolak: Order telah didisposisikan ke Keuangan / aktif SPM / Selesai. Pembatalan klaim surat dikunci dan memerlukan izin Superadmin.'
+            ]);
+            exit;
+        }
+
         $res = $spModel->batalKlaimSuratKeluar($spId, $userId);
 
         if (!empty($res['success'])) {

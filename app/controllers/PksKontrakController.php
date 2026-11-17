@@ -228,7 +228,12 @@ class PksKontrakController extends Controller {
 
         $po = $this->ambilPo($poId);
         if (!$po) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum didisposisikan ke Humas.'], 404);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum memenuhi syarat pembuatan kontrak (validasi PPK BLU & upload PO TTD).'], 404);
+        }
+
+        $orderIdKontrak = (int) ($po['order_id'] ?? 0);
+        if (strtolower(trim((string) ($po['order_status'] ?? ''))) === 'selesai' && !$this->canEditSubmittedData(true, $orderIdKontrak)) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Kontrak / PKS dikunci karena order layanan sudah berstatus selesai. Hubungi Superadmin untuk membuka izin koreksi.'], 422);
         }
 
         $vals = $this->bacaInput($f3);
@@ -580,7 +585,7 @@ class PksKontrakController extends Controller {
                        p.judul_kegiatan AS po_judul,
                        p.ruang_lingkup, p.jadwal_mulai, p.jadwal_selesai,
                        " . ($this->kolomBaca() ? "p.po_ttd_at, p.po_ttd_file, p.po_ttd_asal, p.po_ttd_oleh_nama, p.validasi_keuangan_at, p.kontrak_dibuat_at, p.kontrak_dibuat_oleh_nama, p.kontrak_dibaca_at, p.kontrak_dibaca_oleh_nama," : "") . "
-                       o.id AS order_id, o.id_customer, o.jenis_layanan_opti, o.judul_kegiatan AS order_judul, o.estimasi_biaya,
+                       o.id AS order_id, o.id_customer, o.status AS order_status, o.jenis_layanan_opti, o.judul_kegiatan AS order_judul, o.estimasi_biaya,
                        c.nmcustomer, c.pt_cv,
                        (SELECT sp.nominal_penawaran FROM tb_surat_penawaran sp
                          WHERE sp.order_id = o.id AND sp.status_respon_klien = 'deal'
@@ -588,7 +593,8 @@ class PksKontrakController extends Controller {
                 FROM po_kegiatan p
                 JOIN order_layanan o ON o.id = p.order_id
                 JOIN tb_customer c ON c.id_customer = o.id_customer
-                WHERE (p.status_review = 'disetujui' OR p.disposisi_humas_at IS NOT NULL)";
+                WHERE (p.status_review = 'disetujui' OR p.disposisi_humas_at IS NOT NULL)"
+                . ($this->kolomBaca() ? " AND p.validasi_keuangan_at IS NOT NULL AND p.po_ttd_file IS NOT NULL AND p.po_ttd_file <> ''" : "");
     }
 
     /**

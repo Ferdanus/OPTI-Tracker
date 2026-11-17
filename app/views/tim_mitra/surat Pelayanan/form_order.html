@@ -35,12 +35,24 @@
 </check>
 
 <check if="{{ !@can_edit }}">
-    <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 shadow-xs text-warning-emphasis">
-        <i class="bi bi-lock-fill me-2 fs-5 text-warning flex-shrink-0"></i>
-        <div>
-            <strong>Status Edit Dikunci:</strong> Tidak bisa merubah data, silakan hubungi superadmin.
-        </div>
-    </div>
+    <check if="{{ @is_tim_mitra || @is_superadmin || @can_manage_penawaran }}">
+        <true>
+            <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 shadow-xs text-warning-emphasis">
+                <i class="bi bi-lock-fill me-2 fs-5 text-warning flex-shrink-0"></i>
+                <div>
+                    <strong>Status Edit Dikunci:</strong> Surat penawaran telah disepakati (DEAL) dan proses pelayanan telah berlanjut. Tidak bisa merubah data formulir, silakan hubungi Superadmin jika perlu izin koreksi.
+                </div>
+            </div>
+        </true>
+        <false>
+            <div class="alert alert-info border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 shadow-xs text-info-emphasis">
+                <i class="bi bi-shield-lock-fill me-2 fs-5 text-info flex-shrink-0"></i>
+                <div>
+                    <strong>Mode Pratinjau (Read-Only):</strong> Anda tidak memiliki hak akses untuk mengubah formulir ini. Pembuatan dan pengelolaan Surat Penawaran merupakan wewenang Tim Mitra Industri.
+                </div>
+            </div>
+        </false>
+    </check>
 </check>
 
 <style>
@@ -2201,7 +2213,7 @@
                         </div>
                         <check if="{{ @is_locked_deal || (@sp_existing && @sp_existing.status_respon_klien == 'deal') || (@order.status_penawaran == 'deal') }}">
                             <input type="hidden" name="action_status" id="inputActionStatus" value="deal">
-                            <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft'; var sr = document.getElementById('select_status_respon_klien'); if (sr) sr.value='draft';">
+                            <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft';">
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
                             <button type="submit" name="action_status" value="deal" id="btnSimpanPerubahanDokumen" class="btn btn-primary fw-semibold px-4 py-2 d-inline-flex align-items-center gap-1.5 shadow-xs" {{ (empty(@sumber_lampiran_default) || empty(@is_nomor_surat_lengkap)) ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Lengkapi nomor surat penawaran dan tentukan opsi lampiran"' : '' }}>
@@ -2210,7 +2222,7 @@
                         </check>
                         <check if="{{ !@is_locked_deal && (!@sp_existing || @sp_existing.status_respon_klien != 'deal') && (@order.status_penawaran != 'deal') }}">
                             <input type="hidden" name="action_status" id="inputActionStatus" value="nego">
-                            <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft'; var sr = document.getElementById('select_status_respon_klien'); if (sr) sr.value='draft';">
+                            <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft';">
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
                             <button type="button" id="btnTerbitkanPenawaran" class="btn-submit-theme" onclick="confirmKirimPenawaran();" {{ (empty(@sumber_lampiran_default) || empty(@is_nomor_surat_lengkap)) ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Lengkapi nomor surat penawaran dan tentukan opsi lampiran"' : '' }}>
@@ -2220,9 +2232,18 @@
                     </div>
                 </check>
                 <check if="{{ !@can_edit }}">
-                    <button type="button" class="btn btn-secondary btn-sm px-4 py-2" disabled title="Status edit dikunci. Hubungi Superadmin jika perlu membuka akses.">
-                        <i class="bi bi-lock-fill me-1"></i> Status Edit Dikunci
-                    </button>
+                    <check if="{{ @is_tim_mitra || @is_superadmin || @can_manage_penawaran }}">
+                        <true>
+                            <button type="button" class="btn btn-secondary btn-sm px-4 py-2" disabled title="Surat penawaran telah DEAL dan dikunci. Hubungi Superadmin jika perlu izin koreksi.">
+                                <i class="bi bi-lock-fill me-1"></i> Status Edit Dikunci
+                            </button>
+                        </true>
+                        <false>
+                            <button type="button" class="btn btn-light border text-muted btn-sm px-4 py-2" disabled title="Hanya Tim Mitra Industri yang berwenang menyimpan formulir penawaran.">
+                                <i class="bi bi-shield-lock me-1"></i> Mode Lihat Saja
+                            </button>
+                        </false>
+                    </check>
                 </check>
             </div>
 
@@ -2719,8 +2740,8 @@
         </div>
     </div>
 
-    <!-- Floating Launcher Button ketika Pratinjau Disembunyikan (Pojok Kanan Bawah) -->
-    <button type="button" id="btnFloatingLauncherSpPreview" class="btn btn-dark shadow-lg rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2" onclick="toggleFloatingSpPreview(true)" style="position: fixed; bottom: 24px; right: 24px; z-index: 1045; border: 1.5px solid #475569; background: #1e293b; color: #ffffff; font-weight: 600; font-size: 0.85rem; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35) !important; cursor: pointer;">
+    <!-- Floating Launcher Button ketika Pratinjau Disembunyikan (Tab Setengah Lonjong Menempel Kanan Tengah) -->
+    <button type="button" id="btnFloatingLauncherSpPreview" class="btn btn-dark shadow-lg d-inline-flex align-items-center gap-2" onclick="toggleFloatingSpPreview(true)" style="position: fixed; top: 50%; right: 0; transform: translateY(-50%); z-index: 1045; border-radius: 9999px 0 0 9999px; border: 1.5px solid #475569; border-right: 0; padding: 0.55rem 0.9rem 0.55rem 1.05rem; background: #1e293b; color: #ffffff; font-weight: 600; font-size: 0.85rem; box-shadow: -4px 6px 20px rgba(15, 23, 42, 0.28) !important; cursor: pointer;">
         <i class="bi bi-file-earmark-text-fill text-info"></i>
         <span>Buka Pratinjau Surat</span>
         <span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5" style="font-size: 0.68rem;">Live</span>
@@ -4088,6 +4109,10 @@ function confirmKirimPenawaran() {
             buttonsStyling: false
         }).then(function(result) {
             if (result.isConfirmed) {
+                if (form.dataset.submitting === '1') return;
+                form.dataset.submitting = '1';
+                var btnTerbit = document.getElementById('btnTerbitkanPenawaran');
+                if (btnTerbit) btnTerbit.disabled = true;
                 var selectRespon = document.getElementById('select_status_respon_klien');
                 if (selectRespon && selectRespon.value === 'draft') {
                     selectRespon.value = 'nego';

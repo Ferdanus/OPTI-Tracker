@@ -33,11 +33,22 @@ class ArsipUser extends \DB\SQL\Mapper {
      */
     public static function resolveUserRoleAndLayanan(array $row): array {
         $idStrukturalTim = (int)($row['id_struktural_tim'] ?? 0);
-        $rawRole = !empty($row['si_opti']) ? trim($row['si_opti']) : trim($row['role'] ?? '');
-        $rawLayanan = trim($row['jenis_layanan'] ?? 'semua');
+        $rawRoleCsv = !empty($row['si_opti']) ? trim($row['si_opti']) : trim($row['role'] ?? '');
+        $tokens = array_values(array_filter(array_map(function($t) {
+            $t = strtolower(trim($t));
+            if (strpos($t, 'tim_po_') === 0) {
+                $t = 'pic_po_' . substr($t, 7);
+            }
+            return $t;
+        }, explode(',', $rawRoleCsv))));
+        $rawRole = $tokens[0] ?? '';
+        $rawLayanan = trim($row['jenis_layanan'] ?? ($row['jenis_layanan_opti'] ?? ''));
+        if ($rawLayanan === '') {
+            $rawLayanan = 'semua';
+        }
 
         $roleOpti = 'user';
-        $jenisLayananOpti = $rawLayanan !== '' ? $rawLayanan : 'semua';
+        $jenisLayananOpti = $rawLayanan;
 
         // Prioritaskan superadmin
         if ($rawRole === 'superadmin') {
@@ -77,6 +88,9 @@ class ArsipUser extends \DB\SQL\Mapper {
         } elseif (in_array($rawRole, array('pic_po', 'pic_proposal', 'tim_kerja'), true)) {
             $roleOpti = 'tim_kerja';
             $jenisLayananOpti = $rawLayanan !== '' ? $rawLayanan : 'semua';
+        } elseif ($rawRole === 'pjt_lingkungan' || ($rawRole === 'pjt' && $rawLayanan === 'lingkungan')) {
+            $roleOpti = 'pjt_lingkungan';
+            $jenisLayananOpti = 'lingkungan';
         } elseif (strpos($rawRole, 'ketua_tim_mitra') !== false || $rawRole === 'katim_mitra') {
             $roleOpti = 'ketua_tim_mitra';
             $jenisLayananOpti = 'semua';

@@ -50,10 +50,10 @@ class PoValidasiMitraController extends Controller {
 
         $this->pastikanKolomBaca();
 
-        // Tab 1: "Perlu Divalidasi" -- PO yang sudah diverifikasi Humas tapi belum divalidasi Tim Mitra.
+        // Tab 1: "Perlu Divalidasi" -- PO yang sudah disetujui Ketua Tim & diverifikasi Humas, belum divalidasi Tim Mitra.
         $errPerlu = null;
         $daftar = $this->ambilDaftar(
-            "p.status = 'terkirim'" . \PoSchema::bukanSertifikasi('p') . $this->syaratHumas('p'),
+            "p.status = 'terkirim' AND p.status_review = 'disetujui'" . \PoSchema::bukanSertifikasi('p') . $this->syaratHumas('p'),
             $this->kolomHumas('p') . " DESC, p.created_at DESC",
             $errPerlu
         );
@@ -87,9 +87,10 @@ class PoValidasiMitraController extends Controller {
         try {
             $rows = $this->db->exec(
                 "SELECT p.id, p.nomor_po, p.status, p.created_at, p.updated_at, p.catatan_tim_mitra, p.tervalidasi_mitra_at,
-                        o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.estimasi_biaya, o.ketua_pelaksana_id,
+                        o.id AS order_id, o.nomor_order, o.judul_kegiatan, o.jenis_layanan_opti, o.estimasi_biaya, o.ketua_pelaksana_id, o.status_keuangan,
                         c.nmcustomer, c.pt_cv,
                         sp.nominal_penawaran, sp.surat_kesanggupan_bayar,
+                        EXISTS(SELECT 1 FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.is_kesanggupan_bayar = 1 AND pb.status_verifikasi = 'terverifikasi') AS skb_terverifikasi,
                         " . $this->kolom('p', 'verifikasi_humas_at') . " AS verifikasi_humas_at,
                         " . $this->kolom('p', 'humas_dibaca_at') . " AS humas_dibaca_at,
                         " . $this->kolom('p', 'catatan_humas') . " AS catatan_humas,
@@ -144,8 +145,8 @@ class PoValidasiMitraController extends Controller {
     protected function petakan(array $r) {
         $nilai = !empty($r['nominal_penawaran']) ? (float) $r['nominal_penawaran'] : (float) $r['estimasi_biaya'];
         $terbayar = (float) $r['total_terbayar'];
-        $lunas = $nilai > 0 && $terbayar >= $nilai;
-        $punyaKesanggupan = !empty($r['surat_kesanggupan_bayar']);
+        $lunas = ($nilai > 0 && $terbayar >= $nilai) || strtolower((string) ($r['status_keuangan'] ?? '')) === 'lunas';
+        $punyaKesanggupan = !empty($r['skb_terverifikasi']) || (!empty($r['surat_kesanggupan_bayar']) && strtolower((string) ($r['status_keuangan'] ?? '')) === 'lunas');
         $verif = self::tanggalJam((string) ($r['verifikasi_humas_at'] ?? ''));
         $tglValidasi = self::tanggalJam((string) ($r['tervalidasi_mitra_at'] ?? ''));
         $ts = $tglValidasi !== '' ? strtotime($tglValidasi) : false;
@@ -224,7 +225,7 @@ class PoValidasiMitraController extends Controller {
         try {
             $this->db->exec(
                 "UPDATE po_kegiatan SET mitra_dibaca_at = NOW()
-                 WHERE id = ? AND status = 'terkirim' AND verifikasi_humas_at IS NOT NULL
+                 WHERE id = ? AND status = 'terkirim' AND status_review = 'disetujui' AND verifikasi_humas_at IS NOT NULL
                    AND (mitra_dibaca_at IS NULL OR mitra_dibaca_at < verifikasi_humas_at)",
                 [1 => $id]
             );
@@ -473,11 +474,17 @@ class PoValidasiMitraController extends Controller {
         list($po, $order) = $this->akses((int) $params['id']);
         $uid = (int) $this->getUserId();
 
+        if (strtolower(trim((string) ($order['status'] ?? ''))) === 'selesai' && !$this->canEditSubmittedData(true, (int) $order['id'])) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Order sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.'], 422);
+        }
         if ($po['status'] === 'disetujui_mitra' || $po['status'] === 'disetujui') {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini sudah diverifikasi sebelumnya.'], 422);
         }
         if ($po['status'] !== 'terkirim') {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini belum dikirim, jadi belum bisa diverifikasi.'], 422);
+        }
+        if ((string) ($po['status_review'] ?? '') !== 'disetujui') {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini belum disetujui Ketua Tim.'], 422);
         }
         $this->wajibVerifikasiHumas($po);
 
@@ -493,11 +500,16 @@ class PoValidasiMitraController extends Controller {
             "SELECT COALESCE(SUM(jumlah),0) FROM opti_pembayaran WHERE order_id = ? AND status_verifikasi = 'terverifikasi'",
             [1 => (int) $order['id']]
         );
-        $lunas = $nilai > 0 && $totalTerbayar >= $nilai;
-        $kesanggupanAda = !empty($sp['surat_kesanggupan_bayar']);
+        $skbVerifCount = (int) $this->safeExecScalar(
+            "SELECT COUNT(*) FROM opti_pembayaran WHERE order_id = ? AND is_kesanggupan_bayar = 1 AND status_verifikasi = 'terverifikasi'",
+            [1 => (int) $order['id']]
+        );
+        $statusKeuOrd = strtolower(trim((string) ($order['status_keuangan'] ?? '')));
+        $lunas = ($nilai > 0 && $totalTerbayar >= $nilai) || $statusKeuOrd === 'lunas';
+        $kesanggupanAda = $skbVerifCount > 0 || (!empty($sp['surat_kesanggupan_bayar']) && $statusKeuOrd === 'lunas');
 
         if (!$lunas && !$kesanggupanAda) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Belum bisa diverifikasi: order ini belum lunas dan tidak ada surat kesanggupan bayar.'], 422);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Belum bisa diverifikasi: pembayaran/SKB order ini belum diverifikasi Keuangan.'], 422);
         }
 
         $catatan = trim((string) $f3->get('POST.catatan'));
@@ -511,7 +523,7 @@ class PoValidasiMitraController extends Controller {
                         tervalidasi_mitra_at = NOW(), tervalidasi_mitra_by = ?,
                         catatan_tim_mitra = ?,
                         reviewed_at = COALESCE(reviewed_at, NOW()), reviewed_by = COALESCE(reviewed_by, ?)
-                  WHERE id = ? AND status = 'terkirim' AND verifikasi_humas_at IS NOT NULL",
+                  WHERE id = ? AND status = 'terkirim' AND status_review = 'disetujui' AND verifikasi_humas_at IS NOT NULL",
                 [1 => $uid, 2 => $catatan, 3 => $uid, 4 => (int) $po['id']]
             );
         } catch (\Exception $e) {
@@ -572,7 +584,7 @@ class PoValidasiMitraController extends Controller {
     protected function ambilPo($poId) {
         if ($poId <= 0) { return null; }
         $rows = $this->safeExec(
-            "SELECT p.id, p.nomor_po, p.status, p.catatan_tim_mitra, p.order_id
+            "SELECT p.id, p.nomor_po, p.status, p.status_review, p.catatan_tim_mitra, p.order_id
              FROM po_kegiatan p WHERE p.id = ?" . \PoSchema::bukanSertifikasi('p') . " LIMIT 1",
             [1 => $poId]
         );
@@ -581,7 +593,7 @@ class PoValidasiMitraController extends Controller {
 
     protected function ambilOrder($orderId) {
         $rows = $this->safeExec(
-            "SELECT id, nomor_order, judul_kegiatan, estimasi_biaya, jenis_layanan_opti FROM order_layanan WHERE id = ? LIMIT 1",
+            "SELECT id, nomor_order, judul_kegiatan, estimasi_biaya, jenis_layanan_opti, status, status_keuangan FROM order_layanan WHERE id = ? LIMIT 1",
             [1 => (int) $orderId]
         );
         return !empty($rows) ? $rows[0] : null;

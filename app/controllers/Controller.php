@@ -115,6 +115,12 @@ class Controller {
             'po:view', 'po:progress', 'po:laporan', 'po:sop',
             'alert:manage'
         ),
+        'pjt_lingkungan' => array(
+            'surat_masuk:view',
+            'order:view', 'order:kalkulasi_biaya',
+            'po:view',
+            'alert:manage'
+        ),
         'admin_kontrak' => array(
             'surat_masuk:view',
             'order:view',
@@ -172,6 +178,7 @@ class Controller {
         $this->f3->set('is_humas', $role === 'humas');
         $this->f3->set('is_ppk', $role === 'ppk');
         $this->f3->set('is_tim_kerja', $role === 'tim_kerja');
+        $this->f3->set('is_pjt_lingkungan', $this->isPjtLingkungan());
         // Role layanan (bukan analis OPTI): Tim Kerja Pengujian -> menu Dashboard, Daftar PO & Review PO khusus Pengujian
         $this->f3->set('is_tim_pengujian', $role === 'tim_kerja_pengujian');
         // Role layanan Sertifikasi (Tim Kerja & Ketua Tim Sertifikasi) -> menu Daftar PO (terkunci Sertifikasi) & Review PO
@@ -200,122 +207,12 @@ class Controller {
         $this->f3->set('allow_edit_submitted', $allowEditSubmitted);
 
         // Hitung notifikasi Daftar Order yang perlu dikerjakan oleh user:
-        // - Untuk Tim Mitra: Notifikasi jumlah Order Masuk yang perlu diproses/ditindaklanjuti.
-        // - Untuk Tim Kerja / PIC: Notifikasi jumlah Order yang Berjalan di mana user ditugaskan sebagai PIC (pic_proposal_id atau ketua_pelaksana_id).
-        // - Untuk Ketua Tim OPTI: Notifikasi order yang menunggu evaluasi kelayakan / persetujuan proposal biaya sesuai divisinya.
-        // - Untuk Superadmin: Total order masuk / tugas yang perlu ditindaklanjuti.
+        // Menggunakan OrderLayanan::countUserTasks sebagai single source of truth yang sinkron 100% dengan
+        // indikator "Tugas Saya" dan badge di setiap tab Daftar Order.
         $notifOrderCount = 0;
         $notifPoHumas = 0;
         try {
-            if ($isTimMitra) {
-                // Notifikasi Tim Mitra: Order yang benar-benar membutuhkan aksi dari Tim Mitra
-                // 1. Permohonan baru masuk yang belum didisposisi ke Ketua Tim
-                // 2. Proposal / rincian biaya yang telah disetujui dan siap diterbitkan Surat Penawaran (SPH)
-                $sqlOrderMitra = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
-                                  LEFT JOIN opti_proposal_riset pr ON pr.id = (SELECT id FROM opti_proposal_riset WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
-                                  LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
-                                  WHERE o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
-                                    AND (
-                                        (o.status = 'permintaan_masuk' OR o.jenis_layanan_opti IS NULL OR o.jenis_layanan_opti = 'belum_ditentukan' OR (o.status IN ('draft', 'draft_disimpan') AND o.status_tinjauan IS NULL))
-                                        OR (
-                                            (o.status_proposal_biaya = 'siap_penawaran' OR pr.status_proposal IN ('disetujui', 'disetujui_ketua', 'disetujui_pimpinan'))
-                                            AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
-                                            AND (sp.id IS NULL OR sp.status_respon_klien = 'draft')
-                                        )
-                                    )";
-                // Ditambah: PO yang sedang menunggu verifikasi Tim Mitra (sudah diverifikasi Humas, belum oleh Tim Mitra) - sama dengan tugas "Verifikasi PO" di Daftar Order
-                try {
-                    $sqlMitraPo = str_replace(
-                        "WHERE o.status != 'ditolak'",
-                        "LEFT JOIN po_kegiatan pk ON pk.id = (SELECT id FROM po_kegiatan WHERE order_id = o.id" . (class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('') : '') . " ORDER BY id ASC LIMIT 1)
-                         WHERE o.status != 'ditolak'",
-                        $sqlOrderMitra
-                    );
-                    $sqlMitraPo = preg_replace(
-                        '/\n\s*\)\s*$/',
-                        " OR (pk.status IN ('terkirim','disetujui_mitra','disetujui') AND pk.status_review = 'disetujui'
-                                            AND (pk.ppk_status IS NULL OR pk.ppk_status NOT IN ('minta','katim_kerja','ketupel_kerja','katim_review'))
-                                            AND pk.validasi_keuangan_at IS NULL AND pk.tervalidasi_mitra_at IS NULL AND pk.verifikasi_humas_at IS NOT NULL)
-                                    )",
-                        $sqlMitraPo, 1
-                    );
-                    if ($sqlMitraPo === $sqlOrderMitra) { throw new \Exception('pola SQL tidak cocok'); }
-                    $resOrderMitra = $this->db->exec($sqlMitraPo);
-                } catch (\Exception $eMitraPo) {
-                    $resOrderMitra = $this->db->exec($sqlOrderMitra);
-                }
-                $notifOrderCount = (int)($resOrderMitra[0]['c'] ?? 0);
-            } elseif ($role === 'tim_kerja') {
-                // Tim Kerja: Hitung seluruh order aktif tugas user (baik di tab Masuk maupun Berjalan) di mana user ditugaskan sebagai PIC Proposal atau Ketua Pelaksana
-                $sqlOrderPic = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
-                                LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
-                                LEFT JOIN opti_bast b ON b.id = (SELECT id FROM opti_bast WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
-                                WHERE (
-                                    (o.ketua_pelaksana_id = ?)
-                                    OR (
-                                        o.pic_proposal_id = ? 
-                                        AND (o.status_proposal_biaya IS NULL OR o.status_proposal_biaya NOT IN ('siap_penawaran', 'disetujui'))
-                                        AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
-                                        AND (sp.status_respon_klien IS NULL OR sp.status_respon_klien != 'deal')
-                                        AND o.status NOT IN ('penawaran_deal', 'disetujui')
-                                    )
-                                )
-                                  AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
-                                  AND (o.status != 'selesai' AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai'))
-                                  AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
-                // Order yang PO-nya sedang di meja orang lain (review Ketua Tim, verifikasi Humas / Tim Mitra / PPK BLU) bukan tugas Ketua Pelaksana saat ini
-                // (sama dengan penanda "Giliran Anda" di Daftar Order). Kalau kolom PO belum lengkap, kembali ke hitungan lama.
-                try {
-                    $joinPk = "LEFT JOIN po_kegiatan pk ON pk.id = (SELECT id FROM po_kegiatan WHERE order_id = o.id" . (class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('') : '') . " ORDER BY id ASC LIMIT 1) ";
-                    $sqlPic2 = preg_replace(
-                        '/WHERE\s*\(\s*\(o\.ketua_pelaksana_id = \?\)/',
-                        $joinPk . "WHERE ( (o.ketua_pelaksana_id = ? AND (pk.id IS NULL OR pk.status NOT IN ('terkirim', 'disetujui_mitra', 'disetujui') OR pk.status_review = 'perlu_revisi' OR (pk.status_review = 'disetujui' AND pk.validasi_keuangan_at IS NULL AND pk.ppk_status = 'ketupel_kerja')))",
-                        $sqlOrderPic, 1
-                    );
-                    if ($sqlPic2 === $sqlOrderPic) { throw new \Exception('pola SQL tidak cocok'); }
-                    $resOrderPic = $this->db->exec($sqlPic2, [1 => (int)$userId, 2 => (int)$userId]);
-                } catch (\Exception $ePk) {
-                    $resOrderPic = $this->db->exec($sqlOrderPic, [1 => (int)$userId, 2 => (int)$userId]);
-                }
-                $notifOrderCount = (int)($resOrderPic[0]['c'] ?? 0);
-            } elseif ($role === 'ketua_tim') {
-                $whereDiv = in_array($layanan, array('selulosa', 'lingkungan')) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
-                $sqlNotif = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
-                             LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
-                             LEFT JOIN opti_proposal_riset pr ON pr.id = (SELECT id FROM opti_proposal_riset WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
-                             WHERE o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
-                               AND {$whereDiv} (
-                                   -- 1. Kaji Kelayakan
-                                   (o.status != 'permintaan_masuk' AND o.jenis_layanan_opti IN ('selulosa', 'lingkungan') AND (o.status_tinjauan IS NULL OR o.status_tinjauan IN ('belum_ditinjau', 'menunggu', 'draft')))
-                                   -- 2. Approval Proposal / Biaya
-                                   OR (o.status_proposal_biaya = 'menunggu_approval' OR pr.status_proposal = 'diajukan')
-                                   -- 3. Tunjuk Pelaksana (setelah deal)
-                                   OR ((o.status IN ('disetujui', 'penawaran_deal') OR o.status_penawaran = 'deal' OR sp.status_respon_klien = 'deal') AND o.ketua_pelaksana_id IS NULL AND o.status != 'selesai')
-                                   -- 4. Tunjuk PIC Proposal (khusus Selulosa)
-                                   OR (o.jenis_layanan_opti = 'selulosa' AND o.status_tinjauan = 'layak' AND o.pic_proposal_id IS NULL AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal') AND sp.id IS NULL)
-                               )";
-                $resNotif = $this->db->exec($sqlNotif);
-                $notifOrderCount = (int)($resNotif[0]['c'] ?? 0);
-            } elseif ($role === 'humas') {
-                // Humas: PO yang sudah disetujui Ketua Tim dan menunggu verifikasi Humas (sama dengan "Verifikasi PO" di Daftar Order)
-                $resHumas = $this->db->exec(
-                    "SELECT COUNT(DISTINCT p.order_id) AS c FROM po_kegiatan p
-                      WHERE p.status IN ('terkirim','disetujui_mitra','disetujui') AND p.status_review = 'disetujui'
-                        AND p.verifikasi_humas_at IS NULL"
-                );
-                $notifPoHumas = (int)($resHumas[0]['c'] ?? 0);
-                // + kontrak yang menunggu dibuat Humas (PO bertanda tangan sudah di-upload) -- sama dengan tugas "Buat Kontrak" di Daftar Order
-                $notifOrderCount = $notifPoHumas + $this->hitungKontrakMenunggu();
-            } elseif (in_array($role, array('ppk', 'ppk_blu', 'pejabat'), true)) {
-                // PPK BLU: PO yang sudah diverifikasi Tim Mitra dan menunggu verifikasi PPK BLU (sama dengan "Verifikasi PO" di Daftar Order)
-                $resPpk = $this->db->exec(
-                    "SELECT COUNT(DISTINCT p.order_id) AS c FROM po_kegiatan p
-                      WHERE p.status IN ('terkirim','disetujui_mitra','disetujui') AND p.status_review = 'disetujui'
-                        AND (p.ppk_status IS NULL OR p.ppk_status NOT IN ('minta','katim_kerja','ketupel_kerja','katim_review'))
-                        AND p.tervalidasi_mitra_at IS NOT NULL AND p.validasi_keuangan_at IS NULL"
-                );
-                $notifOrderCount = (int)($resPpk[0]['c'] ?? 0);
-            } elseif ($role === 'superadmin') {
+            if ($role === 'superadmin') {
                 // Superadmin mengawasi seluruh order aktif yang sedang berjalan maupun order masuk
                 $sqlOrderSuper = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
                                   LEFT JOIN po p ON o.id = p.order_id
@@ -331,6 +228,16 @@ class Controller {
                 $orderModel = new \OrderLayanan($this->db);
                 $taskCounts = $orderModel->countUserTasks($role, $userId, $layanan);
                 $notifOrderCount = (int)($taskCounts['total'] ?? 0);
+            }
+
+            if ($role === 'humas') {
+                // Humas: PO yang sudah disetujui Ketua Tim dan menunggu verifikasi Humas (badge PO Humas)
+                $resHumas = $this->db->exec(
+                    "SELECT COUNT(DISTINCT p.order_id) AS c FROM po_kegiatan p
+                      WHERE p.status IN ('terkirim','disetujui_mitra','disetujui') AND p.status_review = 'disetujui'
+                        AND p.verifikasi_humas_at IS NULL"
+                );
+                $notifPoHumas = (int)($resHumas[0]['c'] ?? 0);
             }
         } catch (\Exception $eOrder) {
             $notifOrderCount = 0;
@@ -386,39 +293,66 @@ class Controller {
         }
         $this->f3->set('jumlah_notif_surat', $notifSuratCount);
 
-        // Hitung notifikasi Tugas Proposal Teknis (Tim Kerja, Ketua Tim, Superadmin)
+        // Hitung notifikasi Daftar Proposal (Tahap 4 Selulosa) & Daftar Tarif Parameter (Tahap 4 Lingkungan)
         $notifProposalCount = 0;
+        $notifTarifCount = 0;
         try {
+            $baseTahap4Where = "(o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
+                                AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
             if ($role === 'tim_kerja') {
-                $sqlProposal = "SELECT COUNT(*) as c 
-                                FROM order_layanan o
-                                WHERE o.pic_proposal_id = ?
-                                  AND (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
-                                  AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
-                $resProp = $this->db->exec($sqlProposal, array(1 => (int)$userId));
-                $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
+                $resProp = $this->db->exec(
+                    "SELECT o.jenis_layanan_opti, COUNT(*) as c
+                     FROM order_layanan o
+                     WHERE (o.pic_proposal_id = ? OR o.pic_proposal_cadangan_id = ?)
+                       AND {$baseTahap4Where}
+                       AND o.jenis_layanan_opti IN ('selulosa', 'lingkungan')
+                     GROUP BY o.jenis_layanan_opti",
+                    array(1 => (int)$userId, 2 => (int)$userId)
+                );
+                foreach ($resProp as $rp) {
+                    if ($rp['jenis_layanan_opti'] === 'selulosa') $notifProposalCount = (int)$rp['c'];
+                    if ($rp['jenis_layanan_opti'] === 'lingkungan') $notifTarifCount = (int)$rp['c'];
+                }
+            } elseif ($role === 'pjt_lingkungan') {
+                $resTarif = $this->db->exec(
+                    "SELECT COUNT(*) as c FROM order_layanan o WHERE o.jenis_layanan_opti = 'lingkungan' AND {$baseTahap4Where}"
+                );
+                $notifTarifCount = (int)($resTarif[0]['c'] ?? 0);
             } elseif ($role === 'ketua_tim') {
-                $whereDivProp = in_array($layanan, array('selulosa', 'lingkungan')) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
-                $sqlProposal = "SELECT COUNT(*) as c 
-                                FROM order_layanan o
-                                WHERE {$whereDivProp} (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
-                                  AND o.pic_proposal_id IS NOT NULL
-                                  AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
-                $resProp = $this->db->exec($sqlProposal);
-                $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
+                if ($layanan === 'selulosa' || $layanan === 'semua' || $layanan === '') {
+                    $resProp = $this->db->exec(
+                        "SELECT COUNT(*) as c FROM order_layanan o
+                         WHERE o.jenis_layanan_opti = 'selulosa' AND {$baseTahap4Where}
+                           AND (o.pic_proposal_id IS NOT NULL OR o.pic_proposal_cadangan_id IS NOT NULL)"
+                    );
+                    $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
+                }
+                if ($layanan === 'lingkungan' || $layanan === 'semua' || $layanan === '') {
+                    $resTarif = $this->db->exec(
+                        "SELECT COUNT(*) as c FROM order_layanan o
+                         WHERE o.jenis_layanan_opti = 'lingkungan' AND {$baseTahap4Where}"
+                    );
+                    $notifTarifCount = (int)($resTarif[0]['c'] ?? 0);
+                }
             } elseif ($role === 'superadmin') {
-                $sqlProposal = "SELECT COUNT(*) as c 
-                                FROM order_layanan o
-                                WHERE (o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
-                                  AND o.pic_proposal_id IS NOT NULL
-                                  AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
-                $resProp = $this->db->exec($sqlProposal);
+                $resProp = $this->db->exec(
+                    "SELECT COUNT(*) as c FROM order_layanan o
+                     WHERE o.jenis_layanan_opti = 'selulosa' AND {$baseTahap4Where}
+                       AND (o.pic_proposal_id IS NOT NULL OR o.pic_proposal_cadangan_id IS NOT NULL)"
+                );
                 $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
+                $resTarif = $this->db->exec(
+                    "SELECT COUNT(*) as c FROM order_layanan o
+                     WHERE o.jenis_layanan_opti = 'lingkungan' AND {$baseTahap4Where}"
+                );
+                $notifTarifCount = (int)($resTarif[0]['c'] ?? 0);
             }
         } catch (\Exception $eProp) {
             $notifProposalCount = 0;
+            $notifTarifCount = 0;
         }
         $this->f3->set('jumlah_notif_proposal', $notifProposalCount);
+        $this->f3->set('jumlah_notif_tarif_parameter', $notifTarifCount);
 
         $notifPo = array('lingkungan' => 0, 'selulosa' => 0);
 try {
@@ -515,7 +449,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                 $sqlPenunjukan = "SELECT COUNT(*) as c FROM order_layanan o
                                   WHERE {$whereDivPenunjukan} o.disposisi_katim_at IS NOT NULL
                                     AND o.status_keuangan = 'lunas'
-                                    AND o.tanggal_terima_sampel IS NOT NULL
+                                    AND (o.tanggal_terima_sampel IS NOT NULL OR o.tanggal_spm_mulai IS NOT NULL)
                                     AND o.ketua_pelaksana_id IS NULL";
                 $resPenunjukan = $this->db->exec($sqlPenunjukan);
                 $notifPenunjukanPelaksana = (int)($resPenunjukan[0]['c'] ?? 0);
@@ -530,7 +464,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         $notifValidasiPo = 0;
         if ($isTimMitra || $role === 'superadmin') {
             try {
-                $resValidasi = $this->db->exec("SELECT COUNT(*) as c FROM po_kegiatan WHERE status = 'terkirim' AND verifikasi_humas_at IS NOT NULL" . \PoSchema::bukanSertifikasi(''));
+                $resValidasi = $this->db->exec("SELECT COUNT(*) as c FROM po_kegiatan WHERE status = 'terkirim' AND status_review = 'disetujui' AND verifikasi_humas_at IS NOT NULL" . \PoSchema::bukanSertifikasi(''));
                 $notifValidasiPo = (int)($resValidasi[0]['c'] ?? 0);
             } catch (\Exception $eValidasi) {
                 $notifValidasiPo = 0;
@@ -585,7 +519,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             $this->db, (string) $this->getUserRole(), (int) $this->getUserId(), (string) $this->f3->get('SESSION.jenis_layanan_opti')
         ));
 
-        // Daftar Pengguna Aktif untuk Fitur Pop-Up "Ganti User"
+        // Daftar Pengguna Aktif untuk Fitur Pop-Up "Ganti User" (Disinkronkan dengan Data Pengguna)
         $switchUsers = array();
         try {
             $strukturalRoleMap = array(
@@ -602,9 +536,17 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                 31  => 'ppk'
             );
 
+            $nonOptiRoles = array(
+                'ppk', 'humas',
+                'ketua_tim_pengujian', 'ketua_tim_kalibrasi', 'ketua_tim_sertifikasi',
+                'ketua_tim_pendampingan', 'ketua_tim_inspeksi', 'ketua_tim_profisiensi',
+                'pic_po_pengujian', 'pic_po_kalibrasi', 'pic_po_sertifikasi',
+                'pic_po_pendampingan', 'pic_po_inspeksi', 'pic_po_profisiensi'
+            );
+
             // Ambil seluruh pemetaan role aktif dari opti_user_map
             $allMapRows = $this->db->exec(
-                "SELECT id_user, role, jenis_layanan
+                "SELECT id_user, role, jenis_layanan, akses_opti, akses_po
                  FROM opti_user_map
                  WHERE status_tampil = 'show' AND (is_active = 1 OR is_active = '1')
                  ORDER BY id ASC"
@@ -644,10 +586,15 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
 
                     $userRoleKeys = array();
 
-                    // 1. Dari si_opti jika bukan 'user' atau kosong
+                    // 1. Dari si_opti (mendukung multi-role comma-separated) jika bukan 'user' atau kosong
                     if (!empty($rawRole) && $rawRole !== 'user') {
-                        $normRole = class_exists('\PenggunaController') ? \PenggunaController::normalizeRoleKey($rawRole) : $rawRole;
-                        $userRoleKeys[] = $normRole;
+                        foreach (explode(',', $rawRole) as $rk) {
+                            $rk = trim($rk);
+                            if ($rk !== '' && $rk !== 'user') {
+                                $normRole = class_exists('\PenggunaController') ? \PenggunaController::normalizeRoleKey($rk) : $rk;
+                                $userRoleKeys[] = $normRole;
+                            }
+                        }
                     } elseif (isset($strukturalRoleMap[$idStruktural])) {
                         // 2. Dari jabatan struktural sekretariat
                         $userRoleKeys[] = $strukturalRoleMap[$idStruktural];
@@ -674,22 +621,98 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                         }
                     }
 
-                    // Resolusi badge, label, dan ikon per role
+                    // Resolusi badge, label, dan modul per role
                     $rolesList = array();
                     $labelsArr = array();
+                    $userAksesOpti = 0;
+                    $userAksesPo = 0;
+                    $divisiTitle = '';
+                    $divisiKey = 'lainnya';
+
                     foreach ($userRoleKeys as $rk) {
                         $roleMeta = class_exists('\PenggunaController') 
                             ? \PenggunaController::resolveRoleMeta($uid, $rk) 
                             : array('label' => ucwords(str_replace('_', ' ', $rk)), 'badge_class' => 'role-badge role-badge-default', 'icon' => 'bi-person', 'category' => 'manajemen');
                         
+                        $labelOpti = $roleMeta['label'] ?? ucwords(str_replace('_', ' ', $rk));
+                        $labelPo = $roleMeta['label'] ?? ucwords(str_replace('_', ' ', $rk));
+
+                        if ($rk === 'pic_po_selulosa') {
+                            $labelOpti = 'Tim Kerja Selulosa';
+                            $labelPo = 'PO Selulosa';
+                        } elseif ($rk === 'pic_po_lingkungan') {
+                            $labelOpti = 'Tim Kerja Lingkungan';
+                            $labelPo = 'PO Lingkungan';
+                        }
+
+                        $modul = 'keduanya';
+                        if (strpos($rk, 'pic_po_') === 0 || $rk === 'ppk' || $rk === 'humas') {
+                            $modul = 'po';
+                        } elseif (strpos($rk, 'tim_kerja_') === 0) {
+                            $modul = 'opti';
+                        }
+
                         $rolesList[] = array(
                             'key' => $rk,
                             'label' => $roleMeta['label'] ?? ucwords(str_replace('_', ' ', $rk)),
+                            'label_opti' => $labelOpti,
+                            'label_po' => $labelPo,
                             'badge_class' => $roleMeta['badge_class'] ?? 'role-badge role-badge-default',
+                            'modul' => $modul,
                             'icon' => $roleMeta['icon'] ?? 'bi-person',
                             'category' => $roleMeta['category'] ?? 'manajemen'
                         );
                         $labelsArr[] = $roleMeta['label'] ?? ucwords(str_replace('_', ' ', $rk));
+
+                        if (in_array($rk, $nonOptiRoles, true)) {
+                            $userAksesPo = 1;
+                        } else {
+                            $ro = isset($roleMeta['akses_opti']) ? (int)$roleMeta['akses_opti'] : 1;
+                            $rp = isset($roleMeta['akses_po']) ? (int)$roleMeta['akses_po'] : 1;
+                            if ($ro === 1) $userAksesOpti = 1;
+                            if ($rp === 1) $userAksesPo = 1;
+                        }
+
+                        // Deteksi Divisi Layanan
+                        if ($divisiKey === 'lainnya') {
+                            if ($rk === 'superadmin') {
+                                $divisiKey = 'superadmin';
+                                $divisiTitle = 'Super Administrator';
+                            } elseif (strpos($rk, 'selulosa') !== false) {
+                                $divisiKey = 'selulosa';
+                                $divisiTitle = 'OPTI Selulosa';
+                            } elseif (strpos($rk, 'lingkungan') !== false) {
+                                $divisiKey = 'lingkungan';
+                                $divisiTitle = 'OPTI Lingkungan';
+                            } elseif (strpos($rk, 'mitra') !== false) {
+                                $divisiKey = 'mitra';
+                                $divisiTitle = 'Mitra Industri';
+                            } elseif (strpos($rk, 'keuangan') !== false) {
+                                $divisiKey = 'keuangan';
+                                $divisiTitle = 'Keuangan';
+                            } elseif (strpos($rk, 'pengujian') !== false) {
+                                $divisiKey = 'pengujian';
+                                $divisiTitle = 'Pengujian';
+                            } elseif (strpos($rk, 'kalibrasi') !== false) {
+                                $divisiKey = 'kalibrasi';
+                                $divisiTitle = 'Kalibrasi';
+                            } elseif (strpos($rk, 'sertifikasi') !== false) {
+                                $divisiKey = 'sertifikasi';
+                                $divisiTitle = 'Sertifikasi';
+                            } elseif (strpos($rk, 'pendampingan') !== false) {
+                                $divisiKey = 'pendampingan';
+                                $divisiTitle = 'Pendampingan Teknis';
+                            } elseif (strpos($rk, 'inspeksi') !== false) {
+                                $divisiKey = 'inspeksi';
+                                $divisiTitle = 'Inspeksi';
+                            } elseif (strpos($rk, 'profisiensi') !== false) {
+                                $divisiKey = 'profisiensi';
+                                $divisiTitle = 'Uji Profisiensi';
+                            } elseif (strpos($rk, 'ppk') !== false) {
+                                $divisiKey = 'ppk';
+                                $divisiTitle = 'Pejabat Pembuat Komitmen (PPK)';
+                            }
+                        }
                     }
 
                     $primaryRoleKey = $userRoleKeys[0];
@@ -697,10 +720,14 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
 
                     $u['role_sistem'] = $primaryRoleKey;
                     $u['roles_list'] = $rolesList;
-                    $u['role_label'] = implode(', ', $labelsArr);
+                    $u['role_label'] = implode(', ', array_unique($labelsArr));
                     $u['role_badge_class'] = $primaryMeta['badge_class'];
                     $u['role_icon'] = $primaryMeta['icon'];
                     $u['role_category'] = $primaryMeta['category'] ?? 'manajemen';
+                    $u['divisi_key'] = $divisiKey;
+                    $u['divisi_title'] = $divisiTitle ?: 'Layanan Umum';
+                    $u['akses_opti'] = $userAksesOpti;
+                    $u['akses_po'] = $userAksesPo;
 
                     // Bersihkan bidang dari string 'NULL'
                     $cleanBidang = trim((string)($u['bidang'] ?? ''));
@@ -718,21 +745,35 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                     $switchUsers[] = $u;
                 }
 
-                // Urutkan hierarki: Superadmin -> Ketua Tim -> Tim Mitra -> Keuangan -> Tim Kerja / PO -> PPK -> Lainnya, lalu alfabet nama
-                usort($switchUsers, function($a, $b) {
-                    $getRank = function($role) {
-                        if ($role === 'superadmin') return 1;
-                        if (strpos($role, 'ketua_tim') === 0 || strpos($role, 'katim') === 0) return 2;
-                        if ($role === 'tim_mitra_industri' || $role === 'admin_order' || $role === 'tim_mitra') return 3;
-                        if ($role === 'keuangan') return 4;
-                        if (strpos($role, 'tim_kerja') === 0 || strpos($role, 'pic_po') === 0) return 5;
-                        if ($role === 'ppk') return 6;
-                        return 7;
-                    };
-                    $rankA = $getRank($a['role_sistem']);
-                    $rankB = $getRank($b['role_sistem']);
-                    if ($rankA !== $rankB) {
-                        return $rankA <=> $rankB;
+                // Urutkan hierarki persis seperti Data Pengguna:
+                // Superadmin -> OPTI Selulosa -> OPTI Lingkungan -> Mitra Industri -> Keuangan -> Pengujian -> Kalibrasi -> Sertifikasi -> Pendampingan -> PPK
+                $divRankMap = array(
+                    'superadmin' => 1,
+                    'selulosa' => 2,
+                    'lingkungan' => 3,
+                    'mitra' => 4,
+                    'keuangan' => 5,
+                    'pengujian' => 6,
+                    'kalibrasi' => 7,
+                    'sertifikasi' => 8,
+                    'pendampingan' => 9,
+                    'inspeksi' => 10,
+                    'profisiensi' => 11,
+                    'ppk' => 12,
+                    'lainnya' => 99
+                );
+
+                usort($switchUsers, function($a, $b) use ($divRankMap) {
+                    $rA = $divRankMap[$a['divisi_key']] ?? 99;
+                    $rB = $divRankMap[$b['divisi_key']] ?? 99;
+                    if ($rA !== $rB) {
+                        return $rA <=> $rB;
+                    }
+                    // Di dalam divisi: Ketua Tim / Pimpinan didahulukan
+                    $isLeadA = (strpos($a['role_sistem'], 'ketua_tim') === 0 || $a['role_sistem'] === 'superadmin') ? 0 : 1;
+                    $isLeadB = (strpos($b['role_sistem'], 'ketua_tim') === 0 || $b['role_sistem'] === 'superadmin') ? 0 : 1;
+                    if ($isLeadA !== $isLeadB) {
+                        return $isLeadA <=> $isLeadB;
                     }
                     return strcasecmp($a['nama_lengkap'], $b['nama_lengkap']);
                 });
@@ -785,6 +826,20 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
     public function getUserLayanan(): string {
         return $_SESSION['jenis_layanan_opti'] ?? 'semua';
     }
+
+    /**
+     * Ambil divisi Ketua Tim aktif ('selulosa' / 'lingkungan' / dst., atau '' jika semua).
+     */
+    public function getDivisiKetuaTim(): string {
+        if ($this->isSuperadmin()) {
+            return '';
+        }
+        $layanan = strtolower(trim((string) $this->getUserLayanan()));
+        if ($layanan !== '' && $layanan !== 'semua') {
+            return $layanan;
+        }
+        return $this->getDivisiTimKerja();
+    }
     public function getDivisiTimKerja(): string {
         if ($this->isSuperadmin()) {
             return '';
@@ -836,6 +891,10 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
     public function hasPermission(string $permission): bool {
         $role = $this->getUserRole();
         if ($role === 'superadmin') {
+            return true;
+        }
+        // Daftar Order & Detail Order (read-only) dapat diakses seluruh user yang login (OPTI, PO, maupun tanpa role)
+        if ($permission === 'order:view' && !empty($_SESSION['user_id'])) {
             return true;
         }
 
@@ -919,6 +978,22 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
     }
 
     /**
+     * Cek apakah role aktif adalah PJT Lingkungan (Penanggung Jawab Teknis)
+     */
+    public function isPjtLingkungan(): bool {
+        $r = $this->getUserRole();
+        return $r === 'pjt_lingkungan' || ($r === 'pjt' && strtolower($this->getUserLayanan()) === 'lingkungan');
+    }
+
+    /**
+     * Cek apakah user aktif adalah PJT yang berwenang untuk order tertentu
+     */
+    public function isPjtForOrder(array $order): bool {
+        $layananOrder = strtolower(trim((string)($order['jenis_layanan_opti'] ?? '')));
+        return $this->isPjtLingkungan() && $layananOrder === 'lingkungan';
+    }
+
+    /**
      * Cek apakah role aktif adalah Tim Kerja (Analis / Peneliti)
      */
     public function isTimKerja(): bool {
@@ -946,13 +1021,14 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             return true; // Data masih draft / baru -> boleh diedit oleh pembuat / tim berwenang
         }
 
-        // Resolusi orderId dari parameter router jika tidak diberikan eksplisit
+        // Resolusi orderId hanya dari route /order/{id} atau query order_id eksplisit
         if ($orderId <= 0) {
+            $path = (string)($this->f3->get('PATH') ?? '');
             $paramId = $this->f3->get('PARAMS.id');
-            if (!empty($paramId) && is_numeric($paramId)) {
+            if (!empty($paramId) && is_numeric($paramId) && preg_match('#^/order/\d+#', $path)) {
                 $orderId = (int)$paramId;
             } else {
-                $queryOrderId = $this->f3->get('GET.order_id');
+                $queryOrderId = $this->f3->get('GET.order_id') ?: $this->f3->get('POST.order_id');
                 if (!empty($queryOrderId) && is_numeric($queryOrderId)) {
                     $orderId = (int)$queryOrderId;
                 }
@@ -965,9 +1041,61 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             return $orderModel->isOrderUnlocked($orderId);
         }
 
-        // Fallback backward-compatibility jika orderId benar-benar tidak terdeteksi
-        $fieldConfigModel = new OptiFieldConfig($this->db);
-        return $fieldConfigModel->isAllowEditSubmittedData();
+        // Fail-closed jika orderId tidak terdeteksi untuk data yang sudah terkunci/submitted
+        return false;
+    }
+
+    /**
+     * Cek apakah user adalah Ketua Tim yang membawahi divisi/layanan OPTI pada order terkait (atau Superadmin)
+     */
+    public function isKetuaTimForOrder(array $order): bool {
+        if ($this->isSuperadmin()) {
+            return true;
+        }
+        if (!$this->isKetuaTim()) {
+            return false;
+        }
+        $layananOrder = strtolower(trim((string)($order['jenis_layanan_opti'] ?? '')));
+        $userLayanan = strtolower(trim((string)$this->getUserLayanan()));
+        if (in_array($userLayanan, ['selulosa', 'lingkungan', 'sertifikasi'], true)) {
+            $efektifLayanan = $userLayanan;
+        } else {
+            $userDivisi = strtolower(trim((string)$this->getDivisiTimKerja()));
+            $efektifLayanan = ($userDivisi !== '') ? $userDivisi : $userLayanan;
+        }
+        if ($efektifLayanan === 'semua' || $efektifLayanan === '') {
+            return true;
+        }
+        return ($layananOrder !== '' && $efektifLayanan === $layananOrder);
+    }
+
+    /**
+     * Cek apakah order sudah berstatus DEAL (penawaran disetujui klien) atau SELESAI
+     */
+    public function isOrderDealOrSelesai(array $order, ?array $penawaran = null): bool {
+        $statusOrder = strtolower(trim((string)($order['status'] ?? '')));
+        if ($statusOrder === 'selesai') {
+            return true;
+        }
+        if (strtolower(trim((string)($order['status_penawaran'] ?? ''))) === 'deal') {
+            return true;
+        }
+        if (!empty($penawaran) && strtolower(trim((string)($penawaran['status_respon_klien'] ?? ''))) === 'deal') {
+            return true;
+        }
+        $orderId = (int)($order['id'] ?? 0);
+        if ($orderId > 0) {
+            try {
+                $spDeal = $this->db->exec(
+                    "SELECT id FROM tb_surat_penawaran WHERE order_id = ? AND status_respon_klien = 'deal' LIMIT 1",
+                    [1 => $orderId]
+                );
+                if (!empty($spDeal)) {
+                    return true;
+                }
+            } catch (\Throwable $e) {}
+        }
+        return false;
     }
 
     /**
@@ -1097,10 +1225,38 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         $_SESSION['last_activity'] = time();
 
         // Proteksi CSRF Global untuk Semua Request POST
-        if ($f3->get('VERB') === 'POST' && $path !== '/login') {
-            $postToken = $f3->get('POST.csrf_token');
-            if (!$postToken || !hash_equals($_SESSION['csrf_token'] ?? '', $postToken)) {
-                $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+        if ($f3->get('VERB') === 'POST' && !in_array($path, ['/login', '/login/otp/verify', '/login/otp/resend'], true)) {
+            $headerToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+            $postToken   = $f3->get('POST.csrf_token');
+            $submittedToken = !empty($postToken) ? (string)$postToken : (string)$headerToken;
+            $sessionToken   = (string)($_SESSION['csrf_token'] ?? '');
+
+            if ($sessionToken === '' || $submittedToken === '' || !hash_equals($sessionToken, $submittedToken)) {
+                $isJsonOrAjax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest'
+                    || strpos(strtolower($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json') !== false
+                    || strpos(strtolower($_SERVER['CONTENT_TYPE'] ?? ''), 'application/json') !== false
+                    || $headerToken !== '';
+
+                if ($isJsonOrAjax) {
+                    http_response_code(403);
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode([
+                        'ok'      => false,
+                        'success' => false,
+                        'pesan'   => 'Token keamanan (CSRF) tidak valid atau sesi kedaluwarsa. Silakan muat ulang halaman.',
+                        'error'   => 'CSRF token tidak valid.'
+                    ]);
+                    exit;
+                }
+
+                $_SESSION['flash_error'] = 'Token keamanan (CSRF) tidak valid atau sesi form telah kedaluwarsa. Silakan muat ulang halaman dan coba lagi.';
+                $referer = $_SERVER['HTTP_REFERER'] ?? '';
+                if ($referer !== '' && stripos($referer, $_SERVER['HTTP_HOST'] ?? '') !== false) {
+                    header('Location: ' . $referer);
+                } else {
+                    $f3->reroute('/dashboard');
+                }
+                exit;
             }
         }
     }
@@ -1175,18 +1331,84 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         $orderId = (int) $orderId;
         try {
             $r = $this->db->exec(
-                "SELECT o.status_keuangan, o.tanggal_spm_mulai, o.tanggal_terima_sampel,
-                        (SELECT COUNT(*) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.is_kesanggupan_bayar = 1) AS jumlah_kb
-                 FROM order_layanan o WHERE o.id = ? LIMIT 1",
+                "SELECT o.status_keuangan, o.estimasi_biaya, o.tanggal_spm_mulai, o.tanggal_terima_sampel,
+                        COALESCE(sp.nominal_penawaran, 0) AS nominal_penawaran,
+                        COALESCE(sp.surat_kesanggupan_bayar, '') AS surat_kesanggupan_bayar,
+                        (SELECT COALESCE(SUM(jumlah), 0) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi') AS total_terbayar,
+                        (SELECT COUNT(*) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.is_kesanggupan_bayar = 1 AND p.status_verifikasi = 'terverifikasi') AS jumlah_kb
+                 FROM order_layanan o
+                 LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                     SELECT id FROM tb_surat_penawaran 
+                     WHERE order_id = o.id 
+                     ORDER BY (status_respon_klien = 'deal') DESC, id DESC 
+                     LIMIT 1
+                 )
+                 WHERE o.id = ? LIMIT 1",
                 [1 => $orderId]
             );
         } catch (\Exception $e) {
             return ['ok' => true, 'lunas' => true, 'spm' => true];   // gagal baca: jangan sampai menutup alur
         }
         if (empty($r)) { return ['ok' => false, 'lunas' => false, 'spm' => false]; }
-        $lunas = (($r[0]['status_keuangan'] ?? '') === 'lunas') || ((int) ($r[0]['jumlah_kb'] ?? 0) > 0);
-        $spm   = !empty($r[0]['tanggal_spm_mulai']) || !empty($r[0]['tanggal_terima_sampel']);
+        
+        $biayaAcuan = (float)($r[0]['nominal_penawaran'] ?: $r[0]['estimasi_biaya']);
+        $totalTerbayar = (float)($r[0]['total_terbayar'] ?? 0);
+        $jumlahKb = (int)($r[0]['jumlah_kb'] ?? 0);
+        $punyaSkb = ($jumlahKb > 0) || !empty(trim((string)($r[0]['surat_kesanggupan_bayar'] ?? '')));
+        $statusKeu = (string)($r[0]['status_keuangan'] ?? '');
+
+        $lunas = ($statusKeu === 'lunas') 
+            || ($biayaAcuan > 0 && $totalTerbayar >= $biayaAcuan) 
+            || $punyaSkb;
+
+        // Auto-heal: jika pembayaran sudah mencapai biaya acuan tapi status_keuangan belum 'lunas', sinkronkan ke DB
+        if ($lunas && $statusKeu !== 'lunas' && ($biayaAcuan > 0 && $totalTerbayar >= $biayaAcuan)) {
+            try {
+                $this->db->exec("UPDATE order_layanan SET status_keuangan = 'lunas' WHERE id = ?", [1 => $orderId]);
+            } catch (\Exception $e) {}
+        }
+
+        $spm = !empty($r[0]['tanggal_spm_mulai']) || !empty($r[0]['tanggal_terima_sampel']);
         return ['ok' => ($lunas && $spm), 'lunas' => $lunas, 'spm' => $spm];
+    }
+
+    /**
+     * Syarat penunjukan PIC PO / Ketua Pelaksana (Tahap 7):
+     * Penawaran harus sudah DEAL dan pembayaran telah dimulai/didisposisikan (atau lunas / SKB),
+     * tanpa mewajibkan SPM aktif lebih dulu agar tidak deadlock dengan aktivasi SPM.
+     */
+    protected function syaratTunjukPelaksanaTerpenuhi(int $orderId): array {
+        $orderId = (int)$orderId;
+        if ($orderId <= 0) {
+            return ['ok' => false, 'deal' => false, 'bayar_mulai' => false];
+        }
+        try {
+            $r = $this->db->exec(
+                "SELECT o.status_penawaran, o.status_keuangan, o.disposisi_katim_at,
+                        sp.status_respon_klien,
+                        (SELECT COUNT(*) FROM opti_pembayaran p WHERE p.order_id = o.id AND (p.status_verifikasi = 'terverifikasi' OR p.is_kesanggupan_bayar = 1)) AS jml_bayar
+                 FROM order_layanan o
+                 LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                     SELECT id FROM tb_surat_penawaran
+                     WHERE order_id = o.id
+                     ORDER BY (status_respon_klien = 'deal') DESC, id DESC
+                     LIMIT 1
+                 )
+                 WHERE o.id = ? LIMIT 1",
+                [1 => $orderId]
+            );
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'deal' => false, 'bayar_mulai' => false];
+        }
+        if (empty($r)) {
+            return ['ok' => false, 'deal' => false, 'bayar_mulai' => false];
+        }
+        $row = $r[0];
+        $deal = (($row['status_penawaran'] ?? '') === 'deal') || (($row['status_respon_klien'] ?? '') === 'deal');
+        $bayarMulai = !empty($row['disposisi_katim_at'])
+            || in_array($row['status_keuangan'] ?? '', ['terbayar_sebagian', 'sebagian', 'lunas'], true)
+            || ((int)($row['jml_bayar'] ?? 0) > 0);
+        return ['ok' => ($deal && $bayarMulai), 'deal' => $deal, 'bayar_mulai' => $bayarMulai];
     }
     public function getMasterPenandatanganData()
     {

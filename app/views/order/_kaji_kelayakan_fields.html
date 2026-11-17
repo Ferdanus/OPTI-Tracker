@@ -219,23 +219,42 @@
     </div>
 </div>
 
-<!-- Penunjukan PIC Proposal / Peneliti Pelaksana (Opsional per skenario Ka. Tim Selulosa) -->
+<!-- Penunjukan PIC Proposal / Peneliti Pelaksana (Utama & Cadangan) -->
 <check if="{{ !empty(@show_pic_proposal) }}">
     <div id="{{ @prefix }}boxPicProposal" class="mb-3" style="display: {{ !@tinjauan || @tinjauan.keputusan == 'dapat_dilaksanakan' ? 'block' : 'none' }};">
-        <label class="form-label small fw-bold text-dark mb-1" for="{{ @prefix }}selectPicProposal">
-            Penunjukan PIC Proposal / Peneliti Pelaksana <span class="text-danger">*</span>
-        </label>
-        <select name="pic_proposal_id" class="form-select form-select-sm border-primary" id="{{ @prefix }}selectPicProposal" onchange="updateTetapkanButtonState('{{ @prefix }}')" {{ !@can_edit_kaji ? 'disabled' : '' }} required>
-            <option value="">Pilih PIC Proposal / Peneliti Pelaksana (Wajib)</option>
-            <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
-                <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
-                    {{ @p.nama_user }} ({{ @p.role_label ?: @p.role_opti }} - Divisi {{ ucfirst(@p.spesialisasi ?: @p.role_opti) }})
-                </option>
-            </repeat>
-        </select>
-
-        <div class="invalid-feedback small" id="{{ @prefix }}feedbackPicProposal" style="display: none;">
-            Penunjukan PIC Proposal / Peneliti Pelaksana wajib dipilih.
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label small fw-bold text-dark mb-1" for="{{ @prefix }}selectPicProposal">
+                    PIC Utama <check if="{{ @order.jenis_layanan_opti == 'selulosa' }}"><span class="text-danger">*</span></check><check if="{{ @order.jenis_layanan_opti != 'selulosa' }}"><span class="text-muted fw-normal">(Opsional)</span></check>
+                </label>
+                <select name="pic_proposal_id" class="form-select form-select-sm border-primary" id="{{ @prefix }}selectPicProposal" onchange="updateTetapkanButtonState('{{ @prefix }}')" {{ !@can_edit_kaji ? 'disabled' : '' }} {{ @order.jenis_layanan_opti == 'selulosa' ? 'required' : '' }}>
+                    <option value="">{{ @order.jenis_layanan_opti == 'selulosa' ? 'Pilih PIC Utama (Wajib)' : 'Pilih PIC Utama (Opsional)' }}</option>
+                    <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
+                        <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_id == @p.id_user) ? 'selected' : '' }}>
+                            {{ @p.nama_user }} ({{ @p.role_label ?: @p.role_opti }} - Divisi {{ ucfirst(@p.spesialisasi ?: @p.role_opti) }})
+                        </option>
+                    </repeat>
+                </select>
+                <div class="invalid-feedback small" id="{{ @prefix }}feedbackPicProposal" style="display: none;">
+                    Penunjukan PIC Utama wajib dipilih untuk OPTI Selulosa.
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small fw-bold text-dark mb-1" for="{{ @prefix }}selectPicProposalCadangan">
+                    PIC Cadangan <span class="text-muted fw-normal">(Opsional)</span>
+                </label>
+                <select name="pic_proposal_cadangan_id" class="form-select form-select-sm" id="{{ @prefix }}selectPicProposalCadangan" onchange="updateTetapkanButtonState('{{ @prefix }}')" {{ !@can_edit_kaji ? 'disabled' : '' }}>
+                    <option value="">Pilih PIC Cadangan (Opsional)</option>
+                    <repeat group="{{ @daftar_pic ?: [] }}" value="{{ @p }}">
+                        <option value="{{ @p.id_user }}" {{ (@order.pic_proposal_cadangan_id == @p.id_user) ? 'selected' : '' }}>
+                            {{ @p.nama_user }} ({{ @p.role_label ?: @p.role_opti }} - Divisi {{ ucfirst(@p.spesialisasi ?: @p.role_opti) }})
+                        </option>
+                    </repeat>
+                </select>
+                <div class="invalid-feedback small" id="{{ @prefix }}feedbackPicProposalCadangan" style="display: none;">
+                    PIC Cadangan tidak boleh sama dengan PIC Utama.
+                </div>
+            </div>
         </div>
     </div>
 </check>

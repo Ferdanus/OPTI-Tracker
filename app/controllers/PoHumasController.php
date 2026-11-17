@@ -137,12 +137,18 @@ class PoHumasController extends Controller {
         }
         $id = (int) $params['id'];
         $rows = $this->safeExec(
-            "SELECT p.id, p.status, p.verifikasi_humas_at, p.nomor_po, p.order_id FROM po_kegiatan p
-             WHERE p.id = ? AND p.status IN " . self::STATUS_TERKIRIM . ($this->sertifikasi($id) ? " AND p.status_review = 'disetujui'" : \PoSchema::bukanSertifikasi('p')) . " LIMIT 1",
+            "SELECT p.id, p.status, p.status_review, p.verifikasi_humas_at, p.nomor_po, p.order_id FROM po_kegiatan p
+             WHERE p.id = ? AND p.status IN " . self::STATUS_TERKIRIM . " AND p.status_review = 'disetujui'" . ($this->sertifikasi($id) ? '' : \PoSchema::bukanSertifikasi('p')) . " LIMIT 1",
             [1 => $id]
         );
         if (empty($rows)) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum dikirim.'], 404);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan, belum dikirim, atau belum disetujui Ketua Tim.'], 404);
+        }
+        if (!$this->sertifikasi($id) && !empty($rows[0]['order_id'])) {
+            $ordStatus = $this->safeExec("SELECT status FROM order_layanan WHERE id = ? LIMIT 1", [1 => (int) $rows[0]['order_id']]);
+            if (!empty($ordStatus[0]) && strtolower(trim((string) $ordStatus[0]['status'])) === 'selesai' && !$this->canEditSubmittedData(true, (int) $rows[0]['order_id'])) {
+                $this->keluarkanJson(['ok' => false, 'pesan' => 'Order sudah selesai dan dikunci.'], 422);
+            }
         }
         if (!empty($rows[0]['verifikasi_humas_at'])) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini sudah diverifikasi sebelumnya.'], 422);
@@ -810,6 +816,12 @@ class PoHumasController extends Controller {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan.'], 404);
         }
         $po = $rows[0];
+        if (!empty($po['order_id'])) {
+            $ordLock = $this->safeExec("SELECT status FROM order_layanan WHERE id = ? LIMIT 1", [1 => (int) $po['order_id']]);
+            if (!empty($ordLock[0]) && strtolower(trim((string) $ordLock[0]['status'])) === 'selesai' && !$this->canEditSubmittedData(true, (int) $po['order_id'])) {
+                $this->keluarkanJson(['ok' => false, 'pesan' => 'Order sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.'], 422);
+            }
+        }
         if (empty($po['validasi_keuangan_at']) || empty($po['po_ttd_file'])) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO bertanda tangan belum di-upload Ketua Tim, jadi kontrak belum bisa ditandai.'], 422);
         }

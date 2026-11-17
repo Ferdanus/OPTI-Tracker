@@ -102,7 +102,7 @@ class PenggunaController extends Controller {
                 'layanan' => 'selulosa',
                 'role_map' => 'tim_kerja',
                 'akses_opti' => 1,
-                'akses_po' => 1
+                'akses_po' => 0
             ),
             'tim_kerja_lingkungan' => array(
                 'label' => 'Tim Kerja Lingkungan',
@@ -114,7 +114,7 @@ class PenggunaController extends Controller {
                 'layanan' => 'lingkungan',
                 'role_map' => 'tim_kerja',
                 'akses_opti' => 1,
-                'akses_po' => 1
+                'akses_po' => 0
             ),
             'pic_po_selulosa' => array(
                 'label' => 'PO Selulosa',
@@ -139,6 +139,18 @@ class PenggunaController extends Controller {
                 'role_map' => 'pic_po',
                 'akses_opti' => 1,
                 'akses_po' => 1
+            ),
+            'pjt_lingkungan' => array(
+                'label' => 'PJT Lingkungan',
+                'badge_class' => 'role-badge role-badge-tk-lingkungan',
+                'badge_style' => '',
+                'icon' => 'bi-patch-check-fill',
+                'category' => 'teknis',
+                'desc' => 'Penanggung Jawab Teknis (PJT) penyusun & pengelola tarif/parameter layanan Lingkungan',
+                'layanan' => 'lingkungan',
+                'role_map' => 'pjt_lingkungan',
+                'akses_opti' => 1,
+                'akses_po' => 0
             ),
             'pic_po_pengujian' => array(
                 'label' => 'PO Pengujian',
@@ -325,21 +337,25 @@ class PenggunaController extends Controller {
             }
         } catch (\Throwable $e) {}
 
-        // 3. Fallback backward compatibility dari tb_arsipuser.si_opti
+        // 3. Fallback backward compatibility dari tb_arsipuser.si_opti (mendukung multi-role comma-separated)
         try {
+            $ketuaRoles = self::getKetuaRoles();
             $legacyKetua = $db->exec("
                 SELECT id_user, nama_user, si_opti 
                 FROM tb_arsipuser 
-                WHERE si_opti IN ('superadmin', 'ketua_tim_selulosa', 'ketua_tim_lingkungan', 'ketua_tim_mitra', 'ketua_tim_keuangan', 'katim_selulosa', 'katim_lingkungan', 'katim_mitra', 'katim_keuangan', 'ketua_tim_mitra_industri')
+                WHERE si_opti IS NOT NULL AND si_opti != '' AND si_opti != 'user'
             ");
             if (is_array($legacyKetua)) {
                 foreach ($legacyKetua as $lk) {
-                    $norm = self::normalizeRoleKey($lk['si_opti']);
-                    if (!isset($occupied[$norm])) {
-                        $occupied[$norm] = array(
-                            'id_user'   => (int)$lk['id_user'],
-                            'nama_user' => $lk['nama_user']
-                        );
+                    $tokens = array_filter(array_map('trim', explode(',', (string)$lk['si_opti'])));
+                    foreach ($tokens as $tk) {
+                        $norm = self::normalizeRoleKey($tk);
+                        if (isset($ketuaRoles[$norm]) && !isset($occupied[$norm])) {
+                            $occupied[$norm] = array(
+                                'id_user'   => (int)$lk['id_user'],
+                                'nama_user' => $lk['nama_user']
+                            );
+                        }
                     }
                 }
             }
@@ -365,6 +381,10 @@ class PenggunaController extends Controller {
      * Helper normalisasi alias role key
      */
     public static function normalizeRoleKey(string $roleKey): string {
+        $roleKey = strtolower(trim($roleKey));
+        if (strpos($roleKey, 'tim_po_') === 0) {
+            $roleKey = 'pic_po_' . substr($roleKey, 7);
+        }
         $roleAliases = array(
             'admin_order'               => 'tim_mitra_industri',
             'tim_mitra'                 => 'tim_mitra_industri',
@@ -382,7 +402,8 @@ class PenggunaController extends Controller {
             'tk_selulosa'               => 'tim_kerja_selulosa',
             'tk_lingkungan'             => 'tim_kerja_lingkungan',
             'pic_proposal_selulosa'     => 'tim_kerja_selulosa',
-            'pic_proposal_lingkungan'   => 'tim_kerja_lingkungan'
+            'pic_proposal_lingkungan'   => 'tim_kerja_lingkungan',
+            'penanggung_jawab_teknis_lingkungan' => 'pjt_lingkungan'
         );
         return $roleAliases[$roleKey] ?? $roleKey;
     }
@@ -406,6 +427,9 @@ class PenggunaController extends Controller {
         }
         if ($mapRole === 'tim_kerja' && $mapLayanan !== '' && $mapLayanan !== 'semua') {
             return 'tim_kerja_' . $mapLayanan;
+        }
+        if ($mapRole === 'pjt_lingkungan' || ($mapRole === 'pjt' && $mapLayanan === 'lingkungan')) {
+            return 'pjt_lingkungan';
         }
         if ($mapRole === 'tim_mitra' || $mapRole === 'admin_order') {
             return 'tim_mitra_industri';
@@ -465,9 +489,9 @@ class PenggunaController extends Controller {
         }
 
         if (!empty($filterRole)) {
-            $sql .= " AND (u.si_opti = ? OR m.role = ?)";
+            $sql .= " AND (FIND_IN_SET(?, REPLACE(REPLACE(COALESCE(u.si_opti, ''), ', ', ','), ' ,', ',')) > 0 OR m.role = ?)";
             $params[$paramIdx++] = $filterRole;
-        $params[$paramIdx++] = $filterRole;
+            $params[$paramIdx++] = $filterRole;
         }
 
         $sql .= " GROUP BY u.id_user ORDER BY u.id_user ASC";
@@ -521,7 +545,7 @@ class PenggunaController extends Controller {
         );
 
         $nonOptiRoles = array(
-            'ppk',
+            'ppk', 'humas',
             'ketua_tim_pengujian', 'ketua_tim_kalibrasi', 'ketua_tim_sertifikasi',
             'ketua_tim_pendampingan', 'ketua_tim_inspeksi', 'ketua_tim_profisiensi',
             'pic_po_pengujian', 'pic_po_kalibrasi', 'pic_po_sertifikasi',
@@ -537,9 +561,14 @@ class PenggunaController extends Controller {
 
             $userRoleKeys = array();
 
-            // 1. Dari si_opti atau id_struktural_tim
+            // 1. Dari si_opti (mendukung multi-role comma-separated) atau id_struktural_tim
             if (!empty($roleKey) && $roleKey !== 'user') {
-                $userRoleKeys[] = self::normalizeRoleKey($roleKey);
+                foreach (explode(',', $roleKey) as $rk) {
+                    $rk = trim($rk);
+                    if ($rk !== '' && $rk !== 'user') {
+                        $userRoleKeys[] = self::normalizeRoleKey($rk);
+                    }
+                }
             } elseif (isset($strukturalRoleMap[$idStruktural])) {
                 $userRoleKeys[] = $strukturalRoleMap[$idStruktural];
             }
@@ -578,13 +607,7 @@ class PenggunaController extends Controller {
                 $labelPo = $rMeta['label'];
 
                 // Disesuaikan: Tim Kerja Selulosa / Lingkungan untuk OPTI, sedangkan untuk PO adalah PO Selulosa / PO Lingkungan
-                if ($rk === 'tim_kerja_selulosa') {
-                    $labelOpti = 'Tim Kerja Selulosa';
-                    $labelPo = 'PO Selulosa';
-                } elseif ($rk === 'tim_kerja_lingkungan') {
-                    $labelOpti = 'Tim Kerja Lingkungan';
-                    $labelPo = 'PO Lingkungan';
-                } elseif ($rk === 'pic_po_selulosa') {
+                if ($rk === 'pic_po_selulosa') {
                     $labelOpti = 'Tim Kerja Selulosa';
                     $labelPo = 'PO Selulosa';
                 } elseif ($rk === 'pic_po_lingkungan') {
@@ -592,12 +615,20 @@ class PenggunaController extends Controller {
                     $labelPo = 'PO Lingkungan';
                 }
 
+                $modul = 'keduanya';
+                if (strpos($rk, 'pic_po_') === 0 || $rk === 'ppk') {
+                    $modul = 'po';
+                } elseif (strpos($rk, 'tim_kerja_') === 0) {
+                    $modul = 'opti';
+                }
+
                 $p['roles_list'][] = array(
                     'key' => $rk,
                     'label' => $rMeta['label'],
                     'label_opti' => $labelOpti,
                     'label_po' => $labelPo,
-                    'badge_class' => $rMeta['badge_class']
+                    'badge_class' => $rMeta['badge_class'],
+                    'modul' => $modul
                 );
                 $labelsArr[] = $rMeta['label'];
 
@@ -966,11 +997,13 @@ class PenggunaController extends Controller {
 
         $namaUser = $userCheck[0]['nama_user'];
         $primaryRole = $validRoles[0];
+        $siOptiCsv = implode(', ', $validRoles);
+        $this->ensureSiOptiColumnWidth();
 
-        // Update tb_arsipuser dengan role utama
+        // Update tb_arsipuser dengan semua role (comma-separated)
         $this->db->exec(
             "UPDATE tb_arsipuser SET si_opti = ? WHERE id_user = ?",
-            array(1 => $primaryRole, 2 => $idUser)
+            array(1 => $siOptiCsv, 2 => $idUser)
         );
 
         // Sinkronisasi seluruh multi-role ke opti_user_map
@@ -1067,10 +1100,12 @@ class PenggunaController extends Controller {
 
         $namaUser = $userCheck[0]['nama_user'];
         $primaryRole = $validRoles[0];
+        $siOptiCsv = implode(', ', $validRoles);
+        $this->ensureSiOptiColumnWidth();
 
         $this->db->exec(
             "UPDATE tb_arsipuser SET si_opti = ? WHERE id_user = ?",
-            array(1 => $primaryRole, 2 => $idUser)
+            array(1 => $siOptiCsv, 2 => $idUser)
         );
 
         $this->syncMultiOptiUserMap($idUser, $validRoles);
@@ -1124,6 +1159,22 @@ class PenggunaController extends Controller {
     }
 
     /**
+     * Memastikan kolom tb_arsipuser.si_opti cukup panjang untuk menyimpan multi-role comma-separated.
+     */
+    private function ensureSiOptiColumnWidth() {
+        try {
+            $col = $this->db->exec("SHOW COLUMNS FROM tb_arsipuser LIKE 'si_opti'");
+            if (!empty($col[0]['Type']) && preg_match('/varchar\((\d+)\)/i', $col[0]['Type'], $m)) {
+                if ((int)$m[1] < 200) {
+                    $this->db->exec("ALTER TABLE tb_arsipuser MODIFY COLUMN si_opti VARCHAR(500) NULL DEFAULT NULL");
+                }
+            }
+        } catch (\Throwable $e) {
+            // Abaikan jika hak akses DDL tidak tersedia
+        }
+    }
+
+    /**
      * Sinkronisasi multi-role ke opti_user_map (mendukung 1 user memiliki beberapa role sekaligus, misal Tim Kerja Selulosa + PO Selulosa)
      */
     private function syncMultiOptiUserMap(int $idUser, array $roleKeys) {
@@ -1167,9 +1218,13 @@ class PenggunaController extends Controller {
         } elseif ($siOpti === 'tim_kerja_selulosa' || $siOpti === 'tk_selulosa') {
             $roleOpti = 'tim_kerja';
             $layanan = 'selulosa';
+            $aksesOpti = 1;
+            $aksesPo = 0;
         } elseif ($siOpti === 'tim_kerja_lingkungan' || $siOpti === 'tk_lingkungan') {
             $roleOpti = 'tim_kerja';
             $layanan = 'lingkungan';
+            $aksesOpti = 1;
+            $aksesPo = 0;
         } elseif ($siOpti === 'tim_mitra_industri' || $siOpti === 'admin_order' || $siOpti === 'tim_mitra') {
             $roleOpti = 'tim_mitra';
             $layanan = 'mitra';
@@ -1254,9 +1309,13 @@ class PenggunaController extends Controller {
         } elseif ($siOpti === 'tim_kerja_selulosa' || $siOpti === 'tk_selulosa') {
             $roleOpti = 'tim_kerja';
             $layanan = 'selulosa';
+            $aksesOpti = 1;
+            $aksesPo = 0;
         } elseif ($siOpti === 'tim_kerja_lingkungan' || $siOpti === 'tk_lingkungan') {
             $roleOpti = 'tim_kerja';
             $layanan = 'lingkungan';
+            $aksesOpti = 1;
+            $aksesPo = 0;
         } elseif ($siOpti === 'tim_mitra_industri' || $siOpti === 'admin_order' || $siOpti === 'tim_mitra') {
             $roleOpti = 'tim_mitra';
             $layanan = 'mitra';

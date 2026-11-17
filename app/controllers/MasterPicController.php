@@ -31,7 +31,7 @@ class MasterPicController extends Controller {
                        (SELECT COUNT(*) FROM opti_proposal_riset pr WHERE pr.pic_penyusun_id = u.id_user) AS total_proposal,
                        (SELECT COUNT(*) FROM order_layanan o WHERE o.pic_proposal_id = u.id_user AND o.status NOT IN ('selesai', 'ditolak')) AS total_order_aktif
                 FROM tb_arsipuser u
-                WHERE (u.si_opti LIKE 'tim_kerja%' OR u.si_opti = 'pic')
+                WHERE (u.si_opti LIKE '%tim_kerja%' OR u.si_opti = 'pic')
                   AND (u.status = 1 OR u.status = '1' OR u.status = 'aktif')";
 
         $params = array();

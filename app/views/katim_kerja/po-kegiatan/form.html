@@ -7161,6 +7161,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 var sudahLengkap = n === 0 && rab.ok;
                 var tadiLengkap = kl.classList.contains('done');
                 kl.classList.toggle('done', sudahLengkap);
+                if (sudahLengkap || '{{ @revisi_konteks }}' !== '') {
+                    kl.style.setProperty('display', 'none', 'important');
+                } else {
+                    kl.style.removeProperty('display');
+                }
                 if (sudahLengkap && !tadiLengkap && lastN !== -1) { btn.classList.remove('po-kl-pop'); void btn.offsetWidth; btn.classList.add('po-kl-pop'); }
                 lastN = n; lastKey = key;
             }

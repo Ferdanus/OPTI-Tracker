@@ -25,7 +25,21 @@ class BastController extends Controller {
         $bastModel = new OptiBast($this->db);
         $bast = $bastModel->getByOrderId($orderId);
 
-        if (empty($bast) && !$this->poTtdSudahDiunggah($orderId)) {
+        if (!$this->isTimMitra() && !$this->isAdminOrder() && !$this->isSuperadmin()) {
+            $this->setFlashError('Akses ditolak: pengelolaan BAST hanya dapat dilakukan oleh Tim Mitra Industri.');
+            $f3->reroute('/order/' . $orderId);
+            return;
+        }
+        $_ordBastCheck = (new OrderLayanan($this->db))->getDetail($orderId);
+        $_statusOrdBast = strtolower(trim((string)($_ordBastCheck['status'] ?? '')));
+        $_statusBast = strtolower(trim((string)($bast['status_bast'] ?? '')));
+        if (($_statusOrdBast === 'selesai' || (!empty($bast) && in_array($_statusBast, ['disetujui', 'selesai', 'terbit'], true))) && !$this->canEditSubmittedData(true, $orderId)) {
+            $this->setFlashError('Dokumen BAST / Order sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.');
+            $f3->reroute('/order/' . $orderId);
+            return;
+        }
+
+        if (!$this->poTtdSudahDiunggah($orderId) && !$this->canEditSubmittedData(true, $orderId)) {
             $this->setFlashError('BAST belum bisa dibuat: upload dulu PO yang sudah ditandatangani, lalu tunggu Humas membuat kontrak (Tahap 8).');
             $f3->reroute("/order/{$orderId}");
             return;
@@ -74,6 +88,12 @@ class BastController extends Controller {
         $orderId = (int)($params['id'] ?? 0);
         $post    = $f3->get('POST');
 
+        if (!$this->isTimMitra() && !$this->isAdminOrder() && !$this->isSuperadmin()) {
+            $this->setFlashError('Akses ditolak: pengelolaan BAST hanya dapat dilakukan oleh Tim Mitra Industri.');
+            $f3->reroute('/order/' . $orderId);
+            return;
+        }
+
         try {
             $orderModel = new OrderLayanan($this->db);
             $order = $orderModel->getDetail($orderId);
@@ -83,8 +103,13 @@ class BastController extends Controller {
 
             $bastModel = new OptiBast($this->db);
             $existing = $bastModel->getByOrderId($orderId);
+            $statusOrder = strtolower(trim((string)($order['status'] ?? '')));
+            $statusBast  = strtolower(trim((string)($existing['status_bast'] ?? '')));
+            if (($statusOrder === 'selesai' || (!empty($existing) && in_array($statusBast, ['disetujui', 'selesai', 'terbit'], true))) && !$this->canEditSubmittedData(true, $orderId)) {
+                throw new \Exception('Dokumen BAST / Order sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.');
+            }
 
-            if (empty($existing) && !$this->poTtdSudahDiunggah($orderId)) {
+            if (!$this->poTtdSudahDiunggah($orderId) && !$this->canEditSubmittedData(true, $orderId)) {
                 throw new \Exception('BAST belum bisa dibuat: upload dulu PO yang sudah ditandatangani, lalu tunggu Humas membuat kontrak (Tahap 8).');
             }
 
@@ -159,6 +184,24 @@ class BastController extends Controller {
                     'created_by'      => (int)$this->getUserId(),
                     'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
                 ]);
+
+                // Kirim notifikasi konfirmasi juga ke Ketua Pelaksana PO
+                $ketupelId = (int)($order['ketua_pelaksana_id'] ?? 0);
+                if ($ketupelId > 0 && $ketupelId !== (int)$this->getUserId()) {
+                    \NotificationService::send($this->db, [
+                        'order_id'        => $orderId,
+                        'target_user_id'  => $ketupelId,
+                        'target_role'     => 'tim_kerja',
+                        'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                        'judul'           => 'BAST Resmi Diterbitkan',
+                        'pesan'           => "Dokumen BAST No. {$data['nomor_bast']} untuk Order #{$order['nomor_order']} {$order['nama_perusahaan']} telah berhasil diterbitkan.",
+                        'tipe'            => 'success',
+                        'icon'            => 'bi-file-earmark-check-fill',
+                        'link_url'        => "/order/{$orderId}",
+                        'created_by'      => (int)$this->getUserId(),
+                        'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
+                    ]);
+                }
             } catch (\Exception $eNotif) {}
 
             $f3->reroute("/order/{$orderId}");
@@ -180,13 +223,24 @@ class BastController extends Controller {
         $catatan = trim($post['catatan_penutupan'] ?? 'Seluruh rangkaian pekerjaan jasa layanan telah selesai, BAST ditandatangani dan diarsipkan.');
         $userId  = (int)($this->getUserId() ?? 1);
 
+        if (!$this->isTimMitra() && !$this->isAdminOrder() && !$this->isSuperadmin()) {
+            $this->setFlashError('Akses ditolak: penutupan order hanya dapat dilakukan oleh Tim Mitra Industri.');
+            $f3->reroute('/order/' . $orderId);
+            return;
+        }
+
         try {
             $bastModel = new OptiBast($this->db);
             $bast = $bastModel->getByOrderId($orderId);
             $orderModel = new OrderLayanan($this->db);
             $order = $orderModel->getDetail($orderId);
+            $statusOrder = strtolower(trim((string)($order['status'] ?? '')));
+            $statusBast  = strtolower(trim((string)($bast['status_bast'] ?? '')));
+            if (($statusOrder === 'selesai' || $statusBast === 'selesai') && !$this->canEditSubmittedData(true, $orderId)) {
+                throw new \Exception('Order / BAST sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.');
+            }
 
-            if (!$bast && !$this->poTtdSudahDiunggah($orderId)) {
+            if (!$this->poTtdSudahDiunggah($orderId) && !$this->canEditSubmittedData(true, $orderId)) {
                 throw new \Exception('Order belum bisa ditutup: upload dulu PO yang sudah ditandatangani, lalu tunggu Humas membuat kontrak (Tahap 8).');
             }
 
@@ -242,6 +296,24 @@ class BastController extends Controller {
                     'created_by'      => $userId,
                     'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
                 ]);
+
+                // Kirim notifikasi penutupan order juga ke Ketua Pelaksana PO
+                $ketupelId = (int)($order['ketua_pelaksana_id'] ?? 0);
+                if ($ketupelId > 0 && $ketupelId !== (int)$userId) {
+                    \NotificationService::send($this->db, [
+                        'order_id'        => $orderId,
+                        'target_user_id'  => $ketupelId,
+                        'target_role'     => 'tim_kerja',
+                        'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                        'judul'           => 'Order Selesai & Ditutup (Closing)',
+                        'pesan'           => "Order #{$nomorOrderStr} {$perusahaanStr} telah selesai secara keseluruhan, ditutup dan diarsipkan secara resmi. Terima kasih atas kinerjanya!",
+                        'tipe'            => 'success',
+                        'icon'            => 'bi-check-all',
+                        'link_url'        => "/order/{$orderId}",
+                        'created_by'      => $userId,
+                        'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                    ]);
+                }
             } catch (\Exception $eNotif) {}
 
             $this->setFlashSuccess("Order Layanan #{$orderId} berhasil DITUTUP & DIARSIPKAN (Selesai). Seluruh siklus layanan tuntas!");
@@ -264,9 +336,16 @@ class BastController extends Controller {
                 array(1 => (int) $orderId)
             );
         } catch (\Throwable $e) {
-            return true;
+            return false;
         }
-        if (empty($r)) { return true; }
+        if (empty($r)) {
+            try {
+                $ord = $this->db->exec('SELECT po_id FROM order_layanan WHERE id = ? LIMIT 1', array(1 => (int) $orderId));
+                return !empty($ord[0]['po_id']);
+            } catch (\Throwable $e) {
+                return false;
+            }
+        }
         return !empty($r[0]['po_ttd_file']) && !empty($r[0]['kontrak_dibuat_at']);
     }
 }

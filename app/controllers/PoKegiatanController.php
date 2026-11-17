@@ -264,12 +264,46 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) 
         $po->order_id = $orderIdBaru;
         $po->created_by = (int) $this->getUserId();
 
+        if (!$isLivePreview && $orderIdBaru > 0) {
+            $syaratPo = $this->syaratPoTerpenuhi($orderIdBaru);
+            if (empty($syaratPo['ok'])) {
+                throw new \Exception('Syarat pembuatan PO belum terpenuhi: ' . ($syaratPo['pesan'] ?? 'Tahapan sebelumnya belum selesai.'));
+            }
+            $dupPo = $this->safeQuery(
+                'SELECT id FROM po_kegiatan WHERE order_id = ?' . \PoSchema::bukanSertifikasi('') . ' LIMIT 1',
+                [1 => $orderIdBaru]
+            );
+            if (!empty($dupPo) && !$this->isSuperadmin()) {
+                throw new \Exception('PO Kegiatan untuk order ini sudah pernah dibuat.');
+            }
+        }
+
         // Validasi otoritas Ketua Pelaksana
         if ($orderIdBaru > 0 && $this->isTimKerja() && !$this->isSuperadmin()) {
             $ordRow = $this->safeQuery('SELECT ketua_pelaksana_id FROM order_layanan WHERE id = ? LIMIT 1', [1 => $orderIdBaru]);
             $ketupelId = !empty($ordRow[0]['ketua_pelaksana_id']) ? (int) $ordRow[0]['ketua_pelaksana_id'] : 0;
             if ($ketupelId > 0 && (int) $this->getUserId() !== $ketupelId) {
                 throw new \Exception('Akses Ditolak: Anda bukan Ketua Pelaksana yang ditugaskan untuk menyusun PO Kegiatan order ini.');
+            }
+        }
+    }
+
+    $targetOrderId = (int) ($po->order_id ?? 0);
+    if ($targetOrderId > 0) {
+        $ordLockRows = $this->safeQuery('SELECT id, status, jenis_layanan_opti, ketua_pelaksana_id FROM order_layanan WHERE id = ? LIMIT 1', [1 => $targetOrderId]);
+        if (!empty($ordLockRows[0])) {
+            $ordLock = $ordLockRows[0];
+            if (strtolower(trim((string) ($ordLock['status'] ?? ''))) === 'selesai' && !$this->canEditSubmittedData(true, $targetOrderId)) {
+                throw new \Exception('PO Kegiatan dikunci karena order layanan sudah berstatus selesai. Hubungi Superadmin untuk membuka izin koreksi.');
+            }
+            if ($this->isKetuaTim() && !$this->isSuperadmin() && !$this->isKetuaTimForOrder($ordLock)) {
+                throw new \Exception('Akses Ditolak: Order ini milik divisi OPTI lain dan di luar kewenangan Ketua Tim Anda.');
+            }
+            if ($this->isTimKerja() && !$this->isSuperadmin()) {
+                $ketupelIdLock = (int) ($ordLock['ketua_pelaksana_id'] ?? 0);
+                if ($ketupelIdLock > 0 && (int) $this->getUserId() !== $ketupelIdLock) {
+                    throw new \Exception('Akses Ditolak: Anda bukan Ketua Pelaksana yang ditugaskan untuk menyusun PO Kegiatan order ini.');
+                }
             }
         }
     }
@@ -1329,6 +1363,13 @@ $sqlOrder = "SELECT o.id, o.nomor_order, o.judul_kegiatan, o.tanggal_masuk, o.je
              JOIN tb_customer c ON o.id_customer = c.id_customer
 
              WHERE o.ketua_pelaksana_id IS NOT NULL
+               AND o.status_tinjauan = 'layak'
+               AND (
+                   o.status_keuangan = 'lunas'
+                   OR EXISTS (SELECT 1 FROM tb_surat_penawaran sp WHERE sp.order_id = o.id AND sp.surat_kesanggupan_bayar IS NOT NULL AND sp.surat_kesanggupan_bayar <> '')
+                   OR EXISTS (SELECT 1 FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.is_kesanggupan_bayar = 1 AND pb.status_verifikasi = 'terverifikasi')
+               )
+               AND (o.tanggal_spm_mulai IS NOT NULL OR o.tanggal_terima_sampel IS NOT NULL)
                AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . ")
                AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
 $paramsOrder = [];
@@ -1411,9 +1452,16 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
         // PO baru baru boleh disusun kalau pembayaran sudah lunas dan SPM sudah aktif
         $syaratPo = $this->syaratPoTerpenuhi($orderId);
         if (!$syaratPo['ok']) {
-            $this->setFlashError(!$syaratPo['lunas'] && !$syaratPo['spm']
+            $pesanSyarat = !$syaratPo['lunas'] && !$syaratPo['spm']
                 ? 'Penerbitan PO belum bisa dibuka: pembayaran belum lunas dan SPM belum diaktifkan.'
-                : (!$syaratPo['lunas'] ? 'Penerbitan PO belum bisa dibuka: pembayaran order ini belum lunas.' : 'Penerbitan PO belum bisa dibuka: SPM (Tahap 7) belum diaktifkan.'));
+                : (!$syaratPo['lunas'] ? 'Penerbitan PO belum bisa dibuka: pembayaran order ini belum lunas.' : 'Penerbitan PO belum bisa dibuka: SPM (Tahap 7) belum diaktifkan.');
+            
+            // Jika diakses di dalam iframe (embed=1 atau dari=order), tampilkan pesan aman tanpa reroute untuk mencegah infinite reload loop!
+            if ((string) $f3->get('GET.embed') === '1' || (string) $f3->get('GET.dari') === 'order') {
+                echo '<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="' . $f3->get('BASE') . '/public/css/bootstrap.min.css"></head><body class="p-3 bg-light"><div class="alert alert-warning m-0 shadow-xs"><strong>Perhatian:</strong> ' . htmlspecialchars($pesanSyarat, ENT_QUOTES, 'UTF-8') . '</div></body></html>';
+                exit;
+            }
+            $this->setFlashError($pesanSyarat);
             $f3->reroute('/order/' . $orderId);
             return;
         }
@@ -1739,6 +1787,21 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             } else {
                 list($boleh, $pesan) = \PoReviewController::bolehEdit($this->db, (int) $po->id);
             }
+            if ($boleh && (int) ($po->order_id ?? 0) > 0) {
+                $poOrderId = (int) $po->order_id;
+                $ordLockRows = $this->safeQuery('SELECT id, status, jenis_layanan_opti FROM order_layanan WHERE id = ? LIMIT 1', [1 => $poOrderId]);
+                if (!empty($ordLockRows[0])) {
+                    $ordLock = $ordLockRows[0];
+                    if (strtolower(trim((string) ($ordLock['status'] ?? ''))) === 'selesai' && !$this->canEditSubmittedData(true, $poOrderId)) {
+                        $boleh = false;
+                        $pesan = 'PO Kegiatan dikunci karena order layanan sudah selesai. Hubungi Superadmin untuk membuka izin koreksi.';
+                    } elseif ($this->isKetuaTim() && !$this->isSuperadmin() && !$this->isKetuaTimForOrder($ordLock)) {
+                        $boleh = false;
+                        $pesan = 'Akses Ditolak: Order ini milik divisi OPTI lain dan di luar kewenangan Ketua Tim Anda.';
+                    }
+                }
+            }
+
             if (!$boleh) {
                 if ($ajaxKirim) { $this->jsonSimpan(false, $pesan, 403); }
                 // Dialog "Generate Nomor PO" pada PO yang ternyata sudah terkirim (mis. klik sebelumnya sudah berhasil, tampilan belum diperbarui)

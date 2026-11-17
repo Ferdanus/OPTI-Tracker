@@ -120,7 +120,7 @@ class PoSchema
 
         try {
             $ada = self::namaKolom($db);
-            if (in_array('layanan', $ada, true) && !self::perluBenahi($ada)) {
+            if (in_array('layanan', $ada, true) && !self::perluBenahi($ada, $db)) {
                 self::$siap = true; // jalur cepat: skema sudah siap
                 return true;
             }
@@ -181,7 +181,7 @@ class PoSchema
     }
 
     /** true bila masih ada kolom sertifikasi yang belum ada, atau kolom data_po lama masih ada. */
-    protected static function perluBenahi(array $ada)
+    protected static function perluBenahi(array $ada, $db = null)
     {
         if (in_array('data_po', $ada, true)) {
             return true;
@@ -190,6 +190,15 @@ class PoSchema
             if (!in_array($k, $ada, true)) {
                 return true;
             }
+        }
+        if (!in_array('ronde_revisi', $ada, true) || !in_array('dikirim_at', $ada, true)) {
+            return true;
+        }
+        if ($db) {
+            try {
+                $tCatatan = $db->exec("SHOW TABLES LIKE 'po_revisi_catatan'");
+                if (empty($tCatatan)) { return true; }
+            } catch (\Throwable $e) {}
         }
         return false;
     }
@@ -223,6 +232,7 @@ class PoSchema
             try { $db->exec("ALTER TABLE po_kegiatan ADD COLUMN id_nomor_urut INT UNSIGNED NULL AFTER nomor_po"); } catch (\Throwable $e) { error_log('[PoSchema] ' . $e->getMessage()); }
         }
         self::pastikanTabelNomor($db);
+        self::pastikanSkemaReviewPo($db);
 
         // UNIQUE tunggal di order_id (kalau ada) -> UNIQUE (order_id, layanan)
         try {
@@ -459,6 +469,7 @@ class PoSchema
         // membuka transaksi (DDL seperti CREATE TABLE meng-commit transaksi yang sedang berjalan).
         if ($pastikanTabel) {
             self::pastikanTabelNomor($db);
+        self::pastikanSkemaReviewPo($db);
         }
 
         $ts    = strtotime((string) $tanggalPo) ?: time();
@@ -973,6 +984,81 @@ class PoSchema
             array(1 => (int) $orderId, 2 => self::SERTIFIKASI)
         );
         return empty($r) ? null : $r[0];
+    }
+
+        /**
+     * Memastikan tabel dan kolom review PO & revisi PPK BLU selalu tersedia secara otomatis.
+     */
+    public static function pastikanSkemaReviewPo($db)
+    {
+        try {
+            // 1. Tabel catatan revisi (Ketua Tim / PPK BLU)
+            $db->exec("CREATE TABLE IF NOT EXISTS `po_revisi_catatan` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `po_id` int(11) NOT NULL,
+              `bagian` varchar(100) NOT NULL,
+              `teks` text NOT NULL,
+              `state` varchar(30) NOT NULL DEFAULT 'draf',
+              `ronde` int(11) NOT NULL DEFAULT 0,
+              `tahap` varchar(30) NOT NULL DEFAULT 'review',
+              `asal` varchar(10) NOT NULL DEFAULT 'ppk',
+              `putaran` int(11) NOT NULL DEFAULT 0,
+              `dibuat_oleh` int(11) NOT NULL,
+              `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              `selesai_oleh` int(11) DEFAULT NULL,
+              `selesai_at` datetime DEFAULT NULL,
+              PRIMARY KEY (`id`),
+              KEY `idx_po_catatan_poid` (`po_id`),
+              KEY `idx_po_catatan_tahap` (`po_id`,`tahap`,`ronde`,`state`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            // 2. Tabel jejak perubahan PPK BLU
+            $db->exec("CREATE TABLE IF NOT EXISTS `po_ppk_perubahan` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `po_id` int(11) NOT NULL,
+              `ronde_ppk` int(11) NOT NULL DEFAULT 0,
+              `bagian` varchar(100) NOT NULL,
+              `ringkasan` text NOT NULL,
+              `oleh` int(11) NOT NULL,
+              `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (`id`),
+              KEY `idx_po_ppk_poid` (`po_id`,`ronde_ppk`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            // 3. Kolom status review, tracking, dan PPK BLU di po_kegiatan
+            $ada = self::namaKolom($db);
+            $kolomReview = array(
+                'dikirim_at'           => 'DATETIME NULL',
+                'minta_at'             => 'DATETIME NULL',
+                'minta_dibaca_at'      => 'DATETIME NULL',
+                'revisi_at'            => 'DATETIME NULL',
+                'revisi_dibaca_at'     => 'DATETIME NULL',
+                'ronde_revisi'         => 'INT(11) NOT NULL DEFAULT 0',
+                'verifikasi_humas_at'  => 'DATETIME NULL',
+                'verifikasi_humas_by'  => 'INT(11) NULL',
+                'humas_dibaca_at'      => 'DATETIME NULL',
+                'catatan_humas'        => 'TEXT NULL',
+                'catatan_ppk'          => 'TEXT NULL',
+                'ppk_status'           => 'VARCHAR(50) NULL',
+                'ronde_ppk'            => 'INT(11) NOT NULL DEFAULT 0',
+                'ppk_status_at'        => 'DATETIME NULL',
+                'ppk_dibaca_at'        => 'DATETIME NULL',
+                'ppk_minta_at'         => 'DATETIME NULL',
+                'ppk_alasan'           => 'TEXT NULL',
+            );
+            foreach ($kolomReview as $k => $def) {
+                if (!in_array($k, $ada, true)) {
+                    try { $db->exec('ALTER TABLE po_kegiatan ADD COLUMN `' . $k . '` ' . $def); } catch (\Throwable $e) {}
+                }
+            }
+
+            // Backfill dikirim_at jika masih NULL
+            try {
+                $db->exec("UPDATE po_kegiatan SET dikirim_at = COALESCE(tanggal_dikirim, created_at) WHERE dikirim_at IS NULL AND (tanggal_dikirim IS NOT NULL OR created_at IS NOT NULL)");
+            } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            error_log('[PoSchema] pastikanSkemaReviewPo error: ' . $e->getMessage());
+        }
     }
 
     public static function ambilPoSertifikasi($db, $id)

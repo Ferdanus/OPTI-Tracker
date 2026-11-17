@@ -13,6 +13,7 @@ class CustomerController extends Controller {
      * Route: GET /customer atau GET /klien
      */
     public function index($f3) {
+        $this->requirePermission('klien:view', '/dashboard');
         $search = trim($f3->get('GET.q') ?? '');
         $customerModel = new Customer($this->db);
         $daftarCustomer = $customerModel->allWithCounts($search);
@@ -28,6 +29,7 @@ class CustomerController extends Controller {
      * Route: GET /customer/@id atau GET /klien/@id
      */
     public function detail($f3, $params) {
+        $this->requirePermission('klien:view', '/klien');
         $id = (int)($params['id'] ?? 0);
         $customerModel = new Customer($this->db);
         $data = $customerModel->getDetailWithRelations($id);
@@ -50,6 +52,7 @@ class CustomerController extends Controller {
      * Route: GET /customer/tambah atau GET /klien/tambah
      */
     public function tambah($f3) {
+        $this->requirePermission('klien:create', '/klien');
         $f3->set('customer', null);
         $f3->set('klien', null);
         $this->render('klien/form.html', 'Tambah Customer Baru', 'klien');
@@ -60,6 +63,7 @@ class CustomerController extends Controller {
      * Route: POST /customer/simpan atau POST /klien/simpan
      */
     public function simpan($f3) {
+        $this->requirePermission('klien:create', '/klien');
         $post = $f3->get('POST');
 
         $namaPerusahaan = trim($post['nmcustomer'] ?? '');
@@ -102,6 +106,7 @@ class CustomerController extends Controller {
      * Route: GET /customer/@id/edit atau GET /klien/@id/edit
      */
     public function edit($f3, $params) {
+        $this->requirePermission('klien:edit', '/klien');
         $id = (int)($params['id'] ?? 0);
         $customerModel = new Customer($this->db);
         $customer = $customerModel->getById($id);
@@ -126,6 +131,7 @@ class CustomerController extends Controller {
      * Route: POST /customer/@id/update atau POST /klien/@id/update
      */
     public function update($f3, $params) {
+        $this->requirePermission('klien:edit', '/klien');
         $id = (int)($params['id'] ?? 0);
         $post = $f3->get('POST');
 
@@ -169,9 +175,19 @@ class CustomerController extends Controller {
      * Route: POST /customer/@id/hapus atau POST /klien/@id/hapus
      */
     public function hapus($f3, $params) {
+        $this->requireAuth();
+        if (!$this->isSuperadmin()) {
+            $this->setFlashError('Akses ditolak: penghapusan master customer hanya dapat dilakukan oleh Superadmin.');
+            $f3->reroute('/klien');
+            return;
+        }
         $id = (int)($params['id'] ?? 0);
 
         try {
+            $terpakaiOrder = $this->db->exec('SELECT id FROM order_layanan WHERE id_customer = ? LIMIT 1', array(1 => $id));
+            if (!empty($terpakaiOrder)) {
+                throw new \Exception('Customer tidak dapat dihapus karena masih memiliki riwayat Order Layanan.');
+            }
             $customerModel = new Customer($this->db);
             $customerModel->hapus($id);
 

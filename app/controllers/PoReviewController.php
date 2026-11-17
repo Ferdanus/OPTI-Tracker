@@ -448,11 +448,33 @@ class PoReviewController extends Controller {
         $this->wajibSisi($sisi, 'katim', 'Hanya Ketua Tim yang dapat membuka kembali PO.');
         $this->wajibStatus($po, ['disetujui'], 'PO ini belum berstatus disetujui.');
 
+        $orderId = (int) ($po['order_id'] ?? 0);
+        if (strtolower(trim((string) ($po['order_status'] ?? ''))) === 'selesai' && !$this->canEditSubmittedData(true, $orderId)) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Order sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.'], 422);
+        }
+        if ($this->kolomAda('validasi_keuangan_at')) {
+            $cekVal = [];
+            try {
+                $cekVal = $this->db->exec("SELECT validasi_keuangan_at FROM po_kegiatan WHERE id = ? LIMIT 1", [1 => (int) $po['id']]);
+            } catch (\Throwable $e) {
+                $cekVal = [];
+            }
+            if (!empty($cekVal[0]['validasi_keuangan_at']) && !$this->canEditSubmittedData(true, $orderId)) {
+                $this->keluarkanJson(['ok' => false, 'pesan' => 'PO sudah disetujui PPK BLU dan dikunci. Hubungi Superadmin untuk membuka kembali.'], 422);
+            }
+        }
+
         try {
+            $setReset = "status = 'terkirim', status_review = 'menunggu_review', disetujui_at = NULL, disetujui_by = NULL, disposisi_humas_at = NULL,
+                         reviewed_at = NOW(), reviewed_by = ?";
+            foreach (['verifikasi_humas_at', 'verifikasi_humas_by', 'tervalidasi_mitra_at', 'tervalidasi_mitra_by', 'humas_dibaca_at', 'mitra_dibaca_at'] as $kolReset) {
+                if ($this->kolomAda($kolReset)) {
+                    $setReset .= ", {$kolReset} = NULL";
+                }
+            }
             $diubah = $this->db->exec(
                 "UPDATE po_kegiatan
-                    SET status_review = 'menunggu_review', disetujui_at = NULL, disetujui_by = NULL, disposisi_humas_at = NULL,
-                        reviewed_at = NOW(), reviewed_by = ?
+                    SET {$setReset}
                   WHERE id = ? AND status_review = 'disetujui'",
                 [1 => $uid, 2 => (int) $po['id']]
             );
@@ -1168,7 +1190,7 @@ class PoReviewController extends Controller {
     /** Divisi Ketua Tim ('' = semua divisi). Superadmin selalu semua. */
     protected function divisiKatim() {
         if ($this->isSuperadmin()) { return ''; }
-        $d = isset($_SESSION['jenis_layanan_opti']) ? (string) $_SESSION['jenis_layanan_opti'] : '';
+        $d = (string) ($this->getDivisiKetuaTim() ?: '');
         return in_array($d, self::DIVISI_VALID, true) ? $d : '';
     }
 
@@ -1192,7 +1214,7 @@ class PoReviewController extends Controller {
         /* sql:ambil_po */
         $sql = "SELECT p.id, p.nomor_po, p.status, p.status_review, p.reviewed_at, p.ronde_revisi,
                        p.minta_dibaca_at, p.revisi_dibaca_at,
-                       o.id AS order_id, o.jenis_layanan_opti, o.ketua_pelaksana_id
+                       o.id AS order_id, o.status AS order_status, o.jenis_layanan_opti, o.ketua_pelaksana_id
                 FROM po_kegiatan p
                 JOIN order_layanan o ON o.id = p.order_id
                 WHERE p.id = ? LIMIT 1";

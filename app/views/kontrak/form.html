@@ -921,6 +921,11 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         try { if (window.parent !== window) { window.parent.addEventListener('scroll', posisiKl, { passive: true, capture: true }); window.parent.addEventListener('resize', posisiKl); } } catch (e) {}
         setInterval(posisiKl, 500);
         function updKelengkapan(kosongN, total, ks) {
+            if (kosongN === 0) {
+                if (klEl) { klEl.style.display = 'none'; klEl.classList.add('done'); }
+                klTerakhir = 0;
+                return;
+            }
             if (!klEl) {
                 klEl = document.createElement('div'); klEl.id = 'dpkKl'; klEl.className = 'dpk-kl';
                 klEl.innerHTML = '<div class="dpk-kl-row"><span class="dpk-kl-lk"><span class="dpk-kl-l1"></span><span class="dpk-kl-l2"><i class="bi bi-check-lg"></i>Lengkap</span></span><button type="button" class="dpk-kl-go">Tunjukkan <i class="bi bi-arrow-right"></i></button></div><div class="dpk-kl-bar"><i></i></div>';
@@ -931,12 +936,13 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                     if (k.length) { sorotKosong(k); keField(k[0].id); }
                 });
             }
+            klEl.style.display = '';
             posisiKl();
             var l1 = klEl.querySelector('.dpk-kl-l1');
             l1.innerHTML = 'Kelengkapan <b>' + (total - kosongN) + '/' + total + '</b>';
             if (klTerakhir !== -1 && kosongN !== klTerakhir) { var bt = l1.querySelector('b'); if (bt) { bt.classList.add('dpk-kl-bump'); } }
             klEl.querySelector('.dpk-kl-bar i').style.width = (total ? Math.round((total - kosongN) * 100 / total) : 100) + '%';
-            klEl.classList.toggle('done', kosongN === 0);
+            klEl.classList.remove('done');
             klTerakhir = kosongN;
         }
         function sorotKosong(ks) {
