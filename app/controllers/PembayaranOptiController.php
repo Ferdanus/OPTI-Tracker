@@ -135,13 +135,16 @@ class PembayaranOptiController extends Controller {
         usort($daftarBerjalan, function ($a, $b) { return strtotime($b['created_at'] ?? '') <=> strtotime($a['created_at'] ?? ''); });
 
         // ---- Tab 4: Histori Transaksi ----
-        $sqlHistori = "SELECT p.*, o.nomor_order, o.jenis_layanan_opti, c.nmcustomer AS nama_perusahaan
+        $sqlHistori = "SELECT p.*, o.nomor_order, o.nomor_permintaan, o.judul_kegiatan, o.tanggal_masuk AS tanggal_masuk_order, o.jenis_layanan_opti,
+                              c.nmcustomer AS nama_perusahaan, c.pt_cv, u_ver.nama_user AS verifikator_nama
                        FROM opti_pembayaran p
                        JOIN order_layanan o ON p.order_id = o.id
                        JOIN tb_customer c ON o.id_customer = c.id_customer
+                       LEFT JOIN tb_arsipuser u_ver ON p.verifikator_id = u_ver.id_user
                        ORDER BY p.tanggal_bayar DESC, p.id DESC";
         $daftarHistori = $this->safeQuery($sqlHistori);
         foreach ($daftarHistori as &$h) {
+            $h['nama_perusahaan'] = \Customer::formatNamaPerusahaan($h['pt_cv'] ?? '', $h['nama_perusahaan'] ?? '');
             $t = strtotime($h['tanggal_bayar']);
             $h['tahun_bayar'] = $t ? (int) date('Y', $t) : null;
             $h['bulan_bayar'] = $t ? (int) date('n', $t) : null;
@@ -165,6 +168,46 @@ class PembayaranOptiController extends Controller {
             $daftarHistori = array_values(array_filter($daftarHistori, function ($h) use ($divisiKatim) {
                 return ($h['jenis_layanan_opti'] ?? '') === $divisiKatim;
             }));
+        }
+
+        // Info tambahan supaya tampilan baris sama dengan Daftar Order: saluran permohonan, berkas bukti permohonan, dan durasi hari kerja.
+        // Diambil dari model order yang sama dengan Daftar Order; kalau gagal, daftar tetap tampil tanpa info tambahan.
+        try {
+            $idTampil = [];
+            foreach ([$daftarBaru, $daftarBerjalan, $daftarLunas] as $kelompok) {
+                foreach ($kelompok as $x) { $idTampil[] = (int) $x['id']; }
+            }
+            foreach ($daftarHistori as $x) { $idTampil[] = (int) $x['order_id']; }
+            $infoOrder = [];
+            if ($idTampil) {
+                $modelOrder = new \OrderLayanan($this->db);
+                foreach ($modelOrder->allWithRelasi('', '', '', 'all', 'semua', 'all', array_values(array_unique($idTampil))) as $ro) {
+                    $infoOrder[(int) $ro['id']] = [
+                        'nomor_order'          => $ro['nomor_order'] ?? null,
+                        'media_permohonan'     => $ro['media_permohonan'] ?? '',
+                        'file_bukti_permohonan'=> $ro['file_bukti_permohonan'] ?? '',
+                        'durasi_ditentukan'    => !empty($ro['durasi_ditentukan']),
+                        'durasi_tampil'        => (string) ($ro['durasi_tampil'] ?? ''),
+                        'durasi_badge_class'   => (string) ($ro['durasi_badge_class'] ?? ''),
+                        'durasi_tooltip'       => (string) ($ro['durasi_tooltip'] ?? ''),
+                    ];
+                }
+            }
+            $gabungInfo = function (array $daftar, string $kunci = 'id') use ($infoOrder) {
+                foreach ($daftar as &$x) {
+                    $inf = $infoOrder[(int) ($x[$kunci] ?? 0)] ?? [];
+                    if (empty($inf['nomor_order'])) { unset($inf['nomor_order']); }
+                    $x = array_merge($x, $inf);
+                }
+                unset($x);
+                return $daftar;
+            };
+            $daftarBaru     = $gabungInfo($daftarBaru);
+            $daftarBerjalan = $gabungInfo($daftarBerjalan);
+            $daftarLunas    = $gabungInfo($daftarLunas);
+            $daftarHistori  = $gabungInfo($daftarHistori, 'order_id');
+        } catch (\Throwable $e) {
+            // abaikan: tampilan cukup memakai data dasar
         }
 
         $tahunSekarang = (int) date('Y');
@@ -490,18 +533,18 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
                 ]);
             } catch (\Exception $eNotif) {}
 
+// Tanpa popup disposisi lagi: begitu ada pembayaran tercatat (termin 1 pun), order otomatis diteruskan ke Ketua Tim (sekali saja)
+$this->disposisiKatimOtomatis($orderId);
 if ($statusBaru === 'lunas') {
-    // Tanpa popup disposisi lagi: begitu lunas, order otomatis diteruskan ke Ketua Tim (sekali saja)
-    $this->disposisiKatimOtomatis($orderId);
     $pesanSukses = 'Pembayaran tercatat. Order dinyatakan LUNAS & diteruskan ke Ketua Tim.';
 } else {
-    $pesanSukses = 'Pembayaran termin tercatat.';
+    $pesanSukses = 'Pembayaran termin tercatat & order diteruskan ke Ketua Tim.';
 }
 
 // [BARU] Kalau disposisi & sampel udah kesetel duluan dari tempat lain, dan baru
 // sekarang order-nya lunas -- ini titik terakhir yang melengkapi tiga syarat, jadi
 // cek & kirim notifikasi "siap ditunjuk pelaksana" di sini juga.
-if ($statusBaru === 'lunas' && class_exists('KetuaTimController')) {
+if (in_array($statusBaru, ['lunas', 'terbayar_sebagian'], true) && class_exists('KetuaTimController')) {
     \KetuaTimController::notifikasiJikaSiapPenunjukan($this->db, $orderId, $this->getUserId());
 }
 
@@ -667,7 +710,7 @@ $this->setFlashSuccess($pesanSukses);
 
     protected function validateAndStoreBuktiBayar($file) {
         if (!$file || !isset($file['error']) || is_array($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
-            throw new \Exception('Bukti pembayaran wajib diunggah.');
+            throw new \Exception('Bukti pembayaran atau invoice wajib diunggah.');
         }
         if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) {
             throw new \Exception('Ukuran bukti bayar maksimal 5MB. File yang dipilih terlalu besar, silakan pilih file yang lebih kecil.');
@@ -749,7 +792,7 @@ $this->setFlashSuccess($pesanSukses);
             [1 => $userId, 2 => $orderId]
         );
 
-        $this->logActivity($orderId, 'pembayaran', 'disposisi_katim', "Disposisi status lunas ke Ka. Tim OPTI");
+        $this->logActivity($orderId, 'pembayaran', 'disposisi_katim', "Disposisi pembayaran ke Ka. Tim OPTI");
 
         try {
             $ordLblDispK = \NotificationService::formatOrderLabel($order, $orderId);

@@ -46,7 +46,7 @@ class KetuaTimController extends Controller {
                 LIMIT 1
             )
             WHERE o.disposisi_katim_at IS NOT NULL
-              AND o.status_keuangan = 'lunas'
+              AND o.status_keuangan IN ('lunas', 'terbayar_sebagian')
               AND o.tanggal_terima_sampel IS NOT NULL";
 
     $params = [];
@@ -263,7 +263,7 @@ unset($o);
                  JOIN tb_customer c ON c.id_customer = o.id_customer
                  WHERE o.id = ?
                    AND o.disposisi_katim_at IS NOT NULL
-                   AND o.status_keuangan = 'lunas'
+                   AND o.status_keuangan IN ('lunas', 'terbayar_sebagian')
                    AND o.tanggal_terima_sampel IS NOT NULL
                    AND o.ketua_pelaksana_id IS NULL",
                 [1 => (int) $orderId]
@@ -285,7 +285,7 @@ unset($o);
                 'target_role'     => 'ketua_tim',
                 'target_layanan'  => $o['jenis_layanan_opti'] ?? 'semua',
                 'judul'           => 'Order Siap Ditunjuk Pelaksana',
-                'pesan'           => "Order #{$o['nomor_order']} {$namaPerusahaan} sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana.",
+                'pesan'           => "Order #{$o['nomor_order']} {$namaPerusahaan} pembayaran sudah masuk & sampel diterima -- siap ditunjuk Ketua Pelaksana.",
                 'tipe'            => 'success',
                 'icon'            => 'bi-person-check-fill',
                 'link_url'        => '/ketua-tim/siap-po',
@@ -299,7 +299,7 @@ unset($o);
                 'target_role'     => 'tim_mitra',
                 'target_layanan'  => 'semua',
                 'judul'           => 'Order Siap Ditunjuk Pelaksana',
-                'pesan'           => "Order #{$o['nomor_order']} {$namaPerusahaan} sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana oleh Ka. Tim OPTI.",
+                'pesan'           => "Order #{$o['nomor_order']} {$namaPerusahaan} pembayaran sudah masuk & sampel diterima -- siap ditunjuk Ketua Pelaksana oleh Ka. Tim OPTI.",
                 'tipe'            => 'info',
                 'icon'            => 'bi-person-check-fill',
                 'link_url'        => "/order/{$orderId}",

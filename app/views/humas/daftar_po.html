@@ -812,7 +812,7 @@
     }
     function dataTab(t) {
         if (t === 'semua') { return gabungSemua(); }
-        if (t === 'baru') { return DATA_BARU; }
+        if (t === 'baru') { return DATA_BARU.concat(DATA_SELESAI.filter(function (p) { return p.layanan !== 'sertifikasi' && isUnread(p); })); }   // Perlu Tindakan: PO Sertifikasi belum diverifikasi + PO OPTI yang belum dibuka Humas
         if (t === 'selesai') { return DATA_SELESAI.filter(function (p) { return !(p.ppk_valid_at && p.ttd_at); }); }   // termasuk PO yang menunggu tanda tangan
         if (t === 'kontrak') { return DATA_BARU.concat(DATA_SELESAI).filter(perluKontrak); }   // PO bertanda tangan sudah di-upload, kontrak belum dibuat
         return DATA_BARU.concat(DATA_SELESAI).filter(function (p) { return !!(p.ppk_valid_at && p.ttd_at); });   // PO Aktif = PO bertanda tangan sudah di-upload
@@ -870,10 +870,11 @@
     }
 
     /* ---------- Baca / verifikasi ---------- */
-    function isUnread(p) { return !p.diverifikasi && !p.dibaca_at; }
-    function rowClass(p) { return p.diverifikasi || p.dibaca_at ? 'row-read' : 'row-unread'; }
+    // PO OPTI: Humas hanya melihat (tanpa verifikasi), jadi "belum dibaca" = belum pernah dibuka Humas. PO Sertifikasi: belum diverifikasi dan belum dibuka.
+    function isUnread(p) { return p.layanan === 'sertifikasi' ? (!p.diverifikasi && !p.dibaca_at) : !p.dibaca_at; }
+    function rowClass(p) { return isUnread(p) ? 'row-unread' : 'row-read'; }
     function dotHtml(p) { return isUnread(p) ? '<span class="hm-dot" title="Belum dibaca" aria-hidden="true"></span>' : ''; }
-    function unreadCount() { return DATA_BARU.filter(isUnread).length; }
+    function unreadCount() { return DATA_BARU.concat(DATA_SELESAI).filter(isUnread).length; }
     function ticksSvg(biru) { return '<svg class="hm-ticks' + (biru ? ' read' : '') + '" viewBox="0 0 18 12" width="17" height="11" aria-hidden="true"><path d="M1 6.5L4.5 10L11 2.5"/><path d="M6 6.5L9.5 10L16 2.5"/></svg>'; }
     // Posisi PO sesudah lolos Humas (tab Sedang Berjalan): aturan sama dengan kolom Posisi PO di Daftar PO lain.
     function posisiRinci(p) {
@@ -893,7 +894,7 @@
     // Kolom Dokumen PO: nomor + keterangan tahap (Perlu Tindakan juga menampilkan centang baca)
     function tglKecil(s) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(s || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] + (m[4] ? ' ' + m[4] + ':' + m[5] : '') : ''; }
     function dokCell(p, t) {
-        var h = (t === 'baru' && isUnread(p) ? '<span class="po-dot" title="Belum dibaca"></span>' : '') +
+        var h = (isUnread(p) ? '<span class="po-dot" title="Belum dibaca"></span>' : '') +
             '<span class="fw-bold text-primary d-block" style="word-break: break-all;" title="' + esc(p.nomor) + '">' + esc(p.nomor) + '</span>';
         var dibuat = tglKecil(p.dibuat_at), kirim = tglKecil(p.kirim_at || p.dikirim);
         if (dibuat) { h += subLine('bi-calendar3', 'Dibuat ' + dibuat.substring(0, 10)); }
@@ -1005,12 +1006,12 @@
             '<th class="text-center" style="width: 190px;">Aksi</th></tr></thead><tbody>' +
             rows.map(function (p, i) {
                 var ta = tabAsal(p, t);
-                var tombol = ta === 'baru'
+                var tombol = (ta === 'baru' && !p.diverifikasi)
                     ? '<button type="button" class="btn btn-sm btn-primary py-1 px-2" data-open="' + p.id + '" title="Review PO (buka panel)"><i class="bi bi-eye me-1"></i>Review</button>'
                     : '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" data-open="' + p.id + '" title="Lihat PO (hanya lihat)"><i class="bi bi-eye me-1"></i>Lihat</button>';
                 // Kontrak (PKS) dibuat di menu Kontrak, bukan dari Daftar PO.
                 var detail = (p.order_id && p.layanan !== 'sertifikasi') ? '<a href="' + BASE + '/order/' + p.order_id + '" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>' : '';
-                return '<tr class="' + (ta === 'baru' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
+                return '<tr class="' + (isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
                     '<td class="text-center text-muted small fw-semibold">' + (awal + i + 1) + '</td>' +
                     '<td>' + dokCell(p, ta) + '</td>' +
                     '<td><span class="fw-semibold text-dark">' + esc(p.order || '-') + '</span></td>' +
@@ -1172,9 +1173,10 @@
     function tandaiDibaca(p) {
         if (!isUnread(p)) { return; }
         p.dibaca_at = nowStr();
+        if (p.layanan !== 'sertifikasi' && p.map) { p.map.humas = p.dibaca_at.slice(0, 10); }   // Map Kendali: baris Adm KS & Humas terisi dari tanggal dibuka
         render();
         post(BASE + '/po-humas/' + p.id + '/baca', {}).then(function (j) {
-            if (j && j.waktu) { p.dibaca_at = j.waktu; render(); if (current === p.id) { renderChrome(); } }
+            if (j && j.waktu) { p.dibaca_at = j.waktu; if (p.layanan !== 'sertifikasi' && p.map) { p.map.humas = j.waktu.slice(0, 10); } render(); if (current === p.id) { renderChrome(); } }
         }).catch(function () { /* gagal mencatat tidak mengganggu pekerjaan Humas */ });
     }
     // Dokumen PO Sertifikasi dirender di halamannya sendiri (preview saja, ?embed=1) -> ditampilkan dalam iframe setinggi isinya.
@@ -1278,16 +1280,19 @@
         renderStepper(p); renderShTabs(); renderDock(p); renderBody();
     }
     function renderStepper(p) {
-        var steps = ['Disetujui Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU'];
-
-        var c = posisi(p).langkah;
+        var sert = p.layanan === 'sertifikasi';
+        var steps = sert ? ['Disetujui Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU'] : ['Disetujui Ketua Tim', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU'];
+        var c = posisi(p).langkah - (sert ? 0 : 1);   // PO OPTI: Humas tidak memverifikasi, langkahnya hilang
+        var akhir = steps.length + 1;
         var h = '<div class="hm-steps">';
         steps.forEach(function (s, i) {
             var n = i + 1, cls = n < c ? 'done' : (n === c ? 'cur' : '');
             h += '<div class="hm-step ' + cls + '"><span class="n">' + (n < c ? '<i class="bi bi-check-lg"></i>' : n) + '</span><span class="lb">' + s + '</span></div>';
             if (i < steps.length - 1) { h += '<div class="hm-sline' + (n < c ? ' done' : '') + '"></div>'; }
         });
-        var cat = !p.diverifikasi ? 'Setelah Anda verifikasi, PO diteruskan ke Tim Mitra, lalu PPK BLU.' : (c === 5 ? 'Semua verifikasi selesai.' : 'Sudah Anda verifikasi. PO sekarang di ' + posisi(p).di + '.');
+        var cat = sert
+            ? (!p.diverifikasi ? 'Setelah Anda verifikasi, PO diteruskan ke Tim Mitra, lalu PPK BLU.' : (c === akhir ? 'Semua verifikasi selesai.' : 'Sudah Anda verifikasi. PO sekarang di ' + posisi(p).di + '.'))
+            : (c === akhir ? 'Semua verifikasi selesai.' : 'PO diteruskan ke Tim Mitra dan Humas sekaligus. Humas hanya dapat melihat; PO sekarang di ' + posisi(p).di + '.');
 
         $('hmStepper').innerHTML = h + '</div><div class="hm-nextnote">' + cat + '</div>';
     }
@@ -1309,7 +1314,9 @@
         var h;
         // catatan Tim Mitra (kalau sudah ada) tampil di bawah slide, tidak hanya di tab Berkas
         var cM = p.catatan_mitra ? '<div class="hintline cat-dark" style="flex-basis:100%;border-radius:9px;padding:8px 12px;"><i class="bi bi-chat-left-text"></i> <b>Catatan Tim Mitra:</b> ' + esc(p.catatan_mitra) + '</div>' : '';
-        if (p.diverifikasi) {
+        if (p.layanan !== 'sertifikasi') {
+            h = '<div class="hintline"><i class="bi bi-eye"></i> Anda hanya dapat melihat PO ini. Verifikasi dilakukan oleh Tim Mitra.' + (p.dibaca_at ? ' Dibuka Humas <b>' + tglSingkat(p.dibaca_at) + '</b>.' : '') + '</div>';
+        } else if (p.diverifikasi) {
             h = '<div class="hintline"><i class="bi bi-patch-check"></i> Diverifikasi pada <b>' + tglSingkat(p.tgl_verifikasi) + '</b>.' + (p.catatan ? ' Catatan: ' + esc(p.catatan) : '') + '</div>';
         } else {
             h = '<input type="text" id="hmCatatan" maxlength="500" placeholder="Catatan Humas (opsional), untuk arsip dan acuan pembuatan Kontrak" aria-label="Catatan Humas">' +

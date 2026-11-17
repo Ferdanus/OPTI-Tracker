@@ -92,6 +92,7 @@ class PoValidasiMitraController extends Controller {
                         sp.nominal_penawaran, sp.surat_kesanggupan_bayar,
                         " . $this->kolom('p', 'verifikasi_humas_at') . " AS verifikasi_humas_at,
                         " . $this->kolom('p', 'humas_dibaca_at') . " AS humas_dibaca_at,
+                        " . $this->kolom('p', 'disposisi_humas_at') . " AS disposisi_humas_at,
                         " . $this->kolom('p', 'catatan_humas') . " AS catatan_humas,
                         " . $this->kolom('p', 'mitra_dibaca_at') . " AS mitra_dibaca_at,
                         " . $this->kolomProposal() . " AS tgl_proposal,
@@ -138,6 +139,15 @@ class PoValidasiMitraController extends Controller {
             $hasil[] = $this->petakan($r);
         }
         return $hasil;
+    }
+
+    /** Waktu Humas pertama kali membuka PO (setelah PO masuk), atau '' bila belum. */
+    protected static function bacaHumas(array $r) {
+        $b = self::tanggalJam((string) ($r['humas_dibaca_at'] ?? ''));
+        if ($b === '') { return ''; }
+        $m = self::tanggalJam((string) ($r['disposisi_humas_at'] ?? ''));
+        if ($m !== '' && strtotime($b) < strtotime($m)) { return ''; }
+        return $b;
     }
 
     /** Baris DB -> item JSON (daftar + bahan panel samping / tab Alur). */
@@ -201,7 +211,7 @@ class PoValidasiMitraController extends Controller {
             'disiapkan'          => ((string) ($r['jenis_layanan_opti'] ?? '')) !== '' ? 'Tim Kerja OPTI ' . ucfirst(strtolower((string) $r['jenis_layanan_opti'])) : 'Tim Kerja OPTI',
             'map' => [
                 'proposal' => self::tanggal((string) ($r['tgl_proposal'] ?? '')),
-                'humas'    => self::tanggal((string) ($r['verifikasi_humas_at'] ?? '')),
+                'humas'    => self::tanggal(self::bacaHumas($r)),   // Humas hanya melihat: tanggal pertama kali membuka PO
                 'mitra'    => self::tanggal((string) ($r['tervalidasi_mitra_at'] ?? '')),
                 'keuangan' => self::tanggal((string) ($r['validasi_keuangan_at'] ?? '')),
             ],

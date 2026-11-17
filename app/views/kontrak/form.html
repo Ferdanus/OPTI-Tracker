@@ -88,6 +88,10 @@
     .dpk-un.rst { color: #475569; }
     .dpk-chg { font-size: .65rem; font-weight: 600; color: #475569; }
     .dpk-hint { font-size: .74rem; color: #94a3b8; margin-top: 4px; }
+    .dpk-cek { font-size: .78rem; font-weight: 600; margin-top: 4px; }
+    .dpk-cek.bad { color: #b91c1c; }
+    .dpk-cek.ok { color: #15803d; }
+    .dpk-cek.wait { color: #94a3b8; font-weight: 500; }
     .dpk-chk { display: flex; align-items: center; gap: 8px; font-size: .875rem; cursor: pointer; margin: 0; }
     .dpk-chk input { accent-color: #1e293b; margin: 0; }
     .dpk-derived { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 8px 12px; font-size: .78rem; color: #475569; }
@@ -462,6 +466,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             { id: 'tetap', judul: 'Data BBSPJIS (tetap)', lipat: true }
         ];
         var FIELDS = [
+            { id: 'nomorUrut', sec: 'nomor', label: 'Nomor urut PKS', src: 'manual', type: 'urut', req: true, ph: 'mis. 12', hint: 'Isi angkanya saja. Bulan dan tahun nomor ikut tanggal perjanjian. Urut yang sama boleh dipakai kalau bulan atau tahunnya berbeda.', ph2: '.....' },
             { id: 'nomorPihakPertama', sec: 'nomor', label: 'Nomor perjanjian versi klien', src: 'manual', ph: 'Opsional', ph2: '.........................' },
             { id: 'tanggal', sec: 'nomor', label: 'Tanggal perjanjian', src: 'auto', type: 'autodate', req: false, derived: 'tanggal', ph2: '..............' },
             { id: 'perusahaan', sec: 'pihak1', label: 'Nama perusahaan', src: 'db', req: true, ph2: 'PT .........................' },
@@ -503,9 +508,8 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                      angka: pad2(d.getDate()) + '-' + pad2(d.getMonth() + 1) + '-' + d.getFullYear(), romawi: ROMAWI[d.getMonth() + 1] };
         }
         function nomorDari(v) {
-            if (nomorTetap) { return nomorTetap; }
-            var ti = infoTanggal(v.tanggal);
-            return 'B/...../BBSPJIS/HK/' + (ti ? ti.romawi : 'Bulan') + '/' + (ti ? ti.tahun : 'Tahun');
+            var ti = infoTanggal(v.tanggal), u = String(v.nomorUrut == null ? '' : v.nomorUrut).trim();
+            return 'B/' + (u !== '' ? u : '.....') + '/BBSPJIS/HK/' + (ti ? ti.romawi : 'Bulan') + '/' + (ti ? ti.tahun : 'Tahun');
         }
         function hariAntara(a, b) { var x = parseTgl(a), y = parseTgl(b); return (x && y && y >= x) ? Math.round((y - x) / 86400000) + 1 : 0; }
         function kosongDi(v, f) { var x = v[f.id]; if (f.rich) { return rtTeks(x).trim() === ''; } return f.type === 'money' ? !(x > 0) : String(x == null ? '' : x).trim() === ''; }
@@ -594,19 +598,19 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 kontrol = '<div class="dpk-fin"><textarea class="form-control form-control-sm dpk-input' + (locked ? ' ro' : '') + '" id="' + idn + '" data-fid="' + f.id + '" rows="' + (f.rows || 2) + '"' + (locked ? ' readonly' : '') + '>' + esc(vals[f.id]) + '</textarea>' + (ubah ? '<button type="button" class="dpk-un" data-un="' + f.id + '">Ubah</button>' : '') + '</div>';
             } else {
                 var tipe = f.type === 'date' ? 'date' : 'text';
-                kontrol = '<div class="dpk-fin"><input class="form-control form-control-sm dpk-input' + (locked ? ' ro' : '') + '" type="' + tipe + '" id="' + idn + '" data-fid="' + f.id + '"' + (f.type === 'money' ? ' inputmode="numeric"' : '') + ' value="' + esc(fmtVal(f, vals[f.id])) + '"' + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '') + (locked ? ' readonly' : '') + ' autocomplete="off">' + (ubah ? '<button type="button" class="dpk-un" data-un="' + f.id + '">Ubah</button>' : '') + '</div>';
+                kontrol = '<div class="dpk-fin"><input class="form-control form-control-sm dpk-input' + (locked ? ' ro' : '') + '" type="' + tipe + '" id="' + idn + '" data-fid="' + f.id + '"' + (f.type === 'money' || f.type === 'urut' ? ' inputmode="numeric"' : '') + (f.type === 'urut' ? ' maxlength="9"' : '') + ' value="' + esc(fmtVal(f, vals[f.id])) + '"' + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '') + (locked ? ' readonly' : '') + ' autocomplete="off">' + (ubah ? '<button type="button" class="dpk-un" data-un="' + f.id + '">Ubah</button>' : '') + '</div>';
             }
             var label = '<label class="form-label"' + (f.type === 'logo' ? '' : ' for="' + idn + '"') + '>' + esc(f.label) + (f.req ? wjHtml(f.id) : '') + '</label>';
             var lebar = (f.type === 'textarea' || f.type === 'logo' || f.type === 'check' || PENUH[f.id]) ? 'col-12' : 'col-12 col-md-6';
             return '<div class="' + lebar + '"><div class="dpk-f" data-ff="' + f.id + '"><div class="dpk-fl">' + label +
                 '<span class="dpk-src ' + f.src + '"><i class="bi ' + s[0] + '"></i>' + s[1] + '<span class="dpk-chg" id="dpkChg_' + f.id + '" hidden> diubah</span></span></div>' +
-                kontrol + (f.hint ? '<div class="dpk-hint">' + esc(f.hint) + '</div>' : '') + '</div></div>' +
+                kontrol + (f.id === 'nomorUrut' ? '<div class="dpk-cek" id="dpkCekUrut" hidden></div>' : '') + (f.hint ? '<div class="dpk-hint">' + esc(f.hint) + '</div>' : '') + '</div></div>' +
                 (f.derived ? '<div class="col-12"><div class="dpk-derived" id="dpkDer_' + f.id + '"></div></div>' : '');
         }
 
         function nomorAutoHtml() {
             return '<div class="col-12"><div class="dpk-f" data-ff="nomorPks"><div class="dpk-fl"><label class="form-label">Nomor PKS</label>' +
-                '<span class="dpk-src auto"><i class="bi bi-magic"></i>Otomatis</span></div>' +
+                '<span class="dpk-src auto"><i class="bi bi-magic"></i>Dari urut dan tanggal</span></div>' +
                 '<div class="pp-ro dpk-nomor-box" id="dpk_nomorPks"></div></div></div>';
         }
 
@@ -651,6 +655,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             $('dpkForm').innerHTML = h;
             FIELDS.forEach(function (f) { updMeta(f.id); });
             updDerived();
+            if (vals.nomorUrut) { cekUrut(); }
         }
 
         function updMeta(fid) {
@@ -672,6 +677,38 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             else { btn.textContent = unlocked[fid] ? 'Kunci' : 'Ubah'; btn.classList.remove('rst'); }
         }
     
+        /* ---------- Cek nomor urut bentrok (urut + bulan + tahun sama dengan PKS lain) ---------- */
+        var cekTimer = null, cekSeq = 0, urutBentrok = '';
+        function tulisCek(kelas, teks) {
+            var e = $('dpkCekUrut');
+            if (!e) { return; }
+            e.hidden = !teks;
+            e.className = 'dpk-cek ' + kelas;
+            e.textContent = teks;
+        }
+        function cekUrut() {
+            var u = String(vals.nomorUrut || '');
+            urutBentrok = '';
+            if (u === '') { tulisCek('', ''); return; }
+            var n = ++cekSeq;
+            tulisCek('wait', 'Memeriksa nomor...');
+            fetch(BASE + '/pks/' + poAktif.id + '/cek-nomor?urut=' + encodeURIComponent(u), { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                    if (n !== cekSeq) { return; }
+                    if (!j || !j.ok) { tulisCek('', ''); return; }
+                    if (j.bentrok) { urutBentrok = u; tulisCek('bad', j.pesan); }
+                    else { tulisCek('ok', 'Nomor tersedia: ' + j.nomor); }
+                })
+                .catch(function () { if (n === cekSeq) { tulisCek('', ''); } });
+        }
+        function cekUrutTunda() {
+            clearTimeout(cekTimer);
+            urutBentrok = '';
+            tulisCek('wait', 'Memeriksa nomor...');
+            cekTimer = setTimeout(cekUrut, 400);
+        }
+
         function updNomor() {
             var b = $('dpk_nomorPks');
             if (!b) { return; }
@@ -789,9 +826,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 : '<button type="button" class="dpk-logo-slot empty" data-logo="pilih" title="Klik untuk mengunggah logo" aria-label="Unggah logo perusahaan">LOGO PERUSAHAAN</button>';
     
             var tanggalKalimat = 'Perjanjian ini dibuat pada hari ' + V('tanggal', ti ? ti.hari : '') + ', tanggal ' + V('tanggal', ti ? esc(ti.tglKata) : '') + ' bulan ' + V('tanggal', ti ? ti.bulan : '') + ' tahun ' + V('tanggal', ti ? esc(ti.tahunKata) : '') + ' (' + V('tanggal', ti ? ti.angka : '') + '), kami yang bertanda tangan di bawah ini:';
-            var nomor = nomorTetap
-                ? '<span class="dpk-v auto" data-f="nomorPks">' + esc(nomorTetap) + '</span>'
-                : 'B/<span class="dpk-v auto" data-f="nomorPks">.....</span>/BBSPJIS/HK/' + V('tanggal', ti ? ti.romawi : 'Bulan') + '/' + V('tanggal', ti ? ti.tahun : 'Tahun');
+            var nomor = 'B/' + V('nomorUrut', esc(vals.nomorUrut)) + '/BBSPJIS/HK/' + V('tanggal', ti ? ti.romawi : 'Bulan') + '/' + V('tanggal', ti ? ti.tahun : 'Tahun');
     
             var s1 = '<div class="dpk-logos">' + logoKiri + '<img class="dpk-km" src="' + LOGO_KEMENPERIN + '" alt="Kementerian Perindustrian"></div>' +
                 '<div class="dpk-cover-title">PERJANJIAN KERJA SAMA</div>' +
@@ -1137,10 +1172,12 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 return;
             }
             if (hariAntara(vals.mulai, vals.selesai) === 0) { toast('Tanggal selesai harus sama atau setelah tanggal mulai.', true); keField('selesai'); return; }
+            if (urutBentrok !== '' && urutBentrok === String(vals.nomorUrut)) { toast('Nomor urut ' + vals.nomorUrut + ' sudah dipakai di bulan dan tahun yang sama. Ganti angkanya dulu.', true); keField('nomorUrut'); return; }
             var ke = function () { return (DALAM_DETAIL && poAktif.order_id) ? BASE + '/order/' + poAktif.order_id + '?tahap=9' : BASE + '/pks?tab=selesai&pesan=selesai'; };
             if (!nomorTetap && typeof KontrakNomorDialog !== 'undefined') {
                 // Belum punya nomor: dialog "Generate Nomor Kontrak" (sama dengan Generate Nomor PO); nomor terbit di server saat Selesai
                 KontrakNomorDialog.mulai({
+                    nomor: nomorDari(vals),
                     kirim: function () {
                         kunciTombol(true);
                         return kirim('selesai').then(function (j) {
@@ -1222,6 +1259,11 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             } else if (f.rich) {
                 vals[fid] = rtSimpan(el.innerHTML);
                 if (!(el.textContent || '').trim() && el.innerHTML !== '') { el.innerHTML = ''; }
+            } else if (fid === 'nomorUrut') {
+                var u = String(el.value).replace(/\D/g, '').replace(/^0+/, '').slice(0, 9);
+                if (el.value !== u) { el.value = u; }
+                vals[fid] = u;
+                cekUrutTunda();
             } else { vals[fid] = el.value; }
             dirty = true;
             if (fid === 'alamatPerusahaan' && !unlocked.alamatNotif && String(vals.alamatNotif) === String(dbv.alamatNotif)) {

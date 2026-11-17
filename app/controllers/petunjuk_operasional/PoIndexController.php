@@ -571,8 +571,8 @@ class PoIndexController extends PoSertifikasiController {
         $kPosisi = [
             'review' => "{$sr} NOT IN ('disetujui', 'perlu_revisi')",
             'revisi' => $kRevisi,
-            'humas'  => "{$sr} = 'disetujui' AND p.tervalidasi_mitra_at IS NULL" . ($adaHumas ? " AND p.verifikasi_humas_at IS NULL" : "") . " AND NOT {$kRevisi}",
-            'mitra'  => $adaHumas ? "{$sr} = 'disetujui' AND p.tervalidasi_mitra_at IS NULL AND p.verifikasi_humas_at IS NOT NULL AND NOT {$kRevisi}" : '1 = 0',
+            'humas'  => '1 = 0',   // Humas tidak memverifikasi lagi (hanya melihat): tidak ada posisi "Verifikasi Humas"
+            'mitra'  => "{$sr} = 'disetujui' AND p.tervalidasi_mitra_at IS NULL AND NOT {$kRevisi}",
             'ppk'    => "{$sr} = 'disetujui' AND p.tervalidasi_mitra_at IS NOT NULL AND NOT {$kRevisi}",
         ];
         $kJenis = ['katim' => $kRevisi, 'ppk' => '1 = 0'];
@@ -702,8 +702,7 @@ class PoIndexController extends PoSertifikasiController {
                 if ($srv === 'disetujui') {
                     if ($adaWaktu($r['validasi_keuangan_at'] ?? '')) { $pos['posisi_teks'] = 'PO Aktif'; $pos['posisi_pemegang'] = 'Pengerjaan lab dimulai'; $pos['posisi_kelas'] = 'emerald'; }
                     elseif ($adaWaktu($r['tervalidasi_mitra_at'] ?? '')) { $pos['posisi_teks'] = 'Verifikasi PPK BLU'; $pos['posisi_pemegang'] = 'PPK BLU'; $pos['posisi_kelas'] = 'blue'; $b2 = ['ppk_dibaca_at', 'PPK BLU', 'tervalidasi_mitra_at']; }
-                    elseif ($adaWaktu($r['verifikasi_humas_at'] ?? '')) { $pos['posisi_teks'] = 'Verifikasi Tim Mitra'; $pos['posisi_pemegang'] = 'Tim Mitra'; $pos['posisi_kelas'] = 'blue'; $b2 = ['mitra_dibaca_at', 'Tim Mitra', 'verifikasi_humas_at']; }
-                    else { $pos['posisi_teks'] = 'Verifikasi Humas'; $pos['posisi_pemegang'] = 'Humas'; $pos['posisi_kelas'] = 'blue'; $b2 = ['humas_dibaca_at', 'Humas', 'disposisi_humas_at']; }
+                    else { $pos['posisi_teks'] = 'Verifikasi Tim Mitra'; $pos['posisi_pemegang'] = 'Tim Mitra'; $pos['posisi_kelas'] = 'blue'; $b2 = ['mitra_dibaca_at', 'Tim Mitra', 'verifikasi_humas_at']; }
                 } elseif ($srv === 'perlu_revisi') {
                     $pos = array_merge($pos, ['po_revisi' => true, 'posisi_teks' => 'Perlu revisi PO', 'posisi_pemegang' => 'Tim Kerja', 'posisi_kelas' => 'rose', 'panel_label' => 'Buka']);
                     $pemegang = 'tim'; $b2 = ['minta_dibaca_at', 'Tim Kerja', ''];

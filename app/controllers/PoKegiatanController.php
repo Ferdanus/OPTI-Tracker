@@ -474,10 +474,14 @@ protected function bind(PoKegiatan $po, $f3, $isUpdate, $isLivePreview = false) 
             'items'         => $items,
         ];
     }
-    $po->rab = json_encode([
+    $rabData = [
         'penerimaan'  => ['items' => $penerimaanItems],
         'pengeluaran' => ['kategori' => $kategoriList],
-    ], JSON_UNESCAPED_UNICODE);
+    ];
+    // [BARU] RAB yang diisi dari file Excel: simpan rujukan ke berkas asli + hasil pengecekan otomatis (ditampilkan di review)
+    $sumberExcel = $this->rabExcelSumberDariPost($post);
+    if ($sumberExcel) { $rabData['sumber'] = $sumberExcel; }
+    $po->rab = json_encode($rabData, JSON_UNESCAPED_UNICODE);
 
     $jadwalAuto = $this->jadwalOtomatisDariOrder($this->getOrderDenganMitra((int) $po->order_id));
     $po->jadwal_mulai   = $jadwalAuto ? $jadwalAuto['mulai']   : ($post['jadwal_mulai'] ?: null);
@@ -785,8 +789,8 @@ public function index($f3) {
     $kondisiPosisi = [
         'review' => "COALESCE(p.status_review, '') NOT IN ('disetujui', 'perlu_revisi')",
         'revisi' => $kondisiRevisi,
-        'humas'  => "COALESCE(p.status_review, '') = 'disetujui' AND p.tervalidasi_mitra_at IS NULL AND {$exVerifHumas} IS NULL AND NOT {$kondisiRevisi}",
-        'mitra'  => "COALESCE(p.status_review, '') = 'disetujui' AND p.tervalidasi_mitra_at IS NULL AND {$exVerifHumas} IS NOT NULL AND NOT {$kondisiRevisi}",
+        'humas'  => '1 = 0',   // Humas tidak memverifikasi lagi (hanya melihat)
+        'mitra'  => "COALESCE(p.status_review, '') = 'disetujui' AND p.tervalidasi_mitra_at IS NULL AND NOT {$kondisiRevisi}",
         'ppk'    => "COALESCE(p.status_review, '') = 'disetujui' AND p.tervalidasi_mitra_at IS NOT NULL AND NOT {$kondisiRevisi}",
     ];
     // Tab Perlu Tindakan: jenis tindakan Ketua Tim
@@ -1047,8 +1051,7 @@ $daftarPo = $this->safeQuery($sql, $params);
                     else { $pos = $set('Menunggu Tanda Tangan', 'Ketua Tim', 'rose'); }   // disetujui PPK BLU, belum di-upload PO bertanda tangan: belum PO Aktif
                 }
                 elseif ($adaWaktu($pPos['verif_mitra_at'] ?? '')) { $pos = $set('Verifikasi PPK BLU', 'PPK BLU', 'blue'); }
-                elseif ($adaWaktu($pPos['verif_humas_at'] ?? '')) { $pos = $set('Verifikasi Tim Mitra', 'Tim Mitra', 'blue'); }
-                else { $pos = $set('Verifikasi Humas', 'Humas', 'blue'); }
+                else { $pos = $set('Verifikasi Tim Mitra', 'Tim Mitra', 'blue'); }
             } elseif ($sr === 'perlu_revisi') {
                 $pos = $set('Perlu revisi PO', 'Ketua Pelaksana', 'rose', true, 'review', 'Buka', 'baca_minta');
             } elseif ($sr === 'direvisi') {
@@ -1075,8 +1078,7 @@ $daftarPo = $this->safeQuery($sql, $params);
                 elseif ($ps2 === 'ketupel_kerja') { $b = ['baca_ppk', 'Ketua Pelaksana', '']; }
                 elseif ($ps2 === 'katim_kerja') { $b = null; }
                 elseif ($adaWaktu($pPos['verif_mitra_at'] ?? '')) { $b = ['baca_ppk', 'PPK BLU', ((int) ($pPos['ronde_ppk_x'] ?? 0) > 0 && $adaWaktu($pPos['ppk_status_at_x'] ?? '')) ? 'ppk_status_at_x' : 'verif_mitra_at']; }
-                elseif ($adaWaktu($pPos['verif_humas_at'] ?? '')) { $b = ['baca_mitra', 'Tim Mitra', 'verif_humas_at']; }
-                else { $b = ['baca_humas', 'Humas', 'disp_humas_at']; }
+                else { $b = ['baca_mitra', 'Tim Mitra', 'verif_humas_at']; }
             } elseif ($sr2 === 'perlu_revisi') { $b = ['baca_minta', 'Ketua Pelaksana', '']; }
             elseif ($sr2 === 'direvisi') { $b = ['baca_revisi', 'Ketua Tim', '']; }
             else { $b = ['baca_review', 'Ketua Tim', '']; }
@@ -1213,7 +1215,76 @@ $daftarPo = $this->safeQuery($sql, $params);
 
     $tahunSekarang = (int) date('Y');
 
+    // Info tambahan supaya baris sama dengan Daftar Order: nomor permintaan, tanggal order, saluran permohonan, berkas bukti, dan durasi hari kerja.
+    // Diambil dari model order yang sama dengan Daftar Order; kalau gagal, daftar tetap tampil tanpa info tambahan.
+    $infoOrderPo = [];
+    try {
+        $idTampilPo = [];
+        foreach ($daftarPo as $xPo) { if (!empty($xPo['order_id'])) { $idTampilPo[] = (int) $xPo['order_id']; } }
+        if ($idTampilPo) {
+            $modelOrderPo = new \OrderLayanan($this->db);
+            foreach ($modelOrderPo->allWithRelasi('', '', '', 'all', 'semua', 'all', array_values(array_unique($idTampilPo))) as $roPo) {
+                $infoOrderPo[(int) $roPo['id']] = $roPo;
+            }
+        }
+    } catch (\Throwable $ePo) {
+        $infoOrderPo = [];
+    }
+    $petaMediaPo = [
+        'whatsapp' => ['WhatsApp', 'bi-chat-dots'], 'telepon' => ['Telepon', 'bi-telephone'], 'email' => ['E-mail', 'bi-envelope-at'],
+        'fax' => ['Fax', 'bi-printer'], 'datang_langsung' => ['Datang Langsung', 'bi-building'], 'website' => ['Website', 'bi-laptop'],
+    ];
+    foreach ($daftarPo as &$xPo) {
+        $ro = $infoOrderPo[(int) ($xPo['order_id'] ?? 0)] ?? null;
+        $media = $ro ? (string) ($ro['media_permohonan'] ?? '') : '';
+        $pm = $petaMediaPo[$media] ?? ['Surat', 'bi-envelope-paper'];
+        $xPo['punya_info_order']      = $ro !== null;
+        $xPo['nomor_permintaan']      = $ro ? (string) ($ro['nomor_permintaan'] ?? '') : '';
+        $xPo['tanggal_order']         = ($ro && !empty($ro['tanggal_masuk'])) ? date('d/m/Y', strtotime($ro['tanggal_masuk'])) : '';
+        $xPo['media_label']           = $pm[0];
+        $xPo['media_icon']            = $pm[1];
+        $xPo['file_bukti_permohonan'] = $ro ? (string) ($ro['file_bukti_permohonan'] ?? '') : '';
+        $xPo['kb_ada']                = ($ro && !empty($ro['surat_kesanggupan_bayar']) && !empty($ro['surat_penawaran_id']));   // Surat Kesanggupan Bayar
+        $xPo['kb_sp_id']              = $ro ? (int) ($ro['surat_penawaran_id'] ?? 0) : 0;
+        $xPo['durasi_ditentukan']     = $ro ? !empty($ro['durasi_ditentukan']) : false;
+        $xPo['durasi_tampil']         = $ro ? (string) ($ro['durasi_tampil'] ?? '') : '';
+        $xPo['durasi_badge_class']    = $ro ? (string) ($ro['durasi_badge_class'] ?? '') : '';
+        $xPo['durasi_tooltip']        = $ro ? (string) ($ro['durasi_tooltip'] ?? '') : '';
+        // Estimasi Biaya (sama dengan Daftar Order): nilai, terbayar, dan sisa tagihan
+        $acuanEb = $ro ? (float) (($ro['estimasi_biaya'] ?? 0) ?: ($ro['biaya_po'] ?? 0)) : 0;
+        $bayarEb = $ro ? (float) ($ro['total_terbayar'] ?? 0) : 0;
+        $xPo['eb_ada']      = $ro !== null;
+        $xPo['eb_acuan']    = number_format($acuanEb, 0, ',', '.');
+        $xPo['eb_terbayar'] = $bayarEb > 0 ? number_format($bayarEb, 0, ',', '.') : '';
+        $xPo['eb_lunas']    = $ro ? !empty($ro['bayar_lunas']) : false;
+        $xPo['eb_sisa']     = ($ro && empty($ro['bayar_lunas']) && $bayarEb > 0) ? number_format((float) ($ro['sisa_tagihan_order'] ?? 0), 0, ',', '.') : '';
+        // Status Alur: nama tahap yang sama dengan detail order (tidak ada pill generik "Sedang Berjalan")
+        $tAlur = (string) ($xPo['posisi_teks'] ?? ''); $stAlur = (string) ($xPo['po_status'] ?? '');
+        $petaAlur = [
+            'PPK BLU meminta revisi' => ['Revisi PPK BLU', 'rose'], 'Revisi PPK BLU dikerjakan' => ['Revisi PPK BLU', 'rose'], 'Review hasil revisi PPK BLU' => ['Revisi PPK BLU', 'rose'],
+            'Verifikasi PPK BLU' => ['Verifikasi PPK BLU', 'blue'], 'Verifikasi Tim Mitra' => ['Verifikasi Tim Mitra', 'blue'],
+            'Menunggu Tanda Tangan' => ['Menunggu Tanda Tangan', 'rose'], 'PO Aktif' => ['PO Aktif', 'emerald'],
+            'Perlu revisi PO' => ['Perlu Revisi PO', 'rose'], 'Revisi menunggu review' => ['Review Revisi PO', 'rose'], 'Review Ketua Tim' => ['Review Ketua Tim', 'blue'],
+        ];
+        if (isset($petaAlur[$tAlur])) { $alur = $petaAlur[$tAlur]; }
+        elseif (empty($xPo['po_id']) || $stAlur === 'draft') { $alur = ['Penyusunan PO', 'blue']; }
+        elseif ($stAlur === 'disetujui') { $alur = ['PO Aktif', 'emerald']; }
+        else { $alur = ['Review Ketua Tim', 'blue']; }
+        $xPo['alur_label'] = $alur[0];
+        $xPo['alur_kelas'] = $alur[1];
+        $xPo['alur_teks']  = ($tAlur !== '' ? $tAlur : ($alur[0] === 'Penyusunan PO' ? 'Penyusunan PO' : $alur[0]));
+        if (($xPo['aktif_ket'] ?? '') === 'kontrak' && $alur[0] === 'PO Aktif') { $xPo['alur_teks'] = 'PO Aktif · Menunggu PKS'; }
+        $xPo['alur_catatan'] = empty($xPo['po_id']) ? 'PO belum dibuat' : (($stAlur === 'draft') ? 'PO belum dikirim' : '');
+    }
+    unset($xPo);
+
+    // Pembuat PO (Ketua Pelaksana) yang sedang login tidak perlu melihat namanya sendiri di kolom Judul (PIC) dan Keterangan (Pelaksana).
+    $idSaya = (int) $this->getUserId();
+    foreach ($daftarPo as &$xSaya) { $xSaya['pic_sendiri'] = ($idSaya > 0 && (int) ($xSaya['ketua_pelaksana_id'] ?? 0) === $idSaya) ? 1 : 0; }
+    unset($xSaya);
+
     $f3->set('daftar_po', $daftarPo);
+    $f3->set('kolom_alur', in_array($tab, ['semua', 'berjalan', 'disetujui'], true));   // kolom Status Alur & Keterangan hanya di tab Semua, Sedang Berjalan, PO Aktif
     $f3->set('tab_aktif', $tab);
     $f3->set('q', $q);
     $f3->set('q_url', rawurlencode($q));
@@ -1408,12 +1479,12 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
             $f3->reroute('/po-kegiatan/' . $existing->id . '/edit' . ((string) $f3->get('GET.dari') === 'order' ? '?embed=1&dari=order' : ''));
             return;
         }
-        // PO baru baru boleh disusun kalau pembayaran sudah lunas dan SPM sudah aktif
+        // PO baru boleh disusun kalau pembayaran sudah mulai (termin 1 pun cukup) dan SPM sudah aktif
         $syaratPo = $this->syaratPoTerpenuhi($orderId);
         if (!$syaratPo['ok']) {
-            $this->setFlashError(!$syaratPo['lunas'] && !$syaratPo['spm']
-                ? 'Penerbitan PO belum bisa dibuka: pembayaran belum lunas dan SPM belum diaktifkan.'
-                : (!$syaratPo['lunas'] ? 'Penerbitan PO belum bisa dibuka: pembayaran order ini belum lunas.' : 'Penerbitan PO belum bisa dibuka: SPM (Tahap 7) belum diaktifkan.'));
+            $this->setFlashError(!$syaratPo['bayar'] && !$syaratPo['spm']
+                ? 'Penerbitan PO belum bisa dibuka: belum ada pembayaran tercatat dan SPM belum diaktifkan.'
+                : (!$syaratPo['bayar'] ? 'Penerbitan PO belum bisa dibuka: belum ada pembayaran yang tercatat pada order ini.' : 'Penerbitan PO belum bisa dibuka: SPM (Tahap 7) belum diaktifkan.'));
             $f3->reroute('/order/' . $orderId);
             return;
         }
@@ -1863,6 +1934,183 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
             $f3->reroute($tujuanDaftar);
         }
 
+    /* ============================================================ */
+    /*  RAB dari file Excel                                          */
+    /* ============================================================ */
+
+    /** Lokasi berkas Excel RAB di server; string kosong bila token tidak valid. */
+    public static function rabExcelJalur($token) {
+        $token = (string) $token;
+        if (!preg_match('/^[a-f0-9]{32}$/', $token)) { return ''; }
+        return dirname(__DIR__, 2) . '/storage/rab_excel/' . $token . '.xlsx';
+    }
+
+    /** Ambil data "sumber Excel" dari isian form (token berkas + ringkasan pengecekan), sudah dibersihkan. */
+    protected function rabExcelSumberDariPost($post) {
+        $tok = (string) ($post['rab_excel_token'] ?? '');
+        $path = self::rabExcelJalur($tok);
+        if ($path === '' || !is_file($path)) { return null; }
+        $info = json_decode((string) ($post['rab_excel_info'] ?? ''), true);
+        if (!is_array($info)) { $info = []; }
+        $potong = function ($v, $n) { return mb_substr(trim((string) $v), 0, $n); };
+        $hasil = [
+            'tipe'  => 'excel',
+            'token' => $tok,
+            'nama'  => $potong($post['rab_excel_nama'] ?? 'RAB.xlsx', 200),
+            'waktu' => (isset($info['waktu']) && preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', (string) $info['waktu'])) ? (string) $info['waktu'] : date('Y-m-d H:i:s'),
+            'total_pengeluaran' => (float) ($info['total_pengeluaran'] ?? 0),
+            'total_penerimaan'  => (float) ($info['total_penerimaan'] ?? 0),
+            'kategori' => [],
+            'koreksi'  => [],
+            'masalah'  => [],
+            'sheets'   => [],
+        ];
+        foreach (array_slice(is_array($info['sheets'] ?? null) ? $info['sheets'] : [], 0, 20) as $sn) {
+            if (is_string($sn) && trim($sn) !== '') { $hasil['sheets'][] = $potong($sn, 80); }
+        }
+        foreach (array_slice(is_array($info['kategori'] ?? null) ? $info['kategori'] : [], 0, 40) as $k) {
+            if (!is_array($k)) { continue; }
+            $hasil['kategori'][] = [
+                'nama'  => $potong($k['nama'] ?? '', 150),
+                'form'  => (float) ($k['form'] ?? 0),
+                'rekap' => (isset($k['rekap']) && $k['rekap'] !== null && $k['rekap'] !== '') ? (float) $k['rekap'] : null,
+            ];
+        }
+        foreach (array_slice(is_array($info['koreksi'] ?? null) ? $info['koreksi'] : [], 0, 60) as $k) {
+            if (!is_array($k)) { continue; }
+            $hasil['koreksi'][] = ['sheet' => $potong($k['sheet'] ?? '', 80), 'baris' => (int) ($k['baris'] ?? 0), 'catatan' => $potong($k['catatan'] ?? '', 250)];
+        }
+        foreach (array_slice(is_array($info['masalah'] ?? null) ? $info['masalah'] : [], 0, 60) as $k) {
+            if (!is_array($k)) { continue; }
+            $hasil['masalah'][] = ['sheet' => $potong($k['sheet'] ?? '', 80), 'baris' => (int) ($k['baris'] ?? 0), 'pesan' => $potong($k['pesan'] ?? '', 250)];
+        }
+        return $hasil;
+    }
+
+    protected function rabExcelJson($data, $status = 200) {
+        while (ob_get_level() > 0) { ob_end_clean(); }
+        http_response_code((int) $status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+        exit;
+    }
+
+    /** POST /po-rab-excel/baca -- terima file .xlsx, simpan, baca, dan kembalikan hasil bacaan (JSON). */
+    public function rabExcelBaca($f3) {
+        $this->requireAuth();
+        $f = isset($_FILES['berkas']) ? $_FILES['berkas'] : null;
+        if (!$f || !isset($f['error']) || $f['error'] !== UPLOAD_ERR_OK) {
+            $kode = $f && isset($f['error']) ? (int) $f['error'] : UPLOAD_ERR_NO_FILE;
+            $pesan = ($kode === UPLOAD_ERR_INI_SIZE || $kode === UPLOAD_ERR_FORM_SIZE) ? 'Ukuran file melebihi batas unggah server (maksimal 5 MB).'
+                   : ($kode === UPLOAD_ERR_NO_FILE ? 'Belum ada file yang dipilih.' : 'File gagal diunggah. Coba lagi.');
+            $this->rabExcelJson(['ok' => false, 'pesan' => $pesan], 422);
+        }
+        $nama = (string) ($f['name'] ?? 'RAB.xlsx');
+        $ext = strtolower(pathinfo($nama, PATHINFO_EXTENSION));
+        if ($ext === 'xls') { $this->rabExcelJson(['ok' => false, 'pesan' => 'Format .xls lama belum didukung. Buka di Excel, pilih Simpan Sebagai, lalu pilih format .xlsx.'], 422); }
+        if ($ext !== 'xlsx') { $this->rabExcelJson(['ok' => false, 'pesan' => 'Hanya file Excel .xlsx yang bisa dibaca.'], 422); }
+        if ((int) $f['size'] > \RabExcel::MAKS_UKURAN) { $this->rabExcelJson(['ok' => false, 'pesan' => 'Ukuran file terlalu besar (maksimal 5 MB).'], 422); }
+        $kepala = @file_get_contents($f['tmp_name'], false, null, 0, 2);
+        if ($kepala !== 'PK') { $this->rabExcelJson(['ok' => false, 'pesan' => 'Isi file bukan Excel .xlsx yang valid.'], 422); }
+
+        $dir = dirname(__DIR__, 2) . '/storage/rab_excel';
+        if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
+        // berkas hanya boleh dibuka lewat aplikasi (yang mengecek hak akses), bukan lewat alamat langsung
+        if (!is_file($dir . '/.htaccess')) { @file_put_contents($dir . '/.htaccess', "Require all denied\nDeny from all\n"); }
+        $token = bin2hex(random_bytes(16));
+        $tujuan = $dir . '/' . $token . '.xlsx';
+        if (!@move_uploaded_file($f['tmp_name'], $tujuan)) {
+            $this->rabExcelJson(['ok' => false, 'pesan' => 'File tidak bisa disimpan di server. Periksa izin folder storage.'], 500);
+        }
+        try {
+            $buku = \RabExcel::bacaBuku($tujuan);
+            $an = \RabExcel::analisis($buku);
+        } catch (\RuntimeException $e) {
+            @unlink($tujuan);
+            $this->rabExcelJson(['ok' => false, 'pesan' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            @unlink($tujuan);
+            @error_log('[RabExcel] ' . $e->getMessage());
+            $this->rabExcelJson(['ok' => false, 'pesan' => 'File tidak bisa dibaca. Pastikan bukan file rusak atau terkunci kata sandi.'], 500);
+        }
+        $this->rabExcelJson([
+            'ok' => true, 'token' => $token,
+            'nama' => mb_substr(preg_replace('/[\x00-\x1f\\\\\/]+/u', '', $nama), 0, 200),
+            'ukuran' => (int) $f['size'], 'jumlah_sheet' => count($buku['sheets']),
+            'hasil' => $this->rabExcelSiapkanHasil($an),
+            'grid' => \RabExcel::gridDariBuku($buku),
+        ]);
+    }
+
+    /** Hasil analisis -> bentuk untuk browser: tiap kategori membawa `form` (format form RAB), rincian kegiatan dibuang. */
+    protected function rabExcelSiapkanHasil(array $an) {
+        foreach ($an['kategori'] as $i => $k) { $an['kategori'][$i]['form'] = \RabExcel::keFormKategori($k); $an['kategori'][$i]['ringkas'] = \RabExcel::ringkasKategori($k); unset($an['kategori'][$i]['kegiatan']); }
+        return $an;
+    }
+
+    /** GET /po-rab-excel/@token/grid -- isi Excel (sel-sel) + hasil bacaan, untuk dibuka lagi di editor tabel pada form. */
+    public function rabExcelGrid($f3, $params) {
+        $this->requireAuth();
+        $path = self::rabExcelJalur($params['token'] ?? '');
+        if ($path === '' || !is_file($path)) { $this->rabExcelJson(['ok' => false, 'pesan' => 'Berkas Excel tidak ditemukan di server. Unggah ulang file-nya.'], 404); }
+        try {
+            $buku = \RabExcel::bacaBuku($path);
+            $an = \RabExcel::analisis($buku);
+        } catch (\Throwable $e) {
+            $this->rabExcelJson(['ok' => false, 'pesan' => 'Berkas tidak bisa dibaca. Unggah ulang file-nya.'], 422);
+        }
+        $this->rabExcelJson(['ok' => true, 'ukuran' => (int) @filesize($path), 'hasil' => $this->rabExcelSiapkanHasil($an), 'grid' => \RabExcel::gridDariBuku($buku)]);
+    }
+
+    /**
+     * POST /po-rab-excel/hitung -- isi tabel yang sudah diedit di browser (JSON di field `data`) dihitung ulang.
+     * simpan=1: hasil edit ditulis kembali ke berkas Excel di server (berkas awal disimpan sebagai <token>.asli.xlsx).
+     */
+    public function rabExcelHitung($f3) {
+        $this->requireAuth();
+        $token = (string) ($_POST['token'] ?? '');
+        $path = self::rabExcelJalur($token);
+        if ($path === '' || !is_file($path)) { $this->rabExcelJson(['ok' => false, 'pesan' => 'Berkas Excel tidak ditemukan di server. Unggah ulang file-nya.'], 404); }
+        $data = json_decode((string) ($_POST['data'] ?? ''), true);
+        try {
+            $buku = \RabExcel::bukuDariGrid($data);
+            // sheet yang dicentang pengguna saja yang dianalisis; berkas yang disimpan tetap memuat semua sheet
+            $bukuAn = $buku;
+            $pakai = json_decode((string) ($_POST['pakai'] ?? ''), true);
+            if (is_array($pakai)) {
+                $bukuAn = ['sheets' => array_values(array_filter($buku['sheets'], function ($sh) use ($pakai) { return in_array($sh['nama'], $pakai, true); }))];
+            }
+            $an = \RabExcel::analisis($bukuAn);
+        } catch (\RuntimeException $e) {
+            $this->rabExcelJson(['ok' => false, 'pesan' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            @error_log('[RabExcel hitung] ' . $e->getMessage());
+            $this->rabExcelJson(['ok' => false, 'pesan' => 'Isi tabel tidak bisa dihitung.'], 500);
+        }
+        $ukuran = (int) @filesize($path);
+        if ((string) ($_POST['simpan'] ?? '') === '1') {
+            $asli = dirname($path) . '/' . $token . '.asli.xlsx';
+            if (!is_file($asli)) { @copy($path, $asli); }
+            $tmp = $path . '.tmp';
+            try {
+                \RabExcel::tulisXlsx($buku, $tmp);
+                if (!@rename($tmp, $path)) { @unlink($tmp); throw new \RuntimeException('Berkas tidak bisa diperbarui. Periksa izin folder storage.'); }
+            } catch (\RuntimeException $e) {
+                @unlink($tmp);
+                $this->rabExcelJson(['ok' => false, 'pesan' => $e->getMessage()], 500);
+            }
+            clearstatcache(true, $path); $ukuran = (int) @filesize($path);
+        }
+        $this->rabExcelJson(['ok' => true, 'ukuran' => $ukuran, 'hasil' => $this->rabExcelSiapkanHasil($an)]);
+    }
+
+    /** GET /po-rab-excel/@token[?unduh=1] -- pratinjau (atau unduh) berkas Excel yang baru diunggah di form. */
+    public function rabExcelLihat($f3, $params) {
+        $this->requireAuth();
+        $path = self::rabExcelJalur($params['token'] ?? '');
+        \RabExcel::sajikan($path, 'RAB (pratinjau)', $f3->get('BASE') . '/po-rab-excel/' . (string) ($params['token'] ?? '') . '?unduh=1');
+    }
+
     /** Balasan JSON untuk "Simpan dan kirim" (lihat update()). Mengakhiri request. */
     protected function jsonSimpan($ok, $pesan, $status = 200) {
         http_response_code((int) $status);
@@ -2179,6 +2427,26 @@ protected function siapkanDataPo($po, $orderData) {
 
     $rab = json_decode($poData['rab'] ?? '{}', true) ?: [];
     $poData['rab_hitung'] = $this->hitungRab($rab, $kebutuhanMap);
+
+    // [BARU] RAB dari Excel: penanda sumber + tombol "Lihat Excel" di dokumen pratinjau (hanya tampil di layar, tidak ikut tercetak)
+    $poData['rab_excel'] = null;
+    $smx = (isset($rab['sumber']) && is_array($rab['sumber']) && ($rab['sumber']['tipe'] ?? '') === 'excel') ? $rab['sumber'] : null;
+    if ($smx) {
+        $jx = self::rabExcelJalur($smx['token'] ?? '');
+        if ($jx !== '' && is_file($jx)) {
+            $baseX = (string) $this->f3->get('BASE');
+            $idX = (int) ($poData['id'] ?? 0);
+            $urlX = $idX > 0 ? $baseX . '/po-kegiatan/' . $idX . '/rab-excel' : $baseX . '/po-rab-excel/' . $smx['token'];
+            $poData['rab_excel'] = [
+                'nama'      => (string) ($smx['nama'] ?? 'RAB.xlsx'),
+                'waktu'     => $this->formatTanggalBerkas($smx['waktu'] ?? ''),
+                'url'       => $urlX,
+                'url_unduh' => $urlX . '?unduh=1',
+                // tabel RAB di dokumen = isi sheet Excel apa adanya (dirapikan); kosong bila gagal dibuat -> dokumen memakai tabel RAB biasa
+                'html'      => \RabExcel::htmlDokumen($jx, is_array($smx['sheets'] ?? null) ? $smx['sheets'] : [], (string) ($smx['nama'] ?? '')),
+            ];
+        }
+    }
 
     $kolomInfo = $this->generateJadwalKolom($poData['jadwal_mulai'] ?? null, $poData['jadwal_selesai'] ?? null);
     $poData['jadwal_kolom']        = $kolomInfo['kolom'];

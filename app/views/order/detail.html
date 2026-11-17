@@ -6143,7 +6143,7 @@
                                 .po-btn-baru::after { content:''; position:absolute; top:-5px; right:-5px; width:12px; height:12px; border-radius:50%; background:#e11d48; border:2px solid #fff; box-shadow:0 0 0 0 rgba(225,29,72,.55); animation:poBaruDenyut 1.6s infinite; }
                                 @keyframes poBaruDenyut { 0% { box-shadow:0 0 0 0 rgba(225,29,72,.55); } 70% { box-shadow:0 0 0 7px rgba(225,29,72,0); } 100% { box-shadow:0 0 0 0 rgba(225,29,72,0); } }
                                 .pa-po { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:14px; }
-                                .pa-tl { display:flex; flex-wrap:wrap; margin:4px 0 16px; }
+                                .pa-tl { display:flex; flex-wrap:wrap; margin:18px 0 16px; }
                                 .pa-st { flex:1; min-width:130px; text-align:center; position:relative; padding:0 4px 4px; }
                                 .pa-st::before { content:""; position:absolute; top:15px; left:-50%; width:100%; height:3px; background:#e2e8f0; z-index:0; }
                                 .pa-st:first-child::before { display:none; }
@@ -6155,6 +6155,70 @@
                                 .pa-nm { font-size:.78rem; font-weight:700; line-height:1.2; color:#0f172a; }
                                 .pa-ac { font-size:.7rem; color:#64748b; }
                                 .pa-tg { font-size:.68rem; color:#475569; margin-top:2px; }
+                                /* lama tiap pihak mengerjakan PO: angka di garis penghubung + keterangan diterima/dibuka + dropdown putaran revisi */
+                                .pa-gl { position:absolute; top:-10px; left:calc(-50% + 20px); width:calc(100% - 40px); display:flex; justify-content:center; z-index:2; pointer-events:none; }
+                                .pa-pill { pointer-events:auto; display:inline-flex; align-items:center; gap:4px; background:#fff; border:1px solid #1e293b; border-radius:999px; padding:2px 9px; font-size:.7rem; font-weight:700; color:#1e293b; white-space:nowrap; line-height:1.35; font-family:inherit; }
+                                .pa-pill i { font-size:.62rem; transition:transform .15s; }
+                                button.pa-pill { cursor:pointer; }
+                                .pa-pill-rev { border-color:#b45309; color:#b45309; background:#fffbeb; }
+                                .pa-pill[aria-expanded=true] i, .pa-rv[aria-expanded=true] i { transform:rotate(180deg); }
+                                .pa-st.done.pa-hr::before { background:repeating-linear-gradient(90deg,#b45309 0 10px,transparent 10px 16px); }
+                                .pa-bk { font-size:.66rem; color:#64748b; margin-top:2px; white-space:nowrap; }
+                                .pa-rv { display:inline-flex; align-items:center; gap:3px; margin-top:5px; font:inherit; font-size:.66rem; font-weight:700; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:999px; padding:1px 8px; }
+                                button.pa-rv { cursor:pointer; }
+                                .pa-dd { position:absolute; top:calc(100% + 2px); left:50%; transform:translateX(-50%); width:380px; max-width:90vw; background:#fff; border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 10px 30px rgba(15,23,42,.16); padding:8px 6px; text-align:left; z-index:30; }
+                                .pa-dd[hidden] { display:none; }
+                                .pa-dd h5 { margin:2px 10px 6px; font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:#b45309; font-weight:700; }
+                                .pa-dd .it { display:flex; gap:10px; padding:7px 10px; border-radius:8px; }
+                                .pa-dd .it:hover { background:#f8fafc; }
+                                .pa-dd .no { flex:0 0 20px; height:20px; border-radius:50%; background:#fffbeb; color:#b45309; border:1px solid #fde68a; display:grid; place-items:center; font-size:.68rem; font-weight:700; margin-top:1px; }
+                                .pa-dd .tx { flex:1; min-width:0; font-size:.76rem; line-height:1.35; color:#0f172a; }
+                                .pa-dd .tx .w { display:block; color:#64748b; font-size:.7rem; }
+                                .pa-dd .pa-ddn { margin:0 10px 4px; font-size:.74rem; line-height:1.45; color:#475569; }
+                                /* rincian putaran revisi, tampilan "per putaran": selebar kartu, di bawah stepper */
+                                .pa-jl { margin:4px 0 16px; border:1px solid #e2e8f0; border-radius:14px; background:#f8fafc; padding:16px; text-align:left; }
+                                .pa-jl[hidden] { display:none; }
+                                .pa-jh { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:baseline; justify-content:space-between; margin-bottom:12px; }
+                                .pa-jh h5 { margin:0; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:#b45309; font-weight:700; }
+                                .pa-jc { display:flex; flex-wrap:wrap; gap:6px; }
+                                .pa-jch { font-size:.72rem; font-weight:600; background:#fff; border:1px solid #e2e8f0; border-radius:999px; padding:2px 10px; color:#334155; }
+                                .pa-jch b { color:#0f172a; }
+                                .pa-jn { font-size:.72rem; color:#475569; background:#fff; border:1px dashed #cbd5e1; border-radius:10px; padding:7px 12px; margin-bottom:10px; line-height:1.45; }
+                                .pa-jsum { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:12px; }
+                                .pa-jlbl { font-size:.66rem; text-transform:uppercase; letter-spacing:.07em; color:#64748b; font-weight:600; }
+                                .pa-jstk { display:flex; height:22px; border-radius:7px; overflow:hidden; border:1px solid #0f172a; margin:8px 0 10px; background:#fff; }
+                                .pa-jstk > div { height:100%; min-width:2px; transform-origin:left; animation:paJGrow .6s ease both; }
+                                .pa-s-ppk { background:#0f172a; } .pa-s-tim { background:#475569; } .pa-s-katim { background:#64748b; } .pa-s-ketupel { background:#cbd5e1; } .pa-s-mitra { background:#94a3b8; }
+                                .pa-s-wait { background:repeating-linear-gradient(45deg,#e2e8f0 0 3px,#fff 3px 6px); }
+                                .pa-jleg { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:.76rem; color:#0f172a; }
+                                .pa-jleg span { display:inline-flex; gap:6px; align-items:center; }
+                                .pa-jleg i { width:11px; height:11px; border-radius:3px; display:inline-block; border:1px solid #cbd5e1; }
+                                .pa-jg { background:#fff; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:8px; overflow:hidden; animation:paJUp .35s ease both; }
+                                .pa-jgb { all:unset; box-sizing:border-box; width:100%; display:flex; gap:10px; align-items:center; justify-content:space-between; padding:11px 14px; cursor:pointer; }
+                                .pa-jgb:focus-visible { outline:2px solid #0f172a; outline-offset:-2px; }
+                                .pa-jgt { display:block; font-weight:700; font-size:.86rem; color:#0f172a; }
+                                .pa-jgs { display:block; color:#64748b; font-size:.74rem; }
+                                .pa-jgr { font-weight:700; font-size:.82rem; color:#0f172a; white-space:nowrap; display:inline-flex; gap:8px; align-items:center; }
+                                .pa-jgr i { font-style:normal; font-size:.6rem; transition:transform .2s; }
+                                .pa-jg:not(.open) .pa-jgr i { transform:rotate(-90deg); }
+                                .pa-jgbd { display:grid; grid-template-rows:0fr; transition:grid-template-rows .3s ease; }
+                                .pa-jg.open .pa-jgbd { grid-template-rows:1fr; }
+                                .pa-jgbd > div { overflow:hidden; min-height:0; }
+                                .pa-jrw { display:grid; grid-template-columns:30px 1fr auto; gap:10px; align-items:start; padding:10px 14px; border-top:1px solid #e2e8f0; }
+                                .pa-jdu { font-weight:700; font-size:.82rem; white-space:nowrap; color:#0f172a; }
+                                @keyframes paJGrow { from { transform:scaleX(0); opacity:.2; } to { transform:scaleX(1); opacity:1; } }
+                                @keyframes paJUp { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+                                .pa-jtx { min-width:0; font-size:.82rem; color:#0f172a; }
+                                .pa-jtx b { display:block; }
+                                .pa-jtx span { display:block; color:#64748b; font-size:.74rem; }
+                                .pa-jsub { margin:4px 0 4px 18px; padding:0; font-size:.78rem; color:#334155; line-height:1.5; }
+                                .pa-jem { display:block; font-style:normal; color:#64748b; font-size:.72rem; margin:0 0 4px; }
+                                .pa-jav { flex:none; width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-size:.66rem; font-weight:700; border:2px solid #0f172a; background:#fff; color:#0f172a; }
+                                .pa-jav.ppk { background:#0f172a; color:#fff; }
+                                .pa-jav.ketupel { background:#f1f5f9; border-style:dashed; }
+                                @media (prefers-reduced-motion:reduce) { .pa-jstk > div, .pa-jg { animation:none; } .pa-jgbd, .pa-jgr i { transition:none; } }
+                                .pa-dd .du { font-weight:700; color:#b45309; white-space:nowrap; font-size:.76rem; }
+                                .pa-lgd { font-size:.68rem; color:#64748b; text-align:center; margin:-6px 0 14px; }
                                 .pa-st.cur .pa-tg { color:#1e293b; font-weight:600; }
                                 .pa-st.rev .pa-tg { color:#dc2626; font-weight:600; }
                                 /* Kartu status PO (ilustrasi amplop) */
@@ -6308,7 +6372,7 @@
                                     </true>
                                     <false>
                                         <div class="alert alert-info border-0 shadow-xs small mb-0">
-                                            <i class="bi bi-hourglass-split me-1"></i> <strong>{{ @po_alur.ketupel_nama }}</strong> sedang menyusun PO untuk order ini. Form PO hanya tampil untuk Ketua Pelaksana.
+                                            <i class="bi bi-hourglass-split me-1"></i> <strong>{{ @po_alur.ketupel_nama }}</strong> sedang menyusun PO untuk order ini. Form PO hanya tampil untuk PIC PO yang ditunjuk.
                                         </div>
                                     </false>
                                 </check>
@@ -6355,15 +6419,65 @@
                                 </div>
                                 <div class="pa-tl">
                                     <repeat group="{{ @po_alur.langkah }}" value="{{ @l }}">
-                                        <div class="pa-st {{ @l.cls }}">
+                                        <div class="pa-st {{ @l.cls }}{{ @l.rev_tag && @l.cls == 'done' ? ' pa-hr' : '' }}" data-no="{{ @l.no }}">
+                                            <check if="{{ @l.gl }}">
+                                                <div class="pa-gl"><check if="{{ @l.gl_rev }}"><true><button type="button" class="pa-pill pa-pill-rev" onclick="paDd(this)" aria-expanded="false" title="Total waktu langkah ini, termasuk revisi. Klik untuk rincian putaran.">{{ @l.gl }} <i class="bi bi-chevron-down"></i></button></true><false><span class="pa-pill" title="{{ @l.no == 1 ? 'Waktu pengerjaan: dihitung dari disposisi ke Ketua Pelaksana sampai PO dikirim.' : 'Waktu pengerjaan: dihitung dari PO diterima sampai diteruskan ke pihak berikutnya.' }}">{{ @l.gl }}</span></false></check></div>
+                                            </check>
                                             <div class="pa-dot">{{ @l.dot | raw }}</div>
                                             <div class="pa-nm">{{ @l.nama }}</div>
                                             <div class="pa-ac">{{ @l.aktor }}</div>
                                             <check if="{{ @l.tag }}"><div class="pa-tg">{{ @l.tag }}</div></check>
+                                            <repeat group="{{ @l.bk }}" value="{{ @b }}"><div class="pa-bk">{{ @b }}</div></repeat>
                                             <check if="{{ @l.tag2 }}"><div class="pa-tg" style="color: {{ @l.tag2_cls == 'u' ? '#dc2626' : '#475569' }}; font-weight: 600;">{{ @l.tag2 }}</div></check>
+                                            <check if="{{ @l.rev_tag }}">
+                                                <check if="{{ @l.dd_ada }}"><true><div><button type="button" class="pa-rv" onclick="paDd(this)" aria-expanded="false">{{ @l.rev_tag }} <i class="bi bi-chevron-down"></i></button></div></true><false><div><span class="pa-rv">{{ @l.rev_tag }}</span></div></false></check>
+                                            </check>
+                                            <check if="{{ @l.dd_ada && !@l.jalur }}">
+                                                <div class="pa-dd" hidden>
+                                                    <h5>{{ @l.dd_judul }}</h5>
+                                                    <repeat group="{{ @l.dd }}" value="{{ @r }}">
+                                                        <div class="it"><span class="no">{{ @r.no }}</span><div class="tx">{{ @r.pihak }}<span class="w">{{ @r.waktu }}</span></div><div class="du">{{ @r.lama }}</div></div>
+                                                    </repeat>
+                                                    <check if="{{ @l.dd_info }}"><div class="pa-ddn">{{ @l.dd_info }}</div></check>
+                                                </div>
+                                            </check>
                                         </div>
                                     </repeat>
                                 </div>
+                                <div class="pa-lgd">Angka di atas garis = waktu pengerjaan langkah di sebelah kanannya: dihitung dari PO diterima (didisposisikan) sampai diteruskan ke pihak berikutnya, termasuk waktu menunggu dibuka. Untuk Penyusunan (langkah pertama) angkanya ditulis di bawah langkahnya.</div>
+                                <repeat group="{{ @po_alur.langkah }}" value="{{ @l }}">
+                                    <check if="{{ @l.jalur }}"><div class="pa-jl" id="paJl{{ @l.no }}" hidden>{{ @l.jalur | raw }}</div></check>
+                                </repeat>
+                                <script>
+                                    function paDd(el) {
+                                        var st = el.closest('.pa-st'), jl = st && document.getElementById('paJl' + st.getAttribute('data-no'));
+                                        if (jl) {   // rincian putaran berupa jalur bolak-balik: panel selebar kartu di bawah stepper
+                                            var bukaJ = jl.hidden;
+                                            document.querySelectorAll('.pa-jl').forEach(function (d) { d.hidden = true; });
+                                            document.querySelectorAll('.pa-dd').forEach(function (d) { d.hidden = true; });
+                                            document.querySelectorAll('.pa-st [aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+                                            jl.hidden = !bukaJ;
+                                            st.querySelectorAll('[aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', bukaJ ? 'true' : 'false'); });
+                                            if (bukaJ && jl.scrollIntoView) { jl.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+                                            return;
+                                        }
+                                        var dd = st && st.querySelector('.pa-dd');
+                                        if (!dd) { return; }
+                                        var buka = dd.hidden;
+                                        document.querySelectorAll('.pa-dd').forEach(function (d) { d.hidden = true; });
+                                        document.querySelectorAll('.pa-st [aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+                                        dd.hidden = !buka;
+                                        st.querySelectorAll('[aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', buka ? 'true' : 'false'); });
+                                    }
+                                    document.addEventListener('click', function (e) {
+                                        var jg = e.target.closest && e.target.closest('.pa-jgb');
+                                        if (jg) { var gp = jg.parentNode, bk = !gp.classList.contains('open'); gp.classList.toggle('open', bk); jg.setAttribute('aria-expanded', bk ? 'true' : 'false'); return; }
+                                        if (e.target.closest && e.target.closest('.pa-jl')) { return; }
+                                        if (e.target.closest && e.target.closest('.pa-st')) { return; }
+                                        document.querySelectorAll('.pa-dd').forEach(function (d) { d.hidden = true; });
+                                        document.querySelectorAll('.pa-st [aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+                                    });
+                                </script>
                                 <check if="{{ @po_alur.info.html }}">
                                 <div class="pa-stat{{ (@po_alur.aktif && @po_alur.ttd.ada && @po_alur.info.html && !@po_alur.form_revisi) ? ' pa-gab' : '' }}">
                                     <div class="pa-art" aria-hidden="true">
@@ -7021,7 +7135,10 @@
                         </div>
                     </div>
                     <check if="{{ !empty(@bast) }}">
-                        <span class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i> BAST Diterbitkan</span>
+                        <check if="{{ @bast.status_bast == 'selesai' }}">
+                            <true><span class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i> BAST Diterbitkan</span></true>
+                            <false><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-pencil-square me-1"></i> Draft BAST</span></false>
+                        </check>
                     </check>
                     <check if="{{ empty(@bast) }}">
                         <check if="{{ @po_bast_terbuka }}">
@@ -7065,16 +7182,35 @@
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div>
                                     <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="badge bg-success text-white fw-bold px-2 py-0.5">
-                                            <i class="bi bi-patch-check-fill me-1"></i> BAST Diterbitkan
-                                        </span>
-                                        <strong class="text-dark font-monospace">{{ @bast.nomor_bast }}</strong>
+                                        <check if="{{ @bast.status_bast == 'selesai' }}">
+                                            <true>
+                                                <span class="badge bg-success text-white fw-bold px-2 py-0.5">
+                                                    <i class="bi bi-patch-check-fill me-1"></i> BAST Diterbitkan
+                                                </span>
+                                                <strong class="text-dark font-monospace">{{ @bast.nomor_bast }}</strong>
+                                            </true>
+                                            <false>
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-bold px-2 py-0.5">
+                                                    <i class="bi bi-pencil-square me-1"></i> Draft BAST
+                                                </span>
+                                                <span class="text-muted small">Belum bernomor, belum diterbitkan</span>
+                                            </false>
+                                        </check>
                                     </div>
                                     <div class="small text-secondary">
-                                        Tanggal: <strong>{{ date('d M Y', strtotime(@bast.tanggal_bast)) }}</strong> &bull; Pihak Pertama: <strong>{{ @bast.pihak_pertama_nama }}</strong>
+                                        Tanggal: <strong>{{ date('d M Y', strtotime(@bast.tanggal_bast)) }}</strong> &bull; Pihak Pertama: <strong>{{ @bast.pihak_pertama_nama ?: '-' }}</strong>
                                     </div>
                                 </div>
-                                <div class="d-flex align-items-center gap-2">
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <check if="{{ @bast.status_bast == 'selesai' }}">
+                                        <true>
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1"><i class="bi bi-eye me-1"></i> Buka BAST</a>
+                                        </true>
+                                        <false>
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" onclick="triggerStageRead(9)"><i class="bi bi-pencil-square me-1"></i> Lanjutkan Draft BAST</a>
+                                        </false>
+                                    </check>
+                                    <a href="{{ @BASE }}/order/{{ @order.id }}/bast/unduh" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1"><i class="bi bi-file-earmark-word me-1"></i> Unduh Word</a>
                                     <check if="{{ @bast.file_dokumen_bast }}">
                                         <button type="button" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" data-title="Dokumen BAST" data-subtitle="Nomor: {{ @bast.nomor_bast }}">
                                             <i class="bi bi-file-earmark-pdf-fill me-1"></i> Unduh Berkas BAST
@@ -7803,7 +7939,7 @@ window.addEventListener('message', function (e) {
                                             <false>
                                                 <check if="{{ !empty(@rb.bukti_bayar) }}">
                                                     <true>
-                                                        <button type="button" class="dp-lihat btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @rb.bukti_bayar }}" data-title="Bukti Pembayaran" data-subtitle="Termin {{ @rb.termin_ke }} &bull; {{ @order.nomor_order }}">
+                                                        <button type="button" class="dp-lihat btn-preview-pdf" data-preview-pdf="{{ @BASE }}/pembayaran/bukti/{{ @rb.id }}" data-title="Bukti Pembayaran" data-subtitle="Termin {{ @rb.termin_ke }} &bull; {{ @order.nomor_order }}">
                                                             <i class="bi bi-eye"></i>Lihat
                                                         </button>
                                                     </true>
@@ -11155,6 +11291,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!formDetail) return;
 
     var sisaTagihan = {{ (float)(@order.sisa_tagihan ?: (@penawaran.nominal_penawaran ?: (@order.estimasi_biaya ?: 0))) }};
+    var sudahTerbayar = {{ (float)(@order.terbayar ?: 0) }};   // dipakai popup konfirmasi pembayaran belum lunas
     var sudahDisposisi = {{ !empty(@order.disposisi_katim_at) ? 'true' : 'false' }};
     var divisiOrder = '{{ @order.jenis_layanan_opti }}';
 
@@ -11344,9 +11481,48 @@ document.addEventListener('DOMContentLoaded', function () {
         formDetail.submit();
     }
 
+    // Popup konfirmasi saat pembayaran belum melunasi sisa tagihan: rincian angka + bar progres, lalu Simpan atau Kembali ubah
+    function konfirmasiBelumLunas(angka, lanjut) {
+        var sisaSetelah = Math.max(0, sisaTagihan - angka);
+        var total = sudahTerbayar + sisaTagihan;
+        var pct = total > 0 ? Math.max(0, Math.min(100, Math.round((sudahTerbayar + angka) / total * 100))) : 0;
+        if (typeof Swal === 'undefined') {
+            if (confirm('Pembayaran ' + rupiah(angka) + ' belum melunasi tagihan (sisa ' + rupiah(sisaSetelah) + '). Tetap simpan?')) { lanjut(); }
+            return;
+        }
+        var baris = function (label, nilai, gaya) {
+            return '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 12px;border-top:1px solid #e3e7ee;font-size:.9rem;' + (gaya || '') + '"><span style="flex:1;min-width:0">' + label + '</span><b style="white-space:nowrap">' + nilai + '</b></div>';
+        };
+        var tabel = '<div style="border:1px solid #e3e7ee;border-radius:10px;overflow:hidden;margin:10px 0">' +
+            baris('Total tagihan', rupiah(total), 'border-top:0;color:#475569') +
+            baris('Sudah dibayar sebelumnya', rupiah(sudahTerbayar), 'color:#475569') +
+            baris('Dibayar sekarang', rupiah(angka), 'color:#0f172a') +
+            baris('Sisa tagihan', rupiah(sisaSetelah), 'background:#fdecec;color:#c62828') + '</div>';
+        var bar = '<div style="height:10px;border-radius:5px;background:#f4f6fa;border:1px solid #e3e7ee;overflow:hidden;margin:10px 0 4px"><div id="bayarBarIsi" style="height:100%;width:0;background:#1e293b;transition:width .8s ease"></div></div>' +
+            '<div style="display:flex;justify-content:space-between;font-size:.78rem;color:#64748b"><span>Terbayar ' + pct + '%</span><span>Sisa ' + (100 - pct) + '%</span></div>';
+        Swal.fire({
+            icon: 'warning',
+            width: 580,
+            title: 'Pembayaran ini belum melunasi tagihan',
+            html: '<div class="text-start"><div class="small text-secondary">Periksa rinciannya sebelum disimpan.</div>' + tabel + bar + '</div>',
+            showCancelButton: true,
+            confirmButtonText: 'Simpan pembayaran',
+            cancelButtonText: 'Kembali',
+            confirmButtonColor: '#1e293b',
+            reverseButtons: true,
+            didOpen: function () { setTimeout(function () { var b = document.getElementById('bayarBarIsi'); if (b) { b.style.width = pct + '%'; } }, 80); }
+        }).then(function (hasil) { if (hasil.isConfirmed) { lanjut(); } });
+    }
+
     if (btnSimpan) {
         btnSimpan.addEventListener('click', function () {
             if (inputDisp) inputDisp.value = '0';
+            var modeSkipKlik = document.getElementById('inputIsKesanggupanDetail') && document.getElementById('inputIsKesanggupanDetail').value === '1';
+            var angkaKlik = parseInt(hidden ? hidden.value : 0, 10) || 0;
+            if (!modeSkipKlik && angkaKlik > 0 && sisaTagihan > 0 && angkaKlik < sisaTagihan) {
+                konfirmasiBelumLunas(angkaKlik, function () { if (inputDisp) inputDisp.value = '0'; submitFormDenganValidasi(); });
+                return;
+            }
             submitFormDenganValidasi();
         });
     }

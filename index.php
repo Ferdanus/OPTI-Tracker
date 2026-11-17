@@ -301,6 +301,10 @@ $f3->route('GET /order/@id/bast', 'BastController->formBast');
 $f3->route('GET /order/@id/bast/buat', 'BastController->formBast');
 $f3->route('POST /order/@id/bast/simpan', 'BastController->simpanBast');
 $f3->route('POST /order/@id/bast/tutup', 'BastController->tutupOrder');
+$f3->route('POST /order/@id/bast/draft', 'BastController->simpanBast');
+$f3->route('POST /order/@id/bast/selesai', 'BastController->selesaiBast');
+$f3->route('GET /order/@id/bast/cek-nomor', 'BastController->cekNomor');
+$f3->route('GET /order/@id/bast/unduh', 'BastController->unduh');
 
 // ==========================================
 // ROUTE MODUL PO (DASHBOARD & MONITORING)
@@ -437,6 +441,11 @@ $f3->route('GET /po-kegiatan', 'PoKegiatanController->index');
 $f3->route('GET /po-kegiatan/pilih', 'PoKegiatanController->pilihJenis');
 $f3->route('GET /po-kegiatan/buat', 'PoKegiatanController->create');
 $f3->route('POST /po-kegiatan/simpan', 'PoKegiatanController->store');
+// RAB dari file Excel: baca file (AJAX dari form PO) dan pratinjau/unduh berkas yang baru diunggah. Path sengaja tidak di bawah /po-kegiatan/@id/... supaya tidak bentrok.
+$f3->route('POST /po-rab-excel/baca', 'PoKegiatanController->rabExcelBaca');
+$f3->route('GET /po-rab-excel/@token', 'PoKegiatanController->rabExcelLihat');
+$f3->route('GET /po-rab-excel/@token/grid', 'PoKegiatanController->rabExcelGrid');
+$f3->route('POST /po-rab-excel/hitung', 'PoKegiatanController->rabExcelHitung');
 $f3->route('GET /po-kegiatan/@id/edit', 'PoKegiatanController->edit');
 $f3->route('POST /po-kegiatan/@id/update', 'PoKegiatanController->update');
 $f3->route('GET /po-kegiatan/@id/preview', 'PoKegiatanController->previewFragment');
@@ -450,6 +459,7 @@ $f3->route('GET /po-kegiatan/daftar/data', 'PoReviewController->data');         
 $f3->route('GET /po-kegiatan/notif', 'PoReviewController->notifJson');
 $f3->route('GET /po-kegiatan/@id/review', 'PoReviewController->detail');        // rincian + catatan
 $f3->route('POST /po-kegiatan/@id/baca', 'PoReviewController->baca');          // tandai kiriman terbaca (dipanggil saat PO dibuka)
+$f3->route('GET /debug-alur/@id', 'PoReviewController->debugAlur');   // SEMENTARA: cek po_alur_log + trigger untuk rincian putaran revisi (superadmin saja); hapus setelah selesai
 $f3->route('GET /debug-riwayat/@id', 'PoReviewController->debugRiwayat');   // SEMENTARA: telusuri Riwayat Aktivitas yang tidak tercatat (superadmin saja); hapus setelah selesai
 $f3->route('POST /po-kegiatan/@id/dibuka', 'PoReviewController->baca');          // alias route lama
 $f3->route('POST /po-kegiatan/@id/catatan', 'PoReviewController->catatanTambah'); // Ketua Tim: tambah catatan (draf)
@@ -461,9 +471,11 @@ $f3->route('POST /po-kegiatan/@id/buka-kembali', 'PoReviewController->bukaKembal
 $f3->route('GET /po-kegiatan/@id/po-ttd', 'PoReviewController->lihatPoTtd');   // tab PO TTD di slide Ketua Tim / Ketua Pelaksana
 $f3->route('GET /po-kegiatan/@id/po-ttd-mitra', 'PoValidasiMitraController->lihatPoTtd');   // tab PO TTD di slide Tim Mitra
 $f3->route('GET /po-ppk/@id/po-ttd', 'PoRevisiPpkController->lihatPoTtdPpk');   // tab PO TTD di slide PPK BLU
+$f3->route('GET /po-kegiatan/@id/rab-excel', 'PoReviewController->rabExcel');   // pratinjau / unduh Excel RAB asli (slide review)
 $f3->route('GET /po-kegiatan/@id/berkas', 'PoReviewController->berkas');         // tab Dokumen: surat kesanggupan bayar + bukti pembayaran
 $f3->route('GET /po-kegiatan/@id/berkas/kesanggupan', 'PoReviewController->berkasKesanggupan');
 $f3->route('GET /po-kegiatan/@id/berkas/bukti/@pid', 'PoReviewController->berkasBukti');
+$f3->route('GET /po-kegiatan/@id/alur-langkah', 'OrderController->alurPoPanel');   // tab Alur di panel review: stepper alur PO + waktu pengerjaan (potongan HTML)
 $f3->route('GET /po-kegiatan/@id/chat', 'PoReviewController->chatList');
 $f3->route('POST /po-kegiatan/@id/chat', 'PoReviewController->chatKirim');
 $f3->route('POST /po-kegiatan/@id/chat/baca', 'PoReviewController->chatBaca');
@@ -590,6 +602,7 @@ $f3->route('POST /push/unsubscribe', 'PushController->unsubscribe');
 $f3->route('GET /pks',               'PksKontrakController->index');
 $f3->route('GET /pks/@id/form',      'PksKontrakController->form');
 $f3->route('GET /pks/@id/po-ttd',    'PksKontrakController->poTtd');       // slide "Lihat PO": PO bertanda tangan milik kontrak ini
+$f3->route('GET /pks/@id/cek-nomor', 'PksKontrakController->cekNomor');   // cek bentrok nomor urut (urut + bulan + tahun) saat mengetik
 $f3->route('POST /pks/@id/simpan',   'PksKontrakController->simpan');
 $f3->route('POST /pks/@id/selesai',  'PksKontrakController->selesai');
 $f3->route('GET /pks/@id/unduh',     'PksKontrakController->unduh');

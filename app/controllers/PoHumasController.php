@@ -88,7 +88,7 @@ class PoHumasController extends Controller {
                      FROM po_kegiatan p
                      JOIN order_layanan o ON o.id = p.order_id
                      JOIN tb_customer c ON c.id_customer = o.id_customer
-                     WHERE p.status IN " . self::STATUS_TERKIRIM . " AND p.status_review = 'disetujui'" . \PoSchema::bukanSertifikasi('p') . "
+                     WHERE p.status IN " . self::STATUS_TERKIRIM . " AND p.status_review = 'disetujui' AND p.tervalidasi_mitra_at IS NOT NULL" . \PoSchema::bukanSertifikasi('p') . "
                      ORDER BY p.updated_at DESC, p.id DESC"
                 );
             } catch (\Exception $e) {
@@ -143,6 +143,9 @@ class PoHumasController extends Controller {
         );
         if (empty($rows)) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum dikirim.'], 404);
+        }
+        if (!$this->sertifikasi($id)) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Humas tidak lagi memverifikasi PO OPTI. PO langsung diteruskan ke Tim Mitra dan Humas hanya melihat.'], 422);
         }
         if (!empty($rows[0]['verifikasi_humas_at'])) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini sudah diverifikasi sebelumnya.'], 422);
@@ -360,7 +363,7 @@ class PoHumasController extends Controller {
 
         // Tanggal Map Kendali + data PO bertanda tangan (kolom yang belum ada di database lama membuat query ini kosong, bukan error)
         $mi = $this->safeExec(
-            "SELECT p.verifikasi_humas_at, p.tervalidasi_mitra_at, p.validasi_keuangan_at, p.po_ttd_at, p.po_ttd_nama, p.po_ttd_oleh_nama,
+            "SELECT p.verifikasi_humas_at, p.humas_dibaca_at, p.disposisi_humas_at, p.tervalidasi_mitra_at, p.validasi_keuangan_at, p.po_ttd_at, p.po_ttd_nama, p.po_ttd_oleh_nama,
                     o.jenis_layanan_opti, " . $this->kolomProposal() . " AS tgl_proposal
              FROM po_kegiatan p JOIN order_layanan o ON o.id = p.order_id WHERE p.id = ? LIMIT 1",
             [1 => (int) $po['id']]
@@ -389,7 +392,7 @@ class PoHumasController extends Controller {
             'disiapkan' => !empty($mi['jenis_layanan_opti']) ? 'Tim Kerja OPTI ' . ucfirst(strtolower((string) $mi['jenis_layanan_opti'])) : 'Tim Kerja OPTI',
             'map'       => [
                 'proposal' => self::tanggal((string) ($mi['tgl_proposal'] ?? '')),
-                'humas'    => self::tanggal((string) ($mi['verifikasi_humas_at'] ?? '')),
+                'humas'    => self::tanggal((string) $this->bacaSetelahMasuk($mi)),   // tanggal Humas pertama kali membuka PO
                 'mitra'    => self::tanggal((string) ($mi['tervalidasi_mitra_at'] ?? '')),
                 'keuangan' => self::tanggal((string) ($mi['validasi_keuangan_at'] ?? '')),
             ],
@@ -582,6 +585,10 @@ class PoHumasController extends Controller {
     protected function petakan(array $r) {
         $divisi = strtolower((string) ($r['jenis_layanan_opti'] ?? ''));
         $verif = (string) ($r['verifikasi_humas_at'] ?? '');
+        $verifAsli = $verif;   // dipakai untuk penanda "dibuka Tim Mitra" (urutan lama Humas -> Tim Mitra, khusus Sertifikasi)
+        $r['_opti'] = ($divisi !== 'sertifikasi');
+        // PO OPTI: Humas tidak memverifikasi lagi. PO baru masuk ke Humas setelah diverifikasi Tim Mitra, jadi waktu masuknya = waktu verifikasi Tim Mitra.
+        if ($divisi !== 'sertifikasi') { $verif = (string) (($r['tervalidasi_mitra_at'] ?? '') ?: (($r['disposisi_humas_at'] ?? '') ?: ($r['disetujui_at'] ?? ''))); }
         $tglVerif = self::tanggalJam($verif);   // lengkap dengan jam (halaman menampilkan "Diverifikasi 2 Okt 10:45")
         $ts = $tglVerif !== '' ? strtotime($tglVerif) : false;
         return [
@@ -595,8 +602,8 @@ class PoHumasController extends Controller {
             'layanan'        => $divisi === 'sertifikasi' ? 'sertifikasi' : 'opti',
             'url_lihat'      => $divisi === 'sertifikasi' ? ((string) $this->f3->get('BASE') . '/petunjuk-operasional/sertifikasi/' . (int) $r['id'] . '/lihat?embed=1') : '',
             'disiapkan'      => $divisi === 'sertifikasi' ? 'Tim Kerja Sertifikasi' : ($divisi !== '' ? 'Tim Kerja OPTI ' . ucfirst($divisi) : 'Tim Kerja OPTI'),
-            // waktu PO masuk ke Humas = saat disetujui Ketua Tim (disposisi_humas_at); cadangan: waktu terakhir PO diubah
-            'dikirim'        => self::tanggalJam((string) (($r['disposisi_humas_at'] ?? '') ?: ($r['updated_at'] ?: $r['created_at']))),
+            // waktu PO masuk ke Humas: PO OPTI = saat diverifikasi Tim Mitra; Sertifikasi = saat disetujui Ketua Tim (disposisi_humas_at); cadangan: waktu terakhir PO diubah
+            'dikirim'        => self::tanggalJam((string) (($divisi !== 'sertifikasi' && !empty($r['tervalidasi_mitra_at'])) ? $r['tervalidasi_mitra_at'] : (($r['disposisi_humas_at'] ?? '') ?: ($r['updated_at'] ?: $r['created_at'])))),
             // dibaca hanya dihitung kalau terjadi SETELAH PO masuk (disetujui) ke Humas. Kalau PO dibuka kembali lalu
             // disetujui ulang, disposisi_humas_at jadi lebih baru -> otomatis "belum dibaca" lagi, tanpa menyentuh alur review.
             'dibaca_at'      => $this->bacaSetelahMasuk($r),
@@ -618,7 +625,7 @@ class PoHumasController extends Controller {
             'ppk_status'     => (string) ($r['ppk_status'] ?? ''),
             'ronde_ppk'      => (int) ($r['ronde_ppk'] ?? 0),
             // sudah dibuka pemegang berikutnya? Tim Mitra: hanya dihitung bila dibuka SETELAH Humas memverifikasi. PPK BLU: penanda di-reset tiap perpindahan tahap.
-            'mitra_baca_at'  => (trim((string) ($r['mitra_dibaca_at'] ?? '')) !== '' && $verif !== '' && strcmp((string) $r['mitra_dibaca_at'], $verif) >= 0) ? self::tanggalJam((string) $r['mitra_dibaca_at']) : '',
+            'mitra_baca_at'  => (trim((string) ($r['mitra_dibaca_at'] ?? '')) !== '' && $verifAsli !== '' && strcmp((string) $r['mitra_dibaca_at'], $verifAsli) >= 0) ? self::tanggalJam((string) $r['mitra_dibaca_at']) : '',
             'ppk_baca_at'    => trim((string) ($r['tervalidasi_mitra_at'] ?? '')) !== '' ? self::tanggalJam((string) ($r['ppk_dibaca_at'] ?? '')) : '',
             // catatan Tim Mitra baru tampil setelah Tim Mitra benar-benar memvalidasi PO
             'catatan_mitra'  => trim((string) ($r['tervalidasi_mitra_at'] ?? '')) !== '' ? trim((string) ($r['catatan_tim_mitra'] ?? '')) : '',
@@ -635,7 +642,8 @@ class PoHumasController extends Controller {
             // ---- Map Kendali (hanya tanggal, jam tidak dipakai) ----
             'map' => [
                 'proposal' => self::tanggal((string) ($r['tgl_proposal'] ?? '')),
-                'humas'    => self::tanggal((string) ($r['verifikasi_humas_at'] ?? '')),
+                // PO OPTI: Humas hanya melihat, jadi tanggalnya = pertama kali dibuka. PO Sertifikasi tetap tanggal verifikasi.
+                'humas'    => $divisi === 'sertifikasi' ? self::tanggal((string) ($r['verifikasi_humas_at'] ?? '')) : self::tanggal((string) $this->bacaSetelahMasuk($r)),
                 'mitra'    => self::tanggal((string) ($r['tervalidasi_mitra_at'] ?? '')),
                 'keuangan' => self::tanggal((string) ($r['validasi_keuangan_at'] ?? '')),
             ],
@@ -680,7 +688,9 @@ class PoHumasController extends Controller {
     protected function bacaSetelahMasuk(array $r) {
         $baca = self::tanggalJam((string) ($r['humas_dibaca_at'] ?? ''));
         if ($baca === '') { return null; }
-        $masuk = self::tanggalJam((string) ($r['disposisi_humas_at'] ?? ''));
+        // PO OPTI masuk ke Humas saat diverifikasi Tim Mitra; PO Sertifikasi saat disetujui Ketua Tim
+        $acuan = (!empty($r['_opti']) && trim((string) ($r['tervalidasi_mitra_at'] ?? '')) !== '') ? 'tervalidasi_mitra_at' : 'disposisi_humas_at';
+        $masuk = self::tanggalJam((string) ($r[$acuan] ?? ''));
         if ($masuk !== '' && strtotime($baca) < strtotime($masuk)) { return null; }
         return $baca;
     }
@@ -744,6 +754,13 @@ class PoHumasController extends Controller {
             }
             if ($tambah) { $this->db->exec('ALTER TABLE po_kegiatan ' . implode(', ', $tambah)); }
             $hasil = true;
+            // Humas tidak memverifikasi PO OPTI lagi: PO yang sudah disetujui Ketua Tim dan masih menunggu verifikasi Humas dilepas ke Tim Mitra (sekali jalan, hanya baris yang masih kosong)
+            try {
+                $this->db->exec("UPDATE po_kegiatan p SET p.verifikasi_humas_at = COALESCE(p.disposisi_humas_at, p.disetujui_at, NOW())
+                                  WHERE p.status_review = 'disetujui' AND p.verifikasi_humas_at IS NULL" . \PoSchema::bukanSertifikasi('p'));
+            } catch (\Exception $e2) {
+                error_log('[PO Humas] gagal melepas PO lama ke Tim Mitra: ' . $e2->getMessage());
+            }
         } catch (\Exception $e) {
             error_log('[PO Humas] gagal menyiapkan kolom po_kegiatan: ' . $e->getMessage());
             $hasil = false;
@@ -880,13 +897,25 @@ class PoHumasController extends Controller {
         }
         $id = (int) $params['id'];
         try {
-            $this->db->exec(
-                "UPDATE po_kegiatan SET humas_dibaca_at = NOW()
-                 WHERE id = ? AND status_review = 'disetujui'
-                   AND (humas_dibaca_at IS NULL OR (disposisi_humas_at IS NOT NULL AND humas_dibaca_at < disposisi_humas_at))",
-                [1 => $id]
-            );
-            $r = $this->db->exec("SELECT humas_dibaca_at, disposisi_humas_at FROM po_kegiatan WHERE id = ? LIMIT 1", [1 => $id]);
+            $opti = !$this->sertifikasi($id);
+            if ($opti) {
+                // PO OPTI baru terbaca Humas setelah diverifikasi Tim Mitra
+                $this->db->exec(
+                    "UPDATE po_kegiatan SET humas_dibaca_at = NOW()
+                     WHERE id = ? AND status_review = 'disetujui' AND tervalidasi_mitra_at IS NOT NULL
+                       AND (humas_dibaca_at IS NULL OR humas_dibaca_at < tervalidasi_mitra_at)",
+                    [1 => $id]
+                );
+            } else {
+                $this->db->exec(
+                    "UPDATE po_kegiatan SET humas_dibaca_at = NOW()
+                     WHERE id = ? AND status_review = 'disetujui'
+                       AND (humas_dibaca_at IS NULL OR (disposisi_humas_at IS NOT NULL AND humas_dibaca_at < disposisi_humas_at))",
+                    [1 => $id]
+                );
+            }
+            $r = $this->db->exec("SELECT humas_dibaca_at, disposisi_humas_at, tervalidasi_mitra_at FROM po_kegiatan WHERE id = ? LIMIT 1", [1 => $id]);
+            if (!empty($r[0])) { $r[0]['_opti'] = $opti; }
         } catch (\Exception $e) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal mencatat waktu baca.'], 500);
         }
