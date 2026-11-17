@@ -938,6 +938,86 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
 .rab-pilih-opt:hover { border-color: #1e293b; background: #f8fafc; box-shadow: 0 2px 8px rgba(15,23,42,.06); }
 .rab-pilih-opt b { display: block; font-size: .86rem; color: #0f172a; }
 .rab-pilih-opt span { font-size: .76rem; color: #64748b; }
+/* ---- RAB dari file Excel ---- */
+.rabxl-pilih .rab-pilih-opt.on { border-color: #1e293b; background: #f8fafc; box-shadow: 0 0 0 3px #e2e8f0; }
+.rabxl-drop { border: 2px dashed #cbd5e1; border-radius: 14px; padding: 22px 16px; text-align: center; background: #f8fafc; margin-bottom: 14px; transition: .15s; }
+.rabxl-drop.over { border-color: #1e293b; background: #eef2f7; }
+.rabxl-drop b { display: block; margin-bottom: 2px; font-size: .9rem; }
+.rabxl-drop span.t { font-size: .78rem; color: #64748b; display: block; margin-bottom: 10px; }
+.rabxl-file { display: flex; align-items: center; gap: 12px; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; background: #f8fafc; flex-wrap: wrap; margin-bottom: 12px; }
+.rabxl-file .xl { width: 38px; height: 38px; border-radius: 9px; background: #16a34a; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: .72rem; flex: none; }
+.rabxl-file .nm { font-weight: 700; font-size: .88rem; word-break: break-all; }
+.rabxl-file .ds { color: #64748b; font-size: .75rem; }
+.rabxl-file .sp { flex: 1; }
+.rabxl-tag { display: inline-block; font-size: .7rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+.rabxl-tag.rab { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.rabxl-tag.rekap { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+.rabxl-tag.lewati { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+.rabxl-tag.ok { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+.rabxl-hasil { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+.rabxl-hasil h6 { margin: 0 0 8px; font-size: .88rem; font-weight: 700; }
+.rabxl-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; flex-wrap: wrap; font-size: .82rem; }
+.rabxl-row .n { min-width: 96px; font-weight: 700; }
+.rabxl-row .d { color: #64748b; flex: 1; min-width: 160px; }
+.rabxl-cek { border-radius: 10px; padding: 8px 12px; font-size: .8rem; margin-top: 8px; border: 1px solid; display: flex; gap: 8px; align-items: flex-start; }
+.rabxl-cek.ok { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.rabxl-cek.warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.rabxl-cek.bad { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.rabxl-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+.rabxl-foot .info { margin-right: auto; font-size: .76rem; color: #64748b; }
+.rabxl-galat { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 10px; padding: 8px 12px; font-size: .8rem; margin-bottom: 12px; }
+.rabxl-sub { font-size: .76rem; color: #64748b; margin-bottom: 8px; }
+.rabxl-xtop { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 6px; font-size: .86rem; }
+.rabxl-xtop .xg-pill { margin-left: auto; }
+.rabxl-st { font-size: .74rem; color: #64748b; white-space: nowrap; }
+.rabxl-st.err { color: #b91c1c; }
+.rabxl-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: .72rem; color: #64748b; margin-bottom: 8px; }
+.rabxl-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.rabxl-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.rabxl-tile { border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; background: #fff; }
+.rabxl-tile .l { font-size: .72rem; color: #64748b; font-weight: 600; }
+.rabxl-tile .v { font-size: 1.15rem; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; color: #1e293b; }
+.rabxl-tile .s { font-size: .72rem; color: #64748b; margin-top: 2px; }
+.rabxl-tile.ok { background: #f0fdf4; border-color: #bbf7d0; } .rabxl-tile.ok .v { color: #15803d; }
+.rabxl-tile.warn { background: #fffbeb; border-color: #fde68a; } .rabxl-tile.warn .v { color: #b45309; }
+.rabxl-tile.bad { background: #fef2f2; border-color: #fecaca; } .rabxl-tile.bad .v { color: #dc2626; }
+.rabxl-tabrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.rabxl-tabrow .xg-pill { margin-left: auto; }
+.rabxl-tabs3 { display: inline-flex; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 3px; gap: 2px; }
+.rabxl-tabs3 button { border: 0; background: transparent; padding: 6px 16px; border-radius: 8px; font: inherit; font-weight: 700; font-size: .8rem; color: #64748b; cursor: pointer; }
+.rabxl-tabs3 button.on { background: #1e293b; color: #fff; }
+.rabxl-kcard { border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; margin-bottom: 10px; overflow: hidden; }
+.rabxl-kcard .kh { display: flex; align-items: center; gap: 12px; padding: 11px 14px; cursor: pointer; flex-wrap: wrap; }
+.rabxl-kcard .kh.flat { cursor: default; } .rabxl-kcard .kh:not(.flat):hover { background: #f8fafc; }
+.rabxl-kcard .chev { color: #64748b; font-size: .7rem; width: 14px; transition: .15s; } .rabxl-kcard.open .chev { transform: rotate(90deg); }
+.rabxl-kcard .kn { font-weight: 800; font-size: .9rem; flex: 1; min-width: 180px; } .rabxl-kcard .kn small { display: block; font-weight: 500; color: #64748b; font-size: .74rem; margin-top: 1px; }
+.rabxl-kcard .kt { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; font-size: .92rem; } .rabxl-kcard .kt small { display: block; font-weight: 500; color: #64748b; font-size: .72rem; }
+.rabxl-kcard .kbar { width: 170px; max-width: 100%; } .rabxl-kcard .bs { font-size: .72rem; color: #64748b; margin-top: 3px; }
+.rabxl-kcard .bar { height: 8px; border-radius: 999px; background: #e2e8f0; overflow: hidden; } .rabxl-kcard .bar i { display: block; height: 100%; border-radius: 999px; background: #2563eb; }
+.rabxl-kcard .bar.ok i { background: #16a34a; } .rabxl-kcard .bar.warn i { background: #d97706; } .rabxl-kcard .bar.bad i { background: #dc2626; }
+.rabxl-kcard .kb { display: none; border-top: 1px solid #e2e8f0; padding: 4px 14px 12px; } .rabxl-kcard.open .kb { display: block; }
+.rabxl-kcard .kg { margin-top: 10px; }
+.rabxl-kcard .gh { display: flex; justify-content: space-between; gap: 10px; font-weight: 700; font-size: .82rem; padding: 5px 0; border-bottom: 1px solid #e2e8f0; }
+.rabxl-kcard .gh2 { display: flex; justify-content: space-between; gap: 10px; font-weight: 600; font-size: .78rem; padding: 5px 0 3px 10px; color: #334155; }
+.rabxl-kcard .it { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, 230px) 110px; gap: 8px; font-size: .78rem; padding: 4px 0 4px 18px; border-bottom: 1px dashed #eef2f7; }
+.rabxl-kcard .it .q { color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .rabxl-kcard .it .j { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.rabxl-kcard .go { cursor: pointer; } .rabxl-kcard .go:hover { background: #fefce8; }
+.rabxl-doc { border: 1px solid #e2e8f0; border-radius: 10px; overflow: auto; max-height: 460px; background: #fff; }
+table.rabxl-doctbl { border-collapse: collapse; width: 100%; font-size: .8rem; margin: 0; }
+table.rabxl-doctbl th { position: sticky; top: 0; background: #f1f5f9; z-index: 2; text-align: left; font-size: .72rem; color: #64748b; padding: 7px 10px; border-bottom: 1px solid #cbd5e1; }
+table.rabxl-doctbl th.n, table.rabxl-doctbl td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.rabxl-doctbl td { padding: 6px 10px; border-bottom: 1px solid #eef2f7; }
+table.rabxl-doctbl tr.k td { background: #1e293b; color: #fff; font-weight: 800; }
+table.rabxl-doctbl tr.g td { background: #eff6ff; font-weight: 700; } table.rabxl-doctbl tr.g2 td { background: #f8fafc; font-weight: 600; padding-left: 22px; }
+table.rabxl-doctbl tr.i td:first-child { padding-left: 34px; } table.rabxl-doctbl td.q { color: #64748b; }
+table.rabxl-doctbl tr.t td { background: #f1f5f9; font-weight: 800; border-top: 2px solid #cbd5e1; }
+table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]:hover td { background: #fefce8; }
+.rabxl-bawah { display: flex; gap: 8px; align-items: center; margin-top: 12px; color: #94a3b8; font-size: .76rem; flex-wrap: wrap; }
+.rabxl-link { border: 0; background: transparent; padding: 0; font: inherit; color: #64748b; text-decoration: underline; cursor: pointer; }
+.rabxl-peringatan { border: 1px solid #fde68a; background: #fffbeb; color: #92400e; border-radius: 10px; padding: 10px 14px; font-size: .8rem; margin-bottom: 12px; }
+.rabxl-goto { border: 0; background: transparent; padding: 0; font: inherit; font-weight: 700; text-decoration: underline; color: inherit; cursor: pointer; }
+.rabxl-detail summary { cursor: pointer; font-size: .78rem; color: #475569; margin-top: 6px; }
+.rabxl-detail ul { margin: 6px 0 0; padding-left: 18px; font-size: .78rem; color: #475569; }
 .rab-modebar { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: #334155; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; margin: 2px 0 10px; }
 .rab-modebar b { color: #0f172a; }
 .rab-modebar a { margin-left: auto; color: #64748b; cursor: pointer; text-decoration: underline; }
@@ -1201,7 +1281,11 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                 </div>
                 <div class="col-md-8">
                     <label class="po-label">Perihal / Tentang <span class="text-danger">*</span></label>
-                    <input type="text" id="dasarTentang" name="dasar_tentang" class="form-control po-control" placeholder="Contoh: Pembuatan Bleached Kraft Pulp dari Lima Jenis Serpih Kayu..." data-wajib="1">
+                    <input type="text" id="dasarTentang" name="dasar_tentang" class="form-control po-control" placeholder="Otomatis dari Judul Kegiatan. Bisa diubah." data-wajib="1">
+                    <div class="form-text d-flex align-items-center justify-content-between gap-2" style="font-size:.75rem;">
+                        <span id="infoTentangJudul">Otomatis dari Judul Kegiatan, masih bisa diubah.</span>
+                        <button type="button" id="btnTentangSamaJudul" class="btn btn-link btn-sm p-0 d-none" style="font-size:.75rem;text-decoration:none;"><i class="bi bi-arrow-counterclockwise"></i> Samakan dengan judul</button>
+                    </div>
                 </div>
             </div>
 
@@ -1744,6 +1828,18 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs d-inline-flex align-items-center gap-1.5" id="btnTambahKategori">
                         <i class="bi bi-folder-plus"></i> <span>Tambah Kategori Biaya</span>
                     </button>
+                </div>
+                <!-- [BARU] Cara mengisi RAB: ketik manual, atau unggah file Excel RAB yang sudah ada (hanya RAB Selulosa / Lingkungan) -->
+                <div id="rabExcelBox" hidden>
+                    <div class="rab-pilih-grid rabxl-pilih">
+                        <button type="button" class="rab-pilih-opt on" data-xl-mode="manual"><b>Isi manual</b><span>Ketik kategori, kegiatan, dan item biaya satu per satu di form ini.</span></button>
+                        <button type="button" class="rab-pilih-opt" data-xl-mode="excel"><b>Upload file Excel</b><span>Pakai Excel RAB yang sudah ada. Sistem membacanya, tidak perlu mengetik ulang.</span></button>
+                    </div>
+                    <div id="rabXlPanel"></div>
+                    <input type="file" id="rabXlFile" accept=".xlsx" hidden>
+                    <input type="hidden" name="rab_excel_token" id="rabExcelToken" value="">
+                    <input type="hidden" name="rab_excel_nama" id="rabExcelNama" value="">
+                    <input type="hidden" name="rab_excel_info" id="rabExcelInfo" value="">
                 </div>
                 <div id="bodyKategori"></div>
             </div>
@@ -4387,6 +4483,33 @@ function buatPasanganNominal(name, placeholder, value) {
     return { display: display, hidden: hidden };
 }
 
+// Target % per kategori: hanya angka (maksimal 2 angka desimal), dan jumlah semua kategori tidak boleh melebihi 100%.
+// Ketikan yang membuat total lewat 100% ditolak (nilai kembali) dengan peringatan yang sama seperti batas RAB.
+function sisaPersenKategori(el) {
+    var t = 0;
+    document.querySelectorAll('#bodyKategori input[name^="kat_persen_manual"]').forEach(function (x) {
+        if (x !== el) t += parseFloat(String(x.value).replace('%', '').replace(',', '.')) || 0;
+    });
+    return Math.max(0, Math.round((100 - t) * 100) / 100);
+}
+function jagaPersenKategori(el) {
+    var raw = String(el.value).replace(/%/g, '').replace(/[^0-9.,]/g, '');
+    var p = raw.search(/[.,]/);
+    if (p >= 0) { raw = raw.slice(0, p + 1) + raw.slice(p + 1).replace(/[.,]/g, '').slice(0, 2); }
+    raw = raw.replace(/^0+(?=\d)/, '');
+    var prev = el.dataset.persenLast || '';
+    var num = parseFloat(raw.replace(',', '.')) || 0, numPrev = parseFloat(prev.replace(',', '.')) || 0;
+    var sisa = sisaPersenKategori(el);
+    var tolak = (num > sisa + 0.0001 && num > numPrev + 0.0001);   // mengurangi nilai tetap boleh; data lama yang sudah melebihi tidak dipaksa berubah
+    if (tolak) {
+        raw = prev;
+        rabPeringatan(0, 0, '<b>&#9888; Target % tidak boleh melebihi 100% dari seluruh kategori.</b> Yang masih bisa dialokasikan untuk kategori ini: ' + String(sisa).replace('.', ',') + '%.');
+    }
+    el.dataset.persenLast = raw;
+    el.value = raw === '' ? '' : raw + '%';
+    try { el.setSelectionRange(raw.length, raw.length); } catch (e) { }   // kursor tetap di depan tanda %
+}
+
 function formatPersenLive(el) {
     var raw = el.value.replace(/[^0-9.,]/g, ''); // cuma sisain angka, titik, koma
     el.value = raw === '' ? '' : raw + '%';
@@ -4624,9 +4747,10 @@ function tambahKategori(data) {
 
     var persenAwal = (data.persen_manual || '').toString().replace(/%/g, '');
     inPersen.value = persenAwal !== '' ? persenAwal + '%' : '';
+    inPersen.dataset.persenLast = persenAwal;
 
     inPersen.addEventListener('input', function () {
-        formatPersenLive(inPersen);
+        jagaPersenKategori(inPersen);
         hitungRabLive();
     });
 
@@ -5782,6 +5906,7 @@ function hitungRabLive() {
     var selisih = totalPenerimaan - totalPengeluaran;
     window.rabSelisihTerakhir = selisih;   // dipakai tombol Kirim: PO hanya bisa dikirim kalau RAB seimbang
     window.rabPenerimaanTerakhir = totalPenerimaan; window.rabPengeluaranTerakhir = totalPengeluaran;   // dipakai penjaga batas RAB selulosa
+    if (typeof rabExcelRekam === 'function') { rabExcelRekam(); }   // RAB dari Excel: perbarui hasil pengecekan
     var selisihEl = document.getElementById('disp_selisih');
     var boxEl = document.getElementById('boxTotalPengeluaran');
     var kpiSelisih = document.getElementById('boxKpiSelisih');
@@ -5799,6 +5924,504 @@ function hitungRabLive() {
             kpiSelisih.style.borderColor = '#fecaca';
             kpiSelisih.style.background = '#fef2f2';
         }
+    }
+}
+/* ============================================================ */
+/* RAB DARI FILE EXCEL                                           */
+/* Pilihan "Isi manual" / "Upload file Excel" di bagian B RAB. Berkas dibaca server (/po-rab-excel/baca), hasilnya   */
+/* dipetakan ke kategori RAB yang sama persis dengan isian manual (tambahKategori), jadi tetap bisa diedit.          */
+/* ============================================================ */
+var RAB_XL_BASE = '{{ @BASE }}';
+var rabXl = { mode: '', tahap: 'kosong', busy: false, galat: '', token: '', nama: '', ukuran: 0, waktu: '', hasil: null, pilih: {}, dipakai: [], koreksi: [], masalah: [],
+              payload: null, wb: null, xg: null, laci: null, edited: {}, sheetNama: '', pustaka: null, manual: false, tab: 'ring', memuat: false, simpanBusy: false, ulang: false, berubah: false, kembali: false, ver: 0, timer: null, hitungBusy: false, status: '', statusGalat: false, terapBusy: false };
+
+function rabXlNorm(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+function rabXlUkuran(b) { return b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+function rabXlSekarang() { var d = new Date(), p = function (n) { return ('0' + n).slice(-2); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); }
+function rabXlAdaIsiKategori() {
+    var ada = false;
+    document.querySelectorAll('#bodyKategori > div').forEach(function (b) { var n = b.querySelector('input[name^="kat_nama["]'); if (n && n.value.trim() !== '') ada = true; });
+    return ada;
+}
+function rabXlSetHidden() {
+    var t = document.getElementById('rabExcelToken'), n = document.getElementById('rabExcelNama');
+    if (t) t.value = (rabXl.tahap === 'terapkan') ? rabXl.token : '';
+    if (n) n.value = (rabXl.tahap === 'terapkan') ? rabXl.nama : '';
+    rabXlSegarkanPratinjau();
+}
+function rabXlInit(sumber) {
+    var box = document.getElementById('rabExcelBox'); if (!box) return;
+    box.hidden = !pakaiRabBaru; if (!pakaiRabBaru) return;
+    if (sumber && sumber.token) {
+        rabXl.mode = 'excel'; rabXl.tahap = 'terapkan'; rabXl.token = sumber.token; rabXl.nama = sumber.nama || 'RAB.xlsx'; rabXl.waktu = sumber.waktu || '';
+        rabXl.koreksi = sumber.koreksi || []; rabXl.masalah = sumber.masalah || []; rabXl.sheetsPakai = sumber.sheets || [];
+        rabXl.dipakai = (sumber.kategori || []).map(function (k) { return { nama: k.nama, rekap: (k.rekap === null || k.rekap === undefined) ? null : k.rekap }; });
+    } else if (rabXlAdaIsiKategori()) {
+        rabXl.mode = 'manual'; // PO lama yang sudah berisi kategori manual langsung tampil seperti biasa
+    }
+    box.querySelectorAll('[data-xl-mode]').forEach(function (b) { b.addEventListener('click', function () { rabXlPilihMode(b.dataset.xlMode); }); });
+    var fi = document.getElementById('rabXlFile');
+    if (fi) fi.addEventListener('change', function () { if (fi.files && fi.files[0]) { rabXlUnggah(fi.files[0]); } fi.value = ''; });
+    rabXlSetHidden(); rabXlGambar();
+}
+function rabXlPilihMode(m) {
+    if (rabXl.mode === m) return;
+    rabXl.mode = m; rabXl.galat = '';
+    if (m === 'manual') {
+        // lepas dari Excel: isi kategori di bawah tetap ada dan bisa dilanjutkan manual
+        rabXl.tahap = 'kosong'; rabXl.hasil = null; rabXl.token = ''; rabXl.nama = ''; rabXl.dipakai = []; rabXl.koreksi = []; rabXl.masalah = [];
+        rabXl.payload = null; rabXl.wb = null; rabXl.xg = null; rabXl.laci = null; rabXl.berubah = false; rabXl.kembali = false; rabXl.manual = false; rabXl.tab = 'ring'; clearTimeout(rabXl.timer);
+    }
+    rabXlSetHidden(); rabXlGambar(); hitungRabLive();
+}
+function rabXlUnggah(file) {
+    rabXl.galat = '';
+    if (/\.xls$/i.test(file.name)) { rabXl.galat = 'Format .xls lama belum didukung. Buka di Excel, pilih Simpan Sebagai, lalu pilih format .xlsx.'; rabXlGambar(); return; }
+    if (!/\.xlsx$/i.test(file.name)) { rabXl.galat = 'Hanya file Excel .xlsx yang bisa dibaca.'; rabXlGambar(); return; }
+    if (file.size > 5 * 1024 * 1024) { rabXl.galat = 'Ukuran file terlalu besar (maksimal 5 MB).'; rabXlGambar(); return; }
+    rabXl.busy = true; rabXlGambar();
+    var fd = new FormData();
+    fd.append('berkas', file);
+    var tk = document.querySelector('#formPo [name="csrf_token"]'); fd.append('csrf_token', tk ? tk.value : '');
+    fetch(RAB_XL_BASE + '/po-rab-excel/baca', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        .then(function (r) { return r.text(); })
+        .then(function (t) {
+            var j; try { j = JSON.parse(t); } catch (e) { throw new Error('Server tidak membalas dengan benar. Muat ulang halaman lalu coba lagi.'); }
+            if (!j.ok) { throw new Error(j.pesan || 'File gagal dibaca.'); }
+            rabXl.busy = false; rabXl.tahap = 'dibaca'; rabXl.token = j.token; rabXl.nama = j.nama || file.name; rabXl.ukuran = j.ukuran || file.size; rabXl.hasil = j.hasil;
+            rabXlMuatGrid(j.grid);
+            rabXl.kembali = false;
+            rabXlSetHidden(); rabXlGambar();
+        })
+        .catch(function (e) { rabXl.busy = false; rabXl.galat = e.message || 'File gagal dibaca.'; rabXlGambar(); });
+}
+// Isi ulang kategori RAB di form dari hasil bacaan Excel (kategori dari sheet yang dicentang saja)
+function rabXlIsiKategori() {
+    var h = rabXl.hasil; if (!h) return;
+    var dipakai = [], sheetPakai = {};
+    document.querySelectorAll('#bodyKategori > div').forEach(function (b) { b.remove(); });
+    h.kategori.forEach(function (k) {
+        if (!rabXl.pilih[k.sheet]) return;
+        tambahKategori(k.form);
+        dipakai.push({ nama: k.nama, rekap: (k.rekap === null || k.rekap === undefined) ? null : k.rekap }); sheetPakai[k.sheet] = true;
+    });
+    rabXl.dipakai = dipakai;
+    rabXl.koreksi = (h.koreksi || []).filter(function (x) { return sheetPakai[x.sheet]; });
+    rabXl.masalah = (h.masalah || []).filter(function (x) { return sheetPakai[x.sheet]; });
+    rabXlSegarkanPratinjau();
+}
+// Isi RAB diubah lewat kode (bukan ketikan), jadi pratinjau dokumen di kanan perlu disegarkan sendiri.
+function rabXlSegarkanPratinjau() { if (typeof window.triggerLivePreviewRefresh === 'function') { window.triggerLivePreviewRefresh(); } }
+function rabXlTerapkan() {
+    if (!rabXl.hasil) return;
+    rabXlIsiKategori();
+    rabXl.tahap = 'terapkan'; rabXl.waktu = rabXlSekarang(); rabXl.manual = false; rabXl.tab = 'ring';
+    rabXlSetHidden(); hitungRabLive(); rabXlGambar();
+    var pn = document.getElementById('rabXlPanel'); if (pn && pn.scrollIntoView) { pn.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}
+// Hasil pengecekan otomatis (live): total vs penerimaan, tiap kategori vs sheet Rekap. Dipanggil dari hitungRabLive.
+function rabExcelRekam() {
+    var inp = document.getElementById('rabExcelInfo'); if (!inp || typeof rabXl === 'undefined' || !rabXl) return;
+    if (rabXl.tahap !== 'terapkan' || !rabXl.token) { inp.value = ''; return; }
+    var kat = [];
+    document.querySelectorAll('#bodyKategori > div').forEach(function (box) {
+        var n = box.querySelector('input[name^="kat_nama["]'); var nama = n ? n.value.trim() : ''; if (nama === '') return;
+        var rk = null; (rabXl.dipakai || []).forEach(function (d) { if (rabXlNorm(d.nama) === rabXlNorm(nama)) rk = d.rekap; });
+        kat.push({ nama: nama, form: parseFloat(box.dataset.rabSub) || 0, rekap: rk });
+    });
+    rabXl.kategoriLive = kat;
+    // sheet yang dipakai: dokumen PO menampilkan isi sheet ini apa adanya
+    var shDipakai = [];
+    ((rabXl.hasil && rabXl.hasil.kategori) || []).forEach(function (k) { if (rabXl.pilih && rabXl.pilih[k.sheet] && shDipakai.indexOf(k.sheet) < 0) shDipakai.push(k.sheet); });
+    if (shDipakai.length) { rabXl.sheetsPakai = shDipakai; }
+    inp.value = JSON.stringify({ sheets: rabXl.sheetsPakai || [], waktu: rabXl.waktu, total_pengeluaran: window.rabPengeluaranTerakhir || 0, total_penerimaan: window.rabPenerimaanTerakhir || 0, kategori: kat, koreksi: rabXl.koreksi || [], masalah: rabXl.masalah || [] });
+    var cek = document.getElementById('rabXlCek'); if (cek) cek.innerHTML = rabXlCekHtml();
+}
+function rabXlCekHtml() {
+    var pen = window.rabPenerimaanTerakhir || 0, tot = window.rabPengeluaranTerakhir || 0, sel = pen - tot, h = '';
+    function baris(kelas, teks) { return '<div class="rabxl-cek ' + kelas + '"><span>' + teks + '</span></div>'; }
+    if (pen > 0) { h += (Math.abs(sel) < 1) ? baris('ok', 'Total RAB <b>' + rupiah(tot) + '</b> seimbang dengan Nilai Kontrak.') : baris('warn', 'Total RAB <b>' + rupiah(tot) + '</b> ' + (sel > 0 ? 'kurang ' : 'lebih ') + rupiah(Math.abs(sel)) + ' dari Nilai Kontrak (' + rupiah(pen) + ').'); }
+    (rabXl.kategoriLive || []).forEach(function (k) {
+        if (k.rekap === null || k.rekap === undefined) return;
+        var cocok = Math.abs(k.form - k.rekap) <= Math.max(1, 0.001 * k.rekap);
+        h += baris(cocok ? 'ok' : 'warn', escHtmlRab(k.nama) + ': ' + (cocok ? 'cocok dengan sheet Rekap (' + rupiah(k.rekap) + ').' : 'di form ' + rupiah(k.form) + ', di sheet Rekap ' + rupiah(k.rekap) + '.'));
+    });
+    if ((rabXl.masalah || []).length || (rabXl.koreksi || []).length) {
+        var li = '';
+        (rabXl.koreksi || []).forEach(function (x) { li += '<li>' + escHtmlRab(x.sheet) + ', baris ' + x.baris + ': ' + escHtmlRab(x.catatan) + '</li>'; });
+        (rabXl.masalah || []).forEach(function (x) { li += '<li>' + escHtmlRab(x.sheet) + ', baris ' + x.baris + ': ' + escHtmlRab(x.pesan) + '</li>'; });
+        h += '<details class="rabxl-detail"><summary>Catatan dari pembacaan Excel (' + ((rabXl.koreksi || []).length + (rabXl.masalah || []).length) + ')</summary><ul>' + li + '</ul></details>';
+    }
+    return h;
+}
+function rabXlFileKartu(statusHtml, tombolHtml) {
+    return '<div class="rabxl-file"><span class="xl">XLS</span><div><div class="nm">' + escHtmlRab(rabXl.nama) + '</div><div class="ds">' + (rabXl.ukuran ? rabXlUkuran(rabXl.ukuran) : '') + '</div></div><span class="sp"></span>' + statusHtml + tombolHtml + '</div>';
+}
+/* ---------- Tampilan Excel di form: pilih sheet -> tabel lebar dengan rumus hidup; catatan lewat tombol ringkas + laci ---------- */
+var RAB_XL_JS = RAB_XL_BASE + '/public/js/rab-sheet.js?v=4';
+function rabXlPustaka(cb) {
+    if (window.XL) { cb(); return; }
+    if (rabXl.pustaka) { rabXl.pustaka.push(cb); return; }
+    rabXl.pustaka = [cb];
+    var sc = document.createElement('script'); sc.src = RAB_XL_JS;
+    sc.onload = function () { var q = rabXl.pustaka || []; rabXl.pustaka = null; q.forEach(function (f) { f(); }); };
+    sc.onerror = function () { rabXl.pustaka = null; rabXl.galat = 'Tampilan Excel gagal dimuat. Muat ulang halaman, lalu coba lagi.'; rabXlGambar(); };
+    document.head.appendChild(sc);
+}
+function rabXlMuatGrid(g) {
+    rabXl.payload = (g && g.sheets && g.sheets.length) ? g : null; rabXl.wb = null; rabXl.xg = null; rabXl.laci = null; rabXl.edited = {}; rabXl.sheetNama = '';
+    rabXl.berubah = false; rabXl.ver = 0; rabXl.status = ''; rabXl.statusGalat = false; clearTimeout(rabXl.timer);
+    rabXl.pilih = {};
+    if (rabXl.payload && rabXl.hasil) { (rabXl.hasil.sheets || []).forEach(function (s) { if (s.jenis === 'rab' || s.jenis === 'rekap') rabXl.pilih[s.nama] = true; }); }
+}
+function rabXlDipilih() { return rabXl.wb ? rabXl.wb.order.filter(function (n) { return rabXl.pilih[n] === true; }) : []; }
+function rabXlInfoSheet(nama) { var r = null; ((rabXl.hasil && rabXl.hasil.sheets) || []).forEach(function (s) { if (s.nama === nama) r = s; }); return r; }
+function rabXlCatatUbah(ev) {
+    if (ev && ev.reset) return;
+    rabXl.berubah = true; rabXl.ver++; rabXl.edited = (rabXl.xg && rabXl.xg.edited) || {}; rabXl.status = 'Mengubah...'; rabXl.statusGalat = false; rabXlStatusGambar();
+    clearTimeout(rabXl.timer); rabXl.timer = setTimeout(function () { if (rabXl.tahap === 'terapkan') { rabXlSimpanTerap(); } else { rabXlHitung(false); } }, 600);
+}
+function rabXlStatusGambar() {
+    var e = document.getElementById('rabXlStatus'); if (!e) return;
+    e.textContent = rabXl.status || (rabXl.berubah ? 'Sudah diubah' : ''); e.className = 'rabxl-st' + (rabXl.statusGalat ? ' err' : '');
+}
+// Kirim isi tabel ke server: dianalisis ulang (simpan=false) atau ditulis ke berkas Excel (simpan=true).
+function rabXlHitung(simpan) {
+    if (!rabXl.wb || !rabXl.token) return Promise.resolve(true);
+    clearTimeout(rabXl.timer);
+    var ver = rabXl.ver;
+    rabXl.status = simpan ? 'Menyimpan...' : 'Memeriksa...'; rabXl.statusGalat = false; rabXlStatusGambar();
+    var fd = new FormData();
+    fd.append('token', rabXl.token); fd.append('data', JSON.stringify(XL.toGrid(rabXl.wb))); fd.append('pakai', JSON.stringify(rabXlDipilih())); fd.append('simpan', simpan ? '1' : '0');
+    var tk = document.querySelector('#formPo [name="csrf_token"]'); fd.append('csrf_token', tk ? tk.value : '');
+    return fetch(RAB_XL_BASE + '/po-rab-excel/hitung', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        .then(function (r) { return r.text(); })
+        .then(function (t) {
+            var j; try { j = JSON.parse(t); } catch (e) { throw new Error('Server tidak membalas dengan benar.'); }
+            if (!j.ok) { throw new Error(j.pesan || 'Gagal memeriksa isi tabel.'); }
+            if (simpan || ver === rabXl.ver) {
+                rabXl.hasil = j.hasil; if (j.ukuran) rabXl.ukuran = j.ukuran;
+                rabXl.status = simpan ? 'Tersimpan' : ''; rabXl.statusGalat = false;
+                rabXlSegar(); rabXlStatusGambar();
+            }
+            return true;
+        })
+        .catch(function (e) { rabXl.status = e.message || 'Gagal memeriksa isi tabel.'; rabXl.statusGalat = true; rabXlStatusGambar(); return false; });
+}
+// Catatan sistem -> {perlu:[], oke:[]} untuk tombol ringkas + laci
+function rabXlCatatan() {
+    var hs = rabXl.hasil, perlu = [], oke = [], e = escHtmlRab;
+    if (!hs) return { perlu: perlu, oke: oke };
+    var lbl = function (sh, r) { return r ? sh + ' · baris ' + r : sh; };
+    (hs.masalah || []).forEach(function (m) {
+        if (m.tingkat === 'info') return;
+        perlu.push({ t: m.tingkat === 'bad' ? 'bad' : 'warn', sh: m.sheet, r: m.baris, h: e(m.pesan), w: lbl(m.sheet, m.baris) });
+    });
+    var rekapSheet = ''; (hs.sheets || []).forEach(function (s) { if (s.jenis === 'rekap' && !rekapSheet) rekapSheet = s.nama; });
+    if (hs.nilai_kontrak !== null && hs.nilai_kontrak !== undefined) {
+        var pk = window.rabPenerimaanTerakhir || 0;
+        if (pk > 0 && Math.abs(pk - hs.nilai_kontrak) < 1) { oke.push({ t: 'ok', h: 'Nilai Kontrak di Excel <b>' + rupiah(hs.nilai_kontrak) + '</b> sama dengan Nilai Kontrak di form.', w: 'Nilai Kontrak' }); }
+        else if (pk > 0) { perlu.push({ t: 'warn', h: 'Nilai Kontrak di Excel <b>' + rupiah(hs.nilai_kontrak) + '</b> beda dengan Nilai Kontrak di form (' + rupiah(pk) + '). Periksa dulu sebelum diterapkan.', w: 'Nilai Kontrak' }); }
+    }
+    if (hs.cocok_rekap === true) { oke.push({ t: 'ok', sh: rekapSheet || null, h: 'Total hasil baca <b>' + rupiah(hs.total) + '</b> sama dengan sheet Rekap.', w: 'Pengecekan total' }); }
+    else if (hs.cocok_rekap === false) { perlu.push({ t: 'warn', sh: rekapSheet || null, h: 'Total hasil baca <b>' + rupiah(hs.total) + '</b> beda dengan sheet Rekap (' + rupiah(hs.total_rekap) + ').', w: 'Pengecekan total' }); }
+    (hs.kategori || []).forEach(function (k) {
+        if (k.cocok !== false) return;
+        var pembanding = (k.rekap !== null && k.rekap !== undefined) ? k.rekap : k.total_excel;
+        if (pembanding === null || pembanding === undefined) return;
+        perlu.push({ t: 'warn', sh: k.sheet, h: e(k.nama) + ': hasil baca <b>' + rupiah(k.total) + '</b>, di Excel tertulis ' + rupiah(pembanding) + '.', w: k.sheet });
+    });
+    (hs.koreksi || []).forEach(function (m) { oke.push({ t: 'ok', sh: m.sheet, r: m.baris, h: e(m.catatan) + '.', w: lbl(m.sheet, m.baris) }); });
+    if (!perlu.length) { oke.unshift({ t: 'ok', h: 'Semua baris terbaca dan rumusnya utuh.', w: 'Pengecekan' }); }
+    perlu.sort(function (a, b) { return (a.t === 'bad' ? 0 : 1) - (b.t === 'bad' ? 0 : 1); });
+    return { perlu: perlu, oke: oke };
+}
+function rabXlPeranBaris() {
+    var pm = {}, bad = {};
+    ((rabXl.hasil && rabXl.hasil.sheets) || []).forEach(function (s) { pm[s.nama] = s.peran || {}; });
+    ((rabXl.hasil && rabXl.hasil.masalah) || []).forEach(function (m) {
+        if (m.tingkat === 'info') return; bad[m.sheet] = bad[m.sheet] || {};
+        if (bad[m.sheet][m.baris] !== 'bad') bad[m.sheet][m.baris] = (m.tingkat === 'bad') ? 'bad' : 'warn';
+    });
+    return { peran: pm, bad: bad };
+}
+// Perbarui semua yang bergantung pada hasil bacaan (pilihan sheet, tanda baris, tombol ringkas + laci, tombol bawah) tanpa menggambar ulang tabel
+function rabXlSegar() {
+    if (!rabXl.wb || !rabXl.xg) return;
+    var pk = rabXlDipilih(), el = document.getElementById('rabXlPicks');
+    if (el) {
+        var h = ''; rabXl.wb.order.forEach(function (n) { var on = rabXl.pilih[n] === true; h += '<label class="xg-pick' + (on ? ' on' : '') + '" data-xl-pilih="' + escHtmlRab(n) + '"><input type="checkbox"' + (on ? ' checked' : '') + '><span>' + escHtmlRab(n) + '</span></label>'; });
+        el.innerHTML = h;
+        el.querySelectorAll('.xg-pick').forEach(function (c) {
+            c.querySelector('input').addEventListener('change', function () {
+                rabXl.pilih[c.dataset.xlPilih] = this.checked;
+                var dp = rabXlDipilih(); if (dp.length && dp.indexOf(rabXl.xg.sheet) < 0) rabXl.xg.setSheet(dp[0]);
+                rabXl.berubah = rabXl.berubah || false; rabXl.ver++; rabXlSegar(); rabXlHitung(false);
+            });
+        });
+    }
+    var pb = rabXlPeranBaris();
+    rabXl.xg.setMarks(pb.peran); rabXl.xg.setBad(pb.bad); rabXl.xg.renderTabs();
+    var kosong = document.getElementById('rabXlKosong'), gr = document.getElementById('rabXlGrid');
+    if (kosong) kosong.hidden = pk.length > 0; if (gr) gr.hidden = pk.length === 0;
+    if (rabXl.laci) rabXl.laci.set(rabXlCatatan());
+    rabXlFootGambar();
+    if (rabXl.tahap === 'terapkan') { rabXlTerapIsi(); }
+}
+function rabXlLompat(sheet, baris) {
+    if (!rabXl.xg || !rabXl.wb || rabXl.wb.order.indexOf(sheet) < 0) return;
+    if (rabXl.tahap === 'terapkan' && rabXl.tab !== 'xl') { rabXlTab('xl'); }
+    if (!rabXl.pilih[sheet]) { rabXl.pilih[sheet] = true; rabXlSegar(); }
+    if (baris) { rabXl.xg.highlightRow(sheet, baris); var sel = rabXl.xg.el.table.querySelector('tr[data-r="' + baris + '"]'); if (sel) { var sc = rabXl.xg.el.scroll; sc.scrollTop = Math.max(0, sel.offsetTop - 80); } }
+    else { rabXl.xg.setSheet(sheet); }
+    var w = document.getElementById('rabXlWrap'); if (w && w.scrollIntoView) { w.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+}
+// Buat tabel (sekali per tampilan panel). wb tetap hidup walau panel digambar ulang, jadi isiannya tidak hilang.
+function rabXlBangun() {
+    if (!document.getElementById('rabXlGrid')) return;
+    rabXlPustaka(function () {
+        var mount = document.getElementById('rabXlGrid'); if (!mount || (rabXl.tahap !== 'dibaca' && rabXl.tahap !== 'terapkan') || !rabXl.payload) return;
+        var pertama = false;
+        if (!rabXl.wb) { rabXl.wb = XL.fromGrid(rabXl.payload); pertama = true; }
+        var dp = rabXlDipilih(); var awal = rabXl.sheetNama && rabXl.wb.order.indexOf(rabXl.sheetNama) >= 0 ? rabXl.sheetNama : (dp[0] || rabXl.wb.order[0]);
+        rabXl.xg = new XL.Grid({
+            mount: mount, wb: rabXl.wb, sheet: awal, fill: true, maxHeight: 400, toolbar: true, title: rabXl.nama || 'Tabel Excel',
+            tabList: rabXlDipilih,
+            tabBadge: function (n) {
+                var s = rabXlInfoSheet(n), bad = (rabXlPeranBaris().bad[n]) || {}, ada = Object.keys(bad).length;
+                var warna = ada ? '#dc2626' : (s && s.jenis === 'rab' ? '#2563eb' : (s && s.jenis === 'rekap' ? '#d97706' : '#94a3b8'));
+                return '<span class="tb" style="background:' + warna + '"></span>';
+            },
+            onSheet: function (n) { rabXl.sheetNama = n; },
+            onChange: rabXlCatatUbah
+        });
+        rabXl.xg.edited = rabXl.edited || {}; rabXl.xg.render();
+        rabXl.laci = new XL.Laci({ mount: document.getElementById('rabXlWrap'), pill: document.getElementById('rabXlPill'), onJump: rabXlLompat });
+        // di tahap terapkan tombol ringkas bisa diklik dari tab mana pun: otomatis pindah ke tab Excel
+        document.getElementById('rabXlPill').addEventListener('click', function () { if (rabXl.tahap === 'terapkan' && rabXl.tab !== 'xl') { rabXlTab('xl'); if (!rabXl.laci.open) { rabXl.laci.open = true; rabXl.laci.paint(); } } });
+        rabXlSegar(); rabXlStatusGambar();
+        // rumus yang belum punya hasil tersimpan di file: hitung dulu di browser, lalu periksa ulang di server dan simpan saat diterapkan
+        if (pertama && XL.beda(rabXl.wb) > 0) { rabXl.berubah = true; rabXl.ver++; rabXlHitung(false); }
+    });
+}
+function rabXlBarisLink(sheet, no) { return '<button type="button" class="rabxl-goto" data-xl-lompat="' + escHtmlRab(sheet) + '" data-r="' + no + '">baris ' + no + '</button>'; }
+// Bagian bawah: ringkasan hasil + tombol
+function rabXlFootGambar() {
+    var foot = document.getElementById('rabXlFoot'); if (!foot || !rabXl.hasil) return;
+    var hs = rabXl.hasil, nKat = (hs.kategori || []).length, adaIsi = rabXlAdaIsiKategori();
+    var ringkas = nKat ? ('Terbaca <b>' + nKat + ' kategori</b>, total <b>' + rupiah(hs.total) + '</b>. ') : '<span style="color:#b91c1c">Belum ada sheet berisi tabel biaya yang dikenali. Centang sheet yang berisi tabel biaya (judul kolom Uraian, Volume, Harga Satuan). </span>';
+    foot.innerHTML = '<div class="rabxl-foot"><span class="info">' + ringkas + (adaIsi ? 'RAB yang sudah terisi akan diganti dengan isi Excel ini.' : 'Setelah diterapkan, isi RAB tampil dalam tiga tab dan bisa diubah lewat tab Excel.') + '</span>'
+        + (rabXl.kembali ? '<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="rabXlBatal">Batal</button>' : '')
+        + '<button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3" id="rabXlGanti2">Ganti file</button>'
+        + '<button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlTerapkan"' + ((nKat === 0 || rabXl.terapBusy) ? ' disabled' : '') + '>' + (rabXl.terapBusy ? 'Menyimpan...' : 'Terapkan ke RAB') + '</button></div>';
+    var reset = function () { clearTimeout(rabXl.timer); rabXl.payload = null; rabXl.wb = null; rabXl.xg = null; rabXl.laci = null; rabXl.berubah = false; rabXl.galat = ''; };
+    var g = foot.querySelector('#rabXlGanti2'); if (g) g.addEventListener('click', function () { reset(); rabXl.tahap = 'kosong'; rabXl.hasil = null; rabXl.kembali = false; rabXlSetHidden(); rabXlGambar(); document.getElementById('rabXlFile').click(); });
+    var bt = foot.querySelector('#rabXlBatal'); if (bt) bt.addEventListener('click', function () { reset(); rabXl.tahap = 'terapkan'; rabXl.kembali = false; rabXl.hasil = null; rabXlSetHidden(); rabXlGambar(); });
+    var tp = foot.querySelector('#rabXlTerapkan'); if (tp) tp.addEventListener('click', rabXlTerapkanKlik);
+}
+function rabXlTerapkanKlik() {
+    if (rabXl.terapBusy) return;
+    if (!rabXl.hasil || !(rabXl.hasil.kategori || []).length) { rabXl.galat = 'Centang minimal satu sheet yang berisi tabel biaya.'; rabXlGambar(); return; }
+    // ada perubahan di tabel: simpan dulu hasil editnya ke berkas Excel di server, baru diterapkan
+    if (rabXl.wb && rabXl.berubah) {
+        rabXl.terapBusy = true; rabXlFootGambar();
+        rabXlHitung(true).then(function (ok) {
+            rabXl.terapBusy = false;
+            if (!ok) { rabXl.galat = 'Perubahan di tabel belum tersimpan: ' + (rabXl.status || 'coba lagi.'); rabXlGambar(); return; }
+            rabXl.galat = ''; rabXl.berubah = false; rabXlTerapkan();
+        });
+        return;
+    }
+    rabXlTerapkan();
+}
+// Buka lagi tampilan Excel untuk berkas yang sudah diterapkan (atau milik PO yang sedang diedit)
+function rabXlBukaEditor() {
+    if (!rabXl.token) return;
+    rabXl.galat = ''; rabXl.busy = true; rabXlGambar();
+    fetch(RAB_XL_BASE + '/po-rab-excel/' + encodeURIComponent(rabXl.token) + '/grid', { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        .then(function (r) { return r.text(); })
+        .then(function (t) {
+            var j; try { j = JSON.parse(t); } catch (e) { throw new Error('Server tidak membalas dengan benar.'); }
+            if (!j.ok) { throw new Error(j.pesan || 'Berkas tidak bisa dibuka.'); }
+            rabXl.busy = false; rabXl.hasil = j.hasil; rabXl.ukuran = j.ukuran || rabXl.ukuran; rabXlMuatGrid(j.grid);
+            rabXl.tahap = 'dibaca'; rabXl.kembali = true; rabXlSetHidden(); rabXlGambar();
+        })
+        .catch(function (e) { rabXl.busy = false; rabXl.galat = e.message || 'Berkas tidak bisa dibuka.'; rabXlGambar(); });
+}
+/* ---------- Tahap "terapkan": isi RAB dari Excel tampil dalam tiga tab (Ringkasan, Rincian, Excel), tanpa kotak isian manual ---------- */
+function rabXlAturTampilan() {
+    var sembunyi = rabXl.mode === '' || (rabXl.mode === 'excel' && !rabXl.manual); // belum pilih cara isi: form kategori & tombolnya disembunyikan
+    var bk = document.getElementById('bodyKategori'), bt = document.getElementById('btnTambahKategori');
+    if (bk) bk.style.display = sembunyi ? 'none' : '';
+    if (bt) bt.style.display = sembunyi ? 'none' : '';
+}
+function rabXlAngka(n) { return (n === null || n === undefined) ? '' : Number(n).toLocaleString('id-ID', { maximumFractionDigits: 4 }); }
+function rabXlQty(it) {
+    var p = [rabXlAngka(it.kali) + ' kali'];
+    if (it.dim2 !== null && it.dim2 !== undefined) p.push(rabXlAngka(it.dim2) + (it.dim2_label ? ' ' + it.dim2_label : ''));
+    if (it.hari !== null && it.hari !== undefined) p.push(rabXlAngka(it.hari) + ' hari');
+    return p.join(' × ') + ' × ' + rupiah(it.satuan);
+}
+function rabXlTab(t) {
+    rabXl.tab = t;
+    document.querySelectorAll('#rabXlTabs [data-xt]').forEach(function (b) { b.classList.toggle('on', b.dataset.xt === t); });
+    var m = { ring: 'rabXlPRing', rinci: 'rabXlPRinci', xl: 'rabXlPXl' };
+    Object.keys(m).forEach(function (k) { var e = document.getElementById(m[k]); if (e) e.hidden = (k !== t); });
+    if (t === 'xl' && rabXl.xg) { rabXl.xg.render(); if (rabXl.laci) rabXl.laci.paint(); }
+}
+// Ringkasan angka + kartu kategori + tabel rincian, dihitung dari hasil bacaan terbaru
+function rabXlTerapIsi() {
+    var hs = rabXl.hasil, t = document.getElementById('rabXlTiles'); if (!hs || !t) return;
+    var e = escHtmlRab, N = rabXlCatatan(), nk = hs.nilai_kontrak, pk = window.rabPenerimaanTerakhir || 0;
+    var banding = (nk !== null && nk !== undefined) ? nk : (pk > 0 ? pk : null), sel = banding === null ? null : hs.total - banding, nKat = (hs.kategori || []).length, nItem = 0;
+    (hs.kategori || []).forEach(function (k) { ((k.ringkas && k.ringkas.kegiatan) || []).forEach(function (g) { nItem += g.items.length; g.grup.forEach(function (x) { nItem += x.items.length; }); }); });
+    var perlu = N.perlu.length, selKls = sel === null ? '' : (Math.abs(sel) < 1 ? 'ok' : 'warn');
+    t.innerHTML = '<div class="rabxl-tiles">' +
+        '<div class="rabxl-tile"><div class="l">Total RAB</div><div class="v">' + rupiah(hs.total) + '</div><div class="s">' + nKat + ' kategori' + (nItem ? ' · ' + nItem + ' item' : '') + '</div></div>' +
+        '<div class="rabxl-tile"><div class="l">Nilai Kontrak</div><div class="v">' + (banding === null ? '-' : rupiah(banding)) + '</div><div class="s">' + ((nk !== null && nk !== undefined) ? 'dari file Excel' : 'dari penerimaan di form') + '</div></div>' +
+        '<div class="rabxl-tile ' + selKls + '"><div class="l">Selisih</div><div class="v">' + (sel === null ? '-' : (Math.abs(sel) < 1 ? 'Seimbang' : (sel > 0 ? '+' : '-') + rupiah(Math.abs(sel)))) + '</div><div class="s">' + (sel === null ? '' : (Math.abs(sel) < 1 ? 'RAB sama dengan Nilai Kontrak' : (sel > 0 ? 'RAB lebih besar dari kontrak' : 'RAB kurang dari kontrak'))) + '</div></div>' +
+        '<div class="rabxl-tile ' + (perlu ? 'bad' : 'ok') + '"><div class="l">Pengecekan</div><div class="v">' + (perlu ? perlu + ' perlu dicek' : 'Semua sesuai') + '</div><div class="s">' + (perlu ? 'buka tombol "perlu dicek" untuk rinciannya' : 'tidak ada catatan') + '</div></div></div>';
+    // --- tab Ringkasan
+    var h = '';
+    (hs.kategori || []).forEach(function (k, i) {
+        var r = k.ringkas || { kegiatan: [] }, tv = (k.rekap !== null && k.rekap !== undefined) ? k.rekap : null, diff = tv === null ? 0 : k.total - tv;
+        var kls = tv === null ? '' : (Math.abs(diff) < 1 ? 'ok' : (diff > 0 ? 'bad' : 'warn')), ada = r.kegiatan.length > 0;
+        var itm = 0; r.kegiatan.forEach(function (g) { itm += g.items.length; g.grup.forEach(function (x) { itm += x.items.length; }); });
+        h += '<div class="rabxl-kcard' + (rabXl.buka && rabXl.buka[i] ? ' open' : '') + '" data-ki="' + i + '"><div class="kh' + (ada ? '' : ' flat') + '">' + (ada ? '<span class="chev">&#9654;</span>' : '<span class="chev" style="visibility:hidden">&#9654;</span>') +
+            '<div class="kn">' + e(k.nama) + '<small>' + (ada ? itm + ' item · ' + r.kegiatan.length + ' kegiatan' : 'Tanpa rincian, dihitung dari persentase Nilai Kontrak') + (r.persen !== '' ? ' · target ' + e(String(r.persen).replace('.', ',')) + '%' : '') + '</small></div>' +
+            (tv !== null ? '<div class="kbar"><div class="bar ' + kls + '"><i style="width:' + Math.min(100, tv ? Math.round(k.total / tv * 100) : 0) + '%"></i></div><div class="bs">' + (Math.abs(diff) < 1 ? 'Sesuai target' : (diff > 0 ? 'Lebih ' : 'Kurang ') + rupiah(Math.abs(diff))) + '</div></div>' : '') +
+            '<div class="kt">' + rupiah(k.total) + (tv !== null ? '<small>target ' + rupiah(tv) + '</small>' : '') + '</div></div>';
+        if (ada) {
+            h += '<div class="kb">';
+            r.kegiatan.forEach(function (g) {
+                var b0 = g.items.length ? g.items[0].baris : (g.grup.length && g.grup[0].items.length ? g.grup[0].items[0].baris : 0);
+                var item = function (it) { return '<div class="it go" data-sh="' + e(k.sheet) + '" data-r="' + it.baris + '"><span>' + e(it.nama) + '</span><span class="q">' + e(rabXlQty(it)) + '</span><span class="j">' + rupiah(it.jumlah) + '</span></div>'; };
+                h += '<div class="kg"><div class="gh go" data-sh="' + e(k.sheet) + '" data-r="' + b0 + '"><span>' + e(g.nama) + '</span><span>' + rupiah(g.total) + '</span></div>' + g.items.map(item).join('');
+                g.grup.forEach(function (x) { h += '<div class="gh2"><span>' + e(x.nama) + '</span><span>' + rupiah(x.total) + '</span></div>' + x.items.map(item).join(''); });
+                h += '</div>';
+            });
+            h += '</div>';
+        }
+        h += '</div>';
+    });
+    var pr = document.getElementById('rabXlPRing'); if (pr) {
+        pr.innerHTML = h || '<div class="rabxl-galat" style="margin:0">Belum ada kategori yang terbaca dari sheet yang dipilih.</div>';
+        pr.querySelectorAll('.kcard, .rabxl-kcard').forEach(function (c) { var kh = c.querySelector('.kh'); if (kh && !kh.classList.contains('flat')) kh.onclick = function () { rabXl.buka = rabXl.buka || {}; rabXl.buka[c.dataset.ki] = !c.classList.contains('open'); c.classList.toggle('open'); }; });
+        pr.querySelectorAll('.go[data-sh]').forEach(function (x) { x.onclick = function () { rabXlLompat(x.dataset.sh, parseInt(x.dataset.r, 10) || 0); }; });
+    }
+    // --- tab Rincian
+    var d = '<thead><tr><th>Uraian</th><th class="n">Rincian volume</th><th class="n">Jumlah</th></tr></thead><tbody>';
+    (hs.kategori || []).forEach(function (k) {
+        var r = k.ringkas || { kegiatan: [] };
+        d += '<tr class="k"><td colspan="2">' + e(k.nama) + '</td><td class="n">' + rupiah(k.total) + '</td></tr>';
+        r.kegiatan.forEach(function (g) {
+            var b0 = g.items.length ? g.items[0].baris : (g.grup.length && g.grup[0].items.length ? g.grup[0].items[0].baris : 0);
+            d += '<tr class="g" data-sh="' + e(k.sheet) + '" data-r="' + b0 + '"><td colspan="2">' + e(g.nama) + '</td><td class="n">' + rupiah(g.total) + '</td></tr>';
+            var item = function (it) { return '<tr class="i" data-sh="' + e(k.sheet) + '" data-r="' + it.baris + '"><td>' + e(it.nama) + '</td><td class="n q">' + e(rabXlQty(it)) + '</td><td class="n">' + rupiah(it.jumlah) + '</td></tr>'; };
+            g.items.forEach(function (it) { d += item(it); });
+            g.grup.forEach(function (x) { d += '<tr class="g2"><td colspan="2">' + e(x.nama) + '</td><td class="n">' + rupiah(x.total) + '</td></tr>'; x.items.forEach(function (it) { d += item(it); }); });
+        });
+    });
+    d += '<tr class="t"><td colspan="2">Total RAB</td><td class="n">' + rupiah(hs.total) + '</td></tr></tbody>';
+    var tb = document.getElementById('rabXlDoc'); if (tb) {
+        tb.innerHTML = d;
+        tb.querySelectorAll('tr[data-r]').forEach(function (tr) { tr.onclick = function () { rabXlLompat(tr.dataset.sh, parseInt(tr.dataset.r, 10) || 0); }; });
+    }
+}
+// Edit di tab Excel: simpan ke berkas Excel di server, lalu isi ulang kategori RAB dari hasilnya
+function rabXlSimpanTerap() {
+    if (!rabXl.wb || !rabXl.token) return;
+    if (rabXl.simpanBusy) { rabXl.ulang = true; return; }
+    rabXl.simpanBusy = true; rabXl.ulang = false;
+    rabXlHitung(true).then(function (ok) {
+        rabXl.simpanBusy = false;
+        if (ok) {
+            rabXl.berubah = false; rabXlIsiKategori(); rabXl.waktu = rabXlSekarang(); rabXlSetHidden(); hitungRabLive(); rabXlSegar();
+        }
+        if (rabXl.ulang) { rabXl.ulang = false; rabXlSimpanTerap(); }
+    });
+}
+// Untuk PO yang dibuka lagi (belum ada isi Excel di browser): ambil isi berkas dari server
+function rabXlMuatTerap() {
+    if (rabXl.memuat || !rabXl.token) return;
+    rabXl.memuat = true;
+    fetch(RAB_XL_BASE + '/po-rab-excel/' + encodeURIComponent(rabXl.token) + '/grid', { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        .then(function (r) { return r.text(); })
+        .then(function (t) {
+            var j; try { j = JSON.parse(t); } catch (e) { throw new Error('Server tidak membalas dengan benar.'); }
+            if (!j.ok) { throw new Error(j.pesan || 'Berkas tidak bisa dibuka.'); }
+            rabXl.memuat = false; rabXl.hasil = j.hasil; rabXl.ukuran = j.ukuran || rabXl.ukuran; rabXlMuatGrid(j.grid); rabXl.gagalMuat = false; rabXlGambar();
+        })
+        .catch(function (e) { rabXl.memuat = false; rabXl.gagalMuat = true; rabXl.galat = e.message || 'Berkas tidak bisa dibuka.'; rabXlGambar(); });
+}
+function rabXlTerapHtml() {
+    var h = '';
+    if (rabXl.manual) {
+        h += '<div class="rabxl-peringatan"><b>Mode lanjutan.</b> RAB diedit manual di kotak isian di bawah. File Excel tidak ikut berubah, dan tab Excel dimatikan selama mode ini.' +
+             ' <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 ms-1" id="rabXlKembali">Kembali ke Excel</button></div>';
+        return h;
+    }
+    if (!rabXl.payload || !rabXl.hasil) {
+        if (rabXl.gagalMuat) { return h + '<div id="rabXlCek" style="margin-bottom:12px;">' + rabXlCekHtml() + '</div>'; }
+        rabXlMuatTerap();
+        return h + '<div class="rabxl-drop"><b>Memuat isi Excel...</b><span class="t">Sebentar ya.</span></div>';
+    }
+    h += '<div id="rabXlTiles"></div>';
+    h += '<div class="rabxl-tabrow"><div class="rabxl-tabs3" id="rabXlTabs"><button type="button" data-xt="ring">Ringkasan</button><button type="button" data-xt="rinci">Rincian</button><button type="button" data-xt="xl">Excel</button></div>' +
+         '<span class="rabxl-st" id="rabXlStatus"></span><button type="button" class="xg-pill ok" id="rabXlPill">Memeriksa...</button></div>';
+    h += '<div id="rabXlPRing"></div>';
+    h += '<div id="rabXlPRinci" hidden><div class="rabxl-doc"><table class="rabxl-doctbl" id="rabXlDoc"></table></div></div>';
+    h += '<div id="rabXlPXl" hidden><div class="rabxl-sub" style="margin:0 0 6px">Klik sel untuk melihat rumus, ketik untuk mengubah. Perubahan langsung disimpan ke file Excel dan mengisi ulang RAB.</div><div class="xg-wrap" id="rabXlWrap"><div id="rabXlGrid"></div></div></div>';
+    h += '<div class="rabxl-bawah"><button type="button" class="rabxl-link" id="rabXlUbahSheet">Ubah sheet yang dipakai</button><span>·</span><button type="button" class="rabxl-link" id="rabXlManual">Perlu mengubah tanpa Excel? Edit manual (lanjutan)</button></div>';
+    return h;
+}
+function rabXlTerapPasang(p) {
+    var q = function (s) { return p.querySelector(s); };
+    if (q('#rabXlKembali')) q('#rabXlKembali').addEventListener('click', function () {
+        if (!window.confirm('RAB akan diisi ulang dari file Excel, jadi perubahan manual di kotak isian akan hilang. Lanjutkan?')) return;
+        rabXlIsiKategori(); rabXl.manual = false; rabXl.waktu = rabXlSekarang(); rabXlSetHidden(); hitungRabLive(); rabXlGambar();
+    });
+    if (q('#rabXlManual')) q('#rabXlManual').addEventListener('click', function () { rabXl.manual = true; clearTimeout(rabXl.timer); rabXlGambar(); });
+    if (q('#rabXlUbahSheet')) q('#rabXlUbahSheet').addEventListener('click', function () { rabXl.tahap = 'dibaca'; rabXl.kembali = true; rabXl.galat = ''; rabXlSetHidden(); rabXlGambar(); });
+    p.querySelectorAll('#rabXlTabs [data-xt]').forEach(function (b) { b.addEventListener('click', function () { rabXlTab(b.dataset.xt); }); });
+    if (rabXl.payload && rabXl.hasil && !rabXl.manual) { rabXlTab(rabXl.tab || 'ring'); rabXlTerapIsi(); rabXlBangun(); }
+}
+function rabXlGambar() {
+    var p = document.getElementById('rabXlPanel'); if (!p) return;
+    var box = document.getElementById('rabExcelBox');
+    box.querySelectorAll('[data-xl-mode]').forEach(function (b) { b.classList.toggle('on', b.dataset.xlMode === rabXl.mode); });
+    var h = '';
+    rabXlAturTampilan();
+    if (rabXl.mode !== 'excel') { p.innerHTML = ''; return; }
+    if (rabXl.galat) { h += '<div class="rabxl-galat">' + escHtmlRab(rabXl.galat) + '</div>'; }
+    if (rabXl.busy) {
+        h += '<div class="rabxl-drop"><b>Membaca file...</b><span class="t">Sebentar ya, sistem sedang mengenali sheet dan kolomnya.</span></div>';
+    } else if (rabXl.tahap === 'kosong') {
+        h += '<div class="rabxl-drop" id="rabXlDrop"><b>Tarik file Excel RAB ke sini, atau pilih dari komputer</b><span class="t">Format .xlsx, maksimal 5 MB. Bebas format, tidak perlu memakai template.</span><button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlPilih">Pilih file Excel</button></div>';
+    } else if (rabXl.tahap === 'dibaca' && rabXl.hasil) {
+        h += rabXlFileKartu('<span class="rabxl-tag rekap">Belum diterapkan</span>', '');
+        h += '<div class="rabxl-hasil"><h6>Pilih sheet yang dipakai</h6><div class="rabxl-sub">Centang sheet yang mau dipakai, sheet lain diabaikan. Isi file Excel tampil di bawah dan rumusnya tetap hidup.</div><div class="xg-picks" id="rabXlPicks"></div>'
+            + '<div class="rabxl-xtop"><b>Isi file Excel</b><span class="rabxl-sub" style="margin:0">Klik sel untuk melihat rumus, ketik untuk mengubah. Angka lain ikut berubah.</span><span class="rabxl-st" id="rabXlStatus"></span><button type="button" class="xg-pill ok" id="rabXlPill">Memeriksa...</button></div>'
+            + '<div class="rabxl-legend"><span><i style="background:#16a34a"></i>Item biaya</span><span><i style="background:#2563eb"></i>Kegiatan / lokasi / kategori</span><span><i style="background:#cbd5e1"></i>Dilewati / pembanding</span><span><i style="background:#dc2626"></i>Perlu dicek</span></div>'
+            + '<div class="xg-wrap" id="rabXlWrap"><div id="rabXlGrid"></div><div id="rabXlKosong" class="rabxl-galat" hidden style="margin:0">Belum ada sheet yang dicentang.</div></div><div id="rabXlFoot"></div></div>';
+    } else if (rabXl.tahap === 'terapkan') {
+        h += rabXlFileKartu('<span class="rabxl-tag ok">Diimpor dari Excel</span>',
+            '<a class="btn btn-sm btn-outline-dark rounded-pill px-3" href="' + RAB_XL_BASE + '/po-rab-excel/' + escHtmlRab(rabXl.token) + '?unduh=1">Unduh</a>' +
+            '<button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3" id="rabXlGanti">Ganti file</button>');
+        h += rabXlTerapHtml();
+    }
+    p.innerHTML = h;
+    var q = function (s) { return p.querySelector(s); };
+    var pilihFile = function () { document.getElementById('rabXlFile').click(); };
+    if (q('#rabXlPilih')) q('#rabXlPilih').addEventListener('click', pilihFile);
+    if (q('#rabXlGanti')) q('#rabXlGanti').addEventListener('click', function () { rabXl.galat = ''; pilihFile(); });
+    if (rabXl.tahap === 'terapkan' && !rabXl.busy) { rabXlTerapPasang(p); }
+    if (rabXl.tahap === 'dibaca' && rabXl.hasil) { rabXlFootGambar(); rabXlBangun(); }
+    var dz = q('#rabXlDrop');
+    if (dz) {
+        ['dragenter', 'dragover'].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add('over'); }); });
+        ['dragleave', 'drop'].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.remove('over'); }); });
+        dz.addEventListener('drop', function (e) { var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) rabXlUnggah(f); });
     }
 }
 /* ============================================================ */
@@ -6808,6 +7431,33 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
         komposeDasar();
     }
+    // Perihal / Tentang otomatis ikut Judul Kegiatan, tapi tetap bisa diubah. Begitu diubah manual, tidak ditimpa lagi.
+    (function () {
+        var jd = document.getElementById('inputJudulKegiatan');
+        var tt = document.getElementById('dasarTentang');
+        if (!jd || !tt) return;
+        var info = document.getElementById('infoTentangJudul');
+        var btn = document.getElementById('btnTentangSamaJudul');
+        function norm(v) { return (v || '').trim().replace(/\s+/g, ' ').toLowerCase(); }
+        // PO lama yang Perihal-nya sudah diubah dari judul dibiarkan apa adanya (tidak ikut judul)
+        var ikut = (tt.value.trim() === '') || (norm(tt.value) === norm(jd.value));
+        function tampil() {
+            var sama = norm(tt.value) === norm(jd.value);
+            if (info) { info.textContent = sama ? 'Otomatis dari Judul Kegiatan, masih bisa diubah.' : 'Sudah diubah dari Judul Kegiatan.'; }
+            if (btn) { btn.classList.toggle('d-none', sama || jd.value.trim() === ''); }
+        }
+        if (tt.value.trim() === '' && jd.value.trim() !== '') { tt.value = jd.value.trim(); komposeDasar(); }
+        jd.addEventListener('input', function () {
+            if (ikut) { tt.value = jd.value; komposeDasar(); }
+            tampil();
+        });
+        tt.addEventListener('input', function () {
+            ikut = (tt.value.trim() === '') || (norm(tt.value) === norm(jd.value));
+            tampil();
+        });
+        if (btn) btn.addEventListener('click', function () { tt.value = jd.value.trim(); ikut = true; komposeDasar(); tampil(); tt.focus(); });
+        tampil();
+    })();
     tampilkanInfoPembayaran();
     initAllPoEditors();
 
@@ -6982,6 +7632,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var katList = (rab.pengeluaran && rab.pengeluaran.kategori) ? rab.pengeluaran.kategori : [];
         (katList.length ? katList : [{}]).forEach(function (k) { tambahKategori(k); });
+        rabXlInit(rab.sumber || null);
 
         // 6. Jadwal
         if (inJadwalMulai) inJadwalMulai.value = jadwalAuto ? jadwalAuto.mulai : (poData.jadwal_mulai || '');
@@ -7015,6 +7666,7 @@ document.addEventListener('DOMContentLoaded', function () {
         segarkanKosongTim();
         tambahItemPenerimaan({ nama: 'Nilai Kontrak', nominal: estimasiBiayaAwal });
         tambahKategori();
+        rabXlInit(null);
         
         // Inisialisasi tanggal default (1 bulan dari awal bulan berjalan)
         var today = new Date();

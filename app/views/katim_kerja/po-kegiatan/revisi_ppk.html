@@ -887,7 +887,7 @@
         /* ---------- Daftar ---------- */
         function renderHead() {
             var j = {
-                ppk: ['Daftar Review PO', 'PO yang sudah diverifikasi Humas dan diverifikasi Tim Mitra. Cek PO dan RAB, beri catatan per bagian lalu minta revisi, atau verifikasi kalau sudah sesuai.'],
+                ppk: ['Daftar Review PO', 'PO yang sudah diverifikasi Tim Mitra. Cek PO dan RAB, beri catatan per bagian lalu minta revisi, atau verifikasi kalau sudah sesuai.'],
                 katim: ['Revisi PPK BLU', 'Revisi yang diminta PPK BLU setelah Tim Mitra verifikasi. Putuskan siapa yang mengerjakan, review hasilnya, lalu kirim ke PPK BLU. PO yang belum pernah direvisi tidak muncul di sini, lihat di Daftar PO.'],
                 pembuat: ['Revisi PPK BLU', 'Revisi dari PPK BLU yang didisposisikan Ketua Tim kepada Anda. Posisi PO setelah Anda kirim bisa dilihat di tab Disetujui pada Daftar PO.']
             }[ROLE];
@@ -1527,8 +1527,8 @@
                 it(p.dibuat_at, 'PO dibuat (draf)', 'Ketua Pelaksana', 'bi-file-earmark-plus');
                 it(p.dikirim_at, 'PO dikirim ke Ketua Tim', 'Ketua Pelaksana', 'bi-send');
             }
-            if (!adaSetuju) { it(p.disetujui_at, 'Disetujui Ketua Tim. PO diteruskan ke Humas.', 'Ketua Tim', 'bi-check2-circle'); }
-            it(p.humas_ver_at, 'Diverifikasi', 'Humas', 'bi-patch-check');
+            if (!adaSetuju) { it(p.disetujui_at, 'Disetujui Ketua Tim. PO diteruskan ke Tim Mitra dan Humas (hanya melihat).', 'Ketua Tim', 'bi-check2-circle'); }
+            it(p.humas_baca_at, 'PO dibuka', 'Humas', 'bi-eye');
             it(p.mitra_valid_at, 'Diverifikasi', 'Tim Mitra', 'bi-patch-check');
             if (!a.some(function (x) { return x.oleh === 'PPK BLU' && /validasi|verifikasi/.test(x.teks); })) { it(p.ppk_valid_at, 'Diverifikasi', 'PPK BLU', 'bi-patch-check'); }
             a.sort(function (x, y) { return x.t < y.t ? -1 : (x.t > y.t ? 1 : 0); });

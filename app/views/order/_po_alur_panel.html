@@ -1,0 +1,139 @@
+<!-- Potongan HTML stepper alur PO untuk tab "Alur" di panel review Daftar PO (dirender OrderController::alurPoPanel).
+     Data dan tampilan sama dengan Tahap 8 di order/detail.html ({{ @po_alur }}). -->
+<style>
+    .pa-tl { display:flex; flex-wrap:wrap; margin:18px 0 16px; }
+    .pa-st { flex:1; min-width:130px; text-align:center; position:relative; padding:0 4px 4px; }
+    .pa-st::before { content:""; position:absolute; top:15px; left:-50%; width:100%; height:3px; background:#e2e8f0; z-index:0; }
+    .pa-st:first-child::before { display:none; }
+    .pa-st.done::before, .pa-st.cur::before, .pa-st.rev::before { background:#1e293b; }
+    .pa-dot { width:32px; height:32px; border-radius:50%; margin:0 auto 6px; display:grid; place-items:center; font-size:.8rem; font-weight:700; background:#e2e8f0; color:#64748b; position:relative; z-index:1; border:3px solid #fff; box-shadow:0 0 0 1px #e2e8f0; }
+    .pa-st.done .pa-dot { background:#1e293b; color:#fff; box-shadow:0 0 0 1px #1e293b; }
+    .pa-st.cur .pa-dot { background:#1e293b; color:#fff; box-shadow:0 0 0 4px #cbd5e1; }
+    .pa-st.rev .pa-dot { background:#dc2626; color:#fff; box-shadow:0 0 0 4px #fecaca; }
+    .pa-nm { font-size:.78rem; font-weight:700; line-height:1.2; color:#0f172a; }
+    .pa-ac { font-size:.7rem; color:#64748b; }
+    .pa-tg { font-size:.68rem; color:#475569; margin-top:2px; }
+    /* lama tiap pihak mengerjakan PO: angka di garis penghubung + keterangan diterima/dibuka + dropdown putaran revisi */
+    .pa-gl { position:absolute; top:-10px; left:calc(-50% + 20px); width:calc(100% - 40px); display:flex; justify-content:center; z-index:2; pointer-events:none; }
+    .pa-pill { pointer-events:auto; display:inline-flex; align-items:center; gap:4px; background:#fff; border:1px solid #1e293b; border-radius:999px; padding:2px 9px; font-size:.7rem; font-weight:700; color:#1e293b; white-space:nowrap; line-height:1.35; font-family:inherit; }
+    .pa-pill i { font-size:.62rem; transition:transform .15s; }
+    button.pa-pill { cursor:pointer; }
+    .pa-pill-rev { border-color:#b45309; color:#b45309; background:#fffbeb; }
+    .pa-pill[aria-expanded=true] i, .pa-rv[aria-expanded=true] i { transform:rotate(180deg); }
+    .pa-st.done.pa-hr::before { background:repeating-linear-gradient(90deg,#b45309 0 10px,transparent 10px 16px); }
+    .pa-bk { font-size:.66rem; color:#64748b; margin-top:2px; white-space:nowrap; }
+    .pa-rv { display:inline-flex; align-items:center; gap:3px; margin-top:5px; font:inherit; font-size:.66rem; font-weight:700; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:999px; padding:1px 8px; }
+    button.pa-rv { cursor:pointer; }
+    .pa-dd { position:absolute; top:calc(100% + 2px); left:50%; transform:translateX(-50%); width:380px; max-width:90vw; background:#fff; border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 10px 30px rgba(15,23,42,.16); padding:8px 6px; text-align:left; z-index:30; }
+    .pa-dd[hidden] { display:none; }
+    .pa-dd h5 { margin:2px 10px 6px; font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:#b45309; font-weight:700; }
+    .pa-dd .it { display:flex; gap:10px; padding:7px 10px; border-radius:8px; }
+    .pa-dd .it:hover { background:#f8fafc; }
+    .pa-dd .no { flex:0 0 20px; height:20px; border-radius:50%; background:#fffbeb; color:#b45309; border:1px solid #fde68a; display:grid; place-items:center; font-size:.68rem; font-weight:700; margin-top:1px; }
+    .pa-dd .tx { flex:1; min-width:0; font-size:.76rem; line-height:1.35; color:#0f172a; }
+    .pa-dd .tx .w { display:block; color:#64748b; font-size:.7rem; }
+    .pa-dd .pa-ddn { margin:0 10px 4px; font-size:.74rem; line-height:1.45; color:#475569; }
+    /* rincian putaran revisi, tampilan "per putaran": selebar kartu, di bawah stepper */
+    .pa-jl { margin:4px 0 16px; border:1px solid #e2e8f0; border-radius:14px; background:#f8fafc; padding:16px; text-align:left; }
+    .pa-jl[hidden] { display:none; }
+    .pa-jh { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:baseline; justify-content:space-between; margin-bottom:12px; }
+    .pa-jh h5 { margin:0; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:#b45309; font-weight:700; }
+    .pa-jc { display:flex; flex-wrap:wrap; gap:6px; }
+    .pa-jch { font-size:.72rem; font-weight:600; background:#fff; border:1px solid #e2e8f0; border-radius:999px; padding:2px 10px; color:#334155; }
+    .pa-jch b { color:#0f172a; }
+    .pa-jn { font-size:.72rem; color:#475569; background:#fff; border:1px dashed #cbd5e1; border-radius:10px; padding:7px 12px; margin-bottom:10px; line-height:1.45; }
+    .pa-jsum { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:12px; }
+    .pa-jlbl { font-size:.66rem; text-transform:uppercase; letter-spacing:.07em; color:#64748b; font-weight:600; }
+    .pa-jstk { display:flex; height:22px; border-radius:7px; overflow:hidden; border:1px solid #0f172a; margin:8px 0 10px; background:#fff; }
+    .pa-jstk > div { height:100%; min-width:2px; transform-origin:left; animation:paJGrow .6s ease both; }
+    .pa-s-ppk { background:#0f172a; } .pa-s-tim { background:#475569; } .pa-s-katim { background:#64748b; } .pa-s-ketupel { background:#cbd5e1; } .pa-s-mitra { background:#94a3b8; }
+    .pa-s-wait { background:repeating-linear-gradient(45deg,#e2e8f0 0 3px,#fff 3px 6px); }
+    .pa-jleg { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:.76rem; color:#0f172a; }
+    .pa-jleg span { display:inline-flex; gap:6px; align-items:center; }
+    .pa-jleg i { width:11px; height:11px; border-radius:3px; display:inline-block; border:1px solid #cbd5e1; }
+    .pa-jg { background:#fff; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:8px; overflow:hidden; animation:paJUp .35s ease both; }
+    .pa-jgb { all:unset; box-sizing:border-box; width:100%; display:flex; gap:10px; align-items:center; justify-content:space-between; padding:11px 14px; cursor:pointer; }
+    .pa-jgb:focus-visible { outline:2px solid #0f172a; outline-offset:-2px; }
+    .pa-jgt { display:block; font-weight:700; font-size:.86rem; color:#0f172a; }
+    .pa-jgs { display:block; color:#64748b; font-size:.74rem; }
+    .pa-jgr { font-weight:700; font-size:.82rem; color:#0f172a; white-space:nowrap; display:inline-flex; gap:8px; align-items:center; }
+    .pa-jgr i { font-style:normal; font-size:.6rem; transition:transform .2s; }
+    .pa-jg:not(.open) .pa-jgr i { transform:rotate(-90deg); }
+    .pa-jgbd { display:grid; grid-template-rows:0fr; transition:grid-template-rows .3s ease; }
+    .pa-jg.open .pa-jgbd { grid-template-rows:1fr; }
+    .pa-jgbd > div { overflow:hidden; min-height:0; }
+    .pa-jrw { display:grid; grid-template-columns:30px 1fr auto; gap:10px; align-items:start; padding:10px 14px; border-top:1px solid #e2e8f0; }
+    .pa-jdu { font-weight:700; font-size:.82rem; white-space:nowrap; color:#0f172a; }
+    @keyframes paJGrow { from { transform:scaleX(0); opacity:.2; } to { transform:scaleX(1); opacity:1; } }
+    @keyframes paJUp { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+    .pa-jtx { min-width:0; font-size:.82rem; color:#0f172a; }
+    .pa-jtx b { display:block; }
+    .pa-jtx span { display:block; color:#64748b; font-size:.74rem; }
+    .pa-jsub { margin:4px 0 4px 18px; padding:0; font-size:.78rem; color:#334155; line-height:1.5; }
+    .pa-jem { display:block; font-style:normal; color:#64748b; font-size:.72rem; margin:0 0 4px; }
+    .pa-jav { flex:none; width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-size:.66rem; font-weight:700; border:2px solid #0f172a; background:#fff; color:#0f172a; }
+    .pa-jav.ppk { background:#0f172a; color:#fff; }
+    .pa-jav.ketupel { background:#f1f5f9; border-style:dashed; }
+    @media (prefers-reduced-motion:reduce) { .pa-jstk > div, .pa-jg { animation:none; } .pa-jgbd, .pa-jgr i { transition:none; } }
+    .pa-dd .du { font-weight:700; color:#b45309; white-space:nowrap; font-size:.76rem; }
+    .pa-lgd { font-size:.68rem; color:#64748b; text-align:center; margin:-6px 0 14px; }
+    .pa-st.cur .pa-tg { color:#1e293b; font-weight:600; }
+    .pa-st.rev .pa-tg { color:#dc2626; font-weight:600; }
+    .pa-st.cur::before { background:repeating-linear-gradient(90deg,#1e293b 0 8px,#cbd5e1 8px 16px); background-size:32px 3px; animation:paMarch 1s linear infinite; }
+    @keyframes paMarch { to { background-position:32px 0; } }
+    .pa-st.cur .pa-dot::after, .pa-st.rev .pa-dot::after { content:""; position:absolute; inset:-6px; border-radius:50%; border:2px solid #1e293b; opacity:0; animation:paRing 1.8s ease-out infinite; }
+    .pa-st.rev .pa-dot::after { border-color:#dc2626; }
+    @keyframes paRing { 0% { transform:scale(.7); opacity:.7; } 100% { transform:scale(1.25); opacity:0; } }
+    .rvw-alurx .pa-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:22px 14px 10px; margin-bottom:14px; }
+    .rvw-alurx .pa-card .pa-tl { margin-top:14px; }
+    .rvw-alurx .pa-now { border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; margin-bottom:14px; background:#fff; }
+    .rvw-alurx .pa-eyebrow { display:block; font-size:.66rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#64748b; }
+    .rvw-alurx .pa-jdl { font-size:1.02rem; font-weight:800; margin:3px 0 4px; line-height:1.3; color:#0f172a; }
+    .rvw-alurx .pa-tx { margin:0; color:#475569; font-size:.84rem; }
+    .rvw-alurx .pa-meta { display:inline-flex; align-items:center; gap:7px; margin-top:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:99px; padding:3px 12px 3px 10px; font-size:.72rem; font-weight:600; color:#0f172a; }
+    .rvw-alurx .pa-meta .pa-pd { width:8px; height:8px; border-radius:50%; background:#1e293b; animation:paPd 1.6s infinite; }
+    @keyframes paPd { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+</style>
+<div class="rvw-alurx">
+    <div class="pa-card">
+        <div class="pa-tl">
+            <repeat group="{{ @po_alur.langkah }}" value="{{ @l }}">
+                <div class="pa-st {{ @l.cls }}{{ @l.rev_tag && @l.cls == 'done' ? ' pa-hr' : '' }}" data-no="{{ @l.no }}">
+                    <check if="{{ @l.gl }}">
+                        <div class="pa-gl"><check if="{{ @l.gl_rev }}"><true><button type="button" class="pa-pill pa-pill-rev" onclick="paDd(this)" aria-expanded="false" title="Total waktu langkah ini, termasuk revisi. Klik untuk rincian putaran.">{{ @l.gl }} <i class="bi bi-chevron-down"></i></button></true><false><span class="pa-pill" title="{{ @l.no == 1 ? 'Waktu pengerjaan: dihitung dari disposisi ke Ketua Pelaksana sampai PO dikirim.' : 'Waktu pengerjaan: dihitung dari PO diterima sampai diteruskan ke pihak berikutnya.' }}">{{ @l.gl }}</span></false></check></div>
+                    </check>
+                    <div class="pa-dot">{{ @l.dot | raw }}</div>
+                    <div class="pa-nm">{{ @l.nama }}</div>
+                    <div class="pa-ac">{{ @l.aktor }}</div>
+                    <check if="{{ @l.tag }}"><div class="pa-tg">{{ @l.tag }}</div></check>
+                    <repeat group="{{ @l.bk }}" value="{{ @b }}"><div class="pa-bk">{{ @b }}</div></repeat>
+                    <check if="{{ @l.tag2 }}"><div class="pa-tg" style="color: {{ @l.tag2_cls == 'u' ? '#dc2626' : '#475569' }}; font-weight: 600;">{{ @l.tag2 }}</div></check>
+                    <check if="{{ @l.rev_tag }}">
+                        <check if="{{ @l.dd_ada }}"><true><div><button type="button" class="pa-rv" onclick="paDd(this)" aria-expanded="false">{{ @l.rev_tag }} <i class="bi bi-chevron-down"></i></button></div></true><false><div><span class="pa-rv">{{ @l.rev_tag }}</span></div></false></check>
+                    </check>
+                    <check if="{{ @l.dd_ada && !@l.jalur }}">
+                        <div class="pa-dd" hidden>
+                            <h5>{{ @l.dd_judul }}</h5>
+                            <repeat group="{{ @l.dd }}" value="{{ @r }}">
+                                <div class="it"><span class="no">{{ @r.no }}</span><div class="tx">{{ @r.pihak }}<span class="w">{{ @r.waktu }}</span></div><div class="du">{{ @r.lama }}</div></div>
+                            </repeat>
+                            <check if="{{ @l.dd_info }}"><div class="pa-ddn">{{ @l.dd_info }}</div></check>
+                        </div>
+                    </check>
+                </div>
+            </repeat>
+        </div>
+        <div class="pa-lgd">Angka di atas garis = waktu pengerjaan langkah di sebelah kanannya: dihitung dari PO diterima (didisposisikan) sampai diteruskan ke pihak berikutnya, termasuk waktu menunggu dibuka. Untuk Penyusunan (langkah pertama) angkanya ditulis di bawah langkahnya.</div>
+    </div>
+    <repeat group="{{ @po_alur.langkah }}" value="{{ @l }}">
+        <check if="{{ @l.jalur }}"><div class="pa-jl" id="paJl{{ @l.no }}" hidden>{{ @l.jalur | raw }}</div></check>
+    </repeat>
+    <check if="{{ @po_alur.info.html }}">
+        <div class="pa-now">
+            <span class="pa-eyebrow">{{ @po_alur.info.eyebrow }}</span>
+            <h3 class="pa-jdl">{{ @po_alur.info.judul }}</h3>
+            <p class="pa-tx">{{ @po_alur.info.html | raw }}</p>
+            <check if="{{ @po_alur.info.pihak }}"><span class="pa-meta"><span class="pa-pd"></span>{{ @po_alur.info.pihak }}</span></check>
+        </div>
+    </check>
+</div>

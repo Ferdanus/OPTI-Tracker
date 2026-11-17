@@ -153,6 +153,18 @@
 .termin-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 8px; background: #fff; }
 .termin-item .row-info { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rpd-foot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--color-border, #e2e8f0); background: #fff; }
+.btn-lampiran-clip {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    transition: all 0.15s ease-in-out;
+}
+.btn-lampiran-clip:hover {
+    background-color: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+    transform: translateY(-1px);
+}
 </style>
 
 <div class="container-fluid px-0">
@@ -208,7 +220,7 @@
                 <div class="col-12 col-sm flex-grow-1">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                        <input type="text" id="filterSearch" class="form-control border-start-0" placeholder="Cari nomor order, permintaan, mitra industri, kegiatan..." autocomplete="off">
+                        <input type="text" id="filterSearch" class="form-control border-start-0" placeholder="Cari nomor order, permintaan, pelanggan, kegiatan..." autocomplete="off">
                         <button class="btn btn-outline-secondary border-start-0 text-muted d-none" type="button" id="btnClearSearch" title="Hapus pencarian">
                             <i class="bi bi-x-lg"></i>
                         </button>
@@ -278,12 +290,12 @@
                         <thead class="bg-light">
                             <tr>
                                 <th class="text-center" style="width: 45px;">No</th>
-                                <th style="width: 170px;">No. Permintaan</th>
-                                <th>Judul Permohonan &amp; Klien</th>
-                                <th class="text-center" style="width: 150px;">Divisi OPTI</th>
+                                <th style="width: 165px;">No. &amp; Tgl Order</th>
+                                <th style="min-width: 290px;">Judul Permohonan &amp; Klien</th>
+                                <th class="text-center" style="width: 110px;">Divisi OPTI</th>
                                 <th class="text-end" style="width: 160px;">Nilai Acuan</th>
                                 <th style="width: 140px;">Tanggal Masuk</th>
-                                <th class="text-center" style="width: 160px;">Aksi</th>
+                                <th class="text-center" style="width: 175px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="bodyBaru"></tbody>
@@ -299,13 +311,13 @@
                         <thead class="bg-light">
                             <tr>
                                 <th class="text-center" style="width: 45px;">No</th>
-                                <th style="width: 170px;">No. Order / Identitas</th>
-                                <th>Judul Permohonan &amp; Klien</th>
-                                <th class="text-center" style="width: 150px;">Divisi OPTI</th>
+                                <th style="width: 165px;">No. &amp; Tgl Order</th>
+                                <th style="min-width: 280px;">Judul Kegiatan &amp; Klien</th>
+                                <th class="text-center" style="width: 110px;">Divisi OPTI</th>
                                 <th class="text-end" style="width: 150px;">Nilai Acuan</th>
                                 <th style="width: 190px;">Total Terbayar</th>
                                 <th class="text-end" style="width: 150px;">Sisa Tagihan</th>
-                                <th class="text-center" style="width: 140px;">Aksi</th>
+                                <th class="text-center" style="width: 150px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="bodyBerjalan"></tbody>
@@ -321,9 +333,9 @@
                         <thead class="bg-light">
                             <tr>
                                 <th class="text-center" style="width: 45px;">No</th>
-                                <th style="width: 170px;">No. Order</th>
-                                <th>Judul Permohonan &amp; Klien</th>
-                                <th class="text-center" style="width: 150px;">Divisi OPTI</th>
+                                <th style="width: 165px;">No. &amp; Tgl Order</th>
+                                <th style="min-width: 280px;">Judul Kegiatan &amp; Klien</th>
+                                <th class="text-center" style="width: 110px;">Divisi OPTI</th>
                                 <th class="text-end" style="width: 150px;">Nilai Acuan</th>
                                 <th style="width: 140px;">Tanggal Lunas</th>
                                 <th class="text-center" style="width: 110px;">Termin</th>
@@ -343,12 +355,14 @@
                         <thead class="bg-light">
                             <tr>
                                 <th class="text-center" style="width: 45px;">No</th>
-                                <th style="width: 130px;">Tanggal Bayar</th>
-                                <th style="width: 160px;">No. Order</th>
-                                <th>Mitra &amp; Keterangan</th>
-                                <th class="text-center" style="width: 100px;">Termin</th>
-                                <th class="text-end" style="width: 160px;">Nominal</th>
-                                <th class="text-center" style="width: 90px;">Bukti</th>
+                                <th style="width: 165px;">No. &amp; Tgl Order</th>
+                                <th style="min-width: 280px;">Judul Kegiatan &amp; Klien</th>
+                                <th style="min-width: 200px;">Catatan</th>
+                                <th class="text-center" style="width: 110px;">Divisi OPTI</th>
+                                <th style="width: 165px;">Tanggal Bayar</th>
+                                <th class="text-center" style="width: 90px;">Termin</th>
+                                <th class="text-end" style="width: 150px;">Nominal</th>
+                                <th class="text-center" style="width: 100px;">Bukti</th>
                                 <th class="text-center" style="width: 80px;">Aksi</th>
                             </tr>
                         </thead>
@@ -361,25 +375,102 @@
     </div>
 </div>
 
-<!-- ===== MODAL DETAIL PEMBAYARAN LUNAS ===== -->
+<!-- ===== MODAL DETAIL PEMBAYARAN (tampilan sama dengan Detail Pembayaran di detail order) ===== -->
 <div class="modal fade" id="modalDetailLunas" tabindex="-1" aria-labelledby="detailLunasJudul" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
-        <div class="modal-content rpd-modal">
-            <div class="modal-header rpd-head">
-                <div class="rpd-icon"><i class="bi bi-receipt-cutoff"></i></div>
-                <div class="rpd-headtext">
-                    <h6 class="modal-title" id="detailLunasJudul">Detail Pembayaran Lunas</h6>
-                    <div class="rpd-sub" id="detailLunasSub">-</div>
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title fw-bold text-dark mb-0" id="detailLunasJudul"><i class="bi bi-receipt me-2"></i>Detail Pembayaran</h6>
+                    <div class="small text-muted" id="detailLunasSub">-</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
-            <div class="modal-body rpd-body">
-                <div class="rpd-stats" id="detailLunasInfo"></div>
-                <div class="rpd-section-title">Riwayat Termin Terbayar</div>
-                <div class="rpd-list" id="detailLunasList"></div>
+            <div class="modal-body">
+                <div class="row g-2 mb-3" id="detailLunasInfo"></div>
+                <div class="progress mb-1" style="height: 6px;">
+                    <div class="progress-bar bg-dark" id="dlBar" role="progressbar" style="width: 0%;"></div>
+                </div>
+                <div class="small text-muted mb-3"><span id="dlPct">0</span>% dari tagihan sudah terbayar.</div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead class="text-muted">
+                            <tr>
+                                <th class="fw-semibold">Termin</th>
+                                <th class="fw-semibold">Tanggal</th>
+                                <th class="fw-semibold text-end">Jumlah</th>
+                                <th class="fw-semibold">Metode / NTPN</th>
+                                <th class="fw-semibold">Status</th>
+                                <th class="fw-semibold text-end">Bukti</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailLunasList"></tbody>
+                    </table>
+                </div>
             </div>
-            <div class="modal-footer rpd-foot">
-                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Tutup</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light border btn-sm fw-semibold px-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+#modalDetailLunas .dp-lihat { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 500; line-height: 1.4; padding: 5px 12px; border: 1px solid #e2e8f0; border-radius: 99px; background: #fff; color: #0f172a; cursor: pointer; transition: background .2s, color .2s, border-color .2s, transform .15s; }
+#modalDetailLunas .dp-lihat:hover { background: #0f172a; color: #fff; border-color: #0f172a; }
+#modalDetailLunas .dp-lihat:active { transform: scale(.96); }
+#modalDetailLunas .dp-lihat:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
+#modalDetailLunas #dlBar.dp-anim { transition: width 1.1s cubic-bezier(.22, .8, .2, 1) .15s; }
+#modalDetailLunas.dp-go tbody tr { animation: dlUp .45s ease-out both; }
+#modalDetailLunas.dp-go tbody tr:nth-child(1) { animation-delay: .25s; }
+#modalDetailLunas.dp-go tbody tr:nth-child(2) { animation-delay: .36s; }
+#modalDetailLunas.dp-go tbody tr:nth-child(3) { animation-delay: .47s; }
+#modalDetailLunas.dp-go tbody tr:nth-child(n+4) { animation-delay: .58s; }
+@keyframes dlUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+    #modalDetailLunas #dlBar.dp-anim { transition: none; }
+    #modalDetailLunas.dp-go tbody tr { animation: none; }
+}
+</style>
+
+<!-- ======================================================== -->
+<!-- MODAL POP-UP SEMUA MEDIA & LAMPIRAN ORDER -->
+<!-- ======================================================== -->
+<div class="modal fade" id="modalDaftarLampiranOrder" tabindex="-1" aria-labelledby="modalDaftarLampiranOrderLabel" aria-hidden="true" style="z-index: 1055;">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header py-3 px-4 bg-white border-bottom align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background:#fef3c7; color:#b45309; width:44px; height:44px;">
+                        <i class="bi bi-paperclip fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark m-0 d-flex align-items-center gap-2" id="modalDaftarLampiranOrderLabel">
+                            Lampiran &amp; Media Order
+                            <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle fw-semibold px-2 py-0.5" id="modalLampiranBadgeCount" style="font-size:0.75rem;">
+                                Memuat...
+                            </span>
+                        </h6>
+                        <div class="text-muted small mt-0.5">
+                            <span class="fw-semibold text-dark font-monospace" id="modalLampiranNomorOrder">-</span> &bull; 
+                            <span id="modalLampiranNamaPerusahaan">-</span>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+
+            <div class="modal-body p-3 p-md-4 bg-light" id="modalLampiranBody" style="min-height: 280px;">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="small text-muted mt-2 mb-0">Memuat semua berkas &amp; lampiran order...</p>
+                </div>
+            </div>
+
+            <div class="modal-footer py-2 px-4 bg-white border-top d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i> Klik <strong>Lihat Pratinjau</strong> untuk melihat dokumen langsung di layar, atau <strong>Buka Tab Baru</strong>.
+                </small>
+                <button type="button" class="btn btn-secondary btn-sm px-3 rounded-2" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -412,39 +503,87 @@ function bukaDetailLunas(orderId) {
     if (!order) return;
 
     var noOrderTampil = order.nomor_order || order.nomor_permintaan || ('REQ-' + order.id);
-    document.getElementById('detailLunasSub').innerHTML = '<span class="font-monospace fw-bold text-dark">' + noOrderTampil + '</span>';
-    
-    document.getElementById('detailLunasInfo').innerHTML =
-        '<div class="rpd-stat"><div class="l">Mitra / Perusahaan</div><div class="v text-truncate" title="' + order.nama_perusahaan + '">' + order.nama_perusahaan + '</div></div>' +
-        '<div class="rpd-stat"><div class="l">Nilai Total Acuan</div><div class="v text-dark font-monospace">' + rupiah(order.biaya_acuan) + '</div></div>' +
-        '<div class="rpd-stat"><div class="l">Tanggal Pelunasan</div><div class="v text-dark">' + tglIndo(order.tanggal_lunas) + '</div></div>';
+    document.getElementById('detailLunasSub').textContent = noOrderTampil + ' \u2022 Lunas';
 
     var terminList = DATA_HISTORI.filter(function (h) { return String(h.order_id) === String(orderId); });
-    terminList.sort(function (a, b) { return new Date(a.tanggal_bayar) - new Date(b.tanggal_bayar); });
+    terminList.sort(function (a, b) {
+        var t = (parseInt(a.termin_ke, 10) || 0) - (parseInt(b.termin_ke, 10) || 0);
+        return t !== 0 ? t : (new Date(a.tanggal_bayar) - new Date(b.tanggal_bayar));
+    });
+
+    var nilai = Number(order.biaya_acuan) || 0;
+    var total = Number(order.total_terbayar);
+    if (!(total >= 0)) {
+        total = terminList.reduce(function (s, h) { return s + ((String(h.status_verifikasi || 'terverifikasi') === 'terverifikasi' && !parseInt(h.is_kesanggupan_bayar || 0, 10)) ? (Number(h.jumlah) || 0) : 0); }, 0);
+    }
+    var kartu = function (label, nilaiTeks) {
+        return '<div class="col-sm-4"><div class="bg-light rounded-3 p-3 h-100"><div class="text-muted" style="font-size: 0.75rem;">' + label + '</div><div class="fw-semibold text-dark">' + nilaiTeks + '</div></div></div>';
+    };
+    document.getElementById('detailLunasInfo').innerHTML =
+        kartu('Nilai tagihan', rupiah(nilai)) + kartu('Total dibayar', rupiah(total)) + kartu('Sisa tagihan', 'Rp 0');
+
+    var BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    var tglPendek = function (str) {
+        if (!str) return '-';
+        var d = new Date(String(str).replace(' ', 'T'));
+        return isNaN(d.getTime()) ? str : (d.getDate() + ' ' + BLN[d.getMonth()] + ' ' + d.getFullYear());
+    };
+    var judulKata = function (s) { return String(s).replace(/_/g, ' ').replace(/\b\w/g, function (m) { return m.toUpperCase(); }); };
+    var kecil = function (t) { return '<span class="d-block text-muted" style="font-size: 0.72rem;">' + escAttr(t) + '</span>'; };
 
     var listEl = document.getElementById('detailLunasList');
     listEl.innerHTML = terminList.length === 0
-        ? '<div class="text-muted small text-center py-4 bg-white rounded border border-dashed">Belum ada riwayat termin.</div>'
+        ? '<tr><td colspan="6" class="text-muted small text-center py-4">Belum ada riwayat termin.</td></tr>'
         : terminList.map(function (h) {
-            var btnBukti = h.bukti_bayar
-                ? '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 btn-preview-pdf" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Termin Ke-' + h.termin_ke + '"><i class="bi bi-file-earmark-text me-1"></i>Bukti Bayar</button>'
-                : '<span class="text-muted small">Tanpa lampiran bukti</span>';
-            return '<div class="termin-item shadow-sm">' +
-                '<div class="row-info">' +
-                    '<div class="d-flex align-items-center gap-2">' +
-                        '<span class="badge bg-light text-dark border px-2 py-1 fw-bold">Termin ke-' + h.termin_ke + '</span>' +
-                        '<span class="small text-muted"><i class="bi bi-calendar3 me-1"></i>' + tglIndo(h.tanggal_bayar) + '</span>' +
-                    '</div>' +
-                    '<span class="fw-bold text-dark font-monospace fs-6">' + rupiah(h.jumlah) + '</span>' +
-                '</div>' +
-                '<div class="row-info mt-2 pt-2 border-top">' +
-                    '<span class="small text-muted text-break">' + (h.keterangan ? h.keterangan : 'Pembayaran termin order') + '</span>' +
-                    btnBukti +
-                '</div>' +
-            '</div>';
+            var kb = !!parseInt(h.is_kesanggupan_bayar || 0, 10);
+            var metode = kb ? 'Surat Kesanggupan Bayar' : escAttr(judulKata(h.metode_pembayaran || 'transfer_bank'));
+            var info = (h.nomor_transaksi_ntpn ? kecil('NTPN ' + h.nomor_transaksi_ntpn) : '') +
+                       (h.keterangan ? kecil(h.keterangan) : '') +
+                       (h.verifikator_nama ? kecil('Diverifikasi oleh ' + h.verifikator_nama) : '');
+            var status;
+            if (kb) { status = '<span class="badge bg-light text-dark border">Tercatat</span>'; }
+            else if (String(h.status_verifikasi || 'terverifikasi') === 'terverifikasi') { status = '<span class="badge bg-dark">Terverifikasi</span>'; }
+            else { status = '<span class="badge bg-light text-dark border">Menunggu verifikasi</span>'; }
+            var bukti;
+            if (kb) {
+                bukti = order.sp_id
+                    ? '<button type="button" class="dp-lihat btn-preview-pdf" data-preview-pdf="' + BASE + '/surat-penawaran/' + order.sp_id + '/surat-kesanggupan/preview" data-title="Surat Kesanggupan Bayar" data-subtitle="Order: ' + escAttr(noOrderTampil) + '"><i class="bi bi-eye"></i>Lihat</button>'
+                    : '<span class="text-muted small">Belum ada file</span>';
+            } else if (h.bukti_bayar) {
+                bukti = '<button type="button" class="dp-lihat btn-preview-pdf" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Termin ' + escAttr(h.termin_ke) + ' \u2022 ' + escAttr(noOrderTampil) + '"><i class="bi bi-eye"></i>Lihat</button>';
+            } else {
+                bukti = '<span class="text-muted small">Belum ada file</span>';
+            }
+            return '<tr>' +
+                '<td class="text-nowrap">' + (kb ? 'Kesanggupan' : 'Termin ' + escAttr(h.termin_ke)) + '</td>' +
+                '<td class="text-nowrap">' + tglPendek(h.tanggal_bayar) + '</td>' +
+                '<td class="text-end text-nowrap">' + (kb ? '-' : rupiah(h.jumlah)) + '</td>' +
+                '<td>' + metode + info + '</td>' +
+                '<td class="text-nowrap">' + status + '</td>' +
+                '<td class="text-end text-nowrap">' + bukti + '</td>' +
+            '</tr>';
         }).join('');
 
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetailLunas')).show();
+    var modalEl = document.getElementById('modalDetailLunas');
+    var bar = document.getElementById('dlBar'), pctEl = document.getElementById('dlPct');
+    modalEl.classList.remove('dp-go');
+    bar.classList.remove('dp-anim'); bar.style.width = '0%'; pctEl.textContent = '0';
+    modalEl.addEventListener('shown.bs.modal', function animasi() {
+        modalEl.removeEventListener('shown.bs.modal', animasi);
+        void modalEl.offsetWidth;
+        modalEl.classList.add('dp-go');
+        bar.classList.add('dp-anim');
+        window.requestAnimationFrame(function () { bar.style.width = '100%'; });
+        var t0 = null, dur = 1100;
+        var langkah = function (ts) {
+            if (t0 === null) { t0 = ts + 150; }
+            var p = Math.min(1, Math.max(0, (ts - t0) / dur));
+            pctEl.textContent = Math.round(100 * (1 - Math.pow(1 - p, 3)));
+            if (p < 1) { window.requestAnimationFrame(langkah); }
+        };
+        window.requestAnimationFrame(langkah);
+    });
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
 
 var BASE = '{{ @BASE }}';
@@ -664,27 +803,89 @@ function terapkanFilter() {
     }
 }
 
+
+/* ===== HELPER TAMPILAN GAYA DAFTAR ORDER ===== */
+function escAttr(t) {
+    return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function tglSingkat(str) {
+    if (!str) return '-';
+    var p = String(str).substr(0, 10).split('-');
+    if (p.length !== 3) return str;
+    return p[2] + '/' + p[1] + '/' + p[0];
+}
+function divisiPill(d) {
+    if (d === 'selulosa') return '<span class="badge rounded-pill bg-light text-dark border px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Selulosa</span>';
+    if (d === 'lingkungan') return '<span class="badge rounded-pill bg-light text-dark border px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">Lingkungan</span>';
+    return '<span class="badge rounded-pill bg-light text-muted border px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">-</span>';
+}
+var SALURAN = {
+    whatsapp:        ['bi-chat-dots', 'WhatsApp'],
+    telepon:         ['bi-telephone', 'Telepon'],
+    email:           ['bi-envelope-at', 'E-mail'],
+    fax:             ['bi-printer', 'Fax'],
+    datang_langsung: ['bi-building', 'Datang Langsung'],
+    website:         ['bi-laptop', 'Website']
+};
+function saluranBadge(o, tambahan) {
+    var m = String(o.media_permohonan || 'surat').toLowerCase();
+    var c = SALURAN[m] || ['bi-envelope-paper', 'Surat'];
+    var h = '<span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: ' + c[1] + '">' +
+        '<i class="bi ' + c[0] + ' me-1 text-secondary"></i>' + c[1] + '</span>';
+    if (o.file_bukti_permohonan) {
+        h += '<button type="button" class="badge bg-light text-dark border text-decoration-none px-1.5 py-0.5 rounded-pill btn-preview-pdf" style="font-size: 0.68rem; cursor: pointer;" ' +
+            'data-preview-pdf="' + escAttr(BASE + '/' + o.file_bukti_permohonan) + '" data-title="Berkas Bukti Permohonan Langsung" ' +
+            'data-subtitle="' + escAttr(o.nomor_permintaan || o.nomor_order || '') + '" title="Pratinjau Berkas Bukti Permohonan" onclick="event.stopPropagation();">' +
+            '<i class="bi bi-paperclip me-0.5 text-primary"></i>Bukti</button>';
+    }
+    return '<div class="d-flex align-items-center flex-wrap gap-1 mb-1">' + h + (tambahan || '') + '</div>';
+}
+function durasiBadge(o) {
+    if (o.durasi_ditentukan) {
+        return '<div class="mt-1" style="font-size: 0.72rem;"><span class="badge ' + (o.durasi_badge_class || 'bg-success-subtle text-success border border-success-subtle') + ' px-1.5 py-0.5" title="' + escAttr(o.durasi_tooltip) + '">' +
+            '<i class="bi bi-clock me-1"></i>' + (o.durasi_tampil || '') + '</span></div>';
+    }
+    return '<div class="mt-1" style="font-size: 0.72rem;"><span class="text-muted fst-italic">Belum ditentukan</span></div>';
+}
+function kolomNoTgl(o) {
+    var h = '';
+    if (o.nomor_order) {
+        h += '<div class="fw-bold text-dark small font-monospace">' + o.nomor_order + '</div>';
+        if (o.nomor_permintaan) h += '<div class="text-muted font-monospace" style="font-size: 0.72rem;">' + o.nomor_permintaan + '</div>';
+    } else {
+        h += '<div class="fw-bold text-dark small font-monospace">' + (o.nomor_permintaan || ('REQ-' + o.id)) + '</div>';
+    }
+    h += '<div class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-calendar3 me-1"></i>' + tglSingkat(o.tanggal_masuk || o.created_at) + '</div>';
+    return h + durasiBadge(o);
+}
+function kolomJudul(o) {
+    // Badge Kesanggupan Bayar ditaruh sejajar badge saluran (di atas) supaya baris tidak memakan tempat
+    var skb = o.surat_kesanggupan_bayar ? skbBadge(o).replace('<div class="mt-1">', '<span class="d-inline-flex">').replace(/<\/div>$/, '</span>') : '';
+    return saluranBadge(o, skb) +
+        '<div class="fw-semibold text-dark mb-1 d-flex align-items-start gap-1" title="' + escAttr(o.nama_perusahaan) + '">' +
+            '<i class="bi bi-building text-secondary flex-shrink-0 mt-1" style="font-size: 0.85rem;"></i>' +
+            '<span style="line-height: 1.35;">' + (o.nama_perusahaan || '-') + '</span>' +
+        '</div>' +
+        '<div class="small text-muted mt-0.5" style="line-height: 1.35;" title="' + escAttr(o.judul_kegiatan) + '">' + (o.judul_kegiatan || '-') + '</div>';
+}
+function tombolLampiran(o) {
+    var noTampil = o.nomor_order || o.nomor_permintaan || ('REQ-' + o.id);
+    return '<button type="button" class="btn btn-sm px-2 py-1 d-inline-flex align-items-center justify-content-center shadow-none btn-lampiran-clip btn-modal-lampiran-order" ' +
+        'data-order-id="' + o.id + '" data-nomor-order="' + escAttr(noTampil) + '" data-perusahaan="' + escAttr(o.nama_perusahaan) + '" ' +
+        'title="Lihat Semua Lampiran &amp; Media Order (Surat, SPH, Bukti Bayar, dll)"><i class="bi bi-paperclip fs-6"></i></button>';
+}
+
 /* ===== TAB 1: BARU MASUK ===== */
 function renderBaru(list) {
     var body = document.getElementById('bodyBaru');
     body.innerHTML = list.length === 0
         ? renderEmptyState('bi-inbox', 'Tidak Ada Order Baru', 'Tidak ada data permohonan baru yang menunggu pembayaran pada kriteria ini.')
         : list.map(function (o, idx) {
-            var noId = o.nomor_permintaan ? o.nomor_permintaan : (o.nomor_order ? o.nomor_order : ('REQ-' + o.id));
             return '<tr>' +
                 '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
-                '<td>' +
-                    '<div class="fw-bold text-dark font-monospace small">' + noId + '</div>' +
-                    skbBadge(o) +
-                '</td>' +
-                '<td>' +
-                    '<div class="fw-semibold text-dark mb-1" title="' + (o.judul_kegiatan || '') + '">' + (o.judul_kegiatan || '-') + '</div>' +
-                    '<div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">' +
-                        '<i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>' +
-                        '<span class="text-secondary fw-medium" style="line-height: 1.35;">' + (o.nama_perusahaan || '-') + '</span>' +
-                    '</div>' +
-                '</td>' +
-                '<td class="text-center">' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+                '<td>' + kolomNoTgl(o) + '</td>' +
+                '<td>' + kolomJudul(o) + '</td>' +
+                '<td class="text-center">' + divisiPill(o.jenis_layanan_opti) + '</td>' +
                 '<td class="text-end">' +
                     '<div class="fw-bold text-dark font-monospace small">' + rupiah(o.biaya_acuan) + '</div>' +
                     (o.nominal_penawaran ? '' : '<div class="text-muted" style="font-size:.68rem;">*estimasi biaya</div>') +
@@ -695,9 +896,11 @@ function renderBaru(list) {
                     '</div>' +
                 '</td>' +
                 '<td class="text-center">' +
-                    '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm" style="background:#1e293b; border-color:#1e293b;">' +
-                        '<i class="bi bi-plus-circle"></i> <span>Catat Bayar</span>' +
-                    '</a>' +
+                    '<div class="d-inline-flex align-items-center gap-1">' +
+                        '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm" style="background:#1e293b; border-color:#1e293b;">' +
+                            '<i class="bi bi-plus-circle"></i> <span>Catat Bayar</span>' +
+                        '</a>' +
+                    '</div>' +
                 '</td>' +
             '</tr>';
         }).join('');
@@ -732,22 +935,11 @@ function renderBerjalan(list) {
     body.innerHTML = list.length === 0
         ? renderEmptyState('bi-gear-wide-connected', 'Tidak Ada Pembayaran Berjalan', 'Semua order telah lunas atau belum memulai proses pembayaran.')
         : list.map(function (o, idx) {
-            var noId = o.nomor_order ? o.nomor_order : (o.nomor_permintaan ? o.nomor_permintaan : ('REQ-' + o.id));
-
             return '<tr>' +
                 '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
-                '<td>' +
-                    '<div class="fw-bold text-dark font-monospace small">' + noId + '</div>' +
-                    skbBadge(o) +
-                '</td>' +
-                '<td>' +
-                    '<div class="fw-semibold text-dark mb-1" title="' + (o.judul_kegiatan || '') + '">' + (o.judul_kegiatan || '-') + '</div>' +
-                    '<div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">' +
-                        '<i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>' +
-                        '<span class="text-secondary fw-medium" style="line-height: 1.35;">' + (o.nama_perusahaan || '-') + '</span>' +
-                    '</div>' +
-                '</td>' +
-                '<td class="text-center">' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+                '<td>' + kolomNoTgl(o) + '</td>' +
+                '<td>' + kolomJudul(o) + '</td>' +
+                '<td class="text-center">' + divisiPill(o.jenis_layanan_opti) + '</td>' +
                 '<td class="text-end fw-semibold text-dark font-monospace small">' + rupiah(o.biaya_acuan) + '</td>' +
                 '<td>' +
                     '<div class="d-flex justify-content-between small mb-1">' +
@@ -761,9 +953,11 @@ function renderBerjalan(list) {
                 '</td>' +
                 '<td class="text-end fw-bold text-dark font-monospace small">' + rupiah(o.sisa_tagihan) + '</td>' +
                 '<td class="text-center">' +
-                    '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm" style="background:#1e293b; border-color:#1e293b;" title="Tambah Termin Pembayaran">' +
-                        '<i class="bi bi-plus-circle"></i> <span>Termin</span>' +
-                    '</a>' +
+                    '<div class="d-inline-flex align-items-center gap-1">' +
+                        '<a href="' + BASE + '/pembayaran/tambah?order_id=' + o.id + '" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm" style="background:#1e293b; border-color:#1e293b;" title="Tambah Termin Pembayaran">' +
+                            '<i class="bi bi-plus-circle"></i> <span>Termin</span>' +
+                        '</a>' +
+                    '</div>' +
                 '</td>' +
             '</tr>';
         }).join('');
@@ -806,21 +1000,11 @@ function renderLunas(list) {
     body.innerHTML = list.length === 0
         ? renderEmptyState('bi-check2-all', 'Tidak Ada Order Lunas', 'Belum ada order yang berstatus lunas pada kriteria filter saat ini.')
         : list.map(function (o, idx) {
-            var noId = o.nomor_order ? o.nomor_order : (o.nomor_permintaan ? o.nomor_permintaan : ('ORD-' + o.id));
             return '<tr>' +
                 '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
-                '<td>' +
-                    '<div class="fw-bold text-dark font-monospace small">' + noId + '</div>' +
-                    skbBadge(o) +
-                '</td>' +
-                '<td>' +
-                    '<div class="fw-semibold text-dark mb-1" title="' + (o.judul_kegiatan || '') + '">' + (o.judul_kegiatan || '-') + '</div>' +
-                    '<div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">' +
-                        '<i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>' +
-                        '<span class="text-secondary fw-medium" style="line-height: 1.35;">' + (o.nama_perusahaan || '-') + '</span>' +
-                    '</div>' +
-                '</td>' +
-                '<td class="text-center">' + divisiBadge(o.jenis_layanan_opti) + '</td>' +
+                '<td>' + kolomNoTgl(o) + '</td>' +
+                '<td>' + kolomJudul(o) + '</td>' +
+                '<td class="text-center">' + divisiPill(o.jenis_layanan_opti) + '</td>' +
                 '<td class="text-end fw-semibold text-dark font-monospace small">' + rupiah(o.biaya_acuan) + '</td>' +
                 '<td>' +
                     '<div class="text-dark small fw-medium">' +
@@ -831,9 +1015,11 @@ function renderLunas(list) {
                     '<span class="badge bg-light text-dark border px-2 py-1">' + o.jumlah_termin + 'x termin</span>' +
                 '</td>' +
                 '<td class="text-center">' +
-                    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm" onclick="bukaDetailLunas(' + o.id + ')">' +
-                        '<i class="bi bi-receipt"></i> <span>Detail</span>' +
-                    '</button>' +
+                    '<div class="d-inline-flex align-items-center gap-1">' +
+                        '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm" onclick="bukaDetailLunas(' + o.id + ')">' +
+                            '<i class="bi bi-receipt"></i> <span>Detail</span>' +
+                        '</button>' +
+                    '</div>' +
                 '</td>' +
             '</tr>';
         }).join('');
@@ -872,20 +1058,30 @@ function renderHistori(list) {
                 ? '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 btn-preview-pdf d-inline-flex align-items-center gap-1" data-preview-pdf="' + BASE + '/pembayaran/bukti/' + h.id + '" data-title="Bukti Pembayaran" data-subtitle="Order: ' + h.nomor_order + ' &bull; Termin Ke-' + h.termin_ke + '" title="Lihat Bukti Pembayaran"><i class="bi bi-file-earmark-text"></i> <span>Bukti</span></button>' 
                 : '<span class="text-muted small">-</span>';
             
+            var oi = {
+                id: h.order_id, nomor_order: h.nomor_order, nomor_permintaan: h.nomor_permintaan, tanggal_masuk: h.tanggal_masuk_order,
+                durasi_ditentukan: h.durasi_ditentukan, durasi_tampil: h.durasi_tampil, durasi_badge_class: h.durasi_badge_class, durasi_tooltip: h.durasi_tooltip,
+                media_permohonan: h.media_permohonan, file_bukti_permohonan: h.file_bukti_permohonan
+            };
             return '<tr>' +
                 '<td class="text-center text-muted small">' + (idx + 1) + '</td>' +
+                '<td>' + kolomNoTgl(oi) + '</td>' +
                 '<td>' +
-                    '<div class="small text-dark fw-medium">' +
-                        '<i class="bi bi-calendar3 me-1 text-muted"></i>' + tglIndo(h.tanggal_bayar) +
+                    saluranBadge(oi) +
+                    '<div class="fw-semibold text-dark mb-1 d-flex align-items-start gap-1" title="' + escAttr(h.nama_perusahaan) + '">' +
+                        '<i class="bi bi-building text-secondary flex-shrink-0 mt-1" style="font-size: 0.85rem;"></i>' +
+                        '<span style="line-height: 1.35;">' + (h.nama_perusahaan || '-') + '</span>' +
                     '</div>' +
+                    '<div class="small text-muted mt-0.5" style="line-height: 1.35;" title="' + escAttr(h.judul_kegiatan) + '">' + (h.judul_kegiatan || '-') + '</div>' +
                 '</td>' +
-                '<td>' +
-                    '<div class="fw-bold text-dark font-monospace small">' + (h.nomor_order || '-') + '</div>' +
-                    '<div class="text-muted" style="font-size: 0.725rem;">' + divisiBadge(h.jenis_layanan_opti) + '</div>' +
+                '<td class="small" style="line-height: 1.35;">' +
+                    (h.keterangan ? '<span class="text-dark">' + h.keterangan + '</span>' : '<span class="text-muted">Tidak ada catatan</span>') +
                 '</td>' +
+                '<td class="text-center">' + divisiPill(h.jenis_layanan_opti) + '</td>' +
                 '<td>' +
-                    '<div class="fw-semibold text-dark small mb-0.5">' + (h.nama_perusahaan || '-') + '</div>' +
-                    '<div class="small text-muted">' + (h.keterangan ? h.keterangan : '<span class="fst-italic text-muted">-</span>') + '</div>' +
+                    '<div class="text-dark small fw-medium text-nowrap">' +
+                        '<i class="bi bi-calendar-check me-1 text-muted"></i>' + tglIndo(h.tanggal_bayar) +
+                    '</div>' +
                 '</td>' +
                 '<td class="text-center">' +
                     '<span class="badge bg-light text-dark border px-2 py-1">Ke-' + h.termin_ke + '</span>' +
@@ -919,6 +1115,248 @@ function renderHistori(list) {
             '</div>';
         }).join('');
 }
+
+
+/* ===== MODAL LAMPIRAN & MEDIA ORDER (sama dengan Daftar Order) ===== */
+(function () {
+    var modalLampiranEl = document.getElementById('modalDaftarLampiranOrder');
+    var modalLampiranBs = null;
+    var modalLampiranBody = document.getElementById('modalLampiranBody');
+    var badgeLampiranCount = document.getElementById('modalLampiranBadgeCount');
+    var noOrderLampiranEl = document.getElementById('modalLampiranNomorOrder');
+    var namaPtLampiranEl = document.getElementById('modalLampiranNamaPerusahaan');
+
+    // Handler Pratinjau Dokumen Bebas Intersepsi IDM (PDF.js Canvas Engine)
+    window.bukaPratinjauBerkas = function(url, label, sub) {
+        if (!url) return;
+        if (typeof openPdfPreviewModal === 'function') {
+            openPdfPreviewModal(url, label || 'Pratinjau Dokumen', sub || '');
+        } else {
+            window.open(url, '_blank');
+        }
+    };
+
+    // Stacking handler jika Universal PDF Preview dibuka di atas modal lampiran
+    var modalPdfPreviewEl = document.getElementById('modalUniversalPdfPreview');
+    if (modalPdfPreviewEl) {
+        modalPdfPreviewEl.addEventListener('shown.bs.modal', function () {
+            var backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 1) {
+                // Lapisan gelap preview harus DI ATAS modal lampiran (1055) tapi DI BAWAH modal preview (1065).
+                // Dulu sama-sama 1065 sehingga lapisan gelap menutupi jendela preview dan semua tombolnya tidak bisa diklik.
+                backdrops[backdrops.length - 1].style.zIndex = '1060';
+            }
+        });
+        modalPdfPreviewEl.addEventListener('hidden.bs.modal', function() {
+            // Pastikan scrollbar dan status body tetap aktif untuk modal lampiran yang berada di bawahnya
+            if (modalLampiranEl && modalLampiranEl.classList.contains('show')) {
+                document.body.classList.add('modal-open');
+                document.body.style.overflow = 'hidden';
+            }
+        });
+    }
+
+
+    document.addEventListener('click', function (ev) {
+        var btn = ev.target.closest ? ev.target.closest('.btn-modal-lampiran-order') : null;
+        if (!btn) return;
+            var orderId = btn.getAttribute('data-order-id');
+            var noOrder = btn.getAttribute('data-nomor-order') || '-';
+            var perusahaan = btn.getAttribute('data-perusahaan') || '-';
+
+            if (noOrderLampiranEl) noOrderLampiranEl.textContent = noOrder;
+            if (namaPtLampiranEl) namaPtLampiranEl.textContent = perusahaan;
+            if (badgeLampiranCount) {
+                badgeLampiranCount.className = 'badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle fw-semibold px-2 py-0.5';
+                badgeLampiranCount.textContent = 'Memuat...';
+            }
+
+            if (modalLampiranBody) {
+                modalLampiranBody.innerHTML = '<div class="text-center py-5">' +
+                    '<div class="spinner-border text-primary" role="status"></div>' +
+                    '<p class="small text-muted mt-2 mb-0">Memuat berkas &amp; lampiran order...</p>' +
+                    '</div>';
+            }
+
+            if (modalLampiranEl && window.bootstrap) {
+                modalLampiranBs = bootstrap.Modal.getOrCreateInstance(modalLampiranEl);
+                modalLampiranBs.show();
+            }
+
+            var fetchUrl = BASE + '/order/' + orderId + '/berkas';
+            fetch(fetchUrl)
+                .then(function(res) {
+                    if (!res.ok) throw new Error('Gagal mengambil data lampiran (' + res.status + ')');
+                    return res.json();
+                })
+                .then(function(data) {
+                    if (!data.ok) {
+                        modalLampiranBody.innerHTML = '<div class="alert alert-warning py-3 text-center mb-0">' + (data.pesan || 'Tidak ada data lampiran.') + '</div>';
+                        return;
+                    }
+
+                    var totalAda = data.total_tersedia || 0;
+                    var items = data.items || [];
+                    if (badgeLampiranCount) {
+                        badgeLampiranCount.className = 'badge rounded-pill ' + (totalAda > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-muted border') + ' fw-semibold px-2 py-0.5';
+                        badgeLampiranCount.textContent = totalAda + ' Berkas Tersedia';
+                    }
+
+                    var html = '<div class="d-flex flex-column gap-3">';
+
+                    items.forEach(function(item) {
+                        var isPembayaran = (item.kategori === 'pembayaran');
+                        var bgIcon = '#f1f5f9';
+                        var textIcon = '#475569';
+
+                        if (item.warna === 'amber') { bgIcon = '#fef3c7'; textIcon = '#d97706'; }
+                        else if (item.warna === 'primary') { bgIcon = '#dbeafe'; textIcon = '#2563eb'; }
+                        else if (item.warna === 'indigo') { bgIcon = '#e0e7ff'; textIcon = '#4f46e5'; }
+                        else if (item.warna === 'purple') { bgIcon = '#f3e8ff'; textIcon = '#9333ea'; }
+                        else if (item.warna === 'danger') { bgIcon = '#fee2e2'; textIcon = '#dc2626'; }
+                        else if (item.warna === 'success') { bgIcon = '#dcfce7'; textIcon = '#16a34a'; }
+                        else if (item.warna === 'teal') { bgIcon = '#ccfbf1'; textIcon = '#0d9488'; }
+
+                        html += '<div class="card border ' + (item.ada ? 'border-primary-subtle' : 'border-light-subtle') + ' shadow-sm rounded-3 overflow-hidden bg-white">';
+                        html += '  <div class="card-body p-3">';
+                        html += '    <div class="d-flex align-items-start gap-3">';
+                        html += '      <div class="rounded-3 p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background:' + bgIcon + '; color:' + textIcon + '; width:44px; height:44px;">';
+                        html += '        <i class="bi ' + (item.ikon || 'bi-file-earmark') + ' fs-4"></i>';
+                        html += '      </div>';
+                        html += '      <div class="flex-grow-1 min-w-0">';
+                        
+                        // Header & Status Badge
+                        html += '        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">';
+                        html += '          <h6 class="fw-bold text-dark m-0" style="font-size:0.95rem;">' + item.label + '</h6>';
+                        if (!isPembayaran) {
+                            if (item.ada) {
+                                var badgeText = item.status_label || 'Tersedia';
+                                html += '          <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold px-2.5 py-1 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>' + badgeText + '</span>';
+                            } else {
+                                var badgeTextNone = (item.kategori === 'po_kegiatan' || item.kategori === 'bast' || item.kategori === 'penawaran') ? 'Belum Diterbitkan' : 'Belum Ada';
+                                html += '          <span class="badge bg-secondary-subtle text-secondary border fw-medium px-2.5 py-1 rounded-pill"><i class="bi bi-dash-circle me-1"></i>' + badgeTextNone + '</span>';
+                            }
+                        } else {
+                            var nBayar = (item.items && item.items.length) || 0;
+                            if (nBayar > 0) {
+                                html += '          <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold px-2.5 py-1 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>' + nBayar + ' Bukti Terlampir</span>';
+                            } else {
+                                html += '          <span class="badge bg-secondary-subtle text-secondary border fw-medium px-2.5 py-1 rounded-pill"><i class="bi bi-dash-circle me-1"></i>Belum Ada Bukti</span>';
+                            }
+                        }
+                        html += '        </div>';
+
+                        // Subtitle & Keterangan Dokumen
+                        html += '        <p class="text-muted small mb-1.5" style="font-size:0.82rem;">' + (item.sub || '') + '</p>';
+                        if (item.keterangan) {
+                            html += '        <div class="p-2 rounded-2 mb-2 ' + (item.ada ? 'bg-light text-dark' : 'bg-light-subtle text-muted') + '" style="font-size:0.8rem; border-left: 3px solid ' + (item.ada ? textIcon : '#cbd5e1') + ';">';
+                            html += '          <i class="bi bi-info-circle me-1 text-secondary"></i>' + item.keterangan;
+                            html += '        </div>';
+                        }
+
+                        // Metadata Rincian
+                        if (!isPembayaran) {
+                            var metaItems = [];
+                            if (item.nomor && item.nomor !== '-') {
+                                metaItems.push('<div class="col-sm-6"><span class="text-muted">Nomor Dokumen:</span><br><strong class="font-monospace text-dark">' + item.nomor + '</strong></div>');
+                            }
+                            if (item.pengirim) {
+                                metaItems.push('<div class="col-sm-6"><span class="text-muted">Instansi Pemohon:</span><br><strong class="text-dark">' + item.pengirim + '</strong></div>');
+                            }
+                            if (item.tanggal) {
+                                metaItems.push('<div class="col-sm-6"><span class="text-muted">Tanggal Dokumen:</span><br><span class="text-dark fw-medium">' + item.tanggal + '</span></div>');
+                            }
+                            if (item.nominal && item.nominal > 0) {
+                                metaItems.push('<div class="col-sm-6"><span class="text-muted">Nilai Tarif (PNBP):</span><br><strong class="text-success font-monospace">Rp ' + new Intl.NumberFormat('id-ID').format(item.nominal) + '</strong></div>');
+                            }
+                            if (item.status_respon) {
+                                metaItems.push('<div class="col-sm-6"><span class="text-muted">Status Respon Mitra:</span><br><span class="badge bg-info-subtle text-info border px-2 py-0.5 text-uppercase fw-semibold">' + item.status_respon + '</span></div>');
+                            }
+                            if (item.status_po) {
+                                metaItems.push('<div class="col-sm-6"><span class="text-muted">Status PO:</span><br><span class="badge bg-purple-subtle text-purple border px-2 py-0.5 text-uppercase fw-semibold">' + item.status_po + '</span></div>');
+                            }
+                            if (item.status_proposal) {
+                                metaItems.push('<div class="col-sm-6"><span class="text-muted">Status Proposal:</span><br><span class="badge bg-warning-subtle text-warning-emphasis border px-2 py-0.5 text-capitalize fw-semibold">' + item.status_proposal.replace(/_/g, ' ') + '</span></div>');
+                            }
+                            if (item.file_name) {
+                                metaItems.push('<div class="col-12"><span class="text-muted">Berkas Fisik:</span><br><span class="font-monospace text-secondary small"><i class="bi bi-file-earmark-check me-1 text-primary"></i>' + item.file_name + '</span></div>');
+                            }
+                            if (item.perihal) {
+                                metaItems.push('<div class="col-12"><span class="text-muted">Perihal:</span><br><span class="text-dark small">' + item.perihal + '</span></div>');
+                            }
+
+                            if (metaItems.length > 0) {
+                                html += '        <div class="row g-2 p-2.5 rounded-2 bg-light border border-light-subtle mb-2" style="font-size:0.78rem;">';
+                                html += metaItems.join('');
+                                html += '        </div>';
+                            }
+
+                            // Action Buttons
+                            if (item.ada && item.url) {
+                                html += '        <div class="d-flex align-items-center gap-2 mt-2 pt-1">';
+                                html += '          <button type="button" class="btn btn-sm btn-primary py-1.5 px-3 d-inline-flex align-items-center gap-1.5 shadow-sm rounded-2 fw-medium" onclick="bukaPratinjauBerkas(\'' + item.url + '\', \'' + item.label + '\', \'' + noOrder + ' &bull; ' + (item.nomor && item.nomor !== '-' ? item.nomor : perusahaan) + '\')">';
+                                html += '            <i class="bi bi-eye-fill"></i> Lihat Pratinjau';
+                                html += '          </button>';
+                                html += '          <a href="' + item.url + '" target="_blank" class="btn btn-sm btn-outline-secondary py-1.5 px-3 d-inline-flex align-items-center gap-1.5 rounded-2">';
+                                html += '            <i class="bi bi-box-arrow-up-right"></i> Buka Tab Baru';
+                                html += '          </a>';
+                                html += '        </div>';
+                            }
+                        } else {
+                            // Sub-list Pembayaran
+                            if (item.items && item.items.length > 0) {
+                                html += '        <div class="d-flex flex-column gap-2 mt-2">';
+                                item.items.forEach(function(byr) {
+                                    html += '          <div class="p-2.5 rounded-2 border bg-light d-flex flex-wrap align-items-center justify-content-between gap-2">';
+                                    html += '            <div>';
+                                    html += '              <div class="d-flex align-items-center gap-2 mb-0.5">';
+                                    html += '                <span class="badge bg-primary text-white px-2 py-0.5 small fw-semibold">Termin ' + byr.termin_ke + '</span>';
+                                    html += '                <span class="fw-bold text-success font-monospace" style="font-size:0.9rem;">' + byr.jumlah_format + '</span>';
+                                    html += '                <span class="badge bg-success-subtle text-success border px-2 py-0.5 small text-capitalize">' + byr.status_verifikasi + '</span>';
+                                    html += '              </div>';
+                                    html += '              <div class="text-muted small" style="font-size:0.77rem;">';
+                                    html += '                <span>Tgl: ' + byr.tanggal_bayar + '</span> &bull; <span>Metode: ' + byr.metode + '</span>';
+                                    if (byr.file_name) {
+                                        html += ' &bull; <span class="font-monospace text-secondary">' + byr.file_name + '</span>';
+                                    }
+                                    html += '              </div>';
+                                    html += '            </div>';
+                                    if (byr.url) {
+                                        html += '            <div class="d-flex align-items-center gap-1.5">';
+                                        html += '              <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2.5 d-inline-flex align-items-center gap-1 rounded-2" onclick="bukaPratinjauBerkas(\'' + byr.url + '\', \'Bukti Pembayaran Termin ' + byr.termin_ke + '\', \'' + noOrder + ' &bull; ' + byr.jumlah_format + '\')">';
+                                        html += '                <i class="bi bi-receipt"></i> Lihat Bukti';
+                                        html += '              </button>';
+                                        html += '              <a href="' + byr.url + '" target="_blank" class="btn btn-sm btn-light border py-1 px-2 text-muted rounded-2" title="Buka Tab Baru">';
+                                        html += '                <i class="bi bi-box-arrow-up-right"></i>';
+                                        html += '              </a>';
+                                        html += '            </div>';
+                                    }
+                                    html += '          </div>';
+                                });
+                                html += '        </div>';
+                            } else {
+                                html += '        <div class="text-muted small fst-italic py-1">Belum ada bukti pembayaran yang diunggah untuk order ini.</div>';
+                            }
+                        }
+
+                        html += '      </div>';
+                        html += '    </div>';
+                        html += '  </div>';
+                        html += '</div>';
+                    });
+
+                    html += '</div>';
+                    modalLampiranBody.innerHTML = html;
+                })
+                .catch(function(err) {
+                    if (modalLampiranBody) {
+                        modalLampiranBody.innerHTML = '<div class="alert alert-danger py-3 text-center mb-0">' +
+                            '<i class="bi bi-exclamation-triangle-fill me-2"></i>' + err.message +
+                            '</div>';
+                    }
+                });
+    });
+})();
 
 document.getElementById('filterSearch').addEventListener('input', terapkanFilter);
 document.getElementById('filterBulan').addEventListener('change', terapkanFilter);

@@ -147,6 +147,28 @@ class PoReviewController extends Controller {
         $this->keluarkanJson($out);
     }
 
+    /** SEMENTARA: GET /debug-alur/@id (id order, superadmin saja). Menampilkan isi po_alur_log + trigger untuk memeriksa rincian putaran revisi Tahap 8. Hapus setelah selesai. */
+    public function debugAlur($f3, $params) {
+        $this->requireAuth();
+        if ($this->getUserRole() !== 'superadmin') { $f3->error(403); return; }
+        $oid = (int) $params['id'];
+        $out = array('order_id' => $oid);
+        $try = function ($k, $fn) use (&$out) { try { $out[$k] = $fn(); } catch (\Throwable $e) { $out[$k] = 'GALAT: ' . $e->getMessage(); } };
+        $try('trigger_po_kegiatan', function () { $r = $this->db->exec("SHOW TRIGGERS WHERE `Table` = 'po_kegiatan'"); $o = array(); foreach ($r as $t) { $o[] = $t['Trigger'] . ' (' . $t['Event'] . ' ' . $t['Timing'] . ', dibuat ' . (isset($t['Created']) ? $t['Created'] : '?') . ')'; } return $o ? $o : 'TIDAK ADA TRIGGER (migration_po_alur_log.sql belum dijalankan)'; });
+        $try('tabel_po_alur_log', function () { $r = $this->db->exec("SHOW TABLES LIKE 'po_alur_log'"); return $r ? 'ada' : 'TIDAK ADA'; });
+        $po = array();
+        $try('po', function () use ($oid, &$po) { $po = $this->db->exec("SELECT * FROM po_kegiatan WHERE order_id = ?", array(1 => $oid)); $o = array(); foreach ($po as $r) { $x = array(); foreach (array('id', 'nomor_po', 'status', 'status_review', 'ppk_status', 'ronde_ppk', 'ronde_revisi', 'created_at', 'dikirim_at', 'reviewed_at', 'disetujui_at', 'tervalidasi_mitra_at', 'ppk_dibaca_at', 'ppk_minta_at', 'ppk_status_at', 'validasi_keuangan_at', 'po_ttd_at') as $k) { $x[$k] = array_key_exists($k, $r) ? $r[$k] : '(kolom tidak ada)'; } $o[] = $x; } return $o; });
+        foreach ($po as $r) {
+            $pid = (int) $r['id'];
+            $try('log_po_' . $pid, function () use ($pid) { $l = $this->db->exec("SELECT id, kolom, nilai, waktu FROM po_alur_log WHERE po_id = ? ORDER BY waktu, id", array(1 => $pid)); $o = array(); foreach ($l as $e) { $o[] = $e['waktu'] . '  ' . $e['kolom'] . ($e['nilai'] !== null ? ' = ' . $e['nilai'] : ''); } return $o ? $o : 'KOSONG (tidak ada catatan untuk PO ini)'; });
+            $try('hasil_susun_po_' . $pid, function () use ($pid, $r) { $h = \PoAlurWaktu::susun($r, \PoAlurWaktu::muat($this->db, $pid)); $o = array(); foreach ($h as $s => $w) { $o['langkah_' . $s] = 'revisi=' . ($w['revisi'] ? 'ya' : 'tidak') . ', rinci=' . ($w['rinci'] ? 'ya' : 'tidak') . ', giliran=' . count($w['giliran']); } return $o; });
+        }
+        http_response_code(200);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+
     /**
      * POST /po-kegiatan/@id/baca (alias /dibuka) -- dipanggil saat PO dibuka.
      * Penerima kiriman yang sedang berlaku dicatat "sudah dibaca" (sekali saja per kiriman):
@@ -404,6 +426,7 @@ class PoReviewController extends Controller {
             $diubah = $this->db->exec(
                 "UPDATE po_kegiatan
                     SET status_review = 'disetujui', disetujui_at = NOW(), disetujui_by = ?, disposisi_humas_at = NOW(),
+                        verifikasi_humas_at = NOW(),
                         reviewed_at = COALESCE(reviewed_at, NOW()), reviewed_by = COALESCE(reviewed_by, ?)
                   WHERE id = ? AND status_review IN ('menunggu_review', 'direvisi')",
                 [1 => $uid, 2 => $uid, 3 => (int) $po['id']]
@@ -416,27 +439,32 @@ class PoReviewController extends Controller {
         }
 
         $nama = $this->namaPengguna($uid, 'Ketua Tim');
-        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', $nama . ' menyetujui PO. PO terkunci dan diteruskan ke Humas untuk diverifikasi.');
+        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', $nama . ' menyetujui PO. PO terkunci dan langsung diteruskan ke Tim Mitra (verifikasi) dan Humas (hanya melihat).');
         self::kabari($this->db, [(int) $po['ketua_pelaksana_id']], 'PO disetujui', 'PO ' . $po['nomor_po'] . ' disetujui Ketua Tim.');
-        // [BARU] giliran Humas: PO yang disetujui Ketua Tim masuk ke Daftar PO Humas untuk diverifikasi
-        try {
-            if (class_exists('NotificationService')) {
-                \NotificationService::send($this->db, [
-                    'order_id'        => (int) $po['order_id'],
-                    'po_id'           => (int) $po['id'],
-                    'target_role'     => 'humas',
-                    'target_layanan'  => 'semua',
-                    'judul'           => 'PO Menunggu Verifikasi Humas',
-                    'pesan'           => 'PO ' . $po['nomor_po'] . ' sudah disetujui Ketua Tim, menunggu verifikasi Humas.',
-                    'tipe'            => 'primary',
-                    'icon'            => 'bi-clipboard-check',
-                    'link_url'        => '/po-humas',
-                    'created_by'      => $uid,
-                    'created_by_name' => $nama,
-                ]);
+        // PO yang disetujui Ketua Tim langsung masuk ke Tim Mitra (verifikasi) dan ke Daftar PO Humas (hanya melihat, tanpa verifikasi)
+        foreach ([
+            ['ketua_tim_mitra', 'PO Menunggu Verifikasi', 'PO ' . $po['nomor_po'] . ' sudah disetujui Ketua Tim, menunggu verifikasi Tim Mitra.', '/po-kegiatan/validasi-mitra'],
+            ['humas',           'PO Baru Masuk',          'PO ' . $po['nomor_po'] . ' sudah disetujui Ketua Tim. Humas hanya dapat melihat PO ini.', '/po-humas'],
+        ] as $n) {
+            try {
+                if (class_exists('NotificationService')) {
+                    \NotificationService::send($this->db, [
+                        'order_id'        => (int) $po['order_id'],
+                        'po_id'           => (int) $po['id'],
+                        'target_role'     => $n[0],
+                        'target_layanan'  => 'semua',
+                        'judul'           => $n[1],
+                        'pesan'           => $n[2],
+                        'tipe'            => 'primary',
+                        'icon'            => 'bi-clipboard-check',
+                        'link_url'        => $n[3],
+                        'created_by'      => $uid,
+                        'created_by_name' => $nama,
+                    ]);
+                }
+            } catch (\Throwable $eNotif) {
+                // notifikasi bersifat pelengkap
             }
-        } catch (\Throwable $eNotif) {
-            // notifikasi bersifat pelengkap
         }
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
@@ -730,8 +758,38 @@ class PoReviewController extends Controller {
                 'url' => $kesanggupanAda ? ($f3->get('BASE') . '/po-kegiatan/' . (int) $po['id'] . '/berkas/kesanggupan') : null,
             ],
             'termin' => $termin,
+            'rab_excel' => $this->infoRabExcel((int) $po['id']),
             'dokumen' => $this->dokumenOrder($orderId, $kesanggupanAda ? ($f3->get('BASE') . '/po-kegiatan/' . (int) $po['id'] . '/berkas/kesanggupan') : null),
         ]);
+    }
+
+    /** Rincian "RAB dari Excel" milik PO (berkas asli + hasil pengecekan saat dikirim). ['ada' => false] bila RAB diisi manual. */
+    protected function infoRabExcel($poId) {
+        $r = $this->safeExec("SELECT rab FROM po_kegiatan WHERE id = ? LIMIT 1", [1 => (int) $poId]);
+        $rab = (!empty($r) && !empty($r[0]['rab'])) ? json_decode((string) $r[0]['rab'], true) : null;
+        $sm = (is_array($rab) && isset($rab['sumber']) && is_array($rab['sumber']) && ($rab['sumber']['tipe'] ?? '') === 'excel') ? $rab['sumber'] : null;
+        if (!$sm) { return ['ada' => false]; }
+        $path = \PoKegiatanController::rabExcelJalur($sm['token'] ?? '');
+        if ($path === '' || !is_file($path)) { return ['ada' => false]; }
+        $url = (string) $this->f3->get('BASE') . '/po-kegiatan/' . (int) $poId . '/rab-excel';
+        return [
+            'ada' => true, 'nama' => (string) ($sm['nama'] ?? 'RAB.xlsx'), 'waktu' => (string) ($sm['waktu'] ?? ''),
+            'url' => $url, 'url_unduh' => $url . '?unduh=1',
+            'total_pengeluaran' => (float) ($sm['total_pengeluaran'] ?? 0), 'total_penerimaan' => (float) ($sm['total_penerimaan'] ?? 0),
+            'kategori' => isset($sm['kategori']) && is_array($sm['kategori']) ? $sm['kategori'] : [],
+            'koreksi'  => isset($sm['koreksi']) && is_array($sm['koreksi']) ? $sm['koreksi'] : [],
+            'masalah'  => isset($sm['masalah']) && is_array($sm['masalah']) ? $sm['masalah'] : [],
+        ];
+    }
+
+    /** GET /po-kegiatan/@id/rab-excel[?unduh=1] -- pratinjau (per sheet, hanya-baca) atau unduh berkas Excel RAB asli. */
+    public function rabExcel($f3, $params) {
+        list($po, $sisi) = $this->aksesBaca((int) $params['id']);
+        $info = $this->infoRabExcel((int) $po['id']);
+        if (empty($info['ada'])) { $f3->error(404, 'PO ini tidak memakai file Excel untuk RAB.'); return; }
+        $r = $this->safeExec("SELECT rab FROM po_kegiatan WHERE id = ? LIMIT 1", [1 => (int) $po['id']]);
+        $rab = json_decode((string) $r[0]['rab'], true);
+        \RabExcel::sajikan(\PoKegiatanController::rabExcelJalur($rab['sumber']['token']), 'RAB ' . (string) $po['nomor_po'], $info['url_unduh'], $info['nama']);
     }
 
     /** GET /po-kegiatan/@id/po-ttd[?unduh=1] -- PO bertanda tangan untuk tab PO TTD di slide (hak akses sama dengan tab Berkas) */
@@ -1384,7 +1442,7 @@ class PoReviewController extends Controller {
                 'disiapkan'        => $div !== '' ? 'Tim Kerja OPTI ' . ucfirst(strtolower($div)) : 'Tim Kerja OPTI',
                 'map'              => [
                     'proposal' => self::tanggalMap((string) ($r['tgl_proposal'] ?? '')),
-                    'humas'    => self::tanggalMap((string) ($r['humas_ver_at'] ?? '')),
+                    'humas'    => self::tanggalMap((string) $humasBaca),   // Humas tidak memverifikasi lagi: tanggal = Humas pertama kali membuka PO setelah disetujui Ketua Tim
                     'mitra'    => self::tanggalMap((string) ($r['mitra_valid_at'] ?? '')),
                     'keuangan' => self::tanggalMap((string) ($r['ppk_valid_at'] ?? '')),
                 ],

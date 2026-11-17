@@ -158,13 +158,14 @@ class UniversalPreviewController extends Controller
      */
     protected function handleBuktiPembayaran($pembayaranId)
     {
-        $rows = $this->db->exec('SELECT file_bukti FROM tb_pembayaran WHERE id = ?', [1 => $pembayaranId]);
-        if (empty($rows) || empty($rows[0]['file_bukti'])) {
+        // Bukti bayar disimpan di tabel opti_pembayaran (kolom bukti_bayar); tabel lama tb_pembayaran sudah tidak dipakai.
+        $rows = $this->db->exec('SELECT bukti_bayar FROM opti_pembayaran WHERE id = ?', [1 => $pembayaranId]);
+        if (empty($rows) || empty($rows[0]['bukti_bayar'])) {
             $this->jsonResponse(['success' => false, 'message' => 'Berkas bukti pembayaran tidak ditemukan di database.']);
             return;
         }
 
-        $rawPath = $rows[0]['file_bukti'];
+        $rawPath = $rows[0]['bukti_bayar'];
         $filePath = $this->resolveFilePath($rawPath, ['uploads/bukti_bayar', 'storage/pembayaran']);
 
         if (!$filePath || !is_file($filePath)) {

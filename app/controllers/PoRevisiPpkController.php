@@ -1166,6 +1166,21 @@ class PoRevisiPpkController extends Controller {
      * Daftar PO sesuai mode. katim/pembuat: hanya PO yang sedang/pernah masuk revisi PPK BLU dan belum divalidasi.
      * ppk: semua PO yang sudah sampai di PPK BLU (Humas dan Tim Mitra selesai).
      */
+    /** Ringkasan order untuk kolom Daftar PPK BLU (nomor permintaan, tanggal, durasi, biaya, status alur): sama dengan baris Daftar Order. */
+    protected static function ringkasOrder(array $o) {
+        return [
+            'req'         => (string) ($o['nomor_permintaan'] ?? ''),
+            'tgl'         => (string) ($o['tanggal_masuk'] ?? ''),
+            'media'       => (string) ($o['media_permohonan'] ?? ''),
+            'dur'         => !empty($o['durasi_ditentukan']) ? ['t' => (string) ($o['durasi_tampil'] ?? ''), 'c' => (string) ($o['durasi_badge_class'] ?? ''), 'k' => (string) ($o['durasi_tooltip'] ?? '')] : null,
+            'biaya'       => (float) (!empty($o['estimasi_biaya']) ? $o['estimasi_biaya'] : ($o['biaya_po'] ?? 0)),
+            'bayar'       => (float) ($o['total_terbayar'] ?? 0),
+            'kesanggupan' => !empty($o['punya_kesanggupan']),
+            'st_class'    => (string) ($o['stage_class'] ?? ''),
+            'st_label'    => (string) ($o['stage_label'] ?? ''),
+        ];
+    }
+
     protected function daftarItems($mode, $uid, $poId) {
         $ex = function ($kolom) { return $this->kolomAda($kolom) ? 'p.' . $kolom : 'NULL'; };
         $mitraKol = $this->kolomAda('tervalidasi_mitra_at') ? 'tervalidasi_mitra_at' : ($this->kolomAda('tervalidasi_keuangan_at') ? 'tervalidasi_keuangan_at' : '');
@@ -1178,7 +1193,9 @@ class PoRevisiPpkController extends Controller {
                        p.created_at AS dibuat_at, COALESCE(p.dikirim_at, p.updated_at, p.created_at) AS dikirim_at, p.disetujui_at,
                        " . $ex('po_ttd_at') . " AS po_ttd_at, " . $ex('kontrak_dibuat_at') . " AS kontrak_dibuat_at, " . $ex('kontrak_nomor') . " AS kontrak_nomor,
                        " . $ex('po_ttd_nama') . " AS po_ttd_nama, " . $ex('po_ttd_oleh_nama') . " AS po_ttd_oleh_nama, " . $ex('kontrak_dibuat_oleh_nama') . " AS kontrak_dibuat_oleh_nama,
-                       " . $ex('verifikasi_humas_at') . " AS humas_ver_at, " . $ex('catatan_tim_mitra') . " AS catatan_tim_mitra, " . $ex('catatan_ppk') . " AS catatan_ppk, " . $ex('catatan_humas') . " AS catatan_humas,
+                       " . $ex('verifikasi_humas_at') . " AS humas_ver_at,
+                       CASE WHEN " . $ex('humas_dibaca_at') . " IS NOT NULL AND (" . $ex('disposisi_humas_at') . " IS NULL OR " . $ex('humas_dibaca_at') . " >= " . $ex('disposisi_humas_at') . ") THEN " . $ex('humas_dibaca_at') . " ELSE NULL END AS humas_baca_at,
+                       " . $ex('catatan_tim_mitra') . " AS catatan_tim_mitra, " . $ex('catatan_ppk') . " AS catatan_ppk, " . $ex('catatan_humas') . " AS catatan_humas,
                        " . ($mitraKol !== '' ? 'p.' . $mitraKol : 'NULL') . " AS mitra_valid_at,
                        COALESCE(NULLIF(p.judul_kegiatan, ''), o.judul_kegiatan) AS judul,
                        o.id AS order_id, o.nomor_order, o.jenis_layanan_opti, o.ketua_pelaksana_id,
@@ -1223,6 +1240,16 @@ class PoRevisiPpkController extends Controller {
         foreach ($rows as $r) { $ids[] = $r['ketua_pelaksana_id']; }
         $peta = $this->petaNamaUser($ids);
 
+        // Halaman PPK BLU: kolom daftar disamakan dengan Daftar Order, jadi datanya diambil dari model yang sama (OrderLayanan::allWithRelasi)
+        $ordMap = [];
+        if ($mode === 'ppk' && $rows) {
+            try {
+                $idOrd = array_values(array_unique(array_map(function ($x) { return (int) $x['order_id']; }, $rows)));
+                $mdl = new \OrderLayanan($this->db);
+                foreach ($mdl->allWithRelasi('', '', '', '', 'semua', '', $idOrd) as $oo) { $ordMap[(int) $oo['id']] = $oo; }
+            } catch (\Throwable $e) { $ordMap = []; }
+        }
+
         $daftar = [];
         foreach ($rows as $r) {
             $idp = (int) $r['ketua_pelaksana_id'];
@@ -1253,6 +1280,7 @@ class PoRevisiPpkController extends Controller {
                 'dikirim_at'  => $r['dikirim_at'],
                 'disetujui_at' => $r['disetujui_at'],
                 'humas_ver_at' => $r['humas_ver_at'],
+                'humas_baca_at' => $r['humas_baca_at'],
                 'mitra_valid_at' => $r['mitra_valid_at'],
                 // catatan biasa Tim Mitra saat validasi (bukan revisi); tampil di bawah dokumen PO. Baru terlihat setelah Tim Mitra memvalidasi
                 'catatan_mitra' => (!empty($r['mitra_valid_at']) && isset($r['catatan_tim_mitra'])) ? trim((string) $r['catatan_tim_mitra']) : '',
@@ -1274,7 +1302,7 @@ class PoRevisiPpkController extends Controller {
                 'disiapkan'   => $div !== '' ? 'Tim Kerja OPTI ' . ucfirst(strtolower($div)) : 'Tim Kerja OPTI',
                 'map'         => [
                     'proposal' => self::tanggal((string) ($r['tgl_proposal'] ?? '')),
-                    'humas'    => self::tanggal((string) ($r['humas_ver_at'] ?? '')),
+                    'humas'    => self::tanggal((string) ($r['humas_baca_at'] ?? '')),   // Humas hanya melihat: tanggal pertama kali membuka PO
                     'mitra'    => self::tanggal((string) ($r['mitra_valid_at'] ?? '')),
                     'keuangan' => self::tanggal((string) ($r['validasi_keuangan_at'] ?? '')),
                 ],
@@ -1284,6 +1312,7 @@ class PoRevisiPpkController extends Controller {
                 'siklus'      => $siklusKatim ? 'katim' : 'ppk',
                 'jml_ubah'    => (int) $r['jml_ubah'],
                 'jml_ubah_baru' => (int) $r['jml_ubah_baru'],   // perubahan PO sejak PO terakhir dikirim/didisposisikan ke penerima
+                'ord'         => isset($ordMap[(int) $r['order_id']]) ? self::ringkasOrder($ordMap[(int) $r['order_id']]) : null,
             ];
         }
         return $daftar;

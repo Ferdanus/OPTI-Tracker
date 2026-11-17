@@ -1,6 +1,6 @@
 <!--
     app/views/katim_kerja/po-kegiatan/validasi_mitra.html
-    Verifikasi Pembayaran PO (Tim Mitra). PO masuk sini setelah disetujui Ketua Tim dan diverifikasi Humas.
+    Verifikasi Pembayaran PO (Tim Mitra). PO masuk sini setelah disetujui Ketua Tim (Humas hanya melihat, tidak memverifikasi).
     Tampilan disamakan dengan halaman Tim Mitra lain (Daftar Order / Kotak Masuk Permohonan): breadcrumb, judul berikon, kartu filter,
     tab pill berlencana jumlah, dan kartu tabel berheader kapital. Baris tebal bertitik biru = belum dibaca. Filter (cari, divisi, baca,
     status, bulan, tahun) tetap lengkap. Panel samping di sisi kanan dengan stepper alur (Ketua Tim -> Humas ->
@@ -840,23 +840,23 @@
         return null;
     }
 
-    /* ---------- Posisi PO saat ini (turunan, tidak disimpan): Tim Mitra -> PPK BLU. Semua PO di halaman ini sudah lewat Humas. ---------- */
+    /* ---------- Posisi PO saat ini (turunan, tidak disimpan): Tim Mitra -> PPK BLU. PO masuk langsung setelah disetujui Ketua Tim. ---------- */
     function posisi(p) {
-        if (!p.mitra_valid_at) { return { di: 'Tim Mitra', teks: 'Menunggu verifikasi Tim Mitra', pendek: 'Menunggu Tim Mitra', cls: 'mitra', langkah: 3, ik: 'bi-hourglass-split' }; }
-        if (!p.ppk_valid_at) { return { di: 'PPK BLU', teks: 'Menunggu verifikasi PPK BLU', pendek: 'Menunggu PPK BLU', cls: 'ppk', langkah: 4, ik: 'bi-send-check' }; }
-        return { di: 'PPK BLU', teks: 'Diverifikasi PPK BLU', pendek: 'Diverifikasi PPK BLU', cls: 'ok', langkah: 5, ik: 'bi-patch-check-fill' };
+        if (!p.mitra_valid_at) { return { di: 'Tim Mitra', teks: 'Menunggu verifikasi Tim Mitra', pendek: 'Menunggu Tim Mitra', cls: 'mitra', langkah: 2, ik: 'bi-hourglass-split' }; }
+        if (!p.ppk_valid_at) { return { di: 'PPK BLU', teks: 'Menunggu verifikasi PPK BLU', pendek: 'Menunggu PPK BLU', cls: 'ppk', langkah: 3, ik: 'bi-send-check' }; }
+        return { di: 'PPK BLU', teks: 'Diverifikasi PPK BLU', pendek: 'Diverifikasi PPK BLU', cls: 'ok', langkah: 4, ik: 'bi-patch-check-fill' };
     }
         /* Badge "Sudah diverifikasi Tim Mitra" + tanggal, dipakai di tab Sudah Disetujui */
         function mitraBadge(p) {
         return '<span class="hm-pbadge ok"><i class="bi bi-check2-circle"></i>Diverifikasi Tim Mitra</span>';
     }
     function posBadge(p, penuh) { var o = posisi(p); return '<span class="hm-pbadge ' + o.cls + '" title="' + esc(o.teks) + '"><i class="bi ' + o.ik + '"></i>' + esc(penuh ? o.teks : o.pendek) + '</span>'; }
-    var LANGKAH = ['Ketua Tim', 'Humas', 'Tim Mitra', 'PPK BLU'];
-    // Garis alur mini 4 tahap (Ketua Tim, Humas, Tim Mitra, PPK BLU): hijau = lewat, kuning = sedang di tahap ini
+    var LANGKAH = ['Ketua Tim', 'Tim Mitra', 'PPK BLU'];
+    // Garis alur mini 3 tahap (Ketua Tim, Tim Mitra, PPK BLU): hijau = lewat, kuning = sedang di tahap ini
     function miniAlur(p) {
         var o = posisi(p), seg = '';
-        for (var i = 1; i <= 4; i++) { seg += '<i class="' + (i < o.langkah ? 'done' : (i === o.langkah ? 'cur' : '')) + '" title="' + LANGKAH[i - 1] + '"></i>'; }
-        var lb = o.langkah > 4 ? 'Semua tahap selesai (4/4)' : 'Tahap ' + o.langkah + ' dari 4 &middot; ' + LANGKAH[o.langkah - 1];
+        for (var i = 1; i <= 3; i++) { seg += '<i class="' + (i < o.langkah ? 'done' : (i === o.langkah ? 'cur' : '')) + '" title="' + LANGKAH[i - 1] + '"></i>'; }
+        var lb = o.langkah > 3 ? 'Semua tahap selesai (3/3)' : 'Tahap ' + o.langkah + ' dari 3 &middot; ' + LANGKAH[o.langkah - 1];
         return '<div class="hm-flow" aria-hidden="true">' + seg + '</div><div class="hm-flowlb">' + lb + '</div>';
     }
     /* ---------- Filter ---------- */
@@ -944,8 +944,9 @@
             if (ps === 'katim_review') { return { key: 'revisi', teks: 'Review hasil revisi PPK BLU', oleh: 'Ketua Tim', cls: 'rose' }; }
             return { key: 'ppk', teks: 'Verifikasi PPK BLU', oleh: 'PPK BLU', cls: 'blue', baca: p.ppk_baca_at, nama: 'PPK BLU' };
         }
-        if (!p.ttd_at) { return { key: 'aktif', teks: 'PO Aktif', oleh: 'PO belum di TTD', cls: 'emerald' }; }
-        if (!p.kontrak_at) { return { key: 'aktif', teks: 'PO Aktif', oleh: 'PO sudah di TTD', cls: 'emerald' }; }
+        // disetujui PPK BLU tetapi PO bertanda tangan belum di-upload Ketua Tim: belum PO Aktif
+        if (!p.ttd_at) { return { key: 'ttd', teks: 'Menunggu Tanda Tangan', oleh: 'Ketua Tim', cls: 'rose' }; }
+        if (!p.kontrak_at) { return { key: 'aktif', teks: 'PO Aktif', oleh: 'PO sudah ditandatangani', cls: 'emerald' }; }
         return { key: 'aktif', teks: 'PO Aktif', oleh: 'PKS telah dibuat', cls: 'emerald' };
     }
     function subLine(ikon, teks) { return '<div class="text-muted small d-flex align-items-center gap-1" style="font-size: 0.73rem;"><i class="bi ' + ikon + '"></i><span>' + teks + '</span></div>'; }
@@ -1294,7 +1295,7 @@
         renderStepper(p); renderShTabs(); renderDock(p); renderBody();
     }
     function renderStepper(p) {
-        var steps = ['Disetujui Ketua Tim', 'Verifikasi Humas', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU'];
+        var steps = ['Disetujui Ketua Tim', 'Verifikasi Tim Mitra', 'Verifikasi PPK BLU'];
         var c = posisi(p).langkah;
         var h = '<div class="hm-steps">';
         steps.forEach(function (s, i) {
@@ -1302,7 +1303,7 @@
             h += '<div class="hm-step ' + cls + '"><span class="n">' + (n < c ? '<i class="bi bi-check-lg"></i>' : n) + '</span><span class="lb">' + s + '</span></div>';
             if (i < steps.length - 1) { h += '<div class="hm-sline' + (n < c ? ' done' : '') + '"></div>'; }
         });
-        var cat = !p.divalidasi ? 'Setelah Anda verifikasi, PO diteruskan ke PPK BLU.' : (c === 5 ? 'Semua verifikasi selesai.' : 'Sudah Anda verifikasi. PO sekarang di ' + posisi(p).di + '.');
+        var cat = !p.divalidasi ? 'Setelah Anda verifikasi, PO diteruskan ke PPK BLU.' : (c === 4 ? 'Semua verifikasi selesai.' : 'Sudah Anda verifikasi. PO sekarang di ' + posisi(p).di + '.');
         $('hmStepper').innerHTML = h + '</div><div class="hm-nextnote">' + cat + '</div>';
     }
     function renderShTabs() {

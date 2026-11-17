@@ -215,11 +215,16 @@
 
 <div class="section-title"><span class="no">{{ @po.nomor_rab }}.</span>RENCANA ANGGARAN BIAYA (RAB)</div>
 
+<!-- [BARU] RAB dari Excel: yang tampil HANYA tabel sheet Excel apa adanya, tanpa tabel Penerimaan/Pengeluaran bertingkat. -->
+<check if="{{ @po.rab_excel.html }}">
+    {{ @po.rab_excel.html | raw }}
+</check>
+
 <!-- [BARU] Format RAB baru (lingkungan): persentase per kategori ditampilin di ATAS (nempel
      sama Nilai Kontrak, gantiin A.Penerimaan lama), baru tabel rincian item per kegiatan di
      bawahnya (No | Kegiatan | Rincian | Satuan Biaya | Biaya | Total Biaya). Kategori "tanpa
      rincian" (mis. Biaya Penunjang Klien) cuma nongol di ringkasan persen ini. -->
-<check if="{{ @po.rab_hitung.is_rab_baru }}">
+<check if="{{ @po.rab_hitung.is_rab_baru  && !@po.rab_excel.html }}">
     <table class="isi rab-table" style="margin-bottom:6px;">
         <colgroup>
             <col style="width:52%;"><col style="width:16%;"><col style="width:32%;">
@@ -339,7 +344,7 @@
 </check>
 
 <!-- Format RAB lama (selulosa): A. Penerimaan / B. Rencana Pengeluaran, gak diubah sama sekali. -->
-<check if="{{ !@po.rab_hitung.is_rab_baru }}">
+<check if="{{ !@po.rab_hitung.is_rab_baru  && !@po.rab_excel.html }}">
     <table class="isi rab-table">
         <colgroup>
             <col style="width:26%;"><col style="width:6%;"><col style="width:6%;">
