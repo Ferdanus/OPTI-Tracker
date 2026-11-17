@@ -1,0 +1,457 @@
+<!--
+    app/views/pks_mitra/index.html
+    Menu "PKS" untuk Tim Mitra: PKS yang sudah selesai dibuat Humas. Tim Mitra membuka, mencetak, menyerahkan ke klien,
+    lalu meng-upload PKS bertanda tangan (satu PDF, atau 1-10 foto yang digabung otomatis jadi satu PDF).
+    Susunan meniru Daftar PO: judul, strip alur, kartu angka (klik = filter), tabel, pager. Fragment (dirender di dalam layout lewat $this->render()).
+    Data dari PksMitraController::index(). Slide di pks_mitra/_slide.html. Kelas berawalan "mpk-", id berawalan "mpk".
+-->
+<style>
+    .mpk-root, .mpk-dlg, .mpk-menu { color: var(--color-text-main, #0f172a); --mpk-pri: var(--color-primary, #334155); --mpk-pri-h: var(--color-primary-hover, #1e293b); --mpk-line: var(--color-border, #e2e8f0); --mpk-mut: var(--color-text-muted, #64748b); }
+    .mpk-root *, .mpk-root *::before, .mpk-root *::after { box-sizing: border-box; }
+    .mpk-root [hidden] { display: none !important; }
+    .mpk-root button { font-family: inherit; cursor: pointer; }
+    .mpk-root :focus-visible, .mpk-dlg :focus-visible, .mpk-menu :focus-visible { outline: 2px solid var(--mpk-pri); outline-offset: 2px; }
+    .mpk-head { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+    .mpk-head h1 { font-size: 1.45rem; font-weight: 800; margin: 0; font-family: var(--font-display, inherit); }
+    .mpk-head i { font-size: 1.4rem; }
+    .mpk-alert { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: .85rem; }
+    .mpk-card { background: #fff; border: 1px solid var(--mpk-line); border-radius: 12px; box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+
+    /* kartu angka */
+    .mpk-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+    .mpk-sc { display: block; width: 100%; text-align: left; padding: 16px 20px; font: inherit; color: inherit; background: #fff; border: 1px solid var(--mpk-line); border-radius: 12px; box-shadow: 0 1px 2px rgba(15,23,42,.05); transition: transform .18s, border-color .18s, box-shadow .18s; }
+    .mpk-sc:hover { transform: translateY(-2px); border-color: #94a3b8; }
+    .mpk-sc.on { border-color: var(--mpk-pri); box-shadow: 0 0 0 1px var(--mpk-pri); }
+    .mpk-sc .l { font-size: .7rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--mpk-mut); }
+    .mpk-sc .n { font-size: 1.9rem; font-weight: 800; line-height: 1.15; margin: 3px 0 2px; font-variant-numeric: tabular-nums; }
+    .mpk-sc .h { font-size: .75rem; color: var(--mpk-mut); }
+    .mpk-sc.amb .n { color: #b45309; }
+
+    /* toolbar + tabel */
+    .mpk-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--mpk-line); }
+    .mpk-sbox { flex: 1 1 260px; display: flex; align-items: stretch; border: 1px solid var(--mpk-line); border-radius: 9px; background: #fff; min-width: 0; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+    .mpk-sbox:focus-within { border-color: var(--mpk-pri); box-shadow: 0 0 0 3px rgba(51,65,85,.12); }
+    .mpk-sbox span { display: grid; place-items: center; padding: 0 10px; color: #94a3b8; }
+    .mpk-sbox input { flex: 1; min-width: 0; border: 0; outline: 0; padding: .5rem .6rem .5rem 0; font-size: .85rem; background: transparent; }
+    .mpk-cnt { font-size: .78rem; color: var(--mpk-mut); margin-left: auto; font-variant-numeric: tabular-nums; }
+    .mpk-tw { overflow-x: auto; }
+    table.mpk-table { width: 100%; border-collapse: collapse; }
+    .mpk-table th { text-align: left; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; font-weight: 700; color: var(--mpk-mut); padding: 11px 12px; background: #f8fafc; border-bottom: 1px solid var(--mpk-line); white-space: nowrap; }
+    .mpk-table td { padding: 14px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: .82rem; }
+    .mpk-table tbody tr { transition: background .15s; }
+    .mpk-table tbody tr:hover { background: #f8fafc; }
+    .mpk-table tr:last-child td { border-bottom: 0; }
+    .mpk-table tbody tr.unread td { background: #f8fbff; }
+    .mpk-table tbody tr.unread .mit, .mpk-table tbody tr.unread .jd { font-weight: 700; }
+    .mpk-no { font-family: 'Courier New', monospace; font-weight: 700; font-size: .8rem; white-space: nowrap; }
+    .mpk-po { font-size: .72rem; color: var(--mpk-mut); margin-top: 2px; }
+    .mpk-mit { font-weight: 700; }
+    .mpk-jd { line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .mpk-tag { display: inline-block; margin-top: 4px; font-size: .72rem; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: #f1f5f9; border: 1px solid var(--mpk-line); }
+    .mpk-dot { width: 8px; height: 8px; border-radius: 50%; background: #2563eb; display: inline-block; margin-right: 6px; }
+    .mpk-pill { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 600; padding: 4px 11px; border-radius: 99px; border: 1px solid var(--mpk-line); white-space: nowrap; }
+    .mpk-pill i { width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; }
+    .mpk-pill.m { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+    .mpk-pill.m i { background: #d97706; }
+    .mpk-pill.s { background: var(--mpk-pri); color: #fff; border-color: var(--mpk-pri); }
+    .mpk-pill.s i { background: #fff; }
+    .mpk-mk { font-size: .72rem; font-weight: 600; margin-top: 5px; display: flex; gap: 5px; align-items: center; }
+    .mpk-mk.b { color: #b45309; }
+    .mpk-mk.a { color: #047857; }
+    .mpk-acts { display: flex; gap: 4px; align-items: center; flex-wrap: nowrap; }
+    .mpk-btn { border: 1.5px solid var(--mpk-line); background: #fff; color: #334155; border-radius: 9px; padding: .38rem .8rem; font-size: .78rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; text-decoration: none; transition: border-color .15s, color .15s, background .15s, transform .15s; }
+    .mpk-btn:hover { border-color: var(--mpk-pri); color: var(--mpk-pri); }
+    .mpk-btn:active { transform: scale(.97); }
+    .mpk-btn.pri { background: var(--mpk-pri); border-color: var(--mpk-pri); color: #fff; }
+    .mpk-btn.pri:hover { background: var(--mpk-pri-h); color: #fff; }
+    .mpk-btn.ic { width: 34px; height: 34px; padding: 0; font-size: .95rem; flex: none; }
+    .mpk-acts .mpk-btn:not(.ic) { min-width: 104px; }
+    .mpk-btn[disabled] { opacity: .55; cursor: not-allowed; }
+    .mpk-empty { text-align: center; padding: 52px 16px; color: #94a3b8; font-size: .85rem; }
+    .mpk-empty i { display: block; font-size: 30px; margin-bottom: 6px; }
+    .mpk-pager { display: flex; justify-content: center; gap: 4px; padding: 14px 16px; border-top: 1px solid var(--mpk-line); flex-wrap: wrap; }
+    .mpk-pager button { min-width: 34px; height: 34px; padding: 0 8px; border: 1px solid var(--mpk-line); background: #fff; color: #334155; border-radius: 8px; font-size: .8rem; font-weight: 600; transition: background .15s, border-color .15s; }
+    .mpk-pager button:hover:not([disabled]):not(.on) { background: #f1f5f9; border-color: #cbd5e1; }
+    .mpk-pager button.on { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-color: #1e293b; color: #fff; cursor: default; }
+    .mpk-pager button[disabled]:not(.on) { color: #94a3b8; background: #f8fafc; cursor: not-allowed; }
+
+    /* menu cetak (melayang di bawah tombol) */
+    .mpk-menu { position: absolute; z-index: 1060; background: #fff; border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; box-shadow: 0 18px 44px rgba(15,23,42,.22); padding: 6px; min-width: 250px; animation: mpkPop .16s ease; }
+    .mpk-menu button { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: center; width: 100%; border: 0; background: transparent; padding: 8px 10px; border-radius: 8px; font-size: .83rem; font-weight: 700; color: #334155; text-align: left; font-family: inherit; cursor: pointer; }
+    .mpk-menu button:hover, .mpk-menu button:focus-visible { background: #f1f5f9; }
+    .mpk-menu .ic { width: 32px; height: 32px; border-radius: 8px; background: #f1f5f9; display: grid; place-items: center; transition: background .15s, color .15s; }
+    .mpk-menu button:hover .ic { background: #334155; color: #fff; }
+    .mpk-menu small { display: block; color: #64748b; font-weight: 500; font-size: .72rem; }
+    @keyframes mpkPop { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    /* dialog upload */
+    .mpk-dlg { position: fixed; inset: 0; z-index: 1075; display: grid; place-items: center; background: rgba(15,23,42,.5); padding: 16px; font-family: inherit; color: #0f172a; }
+    .mpk-dlg[hidden] { display: none; }
+    .mpk-dbox { background: #fff; border-radius: 16px; width: min(540px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 22px; box-shadow: 0 24px 60px rgba(15,23,42,.35); animation: mpkPop .2s ease; }
+    .mpk-dbox *, .mpk-dbox *::before, .mpk-dbox *::after { box-sizing: border-box; }
+    .mpk-dbox h3 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 800; }
+    .mpk-dbox .s { font-size: .8rem; color: #64748b; margin-bottom: 14px; overflow-wrap: anywhere; }
+    .mpk-steps { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; font-size: .8rem; }
+    .mpk-steps div { display: flex; gap: 9px; align-items: flex-start; }
+    .mpk-steps .n { width: 20px; height: 20px; border-radius: 50%; background: #334155; color: #fff; display: grid; place-items: center; font-size: .68rem; font-weight: 800; flex: none; margin-top: 1px; }
+    .mpk-drop { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; background: #f8fafc; color: #64748b; font-size: .82rem; transition: border-color .15s, background .15s; }
+    .mpk-drop.over { border-color: #334155; background: #f1f5f9; }
+    .mpk-drop .ic2 { font-size: 1.7rem; color: #94a3b8; display: block; margin-bottom: 2px; }
+    .mpk-drop .mpk-btn { margin-top: 10px; }
+    .mpk-fl { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+    .mpk-fi { display: flex; gap: 8px; align-items: center; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 8px 6px 10px; font-size: .8rem; min-width: 0; }
+    .mpk-fi .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mpk-fi .sz { color: #64748b; font-size: .72rem; white-space: nowrap; }
+    .mpk-fi button { border: 0; background: transparent; width: 26px; height: 26px; border-radius: 6px; color: #64748b; display: grid; place-items: center; font-size: .85rem; cursor: pointer; }
+    .mpk-fi button:hover:not([disabled]) { background: #f1f5f9; color: #0f172a; }
+    .mpk-fi button[disabled] { opacity: .3; cursor: default; }
+    .mpk-fe { margin-top: 10px; background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; border-radius: 9px; padding: 8px 10px; font-size: .8rem; }
+    .mpk-bar2 { height: 6px; border-radius: 99px; background: #e5e7eb; overflow: hidden; margin-top: 12px; }
+    .mpk-bar2 i { display: block; height: 100%; width: 0; background: #334155; transition: width .25s; }
+    .mpk-prog { font-size: .75rem; color: #64748b; margin-top: 5px; }
+    .mpk-ft { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+    .mpk-toast { position: fixed; right: 18px; bottom: 18px; z-index: 1090; background: #0f172a; color: #fff; border-radius: 12px; padding: 11px 14px; font-size: .8rem; max-width: min(92vw, 360px); box-shadow: 0 12px 30px rgba(15,23,42,.35); display: flex; gap: 10px; align-items: flex-start; animation: mpkPop .25s ease; }
+    .mpk-toast i { color: #34d399; font-size: 1rem; margin-top: 1px; }
+    .mpk-toast b { display: block; }
+    .mpk-toast small { color: #cbd5e1; }
+    .mpk-toast.err i { color: #fca5a5; }
+    @media (max-width: 767.98px) { .mpk-stats { grid-template-columns: 1fr; } table.mpk-table { min-width: 880px; } }
+    @media (prefers-reduced-motion: reduce) { .mpk-root *, .mpk-dlg *, .mpk-menu * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="mpk-root" id="mpkRoot">
+    <div class="mpk-head"><i class="bi bi-file-earmark-text"></i><h1>Perjanjian Kerja Sama (PKS)</h1></div>
+
+    <check if="{{ @error_message }}">
+        <div class="mpk-alert" role="alert">{{ @error_message }}</div>
+    </check>
+
+    <div class="mpk-stats" id="mpkStats"></div>
+
+    <div class="mpk-card" style="overflow:hidden;">
+        <div class="mpk-bar">
+            <label class="mpk-sbox"><span><i class="bi bi-search"></i></span><input type="search" id="mpkCari" placeholder="Cari nomor PKS, mitra, judul, atau nomor PO" aria-label="Cari PKS" autocomplete="off"></label>
+            <span class="mpk-cnt" id="mpkCnt"></span>
+        </div>
+        <div id="mpkList"></div>
+    </div>
+</div>
+
+<div class="mpk-dlg" id="mpkDlg" hidden>
+    <div class="mpk-dbox" role="dialog" aria-modal="true" aria-labelledby="mpkDJudul">
+        <h3 id="mpkDJudul">Upload PKS bertanda tangan</h3>
+        <div class="s" id="mpkDSub"></div>
+        <div class="mpk-steps">
+            <div><span class="n">1</span><span>Cetak PKS dan serahkan ke klien.</span></div>
+            <div><span class="n">2</span><span>Setelah ditandatangani klien, foto atau pindai dokumennya.</span></div>
+            <div><span class="n">3</span><span>Upload satu PDF, atau satu sampai 10 foto (otomatis digabung jadi satu PDF). Maks. 30 MB.</span></div>
+        </div>
+        <div class="mpk-drop" id="mpkDrop">
+            <i class="bi bi-cloud-arrow-up ic2"></i>
+            Tarik file ke sini, atau
+            <div><button type="button" class="mpk-btn" id="mpkPilih"><i class="bi bi-folder2-open"></i>Pilih file</button></div>
+            <input type="file" id="mpkFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" multiple hidden>
+        </div>
+        <div class="mpk-fl" id="mpkFl"></div>
+        <div class="mpk-fe" id="mpkFe" hidden role="alert"></div>
+        <div id="mpkPw" hidden><div class="mpk-bar2"><i id="mpkPb"></i></div><div class="mpk-prog" id="mpkPt"></div></div>
+        <div class="mpk-ft">
+            <button type="button" class="mpk-btn" id="mpkBatal">Batal</button>
+            <button type="button" class="mpk-btn pri" id="mpkKirim" disabled><i class="bi bi-upload"></i>Upload</button>
+        </div>
+    </div>
+</div>
+
+<include href="pks_mitra/_slide.html" />
+
+<script>
+(function () {
+    var BASE = '{{ @BASE }}';
+    var CSRF = '{{ @csrf_token }}';
+    var R = {{ @pks_mitra_json | raw }};
+    var MAKS_BYTE = 31457280, MAKS_FOTO = 10, PER_HAL = 10;
+    var filter = 'menunggu', q = '', hal = 1, uploadId = null, berkas = [], mengirim = false;
+
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function rp(n) { return 'Rp ' + Math.round(n || 0).toLocaleString('id-ID'); }
+    function cari(id) { for (var i = 0; i < R.length; i++) { if (R[i].id === id) { return R[i]; } } return null; }
+    function ganti(baris) { for (var i = 0; i < R.length; i++) { if (R[i].id === baris.id) { R[i] = baris; return baris; } } R.unshift(baris); return baris; }
+    function sudahTtd(r) { return !!r.ttd; }
+    function belumDibuka(r) { return !r.baca && !sudahTtd(r); }
+
+    /* ---------- toast ---------- */
+    var tmToast;
+    function toast(judul, sub, galat) {
+        var lama = $('mpkToast'); if (lama) { lama.remove(); }
+        var t = document.createElement('div');
+        t.id = 'mpkToast'; t.className = 'mpk-toast' + (galat ? ' err' : ''); t.setAttribute('role', 'status');
+        t.innerHTML = '<i class="bi ' + (galat ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill') + '"></i><div><b>' + esc(judul) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div>';
+        document.body.appendChild(t);
+        clearTimeout(tmToast); tmToast = setTimeout(function () { t.remove(); }, galat ? 7000 : 4200);
+    }
+
+    /* ---------- badge menu di sidebar ---------- */
+    function perbaruiBadge() {
+        var n = 0; R.forEach(function (r) { if (belumDibuka(r)) { n++; } });
+        var a = document.querySelector('.sidebar-link[href$="/pks-mitra"]'); if (!a) { return; }
+        var b = a.querySelector('.sidebar-notif-badge');
+        if (n > 0) {
+            if (!b) { b = document.createElement('span'); b.className = 'badge rounded-pill ms-auto sidebar-notif-badge'; b.style.cssText = 'font-size:.68rem;padding:.25em .6em;background-color:#e11d48;color:#fff;'; a.appendChild(b); }
+            b.textContent = n;
+        } else if (b) { b.remove(); }
+    }
+
+    /* ---------- daftar ---------- */
+    function terfilter() {
+        var s = q.trim().toLowerCase();
+        return R.filter(function (r) {
+            if (filter === 'menunggu' && sudahTtd(r)) { return false; }
+            if (filter === 'selesai' && !sudahTtd(r)) { return false; }
+            if (!s) { return true; }
+            return (r.nomor_pks + ' ' + r.mitra + ' ' + r.judul + ' ' + r.nomor_po + ' ' + r.layanan_label).toLowerCase().indexOf(s) !== -1;
+        });
+    }
+    function statusHtml(r) {
+        if (sudahTtd(r)) {
+            return '<span class="mpk-pill s"><i></i>Selesai</span><div class="mpk-mk a"><i class="bi bi-check2-circle"></i>TTD di-upload ' + esc(r.ttd_tgl) + '</div>';
+        }
+        var mk;
+        if (!r.baca) { mk = '<div class="mpk-mk b"><i class="bi bi-envelope"></i>Belum dibuka</div>'; }
+        else if (r.cetak) { mk = '<div class="mpk-mk a"><i class="bi bi-printer"></i>Dicetak ' + esc(r.cetak_tgl) + '</div>'; }
+        else { mk = '<div class="mpk-mk a"><i class="bi bi-envelope-open"></i>Dibuka ' + esc(r.baca_tgl) + '</div>'; }
+        return '<span class="mpk-pill m"><i></i>Menunggu TTD klien</span>' + mk;
+    }
+    function aksiHtml(r) {
+        var h = sudahTtd(r)
+            ? '<button type="button" class="mpk-btn pri" data-a="ttd" data-id="' + r.id + '"><i class="bi bi-file-earmark-check"></i>PKS</button>'
+            : '<button type="button" class="mpk-btn pri" data-a="cetak" data-id="' + r.id + '" aria-haspopup="true"><i class="bi bi-printer"></i>Cetak</button>';
+        h += '<button type="button" class="mpk-btn ic" data-a="lihat" data-id="' + r.id + '" title="Lihat PKS" aria-label="Lihat PKS"><i class="bi bi-eye"></i></button>';
+        if (!sudahTtd(r)) { h += '<button type="button" class="mpk-btn ic" data-a="upload" data-id="' + r.id + '" title="Upload PKS bertanda tangan" aria-label="Upload PKS bertanda tangan"><i class="bi bi-upload"></i></button>'; }
+        return '<div class="mpk-acts">' + h + '</div>';
+    }
+    function render() {
+        var m = 0, s = 0; R.forEach(function (r) { if (sudahTtd(r)) { s++; } else { m++; } });
+        $('mpkStats').innerHTML = [
+            ['menunggu', 'Menunggu TTD klien', 'PKS yang perlu dicetak dan di-upload', m],
+            ['selesai', 'Selesai', 'PKS bertanda tangan sudah di-upload', s],
+            ['semua', 'Total PKS', 'Semua PKS dari Humas', R.length]
+        ].map(function (x) { return '<button type="button" class="mpk-sc' + (x[0] === 'menunggu' && m > 0 ? ' amb' : '') + (filter === x[0] ? ' on' : '') + '" data-f="' + x[0] + '" aria-pressed="' + (filter === x[0]) + '"><div class="l">' + x[1] + '</div><div class="n">' + x[3] + '</div><div class="h">' + x[2] + '</div></button>'; }).join('');
+
+        var rows = terfilter();
+        var tot = Math.max(1, Math.ceil(rows.length / PER_HAL));
+        if (hal > tot) { hal = tot; }
+        var tampil = rows.slice((hal - 1) * PER_HAL, hal * PER_HAL);
+        $('mpkCnt').textContent = rows.length ? (rows.length + ' PKS') : '';
+
+        if (!tampil.length) {
+            var pesan = q.trim() ? 'Tidak ada PKS yang cocok dengan pencarian.' : (filter === 'selesai' ? 'Belum ada PKS bertanda tangan yang di-upload.' : (filter === 'menunggu' ? 'Tidak ada PKS yang menunggu tanda tangan klien. PKS baru dari Humas akan muncul di sini.' : 'Belum ada PKS dari Humas.'));
+            $('mpkList').innerHTML = '<div class="mpk-empty"><i class="bi bi-inbox"></i>' + esc(pesan) + '</div>';
+            return;
+        }
+        var h = '<div class="mpk-tw"><table class="mpk-table"><thead><tr><th style="width:176px">Nomor PKS</th><th style="width:170px">Mitra Industri</th><th>Judul Kegiatan</th><th style="width:112px">Nilai</th><th style="width:170px">Status PKS</th><th style="width:206px">Aksi</th></tr></thead><tbody>';
+        tampil.forEach(function (r) {
+            var un = belumDibuka(r);
+            h += '<tr class="' + (un ? 'unread' : '') + '" data-id="' + r.id + '">' +
+                '<td><div class="mpk-no">' + esc(r.nomor_pks) + '</div><div class="mpk-po">' + esc(r.nomor_po) + '</div></td>' +
+                '<td><div class="mpk-mit mit">' + (un ? '<span class="mpk-dot" title="Belum dibuka"></span>' : '') + esc(r.mitra) + '</div><span class="mpk-tag">' + esc(r.layanan_label) + '</span></td>' +
+                '<td><div class="mpk-jd jd" title="' + esc(r.judul) + '">' + esc(r.judul) + '</div></td>' +
+                '<td style="font-weight:600;white-space:nowrap">' + rp(r.biaya) + '</td>' +
+                '<td>' + statusHtml(r) + '</td>' +
+                '<td>' + aksiHtml(r) + '</td></tr>';
+        });
+        h += '</tbody></table></div>';
+        if (tot > 1) {
+            h += '<div class="mpk-pager"><button type="button" data-p="' + (hal - 1) + '"' + (hal <= 1 ? ' disabled' : '') + ' aria-label="Sebelumnya"><i class="bi bi-chevron-left"></i></button>';
+            for (var p = 1; p <= tot; p++) { h += '<button type="button" data-p="' + p + '"' + (p === hal ? ' class="on" aria-current="page"' : '') + '>' + p + '</button>'; }
+            h += '<button type="button" data-p="' + (hal + 1) + '"' + (hal >= tot ? ' disabled' : '') + ' aria-label="Berikutnya"><i class="bi bi-chevron-right"></i></button></div>';
+        }
+        $('mpkList').innerHTML = h;
+    }
+
+    /* ---------- catat dibuka / dicetak ke server ---------- */
+    function kirimTanda(id, jenis) {
+        var r = cari(id); if (!r) { return Promise.resolve(); }
+        if (jenis === 'baca' && r.baca) { return Promise.resolve(); }
+        if (jenis === 'cetak' && r.cetak) { return Promise.resolve(); }
+        var fd = new FormData(); fd.append('csrf_token', CSRF);
+        return fetch(BASE + '/pks-mitra/' + id + '/' + jenis, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (x) { return x.json(); })
+            .then(function (j) {
+                if (!j || !j.ok) { return; }
+                ['baca', 'baca_tgl', 'cetak', 'cetak_tgl'].forEach(function (k) { if (j[k] != null) { r[k] = j[k]; } });
+                render(); perbaruiBadge();
+            })
+            .catch(function () { /* penanda bersifat pelengkap */ });
+    }
+
+    /* ---------- menu cetak ---------- */
+    function tutupMenu() { var m = $('mpkMenu'); if (m) { m.remove(); } }
+    function menuCetak(btn, r) {
+        tutupMenu();
+        var m = document.createElement('div'); m.className = 'mpk-menu'; m.id = 'mpkMenu'; m.setAttribute('role', 'menu');
+        m.innerHTML =
+            '<button type="button" role="menuitem" data-m="pdf"><span class="ic"><i class="bi bi-file-earmark-pdf"></i></span><span>Unduh PDF<small>Siap dicetak</small></span></button>' +
+            '<button type="button" role="menuitem" data-m="word"><span class="ic"><i class="bi bi-file-earmark-word"></i></span><span>Unduh Word<small>Bisa disunting bila perlu</small></span></button>' +
+            '<button type="button" role="menuitem" data-m="print"><span class="ic"><i class="bi bi-printer"></i></span><span>Cetak langsung<small>Buka dialog printer</small></span></button>';
+        document.body.appendChild(m);
+        var b = btn.getBoundingClientRect();
+        var w = m.offsetWidth, h = m.offsetHeight;
+        var kiri = Math.max(8, Math.min(b.left + window.pageXOffset, window.pageXOffset + document.documentElement.clientWidth - w - 8));
+        var atas = b.bottom + window.pageYOffset + 6;
+        if (b.bottom + h + 12 > window.innerHeight && b.top - h - 6 > 0) { atas = b.top + window.pageYOffset - h - 6; }
+        m.style.left = kiri + 'px'; m.style.top = atas + 'px';
+        var pertama = m.querySelector('button'); if (pertama) { pertama.focus(); }
+        m.addEventListener('click', function (e) {
+            var x = e.target.closest('[data-m]'); if (!x) { return; }
+            var fmt = x.getAttribute('data-m'); tutupMenu();
+            if (fmt === 'word') {
+                toast('Menyiapkan Word...');
+                window.PksMitraSlide.unduhWord(r.id).then(function () { kirimTanda(r.id, 'cetak'); }).catch(function (er) { toast('Word gagal diunduh', er.message, true); });
+            } else {
+                window.PksMitraSlide.buka(r, { tab: 'dok', aksi: fmt });   // PDF dan Cetak butuh tampilan PKS: slide dibuka lalu aksinya jalan sendiri
+            }
+        });
+    }
+
+    /* ---------- dialog upload ---------- */
+    function ukuran(b) { return b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+    function jenisFile(f) {
+        var n = (f.name || '').toLowerCase(), t = (f.type || '').toLowerCase();
+        if (t === 'application/pdf' || /\.pdf$/.test(n)) { return 'pdf'; }
+        if (t === 'image/jpeg' || t === 'image/png' || /\.(jpe?g|png)$/.test(n)) { return 'foto'; }
+        return '';
+    }
+    function pesanGalat(t) { var e = $('mpkFe'); e.textContent = t || ''; e.hidden = !t; }
+    function gambarBerkas() {
+        var h = '';
+        berkas.forEach(function (f, i) {
+            var foto = jenisFile(f) === 'foto';
+            h += '<div class="mpk-fi"><i class="bi ' + (foto ? 'bi-file-earmark-image' : 'bi-file-earmark-pdf') + '"></i><span class="nm" title="' + esc(f.name) + '">' + esc(f.name) + '</span><span class="sz">' + ukuran(f.size) + '</span>' +
+                (berkas.length > 1 ? '<button type="button" data-fi="up" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' title="Naikkan" aria-label="Naikkan"><i class="bi bi-arrow-up"></i></button><button type="button" data-fi="down" data-i="' + i + '"' + (i === berkas.length - 1 ? ' disabled' : '') + ' title="Turunkan" aria-label="Turunkan"><i class="bi bi-arrow-down"></i></button>' : '') +
+                '<button type="button" data-fi="del" data-i="' + i + '" title="Hapus" aria-label="Hapus"><i class="bi bi-x-lg"></i></button></div>';
+        });
+        $('mpkFl').innerHTML = h;
+        $('mpkKirim').disabled = !berkas.length || mengirim;
+    }
+    function tambahBerkas(files) {
+        pesanGalat('');
+        var baru = Array.prototype.slice.call(files || []);
+        if (!baru.length) { return; }
+        for (var i = 0; i < baru.length; i++) {
+            if (!jenisFile(baru[i])) { pesanGalat('Format file harus PDF, JPG, atau PNG.'); return; }
+            if (baru[i].size > MAKS_BYTE) { pesanGalat('Ukuran file maksimal 30 MB. Pilih file yang lebih kecil.'); return; }
+            if (baru[i].size <= 0) { pesanGalat('File "' + baru[i].name + '" kosong.'); return; }
+        }
+        var adaPdfBaru = baru.some(function (f) { return jenisFile(f) === 'pdf'; });
+        if (adaPdfBaru && baru.length > 1) { pesanGalat('Pilih satu file PDF saja, atau satu/beberapa foto. PDF tidak bisa dicampur dengan foto.'); return; }
+        if (adaPdfBaru) { berkas = baru; }                                    // PDF menggantikan pilihan sebelumnya
+        else {
+            if (berkas.length && jenisFile(berkas[0]) === 'pdf') { berkas = []; }   // foto menggantikan PDF
+            berkas = berkas.concat(baru);
+            if (berkas.length > MAKS_FOTO) { berkas = berkas.slice(0, MAKS_FOTO); pesanGalat('Maksimal ' + MAKS_FOTO + ' foto dalam satu kali upload. Kelebihannya tidak dimasukkan.'); }
+        }
+        gambarBerkas();
+    }
+    function bukaDialog(id) {
+        var r = cari(id); if (!r) { return; }
+        tutupMenu();
+        uploadId = id; berkas = []; mengirim = false;
+        $('mpkDJudul').textContent = r.ttd ? 'Upload ulang PKS bertanda tangan' : 'Upload PKS bertanda tangan';
+        $('mpkDSub').textContent = r.nomor_pks + ' · ' + r.mitra + (r.ttd ? ' · file lama akan diganti' : '');
+        $('mpkFile').value = ''; pesanGalat(''); $('mpkPw').hidden = true; $('mpkPb').style.width = '0';
+        gambarBerkas();
+        $('mpkDlg').hidden = false;
+        document.body.style.overflow = 'hidden';
+        $('mpkPilih').focus();
+    }
+    function tutupDialog() {
+        if (mengirim) { return; }
+        $('mpkDlg').hidden = true; uploadId = null; berkas = [];
+        if (!document.getElementById('mpsSl') || !document.getElementById('mpsSl').classList.contains('on')) { document.body.style.overflow = ''; }
+    }
+    function kirimUpload() {
+        var r = cari(uploadId); if (!r || !berkas.length || mengirim) { return; }
+        mengirim = true; pesanGalat('');
+        $('mpkKirim').disabled = true; $('mpkBatal').disabled = true; $('mpkPw').hidden = false; $('mpkPb').style.width = '0'; $('mpkPt').textContent = 'Mengirim...';
+        var fd = new FormData(); fd.append('csrf_token', CSRF);
+        berkas.forEach(function (f) { fd.append('file_pks_ttd[]', f, f.name); });
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', BASE + '/pks-mitra/' + r.id + '/upload');
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.upload.onprogress = function (e) {
+            if (!e.lengthComputable) { return; }
+            var p = Math.round(e.loaded / e.total * 100);
+            $('mpkPb').style.width = p + '%';
+            $('mpkPt').textContent = p < 100 ? ('Mengirim ' + p + '%') : (berkas.length > 1 || jenisFile(berkas[0]) === 'foto' ? 'Menggabungkan foto menjadi PDF...' : 'Menyimpan...');
+        };
+        function selesaiGalat(t) { mengirim = false; $('mpkBatal').disabled = false; $('mpkPw').hidden = true; pesanGalat(t); gambarBerkas(); }
+        xhr.onerror = function () { selesaiGalat('Koneksi terputus saat mengirim. Coba lagi.'); };
+        xhr.ontimeout = xhr.onerror;
+        xhr.onload = function () {
+            var j = null; try { j = JSON.parse(xhr.responseText); } catch (e) {}
+            if (!j) { selesaiGalat('Server membalas ' + xhr.status + ' (bukan JSON). Bisa sesi berakhir atau ukuran kiriman melebihi batas server. Muat ulang halaman lalu coba lagi.'); return; }
+            if (!j.ok) { selesaiGalat(j.pesan || 'Upload gagal.'); return; }
+            mengirim = false; $('mpkBatal').disabled = false;
+            var baris = j.baris ? ganti(j.baris) : r;
+            tutupDialog();
+            render(); perbaruiBadge();
+            if (window.PksMitraSlide) { window.PksMitraSlide.perbarui(baris, 'ttd'); }
+            toast('PKS bertanda tangan di-upload', 'Humas dan Ketua Tim mendapat pemberitahuan.');
+        };
+        xhr.send(fd);
+    }
+
+    /* ---------- event ---------- */
+    $('mpkRoot').addEventListener('click', function (e) {
+        var el;
+        if ((el = e.target.closest('[data-f]'))) { filter = el.getAttribute('data-f'); hal = 1; render(); return; }
+        if ((el = e.target.closest('[data-p]'))) { if (!el.disabled) { hal = parseInt(el.getAttribute('data-p'), 10) || 1; render(); } return; }
+        if ((el = e.target.closest('[data-a]'))) {
+            var r = cari(parseInt(el.getAttribute('data-id'), 10)); if (!r) { return; }
+            var a = el.getAttribute('data-a');
+            if (a === 'lihat') { window.PksMitraSlide.buka(r, { tab: 'dok' }); }
+            else if (a === 'ttd') { window.PksMitraSlide.buka(r, { tab: 'ttd' }); }
+            else if (a === 'upload') { bukaDialog(r.id); }
+            else if (a === 'cetak') { if ($('mpkMenu')) { tutupMenu(); } else { menuCetak(el, r); } }
+        }
+    });
+    document.addEventListener('click', function (e) { if (!e.target.closest('#mpkMenu') && !e.target.closest('[data-a="cetak"]')) { tutupMenu(); } });
+    $('mpkCari').addEventListener('input', function () { q = this.value; hal = 1; render(); });
+
+    $('mpkPilih').addEventListener('click', function () { $('mpkFile').click(); });
+    $('mpkFile').addEventListener('change', function () { tambahBerkas(this.files); this.value = ''; });
+    $('mpkBatal').addEventListener('click', tutupDialog);
+    $('mpkKirim').addEventListener('click', kirimUpload);
+    $('mpkDlg').addEventListener('mousedown', function (e) { if (e.target === this) { tutupDialog(); } });
+    $('mpkFl').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-fi]'); if (!b) { return; }
+        var i = parseInt(b.getAttribute('data-i'), 10), t = b.getAttribute('data-fi');
+        if (t === 'del') { berkas.splice(i, 1); }
+        else if (t === 'up' && i > 0) { var x = berkas[i]; berkas[i] = berkas[i - 1]; berkas[i - 1] = x; }
+        else if (t === 'down' && i < berkas.length - 1) { var y = berkas[i]; berkas[i] = berkas[i + 1]; berkas[i + 1] = y; }
+        pesanGalat(''); gambarBerkas();
+    });
+    var drop = $('mpkDrop');
+    ['dragenter', 'dragover'].forEach(function (n) { drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (n) { drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function (e) { if (e.dataTransfer && e.dataTransfer.files) { tambahBerkas(e.dataTransfer.files); } });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') { return; }
+        if (!$('mpkDlg').hidden) { tutupDialog(); e.stopImmediatePropagation(); return; }
+        if ($('mpkMenu')) { tutupMenu(); }
+    }, true);
+
+    /* kabar dari slide */
+    document.addEventListener('pksmitra:dibuka', function (e) { kirimTanda(e.detail.id, 'baca'); });
+    document.addEventListener('pksmitra:dicetak', function (e) { kirimTanda(e.detail.id, 'cetak'); });
+    document.addEventListener('pksmitra:upload', function (e) { bukaDialog(e.detail.id); });
+
+    /* tab awal: yang menunggu bila ada, selain itu semua */
+    (function () {
+        var m = 0; R.forEach(function (r) { if (!sudahTtd(r)) { m++; } });
+        filter = (m > 0 || !R.length) ? 'menunggu' : 'semua';
+    })();
+    render();
+})();
+</script>
