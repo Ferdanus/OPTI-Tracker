@@ -237,7 +237,19 @@
                             <div class="col-4 text-muted">PIC Peneliti</div>
                             <div class="col-8">
                                 <span class="fw-semibold text-dark">{{ @order.pic_proposal_nama ?: (@proposal.pic_nama ?: 'Belum Ditentukan') }}</span>
-                                <span class="text-muted small d-block">Spesialisasi {{ ucfirst(@order.jenis_layanan_opti) }}</span>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2 pb-2 border-bottom">
+                            <div class="col-4 text-muted">PIC Cadangan</div>
+                            <div class="col-8">
+                                <check if="{{ !empty(@order.pic_proposal_cadangan_nama) }}">
+                                    <true>
+                                        <span class="fw-semibold text-dark">{{ @order.pic_proposal_cadangan_nama }}</span>
+                                    </true>
+                                    <false>
+                                        <span class="fw-semibold text-dark">-</span>
+                                    </false>
+                                </check>
                             </div>
                         </div>
                         <div class="row g-2">
@@ -344,10 +356,20 @@
                 <div class="card-body p-3 p-md-4">
                     
                     <check if="{{ !@can_edit }}">
-                        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-4 py-2 px-3 small rounded-3 text-warning-emphasis">
-                            <i class="bi bi-lock-fill flex-shrink-0 text-warning"></i>
-                            <div>{{ @lock_message ?: 'Status edit dikunci. Hubungi superadmin.' }}</div>
-                        </div>
+                        <check if="{{ @can_process_proposal }}">
+                            <true>
+                                <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-4 py-2 px-3 small rounded-3 text-warning-emphasis">
+                                    <i class="bi bi-lock-fill flex-shrink-0 text-warning"></i>
+                                    <div>{{ @lock_message ?: 'Dokumen proposal teknis telah diajukan atau disetujui. Pengeditan dikunci, silakan hubungi superadmin.' }}</div>
+                                </div>
+                            </true>
+                            <false>
+                                <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-4 py-2 px-3 small rounded-3 text-warning-emphasis">
+                                    <i class="bi bi-shield-lock-fill flex-shrink-0 text-warning"></i>
+                                    <div>{{ @lock_message ?: 'Mode Pratinjau (Read-Only): Anda tidak memiliki hak akses untuk mengubah halaman ini. Penyusunan dan pengelolaan proposal teknis merupakan wewenang Ketua Tim OPTI Selulosa dan PIC Proposal yang ditugaskan.' }}</div>
+                                </div>
+                            </false>
+                        </check>
                     </check>
 
                     <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/simpan" method="POST" enctype="multipart/form-data" id="formProposal" data-no-loader="true">
@@ -573,7 +595,14 @@
                         <form action="{{ @BASE }}/order/{{ @order.id }}/proposal/review-katim" method="POST" id="formReviewKatimStandalone">
                             <input type="hidden" name="redirect" value="proposal">
                             <input type="hidden" name="action_review" id="inputActionReviewKatimStandalone" value="">
-                            <check if="{{ @order.jenis_layanan_opti == 'selulosa' && !@proposal_has_file_cost }}">
+                            <set isStandaloneSubmitted="{{ (@proposal && @proposal.status_proposal == 'diajukan') || @order.status_proposal_biaya == 'menunggu_approval' }}" />
+                            <check if="{{ !@isStandaloneSubmitted }}">
+                                <div class="alert alert-warning border border-warning-subtle p-2.5 mb-3 rounded-2 small d-flex align-items-center gap-2">
+                                    <i class="bi bi-lock-fill text-warning-emphasis flex-shrink-0"></i>
+                                    <div>Proposal masih berstatus <strong>Draf / Belum Dikirim</strong> oleh PIC. Tombol <strong>Setujui Proposal</strong> terkunci sampai PIC menekan <strong>Kirim ke Ka. Tim</strong>.</div>
+                                </div>
+                            </check>
+                            <check if="{{ @isStandaloneSubmitted && @order.jenis_layanan_opti == 'selulosa' && !@proposal_has_file_cost }}">
                                 <div class="alert alert-danger border border-danger-subtle p-2.5 mb-3 rounded-2 small d-flex align-items-center gap-2">
                                     <i class="bi bi-exclamation-circle text-danger flex-shrink-0"></i>
                                     <div>PIC belum melengkapi estimasi kerja, estimasi biaya (RAB), atau berkas proposal. Proposal belum dapat disetujui.</div>
@@ -585,18 +614,28 @@
                             </div>
                             
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <button type="button" class="btn btn-outline-danger btn-sm px-3.5 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5" onclick="confirmReviewKatimStandalone('reject')">
-                                    <i class="bi bi-arrow-counterclockwise"></i>
-                                    <span>Minta Revisi</span>
-                                </button>
+                                <check if="{{ @isStandaloneSubmitted }}">
+                                    <true>
+                                        <button type="button" class="btn btn-outline-danger btn-sm px-3.5 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5" onclick="confirmReviewKatimStandalone('reject')">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                            <span>Minta Revisi</span>
+                                        </button>
+                                    </true>
+                                    <false>
+                                        <button type="button" class="btn btn-secondary btn-sm px-3.5 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5" disabled title="Terkunci: Proposal masih berstatus draf dan belum dikirim ke Ka. Tim">
+                                            <i class="bi bi-lock-fill"></i>
+                                            <span>Minta Revisi</span>
+                                        </button>
+                                    </false>
+                                </check>
                                 
-                                <check if="{{ @order.jenis_layanan_opti == 'selulosa' && !@proposal_has_file_cost }}">
-                                    <button type="button" class="btn btn-secondary btn-sm px-4 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5" disabled>
-                                        <i class="bi bi-check2-circle"></i>
+                                <check if="{{ !@isStandaloneSubmitted || (@order.jenis_layanan_opti == 'selulosa' && !@proposal_has_file_cost) }}">
+                                    <button type="button" class="btn btn-secondary btn-sm px-4 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5" disabled title="{{ !@isStandaloneSubmitted ? 'Terkunci: Proposal masih berstatus draf dan belum dikirim ke Ka. Tim' : 'Terkunci: Proposal belum lengkap' }}">
+                                        <i class="bi bi-lock-fill"></i>
                                         <span>Setujui Proposal</span>
                                     </button>
                                 </check>
-                                <check if="{{ @order.jenis_layanan_opti != 'selulosa' || @proposal_has_file_cost }}">
+                                <check if="{{ @isStandaloneSubmitted && (@order.jenis_layanan_opti != 'selulosa' || @proposal_has_file_cost) }}">
                                     <button type="button" class="btn btn-primary btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="confirmReviewKatimStandalone('approve')">
                                         <i class="bi bi-check2-circle"></i>
                                         <span>Setujui Proposal</span>

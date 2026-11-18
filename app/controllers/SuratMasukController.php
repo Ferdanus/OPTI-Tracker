@@ -608,7 +608,7 @@ class SuratMasukController extends Controller {
      * Route: POST /simulasi-sekretariat/kirim
      */
     public function kirimSimulasi() {
-        $this->requireAuth();
+        $this->requirePermission('surat_masuk:registrasi', '/order');
         
         $table = $this->f3->get('db_sekretariat_table') ?: 'tb_arsipsurat';
         $post = $this->f3->get('POST');
@@ -792,7 +792,7 @@ class SuratMasukController extends Controller {
      * Route: POST /simulasi-sekretariat/@id/hapus
      */
     public function hapusSimulasi($f3, $params) {
-        $this->requireAuth();
+        $this->requirePermission('surat_masuk:registrasi', '/order');
         $id = (int)($params['id'] ?? 0);
         $table = $this->f3->get('db_sekretariat_table') ?: 'tb_arsipsurat';
         $idCol = (strpos($table, 'tb_arsipsurat') !== false) ? 'id_arsip' : 'id';

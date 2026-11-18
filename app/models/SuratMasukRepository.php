@@ -527,12 +527,12 @@ class SuratMasukRepository {
             $this->dbMain->exec(
                 "INSERT INTO `order_layanan` (
                     `id_customer`, `id_surat_masuk`, `nomor_permintaan`, `nomor_order`, `tanggal_masuk`, 
-                    `judul_kegiatan`, `deskripsi`, `spm_layanan`, `jenis_layanan_opti`, 
+                    `judul_kegiatan`, `deskripsi`, `spm_layanan`, `jenis_layanan_opti`, `media_permohonan`,
                     `lokasi_pelaksanaan`, `jumlah_pekerjaan`, `estimasi_biaya`, 
                     `status`, `diklaim_oleh`, `tanggal_klaim`, `created_at`
                 ) VALUES (
                     ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?,
                     'internal', '1 paket kegiatan', 0.00,
                     'permintaan_masuk', ?, ?, ?
                 )",
@@ -825,8 +825,27 @@ class SuratMasukRepository {
         $waktuSekarang = date('Y-m-d H:i:s');
         $alasan = trim($alasan);
 
-        $order = $this->dbMain->exec("SELECT id_surat_masuk FROM `order_layanan` WHERE id = ?", array(1 => $orderId));
-        $idSuratMasuk = !empty($order) ? (int)$order[0]['id_surat_masuk'] : 0;
+        $order = $this->dbMain->exec(
+            "SELECT id_surat_masuk, status, status_penawaran, status_keuangan, tanggal_spm_mulai, tanggal_terima_sampel
+             FROM `order_layanan` WHERE id = ?",
+            array(1 => $orderId)
+        );
+        if (empty($order)) {
+            throw new \Exception("Order #{$orderId} tidak ditemukan.");
+        }
+        $row = $order[0];
+        $statusOrd = strtolower(trim((string)($row['status'] ?? '')));
+        if ($statusOrd === 'selesai') {
+            throw new \Exception("Order sudah berstatus selesai dan tidak dapat ditolak.");
+        }
+        if (($row['status_penawaran'] ?? '') === 'deal'
+            || in_array($row['status_keuangan'] ?? '', ['menunggu_pembayaran', 'terbayar_sebagian', 'lunas'], true)
+            || !empty($row['tanggal_spm_mulai'])
+            || !empty($row['tanggal_terima_sampel'])) {
+            throw new \Exception("Order sudah memasuki tahap penawaran DEAL / pembayaran / pelaksanaan dan tidak dapat ditolak langsung.");
+        }
+
+        $idSuratMasuk = (int)$row['id_surat_masuk'];
 
         $this->dbMain->exec(
             "UPDATE `order_layanan` 

@@ -588,9 +588,9 @@
                                             <span class="text-secondary fw-medium" style="font-size: 0.84rem;">{{ @grp.divisi_title }}</span>
                                         </td>
                                         <td>
-                                            <div class="d-flex flex-wrap align-items-center gap-1.5">
+                                            <div class="roles-badge-container d-flex flex-wrap align-items-center gap-1.5">
                                                 <repeat group="{{ @grp.leader.roles_list }}" value="{{ @rb }}">
-                                                    <span class="role-badge" data-label-default="{{ @rb.label }}" data-label-opti="{{ @rb.label_opti ?: @rb.label }}" data-label-po="{{ @rb.label_po ?: @rb.label }}">{{ @rb.label }}</span>
+                                                    <span class="role-badge" data-modul="{{ @rb.modul }}" data-label-default="{{ @rb.label }}" data-label-opti="{{ @rb.label_opti ?: @rb.label }}" data-label-po="{{ @rb.label_po ?: @rb.label }}">{{ @rb.label }}</span>
                                                 </repeat>
                                             </div>
                                         </td>
@@ -660,9 +660,9 @@
                                             </td>
                                             <td>
                                                 <div class="subtim-cell-inner">
-                                                    <div class="d-flex flex-wrap align-items-center gap-1.5">
+                                                    <div class="roles-badge-container d-flex flex-wrap align-items-center gap-1.5">
                                                         <repeat group="{{ @sub.roles_list }}" value="{{ @rb }}">
-                                                            <span class="role-badge" data-label-default="{{ @rb.label }}" data-label-opti="{{ @rb.label_opti ?: @rb.label }}" data-label-po="{{ @rb.label_po ?: @rb.label }}">{{ @rb.label }}</span>
+                                                            <span class="role-badge" data-modul="{{ @rb.modul }}" data-label-default="{{ @rb.label }}" data-label-opti="{{ @rb.label_opti ?: @rb.label }}" data-label-po="{{ @rb.label_po ?: @rb.label }}">{{ @rb.label }}</span>
                                                         </repeat>
                                                     </div>
                                                 </div>
@@ -881,6 +881,7 @@
                                 <div class="role-chips-grid">
                                     <button type="button" class="role-chip-btn tambah-role-chip" data-value="tim_kerja_selulosa" data-label="Tim Kerja Selulosa"><span>Tim Kerja Selulosa</span><i class="bi bi-check2 role-chip-check"></i></button>
                                     <button type="button" class="role-chip-btn tambah-role-chip" data-value="tim_kerja_lingkungan" data-label="Tim Kerja Lingkungan"><span>Tim Kerja Lingkungan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn tambah-role-chip" data-value="pjt_lingkungan" data-label="PJT Lingkungan"><span>PJT Lingkungan</span><i class="bi bi-check2 role-chip-check"></i></button>
                                 </div>
                             </div>
                             <!-- Grup 4: Penyusun PO Layanan -->
@@ -979,6 +980,7 @@
                                 <div class="role-chips-grid">
                                     <button type="button" class="role-chip-btn edit-role-chip" data-value="tim_kerja_selulosa" data-label="Tim Kerja Selulosa"><span>Tim Kerja Selulosa</span><i class="bi bi-check2 role-chip-check"></i></button>
                                     <button type="button" class="role-chip-btn edit-role-chip" data-value="tim_kerja_lingkungan" data-label="Tim Kerja Lingkungan"><span>Tim Kerja Lingkungan</span><i class="bi bi-check2 role-chip-check"></i></button>
+                                    <button type="button" class="role-chip-btn edit-role-chip" data-value="pjt_lingkungan" data-label="PJT Lingkungan"><span>PJT Lingkungan</span><i class="bi bi-check2 role-chip-check"></i></button>
                                 </div>
                             </div>
                             <!-- Grup 4: Penyusun PO Layanan -->
@@ -1604,14 +1606,59 @@ document.addEventListener('DOMContentLoaded', function() {
             emptyRow.style.display = (visibleDivisiIndex === 0 && parentRows.length > 0) ? '' : 'none';
         }
 
-        // Update teks badge role secara dinamis berdasarkan tab yang aktif (OPTI vs PO)
-        document.querySelectorAll('.role-badge[data-label-opti]').forEach(function(badge) {
-            if (activeTabModul === 'po') {
-                badge.textContent = badge.getAttribute('data-label-po') || badge.getAttribute('data-label-default');
-            } else if (activeTabModul === 'opti') {
-                badge.textContent = badge.getAttribute('data-label-opti') || badge.getAttribute('data-label-default');
-            } else {
-                badge.textContent = badge.getAttribute('data-label-default');
+        // Update teks badge role dan filter sesuai tab yang aktif (OPTI vs PO)
+        // Hindari duplikasi: setiap pengguna hanya menampilkan 1 role yang relevan per modul/tab
+        document.querySelectorAll('.roles-badge-container').forEach(function(container) {
+            const badges = container.querySelectorAll('.role-badge');
+            const seenLabels = new Set();
+            let visibleInRow = 0;
+
+            badges.forEach(function(badge) {
+                const modul = badge.getAttribute('data-modul') || 'keduanya';
+                let shouldShow = true;
+
+                if (activeTabModul === 'opti') {
+                    // Di tab Pengguna OPTI: jangan tampilkan role khusus PO jika user memiliki role OPTI
+                    if (modul === 'po') {
+                        shouldShow = false;
+                    }
+                    badge.textContent = badge.getAttribute('data-label-opti') || badge.getAttribute('data-label-default');
+                } else if (activeTabModul === 'po') {
+                    // Di tab Pengguna PO: jangan tampilkan role khusus OPTI jika user memiliki role PO
+                    if (modul === 'opti') {
+                        shouldShow = false;
+                    }
+                    badge.textContent = badge.getAttribute('data-label-po') || badge.getAttribute('data-label-default');
+                } else {
+                    badge.textContent = badge.getAttribute('data-label-default');
+                }
+
+                const currentText = badge.textContent.trim();
+
+                // Cegah duplikasi teks badge pada baris yang sama
+                if (shouldShow && seenLabels.has(currentText)) {
+                    shouldShow = false;
+                }
+
+                if (shouldShow) {
+                    badge.style.display = '';
+                    seenLabels.add(currentText);
+                    visibleInRow++;
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+
+            // Fallback: Jika setelah filter tidak ada badge yang terlihat tapi barisnya cocok,
+            // tampilkan badge pertama agar kolom role tidak kosong
+            if (visibleInRow === 0 && badges.length > 0) {
+                const firstBadge = badges[0];
+                firstBadge.style.display = '';
+                if (activeTabModul === 'po') {
+                    firstBadge.textContent = firstBadge.getAttribute('data-label-po') || firstBadge.getAttribute('data-label-default');
+                } else if (activeTabModul === 'opti') {
+                    firstBadge.textContent = firstBadge.getAttribute('data-label-opti') || firstBadge.getAttribute('data-label-default');
+                }
             }
         });
 

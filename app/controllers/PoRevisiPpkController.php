@@ -528,6 +528,9 @@ class PoRevisiPpkController extends Controller {
     /** POST /po-ppk/@id/catatan -- PPK BLU menambah catatan (draf). Field: bagian, teks */
     public function catatanTambah($f3, $params) {
         $po = $this->aksesPpk((int) $params['id']);
+        if (strtolower(trim((string) ($po['order_status'] ?? ''))) === 'selesai' && !$this->canEditSubmittedData(true, (int) ($po['order_id'] ?? 0))) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Order sudah selesai dan dikunci.'], 422);
+        }
         $this->wajibState($po, ['ppk_cek'], 'Catatan hanya bisa ditambah saat PO berada di PPK BLU.');
 
         $bagian = trim((string) $f3->get('POST.bagian'));
@@ -580,6 +583,9 @@ class PoRevisiPpkController extends Controller {
     /** POST /po-ppk/@id/minta-revisi -- kirim semua draf ke Ketua Tim */
     public function mintaRevisi($f3, $params) {
         $po = $this->aksesPpk((int) $params['id']);
+        if (strtolower(trim((string) ($po['order_status'] ?? ''))) === 'selesai' && !$this->canEditSubmittedData(true, (int) ($po['order_id'] ?? 0))) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Order sudah selesai dan dikunci.'], 422);
+        }
         $uid = (int) $this->getUserId();
         $this->wajibState($po, ['ppk_cek'], 'Revisi hanya bisa diminta saat PO berada di PPK BLU.');
 
@@ -619,6 +625,9 @@ class PoRevisiPpkController extends Controller {
     /** POST /po-ppk/@id/catatan-ppk -- simpan catatan PPK BLU saja (tanpa verifikasi / minta revisi), dipanggil otomatis saat mengetik. */
     public function simpanCatatanPpk($f3, $params) {
         $po = $this->aksesPpk((int) $params['id']);
+        if (strtolower(trim((string) ($po['order_status'] ?? ''))) === 'selesai' && !$this->canEditSubmittedData(true, (int) ($po['order_id'] ?? 0))) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Order sudah selesai dan dikunci.'], 422);
+        }
         $this->wajibState($po, ['ppk_cek'], 'Catatan hanya bisa diisi saat PO berada di PPK BLU.');
         $catatan = mb_substr(trim((string) $f3->get('POST.catatan')), 0, 500);
         if (!$this->siapkanKolomCatatanPpk()) {
@@ -635,6 +644,9 @@ class PoRevisiPpkController extends Controller {
     /** POST /po-ppk/@id/validasi -- PPK BLU memvalidasi. PO selesai dan terkunci. */
     public function validasi($f3, $params) {
         $po = $this->aksesPpk((int) $params['id']);
+        if (strtolower(trim((string) ($po['order_status'] ?? ''))) === 'selesai' && !$this->canEditSubmittedData(true, (int) ($po['order_id'] ?? 0))) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Order sudah selesai dan dikunci.'], 422);
+        }
         $uid = (int) $this->getUserId();
         $this->wajibState($po, ['ppk_cek'], 'PO hanya bisa diverifikasi saat berada di PPK BLU.');
         $n = $this->hitungCatatan((int) $po['id'], 'ppk', null, 'ppk');
@@ -934,13 +946,14 @@ class PoRevisiPpkController extends Controller {
 
     protected function divisiKatim() {
         if ($this->isSuperadmin()) { return ''; }
-        $d = isset($_SESSION['jenis_layanan_opti']) ? (string) $_SESSION['jenis_layanan_opti'] : '';
+        $d = (string) ($this->getDivisiKetuaTim() ?: '');
         return in_array($d, self::DIVISI_VALID, true) ? $d : '';
     }
 
     protected function ambilPo($poId) {
-        $sql = "SELECT p.id, p.nomor_po, p.status, p.status_review, p.ppk_status, p.ronde_ppk, p.validasi_keuangan_at,
-                       o.id AS order_id, o.jenis_layanan_opti, o.ketua_pelaksana_id
+        $sql = "SELECT p.id, p.nomor_po, p.status, p.status_review, p.ppk_status, p.ronde_ppk,
+                       p.verifikasi_humas_at, p.tervalidasi_mitra_at, p.validasi_keuangan_at,
+                       o.id AS order_id, o.status AS order_status, o.jenis_layanan_opti, o.ketua_pelaksana_id
                 FROM po_kegiatan p
                 JOIN order_layanan o ON o.id = p.order_id
                 WHERE p.id = ? LIMIT 1";
@@ -982,8 +995,11 @@ class PoRevisiPpkController extends Controller {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal membaca data PO. Sudah menjalankan migration_po_revisi_ppk.sql? Detail: ' . $e->getMessage()], 500);
         }
         if (!$po) { $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan.'], 404); }
-        if (!in_array($po['status'], ['terkirim', 'disetujui_mitra', 'disetujui'], true) || $po['status_review'] !== 'disetujui') {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini belum disetujui Ketua Tim.'], 422);
+        if (!in_array($po['status'], ['disetujui_mitra', 'disetujui'], true)
+            || $po['status_review'] !== 'disetujui'
+            || empty($po['verifikasi_humas_at'])
+            || empty($po['tervalidasi_mitra_at'])) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO ini belum melewati verifikasi Humas dan validasi Tim Mitra.'], 422);
         }
         return $po;
     }

@@ -111,11 +111,22 @@ class OptiPembayaran extends \DB\SQL\Mapper {
     public function getRekapKeuanganOrder(int $orderId): array {
         $orderModel = new OrderLayanan($this->db);
         $order = $orderModel->getDetail($orderId);
-        $totalBiaya = (float)($order['estimasi_biaya'] ?? 0);
+        $spDeal = $this->db->exec(
+            "SELECT nominal_penawaran FROM tb_surat_penawaran WHERE order_id = ? ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1",
+            array(1 => $orderId)
+        );
+        $totalBiaya = (!empty($spDeal[0]['nominal_penawaran']) && (float)$spDeal[0]['nominal_penawaran'] > 0)
+            ? (float)$spDeal[0]['nominal_penawaran']
+            : (float)($order['estimasi_biaya'] ?? 0);
 
         $totalTerbayar = $this->hitungTotalTerbayar($orderId);
-        $sisaPiutang = max(0, $totalBiaya - $totalTerbayar);
-        $persenLunas = $totalBiaya > 0 ? min(100, round(($totalTerbayar / $totalBiaya) * 100, 1)) : 0;
+        $skbRows = $this->db->exec(
+            "SELECT COUNT(*) AS cnt FROM opti_pembayaran WHERE order_id = ? AND is_kesanggupan_bayar = 1 AND status_verifikasi = 'terverifikasi'",
+            array(1 => $orderId)
+        );
+        $punyaSkb = ((int)($skbRows[0]['cnt'] ?? 0) > 0);
+        $sisaPiutang = $punyaSkb ? 0.0 : max(0, $totalBiaya - $totalTerbayar);
+        $persenLunas = $punyaSkb ? 100.0 : ($totalBiaya > 0 ? min(100, round(($totalTerbayar / $totalBiaya) * 100, 1)) : 0);
 
         $invoices = (new OptiInvoice($this->db))->getByOrderId($orderId);
         $totalTertagih = 0;
@@ -123,8 +134,8 @@ class OptiPembayaran extends \DB\SQL\Mapper {
             $totalTertagih += (float)$inv['nominal_tagihan'];
         }
 
-        $statusKeuangan = 'belum_ditagih';
-        if ($totalTerbayar >= $totalBiaya && $totalBiaya > 0) {
+        $statusKeuangan = (($order['status_keuangan'] ?? '') === 'menunggu_pembayaran') ? 'menunggu_pembayaran' : 'belum_ditagih';
+        if ($punyaSkb || ($totalTerbayar >= $totalBiaya && $totalBiaya > 0)) {
             $statusKeuangan = 'lunas';
         } elseif ($totalTerbayar > 0) {
             $statusKeuangan = 'terbayar_sebagian';
@@ -164,10 +175,13 @@ class OptiPembayaran extends \DB\SQL\Mapper {
      */
     public function recalcStatusKeuangan(int $orderId): string {
         $totalRows = $this->db->exec(
-            "SELECT COALESCE(SUM(jumlah), 0) AS total FROM opti_pembayaran WHERE order_id = ? AND status_verifikasi = 'terverifikasi'",
+            "SELECT COALESCE(SUM(jumlah), 0) AS total,
+                    SUM(CASE WHEN is_kesanggupan_bayar = 1 AND status_verifikasi = 'terverifikasi' THEN 1 ELSE 0 END) AS jml_skb
+             FROM opti_pembayaran WHERE order_id = ? AND status_verifikasi = 'terverifikasi'",
             array(1 => $orderId)
         );
         $totalBayar = (float)($totalRows[0]['total'] ?? 0);
+        $punyaSkb   = ((int)($totalRows[0]['jml_skb'] ?? 0) > 0);
 
         $acuanRows = $this->db->exec(
             "SELECT o.estimasi_biaya, sp.nominal_penawaran
@@ -189,7 +203,9 @@ class OptiPembayaran extends \DB\SQL\Mapper {
                 : (float)$acuanRows[0]['estimasi_biaya'];
         }
 
-        if ($biayaAcuan > 0) {
+        if ($punyaSkb) {
+            $statusBaru = 'lunas';
+        } elseif ($biayaAcuan > 0) {
             $statusBaru = ($totalBayar >= $biayaAcuan) ? 'lunas' : ($totalBayar > 0 ? 'terbayar_sebagian' : 'menunggu_pembayaran');
         } else {
             $statusBaru = ($totalBayar > 0) ? 'lunas' : 'menunggu_pembayaran';

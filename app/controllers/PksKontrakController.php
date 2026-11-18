@@ -240,6 +240,11 @@ class PksKontrakController extends Controller {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum diverifikasi (di-ACC) Tim Mitra.'], 404);
         }
 
+        $orderIdKontrak = (int) ($po['order_id'] ?? 0);
+        if (strtolower(trim((string) ($po['order_status'] ?? ''))) === 'selesai' && !$this->canEditSubmittedData(true, $orderIdKontrak)) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'Kontrak / PKS dikunci karena order layanan sudah berstatus selesai. Hubungi Superadmin untuk membuka izin koreksi.'], 422);
+        }
+
         $vals = $this->bacaInput($f3);
         $lama = $this->ambilKontrak($poId);
 
@@ -596,7 +601,7 @@ class PksKontrakController extends Controller {
                        p.judul_kegiatan AS po_judul,
                        p.ruang_lingkup, p.jadwal_mulai, p.jadwal_selesai,
                        " . ($this->kolomBaca() ? "p.po_ttd_at, p.po_ttd_file, p.po_ttd_asal, p.po_ttd_oleh_nama, p.tervalidasi_mitra_at, p.validasi_keuangan_at, p.kontrak_dibuat_at, p.kontrak_dibuat_oleh_nama, p.kontrak_dibaca_at, p.kontrak_dibaca_oleh_nama," : "") . "
-                       o.id AS order_id, o.id_customer, o.jenis_layanan_opti, o.judul_kegiatan AS order_judul, o.estimasi_biaya,
+                       o.id AS order_id, o.id_customer, o.status AS order_status, o.jenis_layanan_opti, o.judul_kegiatan AS order_judul, o.estimasi_biaya,
                        c.nmcustomer, c.pt_cv,
                        (SELECT sp.nominal_penawaran FROM tb_surat_penawaran sp
                          WHERE sp.order_id = o.id AND sp.status_respon_klien = 'deal'
