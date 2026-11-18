@@ -127,6 +127,7 @@ class MasterJabatanPelaksanaController extends MasterTimPelaksanaController {
     /** POST /master-jabatan-pelaksana/ubah -- ganti nama beberapa jabatan sekaligus. */
     public function ubah($f3) {
         $this->izinkanJabatan(true);
+        $this->pastikanSkema();
         $items = json_decode((string) $f3->get('POST.items'), true);
         if (!is_array($items) || !count($items)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Tidak ada data yang diubah.'], 422); }
 
@@ -157,7 +158,8 @@ class MasterJabatanPelaksanaController extends MasterTimPelaksanaController {
         try {
             $this->db->begin();
             foreach ($ubah as $id => $nama) {
-                $this->db->exec("UPDATE po_jabatan_pelaksana SET nama = ? WHERE id = ?", [1 => $nama, 2 => $id]);
+                if ($semua[$id] === $nama) { continue; }   // nama tidak berubah -> updated_at jangan disentuh
+                $this->db->exec("UPDATE po_jabatan_pelaksana SET nama = ?, updated_at = NOW() WHERE id = ? AND deleted_at IS NULL", [1 => $nama, 2 => $id]);
             }
             foreach ($peta as $layanan => $petaLay) { $poTerubah += $this->terapkanKePoBelumSelesai($petaLay, $layanan); }
             $this->db->commit();
@@ -215,6 +217,7 @@ class MasterJabatanPelaksanaController extends MasterTimPelaksanaController {
     /** POST /master-jabatan-pelaksana/hapus */
     public function hapus($f3) {
         $this->izinkanJabatan(true);
+        $this->pastikanSkema();
         $ids = json_decode((string) $f3->get('POST.ids'), true);
         if (!is_array($ids) || !count($ids)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Tidak ada data yang dipilih.'], 422); }
         $ids = array_values(array_unique(array_map('intval', $ids)));
@@ -230,7 +233,8 @@ class MasterJabatanPelaksanaController extends MasterTimPelaksanaController {
         $n = 0;
         foreach ($ids as $id) {
             if (!isset($milik[$id])) { continue; }
-            $this->db->exec("DELETE FROM po_jabatan_pelaksana WHERE id = ? AND aktif = 0", [1 => $id]);
+            // soft delete: baris tetap ada di DB, hanya ditandai deleted_at (dan tidak tampil lagi di sistem)
+            $this->db->exec("UPDATE po_jabatan_pelaksana SET deleted_at = NOW(), updated_at = NOW() WHERE id = ? AND aktif = 0 AND deleted_at IS NULL", [1 => $id]);
             $n++;
         }
         $this->keluarkanState($n . ' jabatan dihapus. PO yang sudah dibuat tidak berubah.');
@@ -239,12 +243,13 @@ class MasterJabatanPelaksanaController extends MasterTimPelaksanaController {
     /** POST /master-jabatan-pelaksana/@id/aktif */
     public function aktif($f3, $params) {
         $this->izinkanJabatan(true);
+        $this->pastikanSkema();
         $a = ((int) $f3->get('POST.aktif')) ? 1 : 0;
         $id = (int) $params['id'];
         $milik = [];
         foreach ($this->dataJabatan() as $j) { $milik[$j['id']] = 1; }
         if (!isset($milik[$id])) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Jabatan tidak ditemukan.'], 404); }
-        $this->db->exec("UPDATE po_jabatan_pelaksana SET aktif = ? WHERE id = ?", [1 => $a, 2 => $id]);
+        $this->db->exec("UPDATE po_jabatan_pelaksana SET aktif = ?, updated_at = NOW() WHERE id = ? AND deleted_at IS NULL", [1 => $a, 2 => $id]);
         $this->keluarkanState($a ? 'Jabatan diaktifkan.' : 'Jabatan dinonaktifkan (tidak muncul di pilihan baru).');
     }
 }

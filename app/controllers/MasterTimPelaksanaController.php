@@ -18,6 +18,14 @@
  *   POST /master-tim-pelaksana/hapus                ids=[..]
  *   POST /master-tim-pelaksana/@id/aktif            aktif=0|1
  *
+ * Sinkron dari Data Pengguna: pengguna yang terdaftar di Data Pengguna dengan layanan OPTI Selulosa / OPTI Lingkungan (role Ketua Tim / Tim Kerja)
+ * otomatis masuk ke Tim Pelaksana layanan itu (sumber = 'pengguna'). Kalau role-nya dicabut di Data Pengguna, anggota itu jadi NONAKTIF (tidak dihapus,
+ * nonaktif_oleh = 'pengguna'); kalau didaftarkan lagi, aktif kembali. Anggota yang ditambah manual (sumber = 'manual') tidak disentuh sinkron,
+ * dan tambah / nonaktif / hapus di Tim Pelaksana tidak mengubah Data Pengguna. Lihat sinkronDariPengguna().
+ *
+ * Riwayat data: po_tim_pelaksana & po_jabatan_pelaksana punya kolom updated_at (terisi tiap diaktifkan / dinonaktifkan / diubah)
+ * dan deleted_at (soft delete: baris yang "dihapus" TIDAK dibuang dari DB, hanya diberi deleted_at dan tidak ditampilkan lagi).
+ *
  * Kompatibel PHP 7.2.
  */
 class MasterTimPelaksanaController extends Controller {
@@ -105,6 +113,7 @@ class MasterTimPelaksanaController extends Controller {
             if (!empty($kol[0]) && !isset($kol[0]['Default'])) {
                 $this->db->exec("ALTER TABLE po_tim_pelaksana MODIFY id_jabatan INT UNSIGNED NOT NULL DEFAULT 0");
             }
+            $this->migrasiSoftDelete();
             $n = $this->db->exec("SELECT COUNT(*) AS n FROM po_jabatan_pelaksana");
             if ((int) ($n[0]['n'] ?? 0) === 0) {
                 foreach (array_keys(self::$LAYANAN) as $k) {
@@ -127,7 +136,7 @@ class MasterTimPelaksanaController extends Controller {
         if (empty($kol)) {
             $this->db->exec("ALTER TABLE po_jabatan_pelaksana ADD COLUMN layanan VARCHAR(30) NOT NULL DEFAULT '' AFTER id");
         }
-        $baru = $this->db->exec("SHOW INDEX FROM po_jabatan_pelaksana WHERE Key_name = 'uq_jabatan_layanan_nama'");
+        $baru = $this->db->exec("SHOW INDEX FROM po_jabatan_pelaksana WHERE Key_name IN ('uq_jabatan_layanan_nama', 'uq_jabatan_layanan_nama_del')");
         if (empty($baru)) {
             $lama = $this->db->exec("SHOW INDEX FROM po_jabatan_pelaksana WHERE Key_name = 'uq_jabatan_nama'");
             if (!empty($lama)) {
@@ -140,10 +149,48 @@ class MasterTimPelaksanaController extends Controller {
         if (!empty($umum)) {
             foreach (array_keys(self::$LAYANAN) as $k) {
                 foreach ($umum as $r) {
-                    $this->db->exec("INSERT IGNORE INTO po_jabatan_pelaksana (layanan, nama, aktif) VALUES (?, ?, ?)", [1 => $k, 2 => $r['nama'], 3 => (int) $r['aktif']]);
+                    $this->db->exec("INSERT INTO po_jabatan_pelaksana (layanan, nama, aktif)
+                                     SELECT ?, ?, ? FROM DUAL
+                                      WHERE NOT EXISTS (SELECT 1 FROM po_jabatan_pelaksana x WHERE x.layanan = ? AND x.nama = ?)",
+                        [1 => $k, 2 => $r['nama'], 3 => (int) $r['aktif'], 4 => $k, 5 => $r['nama']]);
                 }
             }
             $this->db->exec("DELETE FROM po_jabatan_pelaksana WHERE layanan = ''");
+        }
+    }
+
+    /**
+     * Soft delete + riwayat ubah untuk kedua tabel master. Aman dijalankan berulang:
+     *  - kolom updated_at (kapan terakhir diaktifkan / dinonaktifkan / diubah) dan deleted_at (kapan "dihapus") ditambah bila belum ada;
+     *  - kunci unik lama ((id_user, layanan) / (layanan, nama)) diganti dengan versi yang ikut deleted_at, supaya baris yang sudah
+     *    "dihapus" tidak menghalangi pegawai / nama jabatan yang sama ditambahkan lagi. Pencegahan dobel untuk data yang masih tampil
+     *    dilakukan di kode (tambah / ubah), bukan oleh kunci unik.
+     */
+    protected function migrasiSoftDelete() {
+        $tabel = [
+            'po_tim_pelaksana'      => ['uq_user_layanan',          'uq_user_layanan_del',          '(id_user, layanan, deleted_at)'],
+            'po_jabatan_pelaksana'  => ['uq_jabatan_layanan_nama',  'uq_jabatan_layanan_nama_del',  '(layanan, nama, deleted_at)'],
+        ];
+        foreach ($tabel as $t => $k) {
+            $u = $this->db->exec("SHOW COLUMNS FROM $t LIKE 'updated_at'");
+            if (empty($u)) { $this->db->exec("ALTER TABLE $t ADD COLUMN updated_at DATETIME NULL DEFAULT NULL AFTER created_at"); }
+            $d = $this->db->exec("SHOW COLUMNS FROM $t LIKE 'deleted_at'");
+            if (empty($d)) { $this->db->exec("ALTER TABLE $t ADD COLUMN deleted_at DATETIME NULL DEFAULT NULL AFTER updated_at"); }
+            if ($t === 'po_tim_pelaksana') {
+                $s = $this->db->exec("SHOW COLUMNS FROM $t LIKE 'sumber'");
+                if (empty($s)) { $this->db->exec("ALTER TABLE $t ADD COLUMN sumber VARCHAR(12) NOT NULL DEFAULT 'manual'"); }
+                $n = $this->db->exec("SHOW COLUMNS FROM $t LIKE 'nonaktif_oleh'");
+                if (empty($n)) { $this->db->exec("ALTER TABLE $t ADD COLUMN nonaktif_oleh VARCHAR(12) NULL DEFAULT NULL"); }
+            }
+            $baru = $this->db->exec("SHOW INDEX FROM $t WHERE Key_name = '" . $k[1] . "'");
+            if (empty($baru)) {
+                $lama = $this->db->exec("SHOW INDEX FROM $t WHERE Key_name = '" . $k[0] . "'");
+                if (!empty($lama)) {
+                    $this->db->exec("ALTER TABLE $t DROP INDEX " . $k[0] . ", ADD UNIQUE KEY " . $k[1] . " " . $k[2]);
+                } else {
+                    $this->db->exec("ALTER TABLE $t ADD UNIQUE KEY " . $k[1] . " " . $k[2]);
+                }
+            }
         }
     }
 
@@ -153,14 +200,14 @@ class MasterTimPelaksanaController extends Controller {
 
     protected function dataTim() {
         $lock = $this->layananTerkunci();
-        $sql = "SELECT id, id_user, layanan, id_jabatan, aktif FROM po_tim_pelaksana";
+        $sql = "SELECT id, id_user, layanan, id_jabatan, aktif, sumber FROM po_tim_pelaksana WHERE deleted_at IS NULL";
         $par = [];
-        if ($lock) { $sql .= " WHERE layanan = ?"; $par[1] = $lock; }
+        if ($lock) { $sql .= " AND layanan = ?"; $par[1] = $lock; }
         $sql .= " ORDER BY id ASC";
         $out = [];
         foreach ($this->db->exec($sql, $par) as $r) {
             $out[] = ['id' => (int) $r['id'], 'peg' => (int) $r['id_user'], 'lay' => $r['layanan'],
-                      'jab' => (int) $r['id_jabatan'], 'aktif' => (int) $r['aktif']];
+                      'jab' => (int) $r['id_jabatan'], 'aktif' => (int) $r['aktif'], 'sumber' => (string) $r['sumber']];
         }
         return $out;
     }
@@ -168,9 +215,9 @@ class MasterTimPelaksanaController extends Controller {
     /** Jabatan per layanan. Ketua Tim / Tim Kerja hanya melihat layanannya sendiri; Superadmin semuanya. */
     protected function dataJabatan() {
         $lock = $this->layananTerkunci();
-        $sql = "SELECT id, layanan, nama, aktif FROM po_jabatan_pelaksana";
+        $sql = "SELECT id, layanan, nama, aktif FROM po_jabatan_pelaksana WHERE deleted_at IS NULL";
         $par = [];
-        if ($lock) { $sql .= " WHERE layanan = ?"; $par[1] = $lock; }
+        if ($lock) { $sql .= " AND layanan = ?"; $par[1] = $lock; }
         $sql .= " ORDER BY id ASC";
         $out = [];
         foreach ($this->db->exec($sql, $par) as $r) {
@@ -225,6 +272,7 @@ class MasterTimPelaksanaController extends Controller {
                 'lay'       => $t['lay'],
                 'layanan'   => isset(self::$LAYANAN[$t['lay']]) ? self::$LAYANAN[$t['lay']] : $t['lay'],
                 'aktif'     => (int) $t['aktif'],
+                'sumber'    => $t['sumber'],
             ];
         }
         return $out;
@@ -234,6 +282,73 @@ class MasterTimPelaksanaController extends Controller {
         return json_encode($v, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
     }
 
+    /** Layanan Data Pengguna yang ikut disinkronkan ke Tim Pelaksana PO (role: Ketua Tim & Tim Kerja layanan itu). */
+    protected static $SINKRON_LAYANAN = ['selulosa', 'lingkungan'];
+
+    /**
+     * Samakan Tim Pelaksana dengan Data Pengguna (opti_user_map). Aman dipanggil berulang; tidak melempar error.
+     *  - pengguna aktif di layanan selulosa / lingkungan yang belum ada di Tim -> ditambahkan (aktif, sumber 'pengguna');
+     *  - anggota sumber 'pengguna' yang rolenya dicabut -> dinonaktifkan (nonaktif_oleh 'pengguna'), TIDAK dihapus;
+     *  - anggota yang dinonaktifkan karena dicabut lalu didaftarkan lagi -> aktif kembali;
+     *  - anggota sumber 'manual', anggota yang dinonaktifkan manual oleh Ketua Tim, dan anggota yang sudah dihapus tidak disentuh.
+     * Kalau kolom baru belum ada (halaman Master belum pernah dibuka sesudah update), sinkron dilewati dulu.
+     */
+    public static function sinkronDariPengguna($db) {
+        try {
+            $kol = $db->exec("SHOW COLUMNS FROM po_tim_pelaksana LIKE 'nonaktif_oleh'");
+            if (empty($kol)) { return; }
+            $kol = $db->exec("SHOW COLUMNS FROM po_tim_pelaksana LIKE 'deleted_at'");
+            if (empty($kol)) { return; }
+            if (!class_exists('PenggunaController')) { return; }
+            $lay = "'" . implode("','", self::$SINKRON_LAYANAN) . "'";
+            // Siapa saja yang "terdaftar" dihitung SAMA dengan daftar di halaman Data Pengguna: role dari tb_arsipuser.si_opti
+            // (atau jabatan struktural bila si_opti kosong) digabung dengan role aktif di opti_user_map.
+            $struktural = [170 => 'ketua_tim_selulosa', 180 => 'tim_kerja_selulosa', 190 => 'ketua_tim_lingkungan'];
+            $kunci = [
+                'ketua_tim_selulosa' => 'selulosa', 'tim_kerja_selulosa' => 'selulosa',
+                'ketua_tim_lingkungan' => 'lingkungan', 'tim_kerja_lingkungan' => 'lingkungan',
+            ];
+            $dipakai = [];
+            $tandai = function ($uid, $roleKey) use (&$dipakai, $kunci) {
+                $roleKey = \PenggunaController::normalizeRoleKey((string) $roleKey);
+                if (isset($kunci[$roleKey])) { $dipakai[(int) $uid . '|' . $kunci[$roleKey]] = 1; }
+            };
+            foreach ($db->exec("SELECT id_user, si_opti, id_struktural_tim FROM tb_arsipuser") as $u) {
+                $si = trim((string) $u['si_opti']);
+                $st = (int) $u['id_struktural_tim'];
+                if ($si !== '' && $si !== 'user') { $tandai($u['id_user'], $si); }
+                elseif (isset($struktural[$st])) { $tandai($u['id_user'], $struktural[$st]); }
+            }
+            foreach ($db->exec("SELECT id_user, role, jenis_layanan FROM opti_user_map WHERE is_active = 1 AND status_tampil = 'show'") as $m) {
+                $tandai($m['id_user'], \PenggunaController::mapEntryToRoleKey(trim((string) $m['role']), trim((string) $m['jenis_layanan'])));
+            }
+
+            $ada = $db->exec("SELECT id, id_user, layanan, aktif, sumber, nonaktif_oleh, deleted_at FROM po_tim_pelaksana WHERE layanan IN ($lay)");
+            $hidup = []; $terhapus = [];
+            foreach ($ada as $r) {
+                $k = (int) $r['id_user'] . '|' . $r['layanan'];
+                if ($r['deleted_at'] === null) { $hidup[$k] = $r; } else { $terhapus[$k] = 1; }
+            }
+
+            foreach ($dipakai as $k => $v) {
+                list($uid, $l) = explode('|', $k);
+                if (!isset($hidup[$k])) {
+                    if (isset($terhapus[$k])) { continue; }   // pernah sengaja dihapus dari Tim -> tidak dimasukkan lagi otomatis
+                    $db->exec("INSERT INTO po_tim_pelaksana (id_user, layanan, id_jabatan, aktif, sumber, created_by) VALUES (?, ?, 0, 1, 'pengguna', NULL)", [1 => (int) $uid, 2 => $l]);
+                } elseif ((int) $hidup[$k]['aktif'] === 0 && $hidup[$k]['nonaktif_oleh'] === 'pengguna') {
+                    $db->exec("UPDATE po_tim_pelaksana SET aktif = 1, nonaktif_oleh = NULL, updated_at = NOW() WHERE id = ?", [1 => (int) $hidup[$k]['id']]);
+                }
+            }
+            foreach ($hidup as $k => $r) {
+                if ($r['sumber'] === 'pengguna' && (int) $r['aktif'] === 1 && !isset($dipakai[$k])) {
+                    $db->exec("UPDATE po_tim_pelaksana SET aktif = 0, nonaktif_oleh = 'pengguna', updated_at = NOW() WHERE id = ?", [1 => (int) $r['id']]);
+                }
+            }
+        } catch (\Throwable $e) {
+            // sinkron bersifat tambahan: jangan sampai mengganggu halaman / form PO
+        }
+    }
+
     /**
      * Dipakai form PO: anggota tim pelaksana AKTIF di satu layanan.
      * Format tiap baris: nama saja (jabatan & tugas dikosongkan; jabatan dipilih sendiri di form PO).
@@ -241,6 +356,7 @@ class MasterTimPelaksanaController extends Controller {
     public static function ambilAktif($db, $divisi) {
         $d = strtolower(trim((string) $divisi));
         if (!isset(self::$LAYANAN[$d])) { return []; }
+        self::sinkronDariPengguna($db);
         try {
             $rows = $db->exec(
                 "SELECT u.nama_user AS nama
@@ -284,6 +400,7 @@ class MasterTimPelaksanaController extends Controller {
     public function index($f3) {
         $this->izinkan();
         $ok = $this->pastikanSkema();
+        if ($ok) { self::sinkronDariPengguna($this->db); }
         $lock = $this->layananTerkunci();
         $kelola = $this->bisaKelola();
         $cfg = ['su' => $this->isSuperadmin(), 'kelola' => $kelola, 'lock' => (string) $lock, 'hal' => 'tim'];
@@ -347,7 +464,7 @@ class MasterTimPelaksanaController extends Controller {
         $par = []; foreach ($ids as $i => $v) { $par[$i + 1] = $v; }
         $ada = $this->db->exec("SELECT id_user FROM tb_arsipuser WHERE id_user IN ($in) AND (status = 1 OR status = '1' OR status = 'aktif')", $par);
         if (count($ada) !== count($ids)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada pegawai yang tidak ditemukan atau tidak aktif.'], 422); }
-        $dobel = $this->db->exec("SELECT id_user FROM po_tim_pelaksana WHERE layanan = ? AND id_user IN ($in)", array_merge([1 => $lay], array_combine(range(2, count($ids) + 1), $ids)));
+        $dobel = $this->db->exec("SELECT id_user FROM po_tim_pelaksana WHERE layanan = ? AND deleted_at IS NULL AND id_user IN ($in)", array_merge([1 => $lay], array_combine(range(2, count($ids) + 1), $ids)));
         if (count($dobel)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada pegawai yang sudah terdaftar di layanan ini.'], 422); }
 
         $uid = (int) $this->getUserId();
@@ -374,6 +491,7 @@ class MasterTimPelaksanaController extends Controller {
     /** POST /master-tim-pelaksana/hapus */
     public function hapus($f3) {
         $this->izinkan(true, true);
+        $this->pastikanSkema();
         $ids = json_decode((string) $f3->get('POST.ids'), true);
         if (!is_array($ids) || !count($ids)) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Tidak ada data yang dipilih.'], 422); }
         $milik = [];
@@ -389,7 +507,8 @@ class MasterTimPelaksanaController extends Controller {
         foreach ($ids as $id) {
             $id = (int) $id;
             if (!isset($milik[$id])) { continue; }
-            $this->db->exec("DELETE FROM po_tim_pelaksana WHERE id = ? AND aktif = 0", [1 => $id]);
+            // soft delete: baris tetap ada di DB, hanya ditandai deleted_at (dan tidak tampil lagi di sistem)
+            $this->db->exec("UPDATE po_tim_pelaksana SET deleted_at = NOW(), updated_at = NOW() WHERE id = ? AND aktif = 0 AND deleted_at IS NULL", [1 => $id]);
             $n++;
         }
         $this->keluarkanState($n . ' anggota dihapus. PO yang sudah dibuat tidak berubah.');
@@ -398,12 +517,14 @@ class MasterTimPelaksanaController extends Controller {
     /** POST /master-tim-pelaksana/@id/aktif */
     public function aktif($f3, $params) {
         $this->izinkan(true, true);
+        $this->pastikanSkema();
         $id = (int) $params['id'];
         $milik = [];
         foreach ($this->dataTim() as $t) { $milik[$t['id']] = 1; }
         if (!isset($milik[$id])) { $this->keluarkanJson(['ok' => false, 'pesan' => 'Anggota tidak ditemukan.'], 404); }
         $a = ((int) $f3->get('POST.aktif')) ? 1 : 0;
-        $this->db->exec("UPDATE po_tim_pelaksana SET aktif = ? WHERE id = ?", [1 => $a, 2 => $id]);
+        // dinonaktifkan manual oleh Ketua Tim -> sinkron dari Data Pengguna tidak akan mengaktifkannya lagi
+        $this->db->exec("UPDATE po_tim_pelaksana SET aktif = ?, nonaktif_oleh = " . ($a ? "NULL" : "'manual'") . ", updated_at = NOW() WHERE id = ? AND deleted_at IS NULL", [1 => $a, 2 => $id]);
         $this->keluarkanState($a ? 'Anggota diaktifkan.' : 'Anggota dinonaktifkan.');
     }
 }

@@ -102,6 +102,54 @@ protected function getTanggalKesanggupanBayar($orderId) {
     return (int) date('d', $t) . ' ' . $bulanIndo[(int) date('n', $t)] . ' ' . date('Y', $t);
 }
 
+protected function getRingkasanPembayaran($orderId) {
+    $bulanIndo = ['', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+    $b = $this->safeQuery(
+        "SELECT COALESCE(SUM(jumlah), 0) AS bayar FROM opti_pembayaran WHERE order_id = ? AND status_verifikasi = 'terverifikasi'",
+        [$orderId]
+    );
+    $bayar = (float) ($b[0]['bayar'] ?? 0);
+    if ($bayar <= 0) { return null; }
+
+    $a = $this->safeQuery(
+        "SELECT o.estimasi_biaya, sp.nominal_penawaran
+           FROM order_layanan o
+           LEFT JOIN tb_surat_penawaran sp ON sp.id = (
+                SELECT id FROM tb_surat_penawaran WHERE order_id = o.id
+                ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
+          WHERE o.id = ? LIMIT 1",
+        [$orderId]
+    );
+    $total = 0.0;
+    if (!empty($a)) {
+        $total = !empty($a[0]['nominal_penawaran']) ? (float) $a[0]['nominal_penawaran'] : (float) $a[0]['estimasi_biaya'];
+    }
+    if ($total <= 0 || $bayar >= $total) { return null; }
+
+    $t = $this->safeQuery(
+        "SELECT termin_ke, tanggal_bayar FROM opti_pembayaran
+          WHERE order_id = ? AND status_verifikasi = 'terverifikasi'
+            AND (is_kesanggupan_bayar = 0 OR is_kesanggupan_bayar IS NULL)
+          ORDER BY tanggal_bayar DESC, id DESC LIMIT 1",
+        [$orderId]
+    );
+    $terminKe = (int) ($t[0]['termin_ke'] ?? 1);
+    $tgl = '';
+    if (!empty($t[0]['tanggal_bayar']) && ($ts = strtotime($t[0]['tanggal_bayar']))) {
+        $tgl = (int) date('d', $ts) . ' ' . $bulanIndo[(int) date('n', $ts)] . ' ' . date('Y', $ts);
+    }
+
+    return [
+        'total'     => $total,
+        'bayar'     => $bayar,
+        'sisa'      => $total - $bayar,
+        'pct'       => (int) floor($bayar / $total * 100),
+        'termin_ke' => $terminKe,
+        'tgl'       => $tgl,
+    ];
+}
+
 protected function parsePerPointLines($text) {
     // Satu item = satu poin berpenanda (a. / 1. / - / •). Baris tanpa penanda yang menyusul sebuah poin
     // dianggap lanjutan poin itu (digabung dengan baris baru, isinya tidak diubah) supaya tampil rapi
@@ -1497,7 +1545,7 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
     $infoPembayaran = $this->getInfoPembayaranOtomatis($orderId, $orderData['status_keuangan'] ?? '');
 $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNICODE));
 $f3->set('info_kesanggupan_json', json_encode($this->getTanggalKesanggupanBayar((int) $orderId), JSON_UNESCAPED_UNICODE));
-
+$f3->set('ringkasan_bayar_json', json_encode($this->getRingkasanPembayaran((int) $orderId), JSON_UNESCAPED_UNICODE));
         $suratDasar = $this->suratDasarDariOrder($orderId);
         $jadwalAuto = $this->jadwalOtomatisDariOrder($orderData);
 $f3->set('jadwal_auto', $jadwalAuto);
@@ -1624,7 +1672,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
     $infoPembayaran = $this->getInfoPembayaranOtomatis((int) $po->order_id, $orderData['status_keuangan'] ?? '');
     $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNICODE));
     $f3->set('info_kesanggupan_json', json_encode($this->getTanggalKesanggupanBayar((int) $po->order_id), JSON_UNESCAPED_UNICODE));
-
+    $f3->set('ringkasan_bayar_json', json_encode($this->getRingkasanPembayaran((int) $po->order_id), JSON_UNESCAPED_UNICODE));
         $suratDasar = $this->suratDasarDariOrder((int) $po->order_id);
         $jadwalAuto = $this->jadwalOtomatisDariOrder($orderData);
 $f3->set('jadwal_auto', $jadwalAuto);
@@ -2513,16 +2561,29 @@ protected function siapkanDataPo($po, $orderData) {
      * Periode tampil ke-2 dan seterusnya diberi penanda 'lanjutan'.
      */
     protected function chunkJadwalTampil(array $group, array $chunks) {
+        $kegiatan = array_values(array_filter((array) ($group['kegiatan'] ?? []), 'is_array'));
+        // Jadwal yang terbagi beberapa bagian: satu baris per kegiatan, dan baris itu muncul di SEMUA bagian yang ditampilkan.
+        // Kegiatan yang namanya sama (mis. diketik dua kali di bagian berbeda) digabung jadi satu baris dengan centang gabungan,
+        // jadi kegiatan yang bersambung antar bagian tetap satu baris utuh.
+        $gabung = [];
+        foreach ($kegiatan as $keg) {
+            $nama = trim((string) ($keg['nama'] ?? ''));
+            $kunci = $nama === '' ? '#' . count($gabung) : mb_strtolower(preg_replace('/\s+/u', ' ', $nama));
+            if (!isset($gabung[$kunci])) { $gabung[$kunci] = $keg; $gabung[$kunci]['tanda'] = array_values(array_unique(array_map('strval', (array) ($keg['tanda'] ?? [])))); continue; }
+            $gabung[$kunci]['tanda'] = array_values(array_unique(array_merge($gabung[$kunci]['tanda'], array_map('strval', (array) ($keg['tanda'] ?? [])))));
+        }
+        $gabung = array_values($gabung);
+        $banyakBagian = count($chunks) > 1;
         $tampil = [];
         foreach ($chunks as $ch) {
             $keys = array_column($ch['kolom'], 'key');
             $ada = false;
-            foreach (($group['kegiatan'] ?? []) as $keg) {
-                if (is_array($keg) && array_intersect($keys, (array) ($keg['tanda'] ?? []))) { $ada = true; break; }
+            foreach ($gabung as $keg) {
+                if (array_intersect($keys, (array) ($keg['tanda'] ?? []))) { $ada = true; break; }
             }
-            if ($ada) { $tampil[] = $ch; }
+            if ($ada) { $ch['kegiatan_tampil'] = $banyakBagian ? $gabung : null; $tampil[] = $ch; }
         }
-        if (empty($tampil) && !empty($chunks)) { $tampil = [$chunks[0]]; }
+        if (empty($tampil) && !empty($chunks)) { $tampil = [$chunks[0]]; $tampil[0]['kegiatan_tampil'] = $banyakBagian ? $gabung : null; }
         foreach ($tampil as $i => $ch) { $tampil[$i]['lanjutan'] = ($i > 0); }
         return $tampil;
     }

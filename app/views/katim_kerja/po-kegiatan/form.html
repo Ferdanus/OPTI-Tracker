@@ -144,6 +144,11 @@
     padding: 0.75rem 1rem;
     transition: all 0.2s ease;
 }
+
+.po-payment-banner .bar-bayar { flex: 0 0 100%; height: 6px; border-radius: 99px; background: var(--po-border); overflow: hidden; margin-top: -4px; }
+.po-payment-banner .bar-bayar i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--po-primary); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) { .po-payment-banner .bar-bayar i { transition: none; } }
+
 .po-preview-card {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -385,7 +390,27 @@
     display: none;
     font-weight: 500;
 }
-.wajib-error-msg.show { display: block; }
+.wajib-error-msg.show { display: block; animation: wajibMsgIn .25s ease; }
+/* Merah "wajib diisi" hilang otomatis begitu kolom terisi: hijau sebentar ("Sudah terisi"), lalu memudar ke normal */
+body [data-wajib="1"] { transition: border-color .35s ease, box-shadow .35s ease, background-color .35s ease; }
+body .po-editor-wrap { transition: border-color .35s ease, box-shadow .35s ease; }
+.po-editor-wrap.is-wajib-ok {
+    border-color: #16a34a !important;
+    box-shadow: 0 0 0 3.5px rgba(22, 163, 74, 0.14) !important;
+}
+[data-wajib="1"].is-wajib-ok {
+    border-color: #16a34a !important;
+    box-shadow: 0 0 0 3.5px rgba(22, 163, 74, 0.14) !important;
+    background-color: #ffffff !important;
+}
+.wajib-error-msg.ok { color: #16a34a; font-weight: 600; }
+.wajib-error-msg.show.leaving { overflow: hidden; animation: wajibMsgOut .4s ease forwards; }
+@keyframes wajibMsgIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes wajibMsgOut { from { opacity: 1; max-height: 24px; margin-top: 3px; } to { opacity: 0; max-height: 0; margin-top: 0; } }
+@media (prefers-reduced-motion: reduce) {
+    body [data-wajib="1"], body .po-editor-wrap { transition: none; }
+    .wajib-error-msg.show, .wajib-error-msg.show.leaving { animation: none; }
+}
 
 /* RAB Dynamic Tables & Hierarchical Cards */
 .rab-kat-box {
@@ -640,6 +665,15 @@
 .jadwal-strip i { flex: 1; background: #e2e8f0; border-radius: 1px; }
 .jadwal-strip i.on { background: #1e293b; }
 .jadwal-strip i.gap { margin-left: 6px; }
+.jadwal-chunk-header { position: relative; }
+.jadwal-sambung-cap { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.jadwal-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 99px; padding: 0 8px; }
+.jadwal-tag.go { color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; }
+.jadwal-menu-keg { position: absolute; right: 8px; top: calc(100% + 4px); z-index: 30; width: min(340px, 92vw); background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 30px rgba(15, 23, 42, .18); padding: 6px; }
+.jadwal-menu-keg .g { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px 4px; }
+.jadwal-menu-keg button { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 10px; font: inherit; font-size: .84rem; background: none; border: 0; border-radius: 8px; padding: 8px 10px; cursor: pointer; color: #0f172a; text-align: left; }
+.jadwal-menu-keg button:hover { background: #f1f5f9; }
+.jadwal-menu-keg button small { color: #64748b; white-space: nowrap; }
 .jadwal-chunk-header {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -973,6 +1007,34 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
 .rabxl-st.err { color: #b91c1c; }
 .rabxl-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: .72rem; color: #64748b; margin-bottom: 8px; }
 .rabxl-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+/* Slide kanan: tinjau Excel RAB (3 langkah) sebelum diterapkan */
+body.rabxl-lock { overflow: hidden; }
+.rabxl-dw { position: fixed; top: 0; right: 0; bottom: 0; left: var(--rabxl-kiri, 0px); z-index: 2100; display: none; }
+.rabxl-dw.on { display: block; }
+.rabxl-dw-scrim { position: absolute; inset: 0; background: rgba(15, 23, 42, .5); opacity: 0; transition: opacity .25s; }
+.rabxl-dw.go .rabxl-dw-scrim { opacity: 1; }
+.rabxl-dw-pan { position: absolute; top: 0; right: 0; bottom: 0; width: 100%; background: #fff; display: flex; flex-direction: column; box-shadow: -12px 0 40px rgba(15, 23, 42, .25); transform: translateX(100%); transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+.rabxl-dw.go .rabxl-dw-pan { transform: none; }
+.rabxl-dw-hd { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
+.rabxl-dw-hd .t { flex: 1; min-width: 0; }
+.rabxl-dw-hd .t b { display: block; font-size: 1rem; color: #0f172a; }
+.rabxl-dw-hd .t .s { display: block; font-size: .76rem; color: #64748b; word-break: break-all; }
+.rabxl-dw-x { border: 0; background: #f1f5f9; width: 32px; height: 32px; border-radius: 8px; font-size: 1rem; cursor: pointer; color: #334155; }
+.rabxl-dw-x:hover { background: #e2e8f0; }
+.rabxl-stp { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; flex-wrap: wrap; }
+.rabxl-stp button { display: inline-flex; align-items: center; gap: 8px; border: 0; background: transparent; font: inherit; font-size: .8rem; font-weight: 600; color: #64748b; cursor: pointer; padding: 2px 4px; }
+.rabxl-stp button em { font-style: normal; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: #e2e8f0; font-size: .72rem; font-weight: 800; }
+.rabxl-stp button.on { color: #0f172a; }
+.rabxl-stp button.on em { background: #1e293b; color: #fff; }
+.rabxl-stp button.done em { background: #16a34a; color: #fff; }
+.rabxl-stp i { font-style: normal; color: #cbd5e1; }
+.rabxl-dw-bd { flex: 1; min-height: 0; overflow: auto; padding: 16px 18px; }
+.rabxl-dw-bd h6 { margin: 0 0 6px; font-size: .92rem; font-weight: 700; }
+.rabxl-dw-ft { border-top: 1px solid #e2e8f0; padding: 12px 18px; background: #fff; }
+.rabxl-dw-ft .rabxl-foot { margin-top: 0; }
+.xg-pick em.rabxl-tag { font-style: normal; margin-left: 2px; }
+.rabxl-dw-bd .rabxl-xtop { margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .rabxl-dw-pan, .rabxl-dw-scrim { transition: none; } }
 .rabxl-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 12px; }
 .rabxl-tile { border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; background: #fff; }
 .rabxl-tile .l { font-size: .72rem; color: #64748b; font-weight: 600; }
@@ -983,6 +1045,15 @@ html.silopti-embed.pa-pin { overflow: hidden !important; scroll-behavior: auto !
 .rabxl-tile.bad { background: #fef2f2; border-color: #fecaca; } .rabxl-tile.bad .v { color: #dc2626; }
 .rabxl-tabrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .rabxl-tabrow .xg-pill { margin-left: auto; }
+.rabxl-prev { border: 1px solid #cfcfcf; border-radius: 8px; overflow: hidden; background: #fff; }
+.rabxl-prev-bar { background: #217346; color: #fff; text-align: center; font-size: 12px; padding: 6px 8px; font-family: "Segoe UI", system-ui, Arial, sans-serif; }
+.rabxl-prev .xlg { border: 0; border-radius: 0; }
+.rabxl-prev .xl-bar { display: none; }
+.rabxl-prev-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 12px; background: #f7f7f7; border-top: 1px solid #e0e0e0; font-size: .8rem; color: #64748b; }
+.rabxl-prev-btn { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.rabxl-tabrow .rabxl-st { display: none; }
+.rabxl-xhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; }
+.rabxl-xhead .btn { white-space: nowrap; }
 .rabxl-tabs3 { display: inline-flex; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 3px; gap: 2px; }
 .rabxl-tabs3 button { border: 0; background: transparent; padding: 6px 16px; border-radius: 8px; font: inherit; font-weight: 700; font-size: .8rem; color: #64748b; cursor: pointer; }
 .rabxl-tabs3 button.on { background: #1e293b; color: #fff; }
@@ -2087,6 +2158,18 @@ if ((infoPembayaran === '-' || !infoPembayaran) && kesanggupanTgl) {
     infoPembayaran = 'berdasarkan Surat Kesanggupan Pembayaran dari ' + (namaPerusahaanDasar || '...') + ' tanggal ' + kesanggupanTgl;
     modeKesanggupan = true;
 }
+var ringkasBayar = {{ @ringkasan_bayar_json | raw }};
+var modeSebagian = false;
+if (ringkasBayar && String(infoPembayaran).indexOf('dibayarkan pada') !== 0) {
+    var _rp = function (n) { return 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID'); };
+    var _ket = '(termin ' + ringkasBayar.termin_ke + (ringkasBayar.tgl ? ', tanggal ' + ringkasBayar.tgl : '') + ')';
+    var _akhir = kesanggupanTgl
+        ? 'yang akan diselesaikan berdasarkan Surat Kesanggupan Pembayaran dari ' + (namaPerusahaanDasar || '...') + ' tanggal ' + kesanggupanTgl
+        : 'yang belum diselesaikan';
+    infoPembayaran = 'telah dibayarkan sebesar ' + _rp(ringkasBayar.bayar) + ' ' + _ket + ' dari total biaya sebesar ' + _rp(ringkasBayar.total) + ', dengan sisa pembayaran sebesar ' + _rp(ringkasBayar.sisa) + ' ' + _akhir;
+    modeSebagian = true;
+    modeKesanggupan = false;
+}
 var suratDasar = {{ @surat_dasar_json | raw }};  // null kalau order belum punya surat penawaran
 var jadwalAuto = {{ @jadwal_auto_json | raw }};  // null kalau tanggal sampel atau deadline SPM belum ada
 var BULAN_INDO = ['', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -2131,7 +2214,7 @@ function komposeDasar() {
     '</div>' +
     '<div class="d-flex align-items-start gap-2">' +
         '<span class="po-point-label">b.</span>' +
-        '<div class="po-point-content"><strong>Pembayaran:</strong> ' + (infoPembayaran === '-' ? '<span class="text-muted">-</span>' : '<span class="' + (modeKesanggupan ? 'text-dark' : 'text-success') + ' fw-semibold">' + infoPembayaran + '</span>') + '</div>' +
+        '<div class="po-point-content"><strong>Pembayaran:</strong> ' + (infoPembayaran === '-' ? '<span class="text-muted">-</span>' : '<span class="' + ((modeKesanggupan || modeSebagian) ? 'text-dark' : 'text-success') + ' fw-semibold">' + infoPembayaran + '</span>') + '</div>' +
     '</div>';
 
     var prevEl = document.getElementById('dasarPreview');
@@ -2167,6 +2250,33 @@ function tampilkanInfoPembayaran() {
         if (badgeBox) {
             badgeBox.className = 'badge bg-light text-muted border rounded-pill px-3 py-1.5';
             badgeBox.textContent = 'Belum Tercatat';
+        }
+    } else if (modeSebagian) {
+        if (box) {
+            box.style.background = '#f8fafc';
+            box.style.borderColor = '#cbd5e1';
+        }
+        if (iconBox) {
+            iconBox.className = 'd-inline-flex align-items-center justify-content-center rounded-circle text-white flex-shrink-0';
+            iconBox.style.background = 'var(--po-primary)';
+            iconBox.style.marginRight = '12px';
+            iconBox.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+        }
+        if (info) {
+            info.className = 'fw-semibold text-dark small';
+            info.textContent = 'Terbayar ' + rupiah(ringkasBayar.bayar) + ' dari ' + rupiah(ringkasBayar.total) + ' \u00b7 Sisa ' + rupiah(ringkasBayar.sisa);
+        }
+        if (badgeBox) {
+            badgeBox.className = 'badge bg-light text-dark border rounded-pill px-3 py-1.5';
+            badgeBox.style.cssText = 'font-size:.725rem;font-weight:600;';
+            badgeBox.textContent = 'Belum Lunas \u00b7 ' + ringkasBayar.pct + '%';
+        }
+        if (box && !box.querySelector('.bar-bayar')) {
+            var bar = document.createElement('div');
+            bar.className = 'bar-bayar';
+            bar.innerHTML = '<i></i>';
+            box.appendChild(bar);
+            setTimeout(function () { bar.firstChild.style.width = ringkasBayar.pct + '%'; }, 30);
         }
     } else if (modeKesanggupan) {
         if (box) {
@@ -5979,7 +6089,7 @@ function rabXlUnggah(file) {
     if (/\.xls$/i.test(file.name)) { rabXl.galat = 'Format .xls lama belum didukung. Buka di Excel, pilih Simpan Sebagai, lalu pilih format .xlsx.'; rabXlGambar(); return; }
     if (!/\.xlsx$/i.test(file.name)) { rabXl.galat = 'Hanya file Excel .xlsx yang bisa dibaca.'; rabXlGambar(); return; }
     if (file.size > 5 * 1024 * 1024) { rabXl.galat = 'Ukuran file terlalu besar (maksimal 5 MB).'; rabXlGambar(); return; }
-    rabXl.busy = true; rabXlGambar();
+    rabXl.drawer = false; rabXl.busy = true; rabXlGambar();
     var fd = new FormData();
     fd.append('berkas', file);
     var tk = document.querySelector('#formPo [name="csrf_token"]'); fd.append('csrf_token', tk ? tk.value : '');
@@ -5990,7 +6100,7 @@ function rabXlUnggah(file) {
             if (!j.ok) { throw new Error(j.pesan || 'File gagal dibaca.'); }
             rabXl.busy = false; rabXl.tahap = 'dibaca'; rabXl.token = j.token; rabXl.nama = j.nama || file.name; rabXl.ukuran = j.ukuran || file.size; rabXl.hasil = j.hasil;
             rabXlMuatGrid(j.grid);
-            rabXl.kembali = false;
+            rabXl.kembali = false; rabXl.drawer = true; rabXl.langkah = 1;
             rabXlSetHidden(); rabXlGambar();
         })
         .catch(function (e) { rabXl.busy = false; rabXl.galat = e.message || 'File gagal dibaca.'; rabXlGambar(); });
@@ -6015,7 +6125,7 @@ function rabXlSegarkanPratinjau() { if (typeof window.triggerLivePreviewRefresh 
 function rabXlTerapkan() {
     if (!rabXl.hasil) return;
     rabXlIsiKategori();
-    rabXl.tahap = 'terapkan'; rabXl.waktu = rabXlSekarang(); rabXl.manual = false; rabXl.tab = 'ring';
+    rabXl.tahap = 'terapkan'; rabXl.waktu = rabXlSekarang(); rabXl.manual = false; rabXl.tab = 'ring'; rabXl.drawer = false;
     rabXlSetHidden(); hitungRabLive(); rabXlGambar();
     var pn = document.getElementById('rabXlPanel'); if (pn && pn.scrollIntoView) { pn.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 }
@@ -6032,7 +6142,11 @@ function rabExcelRekam() {
     rabXl.kategoriLive = kat;
     // sheet yang dipakai: dokumen PO menampilkan isi sheet ini apa adanya
     var shDipakai = [];
-    ((rabXl.hasil && rabXl.hasil.kategori) || []).forEach(function (k) { if (rabXl.pilih && rabXl.pilih[k.sheet] && shDipakai.indexOf(k.sheet) < 0) shDipakai.push(k.sheet); });
+    // semua sheet yang dicentang di langkah 1 ikut tampil di dokumen (urutan sesuai file), bukan hanya yang berisi tabel biaya
+    if (typeof rabXlDipilih === 'function') { rabXlDipilih().forEach(function (n) { if (shDipakai.indexOf(n) < 0) shDipakai.push(n); }); }
+    if (!shDipakai.length) {
+        ((rabXl.hasil && rabXl.hasil.kategori) || []).forEach(function (k) { if (rabXl.pilih && rabXl.pilih[k.sheet] && shDipakai.indexOf(k.sheet) < 0) shDipakai.push(k.sheet); });
+    }
     if (shDipakai.length) { rabXl.sheetsPakai = shDipakai; }
     inp.value = JSON.stringify({ sheets: rabXl.sheetsPakai || [], waktu: rabXl.waktu, total_pengeluaran: window.rabPengeluaranTerakhir || 0, total_penerimaan: window.rabPenerimaanTerakhir || 0, kategori: kat, koreksi: rabXl.koreksi || [], masalah: rabXl.masalah || [] });
     var cek = document.getElementById('rabXlCek'); if (cek) cek.innerHTML = rabXlCekHtml();
@@ -6058,7 +6172,7 @@ function rabXlFileKartu(statusHtml, tombolHtml) {
     return '<div class="rabxl-file"><span class="xl">XLS</span><div><div class="nm">' + escHtmlRab(rabXl.nama) + '</div><div class="ds">' + (rabXl.ukuran ? rabXlUkuran(rabXl.ukuran) : '') + '</div></div><span class="sp"></span>' + statusHtml + tombolHtml + '</div>';
 }
 /* ---------- Tampilan Excel di form: pilih sheet -> tabel lebar dengan rumus hidup; catatan lewat tombol ringkas + laci ---------- */
-var RAB_XL_JS = RAB_XL_BASE + '/public/js/rab-sheet.js?v=4';
+var RAB_XL_JS = RAB_XL_BASE + '/public/js/rab-sheet.js?v=5';
 function rabXlPustaka(cb) {
     if (window.XL) { cb(); return; }
     if (rabXl.pustaka) { rabXl.pustaka.push(cb); return; }
@@ -6150,7 +6264,7 @@ function rabXlSegar() {
     if (!rabXl.wb || !rabXl.xg) return;
     var pk = rabXlDipilih(), el = document.getElementById('rabXlPicks');
     if (el) {
-        var h = ''; rabXl.wb.order.forEach(function (n) { var on = rabXl.pilih[n] === true; h += '<label class="xg-pick' + (on ? ' on' : '') + '" data-xl-pilih="' + escHtmlRab(n) + '"><input type="checkbox"' + (on ? ' checked' : '') + '><span>' + escHtmlRab(n) + '</span></label>'; });
+        var h = ''; rabXl.wb.order.forEach(function (n) { var on = rabXl.pilih[n] === true; var si = rabXlInfoSheet(n); var tg = si ? (si.jenis === 'rab' ? '<em class="rabxl-tag rab">Tabel biaya</em>' : (si.jenis === 'rekap' ? '<em class="rabxl-tag rekap">Rekap</em>' : '<em class="rabxl-tag lewati">Dilewati</em>')) : ''; h += '<label class="xg-pick' + (on ? ' on' : '') + '" data-xl-pilih="' + escHtmlRab(n) + '"><input type="checkbox"' + (on ? ' checked' : '') + '><span>' + escHtmlRab(n) + '</span>' + tg + '</label>'; });
         el.innerHTML = h;
         el.querySelectorAll('.xg-pick').forEach(function (c) {
             c.querySelector('input').addEventListener('change', function () {
@@ -6166,6 +6280,7 @@ function rabXlSegar() {
     if (kosong) kosong.hidden = pk.length > 0; if (gr) gr.hidden = pk.length === 0;
     if (rabXl.laci) rabXl.laci.set(rabXlCatatan());
     rabXlFootGambar();
+    if (rabXl.drawer && rabXl.langkah === 3) { rabXlRingkasIsi(); }
     if (rabXl.tahap === 'terapkan') { rabXlTerapIsi(); }
 }
 function rabXlLompat(sheet, baris) {
@@ -6185,7 +6300,7 @@ function rabXlBangun() {
         if (!rabXl.wb) { rabXl.wb = XL.fromGrid(rabXl.payload); pertama = true; }
         var dp = rabXlDipilih(); var awal = rabXl.sheetNama && rabXl.wb.order.indexOf(rabXl.sheetNama) >= 0 ? rabXl.sheetNama : (dp[0] || rabXl.wb.order[0]);
         rabXl.xg = new XL.Grid({
-            mount: mount, wb: rabXl.wb, sheet: awal, fill: true, maxHeight: 400, toolbar: true, title: rabXl.nama || 'Tabel Excel',
+            mount: mount, wb: rabXl.wb, sheet: awal, fill: true, maxHeight: (rabXl.drawer ? Math.max(240, window.innerHeight - 360) : 400), readonly: (rabXl.tahap === 'terapkan'), toolbar: (rabXl.tahap !== 'terapkan'), title: rabXl.nama || 'Tabel Excel',
             tabList: rabXlDipilih,
             tabBadge: function (n) {
                 var s = rabXlInfoSheet(n), bad = (rabXlPeranBaris().bad[n]) || {}, ada = Object.keys(bad).length;
@@ -6196,6 +6311,8 @@ function rabXlBangun() {
             onChange: rabXlCatatUbah
         });
         rabXl.xg.edited = rabXl.edited || {}; rabXl.xg.render();
+        var pb = document.getElementById('rabXlPrevBar'); if (pb) { pb.textContent = rabXl.nama || 'Tabel Excel'; }
+        if (rabXl.tahap === 'terapkan' && rabXl.xg.el.tabs && rabXlDipilih().length <= 1) { rabXl.xg.el.tabs.style.display = 'none'; }
         rabXl.laci = new XL.Laci({ mount: document.getElementById('rabXlWrap'), pill: document.getElementById('rabXlPill'), onJump: rabXlLompat });
         // di tahap terapkan tombol ringkas bisa diklik dari tab mana pun: otomatis pindah ke tab Excel
         document.getElementById('rabXlPill').addEventListener('click', function () { if (rabXl.tahap === 'terapkan' && rabXl.tab !== 'xl') { rabXlTab('xl'); if (!rabXl.laci.open) { rabXl.laci.open = true; rabXl.laci.paint(); } } });
@@ -6208,17 +6325,126 @@ function rabXlBarisLink(sheet, no) { return '<button type="button" class="rabxl-
 // Bagian bawah: ringkasan hasil + tombol
 function rabXlFootGambar() {
     var foot = document.getElementById('rabXlFoot'); if (!foot || !rabXl.hasil) return;
-    var hs = rabXl.hasil, nKat = (hs.kategori || []).length, adaIsi = rabXlAdaIsiKategori();
+    var hs = rabXl.hasil, nKat = (hs.kategori || []).length, adaIsi = rabXlAdaIsiKategori(), st = rabXl.langkah || 1;
     var ringkas = nKat ? ('Terbaca <b>' + nKat + ' kategori</b>, total <b>' + rupiah(hs.total) + '</b>. ') : '<span style="color:#b91c1c">Belum ada sheet berisi tabel biaya yang dikenali. Centang sheet yang berisi tabel biaya (judul kolom Uraian, Volume, Harga Satuan). </span>';
-    foot.innerHTML = '<div class="rabxl-foot"><span class="info">' + ringkas + (adaIsi ? 'RAB yang sudah terisi akan diganti dengan isi Excel ini.' : 'Setelah diterapkan, isi RAB tampil dalam tiga tab dan bisa diubah lewat tab Excel.') + '</span>'
-        + (rabXl.kembali ? '<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="rabXlBatal">Batal</button>' : '')
-        + '<button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3" id="rabXlGanti2">Ganti file</button>'
-        + '<button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlTerapkan"' + ((nKat === 0 || rabXl.terapBusy) ? ' disabled' : '') + '>' + (rabXl.terapBusy ? 'Menyimpan...' : 'Terapkan ke RAB') + '</button></div>';
+    var info = ringkas + ((st === 3 && adaIsi) ? 'RAB yang sudah terisi akan diganti dengan isi Excel ini.' : '');
+    var tombol = '';
+    if (st === 1) {
+        tombol = '<button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3" id="rabXlGanti2">Ganti file</button>'
+            + '<button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlLanjut"' + (nKat === 0 ? ' disabled' : '') + '>Lanjut: Periksa isi &rsaquo;</button>';
+    } else if (st === 2) {
+        tombol = '<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="rabXlKembaliLg">&lsaquo; Kembali</button>'
+            + '<button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlLanjut"' + (nKat === 0 ? ' disabled' : '') + '>Lanjut: Terapkan &rsaquo;</button>';
+    } else {
+        tombol = '<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="rabXlKembaliLg">&lsaquo; Kembali</button>'
+            + '<button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlTerapkan"' + ((nKat === 0 || rabXl.terapBusy) ? ' disabled' : '') + '>' + (rabXl.terapBusy ? 'Menyimpan...' : 'Terapkan ke RAB') + '</button>';
+    }
+    foot.innerHTML = '<div class="rabxl-foot"><span class="info">' + info + '</span>' + tombol + '</div>';
     var reset = function () { clearTimeout(rabXl.timer); rabXl.payload = null; rabXl.wb = null; rabXl.xg = null; rabXl.laci = null; rabXl.berubah = false; rabXl.galat = ''; };
-    var g = foot.querySelector('#rabXlGanti2'); if (g) g.addEventListener('click', function () { reset(); rabXl.tahap = 'kosong'; rabXl.hasil = null; rabXl.kembali = false; rabXlSetHidden(); rabXlGambar(); document.getElementById('rabXlFile').click(); });
-    var bt = foot.querySelector('#rabXlBatal'); if (bt) bt.addEventListener('click', function () { reset(); rabXl.tahap = 'terapkan'; rabXl.kembali = false; rabXl.hasil = null; rabXlSetHidden(); rabXlGambar(); });
+    var g = foot.querySelector('#rabXlGanti2'); if (g) g.addEventListener('click', function () { reset(); rabXl.drawer = false; rabXl.tahap = 'kosong'; rabXl.hasil = null; rabXl.kembali = false; rabXlSetHidden(); rabXlGambar(); document.getElementById('rabXlFile').click(); });
+    var lj = foot.querySelector('#rabXlLanjut'); if (lj) lj.addEventListener('click', function () { rabXlLangkah((rabXl.langkah || 1) + 1); });
+    var kb = foot.querySelector('#rabXlKembaliLg'); if (kb) kb.addEventListener('click', function () { rabXlLangkah((rabXl.langkah || 1) - 1); });
     var tp = foot.querySelector('#rabXlTerapkan'); if (tp) tp.addEventListener('click', rabXlTerapkanKlik);
 }
+/* ---------- Slide kanan "Tinjau Excel RAB": 3 langkah (Pilih sheet, Periksa isi, Terapkan) ---------- */
+var RABXL_LANGKAH = ['Pilih sheet', 'Periksa isi', 'Terapkan'];
+function rabXlKiri() {
+    var d = document.getElementById('rabXlDrawer'), sb = document.getElementById('sidebar'); if (!d) return;
+    var x = 0; if (sb) { var r = sb.getBoundingClientRect(); if (r.width > 0 && r.right > 0 && getComputedStyle(sb).display !== 'none') x = Math.round(r.right); }
+    d.style.setProperty('--rabxl-kiri', x + 'px');
+}
+window.addEventListener('resize', rabXlKiri);
+function rabXlDrawerEl() {
+    var d = document.getElementById('rabXlDrawer');
+    if (!d) { d = document.createElement('div'); d.id = 'rabXlDrawer'; d.className = 'rabxl-dw'; document.body.appendChild(d); }
+    return d;
+}
+// Tutup lewat X / latar / Esc. Kalau ini tinjauan ulang file yang sudah diterapkan, sama dengan Batal (isi RAB tidak berubah).
+function rabXlDrawerTutup() {
+    if (rabXl.kembali) {
+        clearTimeout(rabXl.timer); rabXl.payload = null; rabXl.wb = null; rabXl.xg = null; rabXl.laci = null; rabXl.berubah = false; rabXl.galat = '';
+        rabXl.tahap = 'terapkan'; rabXl.kembali = false; rabXl.hasil = null; rabXl.drawer = false; rabXlSetHidden(); rabXlGambar();
+        return;
+    }
+    rabXl.drawer = false; rabXlGambar();
+}
+function rabXlLangkahTanda() {
+    var d = document.getElementById('rabXlDrawer'); if (!d) return;
+    var st = rabXl.langkah || 1;
+    d.querySelectorAll('.rabxl-stp button').forEach(function (b) {
+        var n = parseInt(b.dataset.lg, 10);
+        b.className = n === st ? 'on' : (n < st ? 'done' : '');
+        b.querySelector('em').textContent = n < st ? '✓' : String(n);
+    });
+    for (var i = 1; i <= 3; i++) { var p = document.getElementById('rabXlP' + i); if (p) p.hidden = (i !== st); }
+}
+function rabXlLangkah(n) {
+    n = Math.max(1, Math.min(3, n));
+    if (n === 3 && !(((rabXl.hasil && rabXl.hasil.kategori) || []).length)) return;
+    rabXl.langkah = n; rabXlLangkahTanda();
+    if (n === 2 && rabXl.xg) { try { rabXl.xg.render(); } catch (e) { /* tabel dibangun ulang saat digambar */ } }
+    if (n === 3) { rabXlRingkasIsi(); }
+    rabXlFootGambar();
+    var bd = document.querySelector('#rabXlDrawer .rabxl-dw-bd'); if (bd) bd.scrollTop = 0;
+}
+// Langkah 3: ringkasan sebelum diterapkan
+function rabXlRingkasIsi() {
+    var el = document.getElementById('rabXlP3'); if (!el || !rabXl.hasil) return;
+    var hs = rabXl.hasil, kat = hs.kategori || [], C = rabXlCatatan(), e = escHtmlRab, pk = window.rabPenerimaanTerakhir || 0, h = '';
+    var selisih = pk - (hs.total || 0);
+    h += '<div class="rabxl-tiles">'
+        + '<div class="rabxl-tile"><div class="l">Kategori terbaca</div><div class="v">' + kat.length + '</div></div>'
+        + '<div class="rabxl-tile"><div class="l">Total hasil baca</div><div class="v">' + rupiah(hs.total || 0) + '</div></div>'
+        + (pk > 0 ? '<div class="rabxl-tile ' + (Math.abs(selisih) < 1 ? 'ok' : 'warn') + '"><div class="l">Nilai Kontrak di form</div><div class="v">' + rupiah(pk) + '</div><div class="s">' + (Math.abs(selisih) < 1 ? 'Seimbang dengan total Excel' : ((selisih > 0 ? 'Kurang ' : 'Lebih ') + rupiah(Math.abs(selisih)) + ' dari Nilai Kontrak')) + '</div></div>' : '')
+        + '</div>';
+    h += '<h6>Kategori yang akan dimasukkan ke RAB</h6>';
+    kat.forEach(function (k) { h += '<div class="rabxl-row"><span class="n" style="min-width:0;flex:1">' + e(k.nama) + '</span><span class="d" style="flex:none;min-width:0">' + e(k.sheet || '') + '</span><b>' + rupiah(k.total || 0) + '</b></div>'; });
+    if (!kat.length) { h += '<div class="rabxl-galat">Belum ada kategori yang terbaca. Kembali ke langkah 1 dan centang sheet yang berisi tabel biaya.</div>'; }
+    if (C.perlu.length) {
+        h += '<h6 style="margin-top:14px">Perlu dicek</h6>';
+        C.perlu.forEach(function (x) { h += '<div class="rabxl-cek ' + (x.t === 'bad' ? 'bad' : 'warn') + '"><span>' + (x.w ? '<b>' + e(x.w) + ':</b> ' : '') + x.h + '</span></div>'; });
+    }
+    if (C.oke.length) {
+        h += '<h6 style="margin-top:14px">Sudah sesuai</h6>';
+        C.oke.forEach(function (x) { h += '<div class="rabxl-cek ok"><span>' + x.h + '</span></div>'; });
+    }
+    h += '<div class="rabxl-sub" style="margin-top:12px">Belum ada yang berubah di RAB. Isi RAB baru berganti setelah kamu klik "Terapkan ke RAB".</div>';
+    el.innerHTML = h;
+}
+function rabXlDrawerGambar() {
+    var d = rabXlDrawerEl();
+    var buka = !!(rabXl.drawer && rabXl.tahap === 'dibaca' && rabXl.hasil && !rabXl.busy && rabXl.mode === 'excel');
+    if (!buka) {
+        if (d.classList.contains('on')) {
+            d.classList.remove('go'); document.body.classList.remove('rabxl-lock');
+            clearTimeout(d._tm); d._tm = setTimeout(function () { if (!d.classList.contains('go')) { d.classList.remove('on'); d.innerHTML = ''; } }, 300);
+        }
+        return;
+    }
+    clearTimeout(d._tm); rabXlKiri();
+    var sudahBuka = d.classList.contains('on') && d.classList.contains('go');
+    var st = rabXl.langkah || 1, e = escHtmlRab;
+    var stp = '';
+    for (var i = 1; i <= 3; i++) { stp += (i > 1 ? '<i>›</i>' : '') + '<button type="button" data-lg="' + i + '" class="' + (i === st ? 'on' : (i < st ? 'done' : '')) + '"><em>' + (i < st ? '✓' : i) + '</em>' + RABXL_LANGKAH[i - 1] + '</button>'; }
+    d.innerHTML = '<div class="rabxl-dw-scrim" id="rabXlDwScrim"></div><div class="rabxl-dw-pan" role="dialog" aria-modal="true" aria-label="Tinjau Excel RAB">'
+        + '<div class="rabxl-dw-hd"><div class="t"><b>Tinjau Excel RAB</b><span class="s">' + e(rabXl.nama || 'Excel') + (rabXl.ukuran ? ' · ' + rabXlUkuran(rabXl.ukuran) : '') + '</span></div><span class="rabxl-tag rekap">Belum diterapkan</span><button type="button" class="rabxl-dw-x" id="rabXlDwX" aria-label="Tutup">✕</button></div>'
+        + '<div class="rabxl-stp">' + stp + '</div>'
+        + '<div class="rabxl-dw-bd">' + (rabXl.galat ? '<div class="rabxl-galat">' + e(rabXl.galat) + '</div>' : '')
+        + '<div id="rabXlP1"' + (st === 1 ? '' : ' hidden') + '><h6>Pilih sheet yang dipakai</h6><div class="rabxl-sub">Centang sheet yang mau dipakai, sheet lain diabaikan. Tabel biaya dan Rekap biasanya sudah tercentang otomatis.</div><div class="xg-picks" id="rabXlPicks"></div></div>'
+        + '<div id="rabXlP2"' + (st === 2 ? '' : ' hidden') + '><div class="rabxl-xtop"><b>Isi file Excel</b><span class="rabxl-sub" style="margin:0">Klik sel untuk melihat rumus, ketik untuk mengubah. Angka lain ikut berubah.</span><span class="rabxl-st" id="rabXlStatus"></span><button type="button" class="xg-pill ok" id="rabXlPill">Memeriksa...</button></div>'
+        + '<div class="rabxl-legend"><span><i style="background:#16a34a"></i>Item biaya</span><span><i style="background:#2563eb"></i>Kegiatan / lokasi / kategori</span><span><i style="background:#cbd5e1"></i>Dilewati / pembanding</span><span><i style="background:#dc2626"></i>Perlu dicek</span></div>'
+        + '<div class="xg-wrap" id="rabXlWrap"><div id="rabXlGrid"></div><div id="rabXlKosong" class="rabxl-galat" hidden style="margin:0">Belum ada sheet yang dicentang.</div></div></div>'
+        + '<div id="rabXlP3"' + (st === 3 ? '' : ' hidden') + '></div></div>'
+        + '<div class="rabxl-dw-ft" id="rabXlFoot"></div></div>';
+    d.classList.add('on'); document.body.classList.add('rabxl-lock');
+    if (sudahBuka) { d.classList.add('go'); } else { void d.offsetWidth; clearTimeout(d._go); d._go = setTimeout(function () { d.classList.add('go'); }, 30); }
+    d.querySelector('#rabXlDwScrim').addEventListener('click', rabXlDrawerTutup);
+    d.querySelector('#rabXlDwX').addEventListener('click', rabXlDrawerTutup);
+    d.querySelectorAll('.rabxl-stp button').forEach(function (b) { b.addEventListener('click', function () { rabXlLangkah(parseInt(b.dataset.lg, 10)); }); });
+    rabXlFootGambar(); rabXlBangun();
+    if (st === 3) { rabXlRingkasIsi(); }
+}
+document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && rabXl.drawer && document.getElementById('rabXlDrawer') && document.getElementById('rabXlDrawer').classList.contains('on')) { rabXlDrawerTutup(); } });
 function rabXlTerapkanKlik() {
     if (rabXl.terapBusy) return;
     if (!rabXl.hasil || !(rabXl.hasil.kategori || []).length) { rabXl.galat = 'Centang minimal satu sheet yang berisi tabel biaya.'; rabXlGambar(); return; }
@@ -6244,7 +6470,7 @@ function rabXlBukaEditor() {
             var j; try { j = JSON.parse(t); } catch (e) { throw new Error('Server tidak membalas dengan benar.'); }
             if (!j.ok) { throw new Error(j.pesan || 'Berkas tidak bisa dibuka.'); }
             rabXl.busy = false; rabXl.hasil = j.hasil; rabXl.ukuran = j.ukuran || rabXl.ukuran; rabXlMuatGrid(j.grid);
-            rabXl.tahap = 'dibaca'; rabXl.kembali = true; rabXlSetHidden(); rabXlGambar();
+            rabXl.tahap = 'dibaca'; rabXl.kembali = true; rabXl.drawer = true; rabXl.langkah = 2; rabXlSetHidden(); rabXlGambar();
         })
         .catch(function (e) { rabXl.busy = false; rabXl.galat = e.message || 'Berkas tidak bisa dibuka.'; rabXlGambar(); });
 }
@@ -6253,7 +6479,8 @@ function rabXlAturTampilan() {
     var sembunyi = rabXl.mode === '' || (rabXl.mode === 'excel' && !rabXl.manual); // belum pilih cara isi: form kategori & tombolnya disembunyikan
     var bk = document.getElementById('bodyKategori'), bt = document.getElementById('btnTambahKategori');
     if (bk) bk.style.display = sembunyi ? 'none' : '';
-    if (bt) bt.style.display = sembunyi ? 'none' : '';
+    // Tombol punya kelas Bootstrap d-inline-flex (display: ... !important) yang mengalahkan style.display biasa, jadi disembunyikan dengan !important
+    if (bt) { if (sembunyi) { bt.style.setProperty('display', 'none', 'important'); } else { bt.style.removeProperty('display'); } }
 }
 function rabXlAngka(n) { return (n === null || n === undefined) ? '' : Number(n).toLocaleString('id-ID', { maximumFractionDigits: 4 }); }
 function rabXlQty(it) {
@@ -6371,7 +6598,12 @@ function rabXlTerapHtml() {
          '<span class="rabxl-st" id="rabXlStatus"></span><button type="button" class="xg-pill ok" id="rabXlPill">Memeriksa...</button></div>';
     h += '<div id="rabXlPRing"></div>';
     h += '<div id="rabXlPRinci" hidden><div class="rabxl-doc"><table class="rabxl-doctbl" id="rabXlDoc"></table></div></div>';
-    h += '<div id="rabXlPXl" hidden><div class="rabxl-sub" style="margin:0 0 6px">Klik sel untuk melihat rumus, ketik untuk mengubah. Perubahan langsung disimpan ke file Excel dan mengisi ulang RAB.</div><div class="xg-wrap" id="rabXlWrap"><div id="rabXlGrid"></div></div></div>';
+    var nKatP = (rabXl.hasil.kategori || []).length;
+    h += '<div id="rabXlPXl" hidden><div class="rabxl-sub" style="margin:0 0 8px">Pratinjau hasil import dari Excel. Angka dihitung dari file.</div>' +
+         '<div class="rabxl-prev"><div class="rabxl-prev-bar" id="rabXlPrevBar"></div><div class="xg-wrap" id="rabXlWrap"><div id="rabXlGrid"></div></div>' +
+         '<div class="rabxl-prev-foot"><span>' + nKatP + ' kategori · ' + rupiah(rabXl.hasil.total || 0) + '</span><span class="rabxl-prev-btn">' +
+         '<a class="btn btn-sm btn-outline-dark rounded-pill px-3" href="' + RAB_XL_BASE + '/po-rab-excel/' + escHtmlRab(rabXl.token) + '?unduh=1">Unduh</a>' +
+         '<button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlEditor">Buka editor Excel</button></span></div></div></div>';
     h += '<div class="rabxl-bawah"><button type="button" class="rabxl-link" id="rabXlUbahSheet">Ubah sheet yang dipakai</button><span>·</span><button type="button" class="rabxl-link" id="rabXlManual">Perlu mengubah tanpa Excel? Edit manual (lanjutan)</button></div>';
     return h;
 }
@@ -6381,8 +6613,9 @@ function rabXlTerapPasang(p) {
         if (!window.confirm('RAB akan diisi ulang dari file Excel, jadi perubahan manual di kotak isian akan hilang. Lanjutkan?')) return;
         rabXlIsiKategori(); rabXl.manual = false; rabXl.waktu = rabXlSekarang(); rabXlSetHidden(); hitungRabLive(); rabXlGambar();
     });
+    if (q('#rabXlEditor')) q('#rabXlEditor').addEventListener('click', rabXlBukaEditor);
     if (q('#rabXlManual')) q('#rabXlManual').addEventListener('click', function () { rabXl.manual = true; clearTimeout(rabXl.timer); rabXlGambar(); });
-    if (q('#rabXlUbahSheet')) q('#rabXlUbahSheet').addEventListener('click', function () { rabXl.tahap = 'dibaca'; rabXl.kembali = true; rabXl.galat = ''; rabXlSetHidden(); rabXlGambar(); });
+    if (q('#rabXlUbahSheet')) q('#rabXlUbahSheet').addEventListener('click', function () { rabXl.tahap = 'dibaca'; rabXl.kembali = true; rabXl.galat = ''; rabXl.drawer = true; rabXl.langkah = 1; rabXlSetHidden(); rabXlGambar(); });
     p.querySelectorAll('#rabXlTabs [data-xt]').forEach(function (b) { b.addEventListener('click', function () { rabXlTab(b.dataset.xt); }); });
     if (rabXl.payload && rabXl.hasil && !rabXl.manual) { rabXlTab(rabXl.tab || 'ring'); rabXlTerapIsi(); rabXlBangun(); }
 }
@@ -6392,18 +6625,18 @@ function rabXlGambar() {
     box.querySelectorAll('[data-xl-mode]').forEach(function (b) { b.classList.toggle('on', b.dataset.xlMode === rabXl.mode); });
     var h = '';
     rabXlAturTampilan();
-    if (rabXl.mode !== 'excel') { p.innerHTML = ''; return; }
+    if (rabXl.mode !== 'excel') { p.innerHTML = ''; rabXl.drawer = false; rabXlDrawerGambar(); return; }
     if (rabXl.galat) { h += '<div class="rabxl-galat">' + escHtmlRab(rabXl.galat) + '</div>'; }
     if (rabXl.busy) {
         h += '<div class="rabxl-drop"><b>Membaca file...</b><span class="t">Sebentar ya, sistem sedang mengenali sheet dan kolomnya.</span></div>';
     } else if (rabXl.tahap === 'kosong') {
         h += '<div class="rabxl-drop" id="rabXlDrop"><b>Tarik file Excel RAB ke sini, atau pilih dari komputer</b><span class="t">Format .xlsx, maksimal 5 MB. Bebas format, tidak perlu memakai template.</span><button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlPilih">Pilih file Excel</button></div>';
     } else if (rabXl.tahap === 'dibaca' && rabXl.hasil) {
-        h += rabXlFileKartu('<span class="rabxl-tag rekap">Belum diterapkan</span>', '');
-        h += '<div class="rabxl-hasil"><h6>Pilih sheet yang dipakai</h6><div class="rabxl-sub">Centang sheet yang mau dipakai, sheet lain diabaikan. Isi file Excel tampil di bawah dan rumusnya tetap hidup.</div><div class="xg-picks" id="rabXlPicks"></div>'
-            + '<div class="rabxl-xtop"><b>Isi file Excel</b><span class="rabxl-sub" style="margin:0">Klik sel untuk melihat rumus, ketik untuk mengubah. Angka lain ikut berubah.</span><span class="rabxl-st" id="rabXlStatus"></span><button type="button" class="xg-pill ok" id="rabXlPill">Memeriksa...</button></div>'
-            + '<div class="rabxl-legend"><span><i style="background:#16a34a"></i>Item biaya</span><span><i style="background:#2563eb"></i>Kegiatan / lokasi / kategori</span><span><i style="background:#cbd5e1"></i>Dilewati / pembanding</span><span><i style="background:#dc2626"></i>Perlu dicek</span></div>'
-            + '<div class="xg-wrap" id="rabXlWrap"><div id="rabXlGrid"></div><div id="rabXlKosong" class="rabxl-galat" hidden style="margin:0">Belum ada sheet yang dicentang.</div></div><div id="rabXlFoot"></div></div>';
+        var hsK = rabXl.hasil, nKatK = (hsK.kategori || []).length;
+        h += rabXlFileKartu('<span class="rabxl-tag rekap">Belum diterapkan</span>',
+            '<button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlTinjau">Tinjau dan terapkan</button>' +
+            '<button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3" id="rabXlGantiK">Ganti file</button>');
+        h += '<div class="rabxl-sub">' + (nKatK ? 'Terbaca <b>' + nKatK + ' kategori</b>, total <b>' + rupiah(hsK.total) + '</b>. ' : '') + 'Isi RAB di form belum berubah. Klik "Tinjau dan terapkan" untuk memeriksa Excel-nya dulu.</div>';
     } else if (rabXl.tahap === 'terapkan') {
         h += rabXlFileKartu('<span class="rabxl-tag ok">Diimpor dari Excel</span>',
             '<a class="btn btn-sm btn-outline-dark rounded-pill px-3" href="' + RAB_XL_BASE + '/po-rab-excel/' + escHtmlRab(rabXl.token) + '?unduh=1">Unduh</a>' +
@@ -6416,7 +6649,9 @@ function rabXlGambar() {
     if (q('#rabXlPilih')) q('#rabXlPilih').addEventListener('click', pilihFile);
     if (q('#rabXlGanti')) q('#rabXlGanti').addEventListener('click', function () { rabXl.galat = ''; pilihFile(); });
     if (rabXl.tahap === 'terapkan' && !rabXl.busy) { rabXlTerapPasang(p); }
-    if (rabXl.tahap === 'dibaca' && rabXl.hasil) { rabXlFootGambar(); rabXlBangun(); }
+    if (q('#rabXlTinjau')) q('#rabXlTinjau').addEventListener('click', function () { rabXl.drawer = true; rabXl.langkah = rabXl.kembali ? 2 : 1; rabXlGambar(); });
+    if (q('#rabXlGantiK')) q('#rabXlGantiK').addEventListener('click', function () { rabXl.galat = ''; pilihFile(); });
+    rabXlDrawerGambar();
     var dz = q('#rabXlDrop');
     if (dz) {
         ['dragenter', 'dragover'].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add('over'); }); });
@@ -6985,6 +7220,34 @@ function tambahKegiatanDiBagian(gIdx, cIdx) {
     jadwalSegarkanPratinjau();
 }
 
+// Menu "Tambah Kegiatan" tiap Bagian: Kegiatan baru, atau lanjutkan kegiatan dari bagian lain (jadi satu kegiatan yang bersambung)
+function tutupMenuTambahBagian() { document.querySelectorAll('.jadwal-menu-keg').forEach(function (m) { m.remove(); }); }
+document.addEventListener('click', function (ev) { if (!ev.target.closest || !ev.target.closest('.jadwal-menu-keg')) tutupMenuTambahBagian(); });
+document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') tutupMenuTambahBagian(); });
+function bukaMenuTambahBagian(headEl, gIdx, cIdx, chunks) {
+    var ada = headEl.querySelector('.jadwal-menu-keg'); tutupMenuTambahBagian(); if (ada) return;
+    var sisa = [];
+    groups[gIdx].kegiatan.forEach(function (kg, ki) { if (String(kg.nama || '').trim() !== '' && !jadwalKegDiBagian(kg, cIdx, chunks)) sisa.push(ki); });   // yang belum diberi nama tidak ditawarkan
+    if (!sisa.length) { tambahKegiatanDiBagian(gIdx, cIdx); return; }   // tidak ada yang bisa dilanjutkan: langsung tambah baru
+    var m = document.createElement('div'); m.className = 'jadwal-menu-keg';
+    var h = '<button type="button" data-baru><span><i class="bi bi-plus-lg"></i> Kegiatan baru</span></button><div class="g">Lanjutan dari bagian lain</div>';
+    sisa.forEach(function (ki) {
+        var kg = groups[gIdx].kegiatan[ki];
+        h += '<button type="button" data-pil="' + ki + '"><span>' + escHtmlRab(kg.nama || '(belum diberi nama)') + '</span><small>dari Bagian ' + jadwalBagianKeg(kg, chunks).join(', ') + '</small></button>';
+    });
+    m.innerHTML = h; headEl.appendChild(m);
+    m.querySelector('[data-baru]').addEventListener('click', function (ev) { ev.stopPropagation(); tutupMenuTambahBagian(); tambahKegiatanDiBagian(gIdx, cIdx); });
+    m.querySelectorAll('[data-pil]').forEach(function (b) {
+        b.addEventListener('click', function (ev) {
+            ev.stopPropagation(); tutupMenuTambahBagian();
+            var kg = groups[gIdx].kegiatan[parseInt(b.dataset.pil, 10)]; if (!kg) return;
+            if (!kg.bagian) kg.bagian = [];
+            if (kg.bagian.indexOf(cIdx) === -1) kg.bagian.push(cIdx);
+            renderJadwal(); jadwalSegarkanPratinjau();
+        });
+    });
+}
+
 function jadwalHapusDariBagian(gIdx, kIdx, cIdx, chunks) {
     var keg = groups[gIdx].kegiatan[kIdx], ch = chunks[cIdx];
     keg.tanda = (keg.tanda || []).filter(function (key) { return !ch.kolom.some(function (c) { return c.key === key; }); });
@@ -7084,8 +7347,8 @@ function renderJadwal() {
                     chunkHead.className = 'jadwal-chunk-header';
                     chunkHead.innerHTML = '<div class="fw-bold small text-dark"><i class="bi bi-calendar-range text-primary me-1.5"></i> Bagian ' + (cIdx + 1) + ': ' + chunk.label + '</div>' +
                         '<div class="d-flex align-items-center gap-2"><span class="badge bg-secondary-subtle text-secondary border small font-monospace">' + chunk.kolom.length + ' Kolom</span>' +
-                        '<button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-1 shadow-2xs d-inline-flex align-items-center gap-1 jadwal-tambah-bagian"><i class="bi bi-plus-lg"></i> Tambah Kegiatan</button></div>';
-                    chunkHead.querySelector('.jadwal-tambah-bagian').addEventListener('click', function () { tambahKegiatanDiBagian(gIdx, cIdx); });
+                        '<button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-1 shadow-2xs d-inline-flex align-items-center gap-1 jadwal-tambah-bagian"><i class="bi bi-plus-lg"></i> Tambah Kegiatan <i class="bi bi-chevron-down" style="font-size:.65rem;"></i></button></div>';
+                    chunkHead.querySelector('.jadwal-tambah-bagian').addEventListener('click', function (ev) { ev.stopPropagation(); bukaMenuTambahBagian(chunkHead, gIdx, cIdx, chunks); });
                     block.appendChild(chunkHead);
                 }
 
@@ -7136,9 +7399,10 @@ function renderJadwal() {
                             var lainBagian = jadwalBagianKeg(keg, chunks).filter(function (n) { return n !== cIdx + 1; });
                             if (lainBagian.length) {
                                 var capBagian = document.createElement('div');
-                                capBagian.className = 'text-muted';
-                                capBagian.style.cssText = 'font-size:11px;margin-top:2px;';
-                                capBagian.textContent = 'Juga ada di Bagian ' + lainBagian.join(', ');
+                                capBagian.className = 'jadwal-sambung-cap';
+                                var nSebelum = lainBagian.filter(function (n) { return n < cIdx + 1; }), nSesudah = lainBagian.filter(function (n) { return n > cIdx + 1; });
+                                if (nSebelum.length) { capBagian.innerHTML += '<span class="jadwal-tag"><i class="bi bi-arrow-return-right"></i> Lanjutan dari Bagian ' + nSebelum[nSebelum.length - 1] + '</span>'; }
+                                if (nSesudah.length) { capBagian.innerHTML += '<span class="jadwal-tag go">Berlanjut ke Bagian ' + nSesudah[0] + '</span>'; }
                                 tdNama.appendChild(capBagian);
                             }
                         }
@@ -7231,45 +7495,6 @@ function renderJadwal() {
                 tableWrap.appendChild(table);
                 block.appendChild(tableWrap);
 
-                // Sambungkan kegiatan dari bagian lain ke bagian ini
-                if (jadwalModeBagian) {
-                    var sisaKeg = [];
-                    group.kegiatan.forEach(function (kg, ki) { if (!jadwalKegDiBagian(kg, cIdx, chunks)) sisaKeg.push(ki); });
-                    if (sisaKeg.length) {
-                        if (jadwalMenuBagian === cIdx) {
-                            var menuBagian = document.createElement('div');
-                            menuBagian.className = 'list-group border rounded-3 mb-2';
-                            menuBagian.style.maxWidth = '360px';
-                            var judulMenu = document.createElement('div');
-                            judulMenu.className = 'list-group-item small fw-bold text-muted text-uppercase';
-                            judulMenu.style.fontSize = '11px';
-                            judulMenu.textContent = 'Sambungkan ke Bagian ' + (cIdx + 1);
-                            menuBagian.appendChild(judulMenu);
-                            sisaKeg.forEach(function (ki) {
-                                var kg = group.kegiatan[ki];
-                                var opsi = document.createElement('button');
-                                opsi.type = 'button';
-                                opsi.className = 'list-group-item list-group-item-action d-flex justify-content-between gap-3 small';
-                                opsi.innerHTML = '<span>' + escHtmlRab(kg.nama || '(belum diberi nama)') + '</span><span class="text-muted">dari Bagian ' + jadwalBagianKeg(kg, chunks).join(', ') + '</span>';
-                                opsi.addEventListener('click', function () {
-                                    if (!kg.bagian) kg.bagian = [];
-                                    if (kg.bagian.indexOf(cIdx) === -1) kg.bagian.push(cIdx);
-                                    jadwalMenuBagian = -1;
-                                    renderJadwal();
-                                });
-                                menuBagian.appendChild(opsi);
-                            });
-                            block.appendChild(menuBagian);
-                        } else {
-                            var linkSambung = document.createElement('button');
-                            linkSambung.type = 'button';
-                            linkSambung.className = 'btn btn-xs btn-link text-muted p-0 mb-2 d-block small fw-semibold';
-                            linkSambung.textContent = 'Sambungkan kegiatan dari bagian lain (' + sisaKeg.length + ')';
-                            linkSambung.addEventListener('click', function () { jadwalMenuBagian = cIdx; renderJadwal(); });
-                            block.appendChild(linkSambung);
-                        }
-                    }
-                }
             });
 
             // Ringkasan seluruh periode (hanya mode bertahap dan jadwal terbagi beberapa periode)
@@ -8022,6 +8247,49 @@ function teksRabBelumSesuai() {
     var st = rabStatus();
     return 'RAB belum sesuai (' + rupiah(Math.abs(st.selisih)) + (st.selisih > 0 ? ' sisa' : ' lebih') + ')';
 }
+/* ---- Kolom wajib: tanda merah + pesan, dan hilang otomatis begitu sudah diisi (hijau sebentar lalu normal) ---- */
+function wajibKosong(el) {
+    var wrap = el.closest('.po-editor-wrap');
+    var val = el.value || '';
+    if (wrap) {
+        var editorContent = wrap.querySelector('.po-editor-content');
+        if (editorContent) { val = editorContent.innerText || editorContent.textContent || ''; }
+    }
+    return !val || !val.trim();
+}
+function wajibPesan(target) {
+    var nx = target.nextElementSibling;
+    return (nx && nx.classList && nx.classList.contains('wajib-error-msg')) ? nx : null;
+}
+function wajibMerah(target) {
+    clearTimeout(target._wjT1); clearTimeout(target._wjT2);
+    target.classList.remove('is-wajib-ok');
+    target.classList.add('is-wajib-error');
+    target.setAttribute('data-wajib-armed', '1');   // sudah pernah ditandai: kalau dikosongkan lagi, merahnya balik
+    var msg = wajibPesan(target);
+    if (!msg) {
+        msg = document.createElement('div');
+        msg.className = 'wajib-error-msg';
+        target.insertAdjacentElement('afterend', msg);
+    }
+    msg.classList.remove('ok', 'leaving');
+    msg.textContent = 'Kolom ini wajib diisi.';
+    msg.classList.add('show');
+}
+function wajibSelesai(target) {
+    var msg = wajibPesan(target);
+    clearTimeout(target._wjT1); clearTimeout(target._wjT2);
+    target.classList.remove('is-wajib-error');
+    target.classList.add('is-wajib-ok');
+    if (msg) { msg.classList.remove('leaving'); msg.classList.add('show', 'ok'); msg.textContent = 'Sudah terisi'; }
+    target._wjT1 = setTimeout(function () {
+        target.classList.remove('is-wajib-ok');
+        if (msg) { msg.classList.add('leaving'); }
+    }, 1000);
+    target._wjT2 = setTimeout(function () {
+        if (msg) { msg.classList.remove('show', 'ok', 'leaving'); msg.textContent = 'Kolom ini wajib diisi.'; }
+    }, 1450);
+}
 function validasiFieldWajib() {
     var invalidFields = [];
 
@@ -8031,39 +8299,39 @@ function validasiFieldWajib() {
         // Skip field yang lagi disembunyiin (misal bagian Selulosa vs Lingkungan yang gak aktif)
         if (checkEl.offsetParent === null) return;
 
-        var val = el.value || '';
-        if (wrap) {
-            var editorContent = wrap.querySelector('.po-editor-content');
-            if (editorContent) {
-                val = editorContent.innerText || editorContent.textContent || '';
-            }
-        }
-
-        var kosong = !val || !val.trim();
+        var kosong = wajibKosong(el);
         if (window.POSENYAP) { if (kosong) { invalidFields.push(wrap || el); } return; }   // mode senyap: hanya menghitung, tanpa menandai kolom
         var targetToHighlight = wrap || el;
-        var parentForMsg = wrap ? wrap.parentElement : el.parentElement;
-        var existingMsg = parentForMsg.querySelector('.wajib-error-msg');
 
         if (kosong) {
-            targetToHighlight.classList.add('is-wajib-error');
-            if (!existingMsg) {
-                var msg = document.createElement('div');
-                msg.className = 'wajib-error-msg show';
-                msg.textContent = 'Kolom ini wajib diisi.';
-                targetToHighlight.insertAdjacentElement('afterend', msg);
-            } else {
-                existingMsg.classList.add('show');
-            }
+            wajibMerah(targetToHighlight);
             invalidFields.push(targetToHighlight);
-        } else {
-            targetToHighlight.classList.remove('is-wajib-error');
-            if (existingMsg) existingMsg.classList.remove('show');
+        } else if (targetToHighlight.classList.contains('is-wajib-error')) {
+            wajibSelesai(targetToHighlight);
         }
     });
 
     return invalidFields;
 }
+// Live: begitu kolom yang tadi merah sudah terisi -> hijau sebentar lalu normal; kalau dikosongkan lagi -> merah lagi.
+function wajibLive() {
+    document.querySelectorAll('.is-wajib-error').forEach(function (t) {
+        var el = t.matches('[data-wajib="1"]') ? t : t.querySelector('[data-wajib="1"]');
+        if (el && !wajibKosong(el)) { wajibSelesai(t); }
+    });
+    document.querySelectorAll('[data-wajib-armed="1"]:not(.is-wajib-error)').forEach(function (t) {
+        var el = t.matches('[data-wajib="1"]') ? t : t.querySelector('[data-wajib="1"]');
+        if (el && t.offsetParent !== null && wajibKosong(el)) { wajibMerah(t); }
+    });
+}
+['input', 'change', 'keyup'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+        if (!e.target || !e.target.closest || !e.target.closest('#formPo')) { return; }
+        clearTimeout(window.__wajibLiveTm);
+        window.__wajibLiveTm = setTimeout(wajibLive, 30);
+    }, true);
+});
+setInterval(wajibLive, 1200);   // jaga-jaga untuk isian yang diisi lewat kode (tanpa event input)
 
 /* ============================================================ */
 /* REAL-TIME LIVE PREVIEW & SPLIT-VIEW ENGINE                   */
