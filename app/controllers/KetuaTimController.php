@@ -47,7 +47,7 @@ class KetuaTimController extends Controller {
             )
             WHERE o.disposisi_katim_at IS NOT NULL
               AND o.status_keuangan IN ('lunas', 'terbayar_sebagian')
-              AND o.tanggal_terima_sampel IS NOT NULL";
+              AND (o.tanggal_terima_sampel IS NOT NULL OR o.tanggal_spm_mulai IS NOT NULL)";
 
     $params = [];
     if ($filterDivisi) {
@@ -84,10 +84,22 @@ class KetuaTimController extends Controller {
     }
 
     try {
-        // [SEMENTARA] cuma tim_kerja_selulosa dulu. Lingkungan gak lewat alur "pilih pelaksana" ini,
-// nanti pakai mekanisme disposisi langsung yang beda -- nyusul kalau udah dibahas.
-$daftarPelaksana = $this->db->exec("SELECT DISTINCT u.id_user, u.nama_user, m.jenis_layanan AS divisi FROM tb_arsipuser u LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show' AND m.is_active = 1 WHERE u.si_opti IN ('tim_kerja_selulosa', 'pic_po_selulosa') OR (m.role IN ('pic_po', 'tim_kerja') AND m.jenis_layanan = 'selulosa') ORDER BY u.nama_user ASC");
-        // $daftarPelaksana = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE si_opti LIKE '%tim_kerja%' ORDER BY nama_user ASC");
+        $wherePelDiv = '';
+        $paramsPel = [];
+        if ($filterDivisi) {
+            $wherePelDiv = " AND (m.jenis_layanan = ? OR (m.jenis_layanan IS NULL AND u.si_opti IN (?, ?)))";
+            $paramsPel = [1 => $filterDivisi, 2 => 'tim_kerja_' . $filterDivisi, 3 => 'pic_po_' . $filterDivisi];
+        }
+        $daftarPelaksana = $this->db->exec(
+            "SELECT DISTINCT u.id_user, u.nama_user, COALESCE(NULLIF(m.jenis_layanan, ''), CASE WHEN u.si_opti LIKE '%lingkungan%' THEN 'lingkungan' WHEN u.si_opti LIKE '%selulosa%' THEN 'selulosa' ELSE '' END) AS divisi
+             FROM tb_arsipuser u
+             LEFT JOIN opti_user_map m ON u.id_user = m.id_user AND m.status_tampil = 'show' AND m.is_active = 1
+             WHERE (u.si_opti IN ('tim_kerja_selulosa', 'pic_po_selulosa', 'tim_kerja_lingkungan', 'pic_po_lingkungan')
+                    OR (m.role IN ('pic_po', 'tim_kerja') AND m.jenis_layanan IN ('selulosa', 'lingkungan')))"
+            . $wherePelDiv
+            . " ORDER BY u.nama_user ASC",
+            $paramsPel
+        );
     } catch (\Exception $e) {
         $daftarPelaksana = [];
     }
@@ -154,29 +166,60 @@ unset($o);
 
         $orderId     = (int) ($params['id'] ?? 0);
         $pelaksanaId = (int) ($f3->get('POST.ketua_pelaksana_id') ?? 0);
+        $redirectUrl = $f3->get('POST.redirect_url');
+        $fallbackUrl = !empty($redirectUrl) ? $redirectUrl : ($orderId > 0 ? "/order/{$orderId}#pane-stage-7" : '/ketua-tim/siap-po');
 
         if ($orderId <= 0 || $pelaksanaId <= 0) {
             $this->setFlashError('Order atau Ketua Pelaksana tidak valid.');
-            $redirectUrl = $f3->get('POST.redirect_url');
-        if (!empty($redirectUrl)) {
-            $f3->reroute($redirectUrl);
-            return;
-        }
-        $f3->reroute('/ketua-tim/siap-po');
+            $f3->reroute($fallbackUrl);
             return;
         }
 
-        // Cek izin edit jika mengganti pelaksana yang sudah ditunjuk sebelumnya
         $orderModel = new \OrderLayanan($this->db);
         $curr = $orderModel->getDetail($orderId);
-        if ($curr && !empty($curr['ketua_pelaksana_id']) && (int)$curr['ketua_pelaksana_id'] !== $pelaksanaId) {
+        if (!$curr) {
+            $this->setFlashError("Order Layanan #{$orderId} tidak ditemukan.");
+            $f3->reroute('/ketua-tim/siap-po');
+            return;
+        }
+
+        // Validasi otoritas divisi Ketua Tim OPTI
+        if (!$this->isKetuaTimForOrder($curr)) {
+            $this->setFlashError('Akses Ditolak: Penunjukan pelaksana hanya dapat dilakukan oleh Ketua Tim OPTI divisi terkait atau Superadmin.');
+            $f3->reroute($fallbackUrl);
+            return;
+        }
+
+        $statusOrder = strtolower(trim((string)($curr['status'] ?? '')));
+        if (in_array($statusOrder, ['selesai', 'batal', 'ditolak'], true) && !$this->canEditSubmittedData(true, $orderId)) {
+            $this->setFlashError("Akses Ditolak: Order berstatus '{$statusOrder}' dan terkunci. Hubungi Superadmin untuk membuka izin edit.");
+            $f3->reroute($fallbackUrl);
+            return;
+        }
+
+        // Validasi prasyarat alur: Penawaran sudah DEAL dan pembayaran telah dimulai / didisposisikan
+        $syaratPelaksana = $this->syaratTunjukPelaksanaTerpenuhi($orderId);
+        if (!$syaratPelaksana['ok'] && !$this->canEditSubmittedData(true, $orderId)) {
+            $this->setFlashError('Penunjukan PIC PO belum dibuka: pastikan penawaran sudah DEAL dan pembayaran telah dicatat/diverifikasi.');
+            $f3->reroute($fallbackUrl);
+            return;
+        }
+
+        // Cek izin edit jika mengganti pelaksana yang sudah ditunjuk sebelumnya:
+        if (!empty($curr['ketua_pelaksana_id']) && (int)$curr['ketua_pelaksana_id'] !== $pelaksanaId) {
             $isSuperadmin = $this->isSuperadmin();
             $isUnlocked = \OrderLayanan::isOrderUnlocked($orderId);
-            if (!$isSuperadmin && !$isUnlocked) {
-                $this->setFlashError('Perubahan PIC PO dikunci. Hubungi Superadmin untuk membuka izin edit order ini.');
-                $redirectUrl = $f3->get('POST.redirect_url');
-                if (!empty($redirectUrl)) { $f3->reroute($redirectUrl); return; }
-                $f3->reroute("/order/{$orderId}#pane-stage-7");
+            $poSudahKirim = false;
+            try {
+                $cekPo = $this->db->exec('SELECT id, status FROM po_kegiatan WHERE order_id = ?' . (class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('') : '') . ' LIMIT 1', [1 => $orderId]);
+                if (!empty($cekPo) && (string)$cekPo[0]['status'] !== 'draft') {
+                    $poSudahKirim = true;
+                }
+            } catch (\Exception $e) {}
+
+            if ($poSudahKirim && !$isSuperadmin && !$isUnlocked) {
+                $this->setFlashError('Perubahan PIC PO dikunci karena proses telah berlanjut ke pengajuan PO Kegiatan. Hubungi Superadmin untuk membuka izin edit order ini.');
+                $f3->reroute($fallbackUrl);
                 return;
             }
         }
@@ -264,7 +307,7 @@ unset($o);
                  WHERE o.id = ?
                    AND o.disposisi_katim_at IS NOT NULL
                    AND o.status_keuangan IN ('lunas', 'terbayar_sebagian')
-                   AND o.tanggal_terima_sampel IS NOT NULL
+                   AND (o.tanggal_terima_sampel IS NOT NULL OR o.tanggal_spm_mulai IS NOT NULL)
                    AND o.ketua_pelaksana_id IS NULL",
                 [1 => (int) $orderId]
             );

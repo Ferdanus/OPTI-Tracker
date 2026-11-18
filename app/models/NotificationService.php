@@ -106,7 +106,22 @@ class NotificationService
             $createdByName
         ]);
 
-        return (int)$db->lastInsertId();
+        $notifId = (int)$db->lastInsertId();
+
+        // Hook persiapan notifikasi WA (hanya masuk antrean jika kirim_wa=true & wa_notif_enabled=1 di opti_config)
+        if (!empty($data['kirim_wa'])) {
+            try {
+                if (class_exists('WhatsAppService')) {
+                    WhatsAppService::enqueueNotification($db, array_merge($data, [
+                        'notif_id' => $notifId,
+                        'order_id' => $orderId,
+                        'pesan'    => $pesan,
+                    ]));
+                }
+            } catch (\Throwable $eWa) {}
+        }
+
+        return $notifId;
     }
 
     /**
@@ -129,11 +144,16 @@ class NotificationService
 
         // 2. Role-based matching (only when target_user_id IS NULL or 0)
         $roleMatch = [];
-        $isMitra = in_array($role, ['ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'mitra']) || ($role === 'ketua_tim' && $layanan === 'mitra');
+        $isKetuaTimMitra = ($role === 'ketua_tim_mitra') || ($role === 'ketua_tim' && $layanan === 'mitra');
+        $isSubTimMitra = in_array($role, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'mitra'], true);
         $isKeuangan = in_array($role, ['ketua_tim_keuangan', 'keuangan']) || ($role === 'ketua_tim' && $layanan === 'keuangan');
 
-        if ($isMitra) {
+        if ($isKetuaTimMitra) {
+            // Notifikasi role Tim Mitra hanya masuk ke Ketua Tim Mitra
             $roleMatch[] = "n.target_role IN ('ketua_tim_mitra', 'tim_mitra_industri', 'admin_order', 'tim_mitra', 'mitra', 'all')";
+        } elseif ($isSubTimMitra) {
+            // Sub tim kerja Mitra tidak menerima notifikasi role Mitra (hanya 'all' atau target_user_id langsung)
+            $roleMatch[] = "n.target_role = 'all'";
         } elseif ($isKeuangan) {
             $roleMatch[] = "n.target_role IN ('ketua_tim_keuangan', 'keuangan', 'all')";
         } elseif ($role === 'ketua_tim') {

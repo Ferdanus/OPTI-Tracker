@@ -2,9 +2,18 @@
 
 class SuratPenawaranMitraController extends Controller {
 
+    protected function wajibAksesMitra($f3) {
+        $this->requireAuth();
+        if (!$this->isTimMitra() && !$this->isAdminOrder() && !$this->isSuperadmin()) {
+            $this->setFlashError('Akses ditolak: fitur Surat Penawaran Mitra hanya dapat diakses oleh Tim Mitra Industri.');
+            $f3->reroute('/dashboard');
+            exit;
+        }
+    }
+
     /** GET /surat-penawaran-mitra */
     public function index($f3) {
-        $this->requireAuth();
+        $this->wajibAksesMitra($f3);
 
         $currentYear  = date('Y');
         $filterTahun  = $f3->exists('GET.tahun') ? trim((string)$f3->get('GET.tahun')) : $currentYear;
@@ -69,7 +78,7 @@ class SuratPenawaranMitraController extends Controller {
 
     /** GET /surat-penawaran-mitra/tambah */
     public function create($f3) {
-        $this->requireAuth();
+        $this->wajibAksesMitra($f3);
 
         $f3->set('surat', null);
 
@@ -78,7 +87,7 @@ class SuratPenawaranMitraController extends Controller {
 
     /** GET /surat-penawaran-mitra/@id/edit */
     public function edit($f3, $params) {
-        $this->requireAuth();
+        $this->wajibAksesMitra($f3);
 
         $id = (int) ($params['id'] ?? 0);
         $surat = new SuratPenawaranMitra($this->db);
@@ -86,6 +95,11 @@ class SuratPenawaranMitraController extends Controller {
 
         if ($surat->dry()) {
             $this->setFlashError("Surat Penawaran Mitra #{$id} tidak ditemukan.");
+            $f3->reroute('/surat-penawaran-mitra');
+            return;
+        }
+        if (strtolower(trim((string) ($surat->status ?? ''))) === 'final' && !$this->isSuperadmin()) {
+            $this->setFlashError("Surat Penawaran Mitra #{$id} sudah berstatus Final dan dikunci. Hubungi Superadmin untuk membuka izin edit.");
             $f3->reroute('/surat-penawaran-mitra');
             return;
         }
@@ -97,7 +111,7 @@ class SuratPenawaranMitraController extends Controller {
 
     /** POST /surat-penawaran-mitra/simpan */
     public function store($f3) {
-        $this->requireAuth();
+        $this->wajibAksesMitra($f3);
 
         try {
             $surat = new SuratPenawaranMitra($this->db);
@@ -117,7 +131,7 @@ class SuratPenawaranMitraController extends Controller {
 
     /** POST /surat-penawaran-mitra/@id/update */
     public function update($f3, $params) {
-        $this->requireAuth();
+        $this->wajibAksesMitra($f3);
 
         $id = (int) ($params['id'] ?? 0);
         $surat = new SuratPenawaranMitra($this->db);
@@ -125,6 +139,11 @@ class SuratPenawaranMitraController extends Controller {
 
         if ($surat->dry()) {
             $this->setFlashError("Surat Penawaran Mitra #{$id} tidak ditemukan.");
+            $f3->reroute('/surat-penawaran-mitra');
+            return;
+        }
+        if (strtolower(trim((string) ($surat->status ?? ''))) === 'final' && !$this->isSuperadmin()) {
+            $this->setFlashError("Surat Penawaran Mitra #{$id} sudah berstatus Final dan dikunci. Hubungi Superadmin untuk mengubah data.");
             $f3->reroute('/surat-penawaran-mitra');
             return;
         }
@@ -145,13 +164,18 @@ class SuratPenawaranMitraController extends Controller {
 
     /** POST /surat-penawaran-mitra/@id/hapus */
     public function delete($f3, $params) {
-        $this->requireAuth();
+        $this->wajibAksesMitra($f3);
 
         $id = (int) ($params['id'] ?? 0);
         $surat = new SuratPenawaranMitra($this->db);
         $surat->load(['id = ?', $id]);
 
         if (!$surat->dry()) {
+            if (strtolower(trim((string) ($surat->status ?? ''))) === 'final' && !$this->isSuperadmin()) {
+                $this->setFlashError("Surat Penawaran Mitra #{$id} sudah berstatus Final dan dikunci. Hanya Superadmin yang dapat menghapus.");
+                $f3->reroute('/surat-penawaran-mitra');
+                return;
+            }
             $surat->erase();
             $this->setFlashSuccess("Surat Penawaran Mitra #{$id} berhasil dihapus.");
         }

@@ -14,13 +14,17 @@
  */
 class PembayaranOptiController extends Controller {
 
-    protected $allowedExt  = ['pdf'];
-    protected $allowedMime = ['application/pdf'];
+    protected $allowedExt  = ['pdf', 'jpg', 'jpeg', 'png'];
+    protected $allowedMime = ['application/pdf', 'image/jpeg', 'image/png'];
     protected $maxSize     = 5242880; // 5MB
 
     public function beforeRoute($f3) {
         parent::beforeRoute($f3);
         $this->requireAuth();
+        $pattern = (string)($f3->get('PATTERN') ?? '');
+        if ($pattern === '/pembayaran/bukti/@id') {
+            return;
+        }
         if (!$this->isSuperadmin() && !$this->isKeuangan()) {
             $this->setFlashError('Akses Ditolak: Modul Pembayaran hanya dapat diakses oleh Tim Keuangan dan Superadmin.');
             $f3->reroute('/dashboard');
@@ -308,6 +312,14 @@ $order['sudah_ada_pembayaran'] = ((int)$order['jumlah_baris_total']) > 0;
     /** POST /pembayaran/simpan */
     public function simpan($f3) {
         $this->requirePermission('pembayaran:create', '/pembayaran');
+        if (!$this->isKeuangan() && !$this->isSuperadmin()) {
+            $postTmp = $f3->get('POST');
+            $oidTmp  = (int)($postTmp['order_id'] ?? 0);
+            $backUrl = (($postTmp['dari'] ?? '') === 'order' && $oidTmp > 0) ? ('/order/' . $oidTmp) : '/pembayaran';
+            $this->setFlashError('Akses ditolak: transaksi pembayaran hanya dapat dikelola oleh Tim Keuangan.');
+            $f3->reroute($backUrl);
+            return;
+        }
 
         $post = $f3->get('POST');
 
@@ -334,6 +346,31 @@ $qDari     = $dariOrder ? '&dari=order' : '';
 if ($orderId <= 0) {
     $this->setFlashError('Order layanan tidak valid.');
     $f3->reroute('/pembayaran/tambah');
+    return;
+}
+
+$_ordModelCheck = new OrderLayanan($this->db);
+$_ordCheck = $_ordModelCheck->getDetail($orderId);
+if (!$_ordCheck) {
+    $this->setFlashError('Order layanan tidak ditemukan.');
+    $f3->reroute($kembali);
+    return;
+}
+$_statusOrdCheck = strtolower(trim((string)($_ordCheck['status'] ?? '')));
+$_statusKeuCheck = strtolower(trim((string)($_ordCheck['status_keuangan'] ?? '')));
+if (in_array($_statusOrdCheck, ['batal', 'ditolak'], true)) {
+    $this->setFlashError('Akses Ditolak: Order berstatus batal/ditolak dan tidak dapat menerima pembayaran.');
+    $f3->reroute($kembali);
+    return;
+}
+if (!$this->isOrderDealOrSelesai($_ordCheck) || !in_array($_statusKeuCheck, ['menunggu_pembayaran', 'terbayar_sebagian', 'sebagian', 'lunas'], true)) {
+    $this->setFlashError('Tahap 6 belum terbuka: Penawaran harus berstatus DEAL dan sudah didisposisikan ke Tim Keuangan terlebih dahulu.');
+    $f3->reroute($kembali);
+    return;
+}
+if (($_statusOrdCheck === 'selesai' || $_statusKeuCheck === 'lunas') && !$this->canEditSubmittedData(true, $orderId)) {
+    $this->setFlashError('Pembayaran dikunci karena order sudah lunas atau selesai. Hubungi Superadmin untuk membuka izin edit.');
+    $f3->reroute($kembali);
     return;
 }
 
@@ -560,13 +597,27 @@ $this->setFlashSuccess($pesanSukses);
     /** POST /pembayaran/@id/hapus */
     public function hapus($f3, $params) {
         $this->requirePermission('pembayaran:edit', '/pembayaran');
+        if (!$this->isKeuangan() && !$this->isSuperadmin()) {
+            $this->setFlashError('Akses ditolak: transaksi pembayaran hanya dapat dihapus oleh Tim Keuangan.');
+            $f3->reroute('/pembayaran');
+            return;
+        }
 
         $id = (int)($params['id'] ?? 0);
         $pembayaran = new OptiPembayaran($this->db);
         $pembayaran->load(['id = ?', $id]);
 
         if (!$pembayaran->dry()) {
-            $orderId = $pembayaran->order_id;
+            $orderId = (int)$pembayaran->order_id;
+            $orderModel = new OrderLayanan($this->db);
+            $order = $orderModel->getDetail($orderId);
+            $statusOrder = strtolower(trim((string)($order['status'] ?? '')));
+            $statusKeuangan = strtolower(trim((string)($order['status_keuangan'] ?? '')));
+            if (($statusOrder === 'selesai' || $statusKeuangan === 'lunas' || $orderModel->isTahapSpmReached($orderId)) && !$this->canEditSubmittedData(true, $orderId)) {
+                $this->setFlashError('Transaksi pembayaran dikunci karena order sudah lunas, memasuki tahap SPM, atau selesai. Hubungi Superadmin untuk membuka izin edit.');
+                $f3->reroute('/pembayaran');
+                return;
+            }
             $pembayaran->erase();
             $this->recalcStatusKeuangan($orderId);
             $this->logActivity($orderId, 'pembayaran', 'hapus_pembayaran', "Menghapus transaksi pembayaran ID #{$id}");
@@ -638,10 +689,14 @@ $this->setFlashSuccess($pesanSukses);
      */
     protected function recalcStatusKeuangan($orderId) {
         $totalRows = $this->safeQuery(
-            "SELECT COALESCE(SUM(jumlah), 0) AS total FROM opti_pembayaran WHERE order_id = ? AND status_verifikasi = 'terverifikasi'",
+            "SELECT COALESCE(SUM(jumlah), 0) AS total,
+                    SUM(CASE WHEN is_kesanggupan_bayar = 1 AND status_verifikasi = 'terverifikasi' THEN 1 ELSE 0 END) AS jml_skb
+             FROM opti_pembayaran
+             WHERE order_id = ? AND status_verifikasi = 'terverifikasi'",
             [$orderId]
         );
         $totalBayar = (float)($totalRows[0]['total'] ?? 0);
+        $punyaSkb   = ((int)($totalRows[0]['jml_skb'] ?? 0) > 0);
 
         $acuanRows = $this->safeQuery(
             "SELECT o.estimasi_biaya, sp.nominal_penawaran
@@ -661,9 +716,19 @@ $this->setFlashSuccess($pesanSukses);
             ? (float)$acuanRows[0]['nominal_penawaran']
             : (float)$acuanRows[0]['estimasi_biaya'];
 
-        if ($biayaAcuan <= 0) return null;
-
-        $statusBaru = ($totalBayar >= $biayaAcuan) ? 'lunas' : 'terbayar_sebagian';
+        if ($punyaSkb) {
+            $statusBaru = 'lunas';
+        } elseif ($biayaAcuan > 0) {
+            if ($totalBayar >= $biayaAcuan) {
+                $statusBaru = 'lunas';
+            } elseif ($totalBayar > 0) {
+                $statusBaru = 'terbayar_sebagian';
+            } else {
+                $statusBaru = 'menunggu_pembayaran';
+            }
+        } else {
+            $statusBaru = ($totalBayar > 0) ? 'lunas' : 'menunggu_pembayaran';
+        }
 
         $order = new OrderLayanan($this->db);
         $order->load(['id = ?', $orderId]);
@@ -835,10 +900,48 @@ $this->setFlashSuccess($pesanSukses);
     }
     /** POST /pembayaran/@id/disposisi-katim */
     public function disposisiKatim($f3, $params) {
-        $this->requirePermission('pembayaran:view', '/dashboard');
-        $orderId = (int)($params['id'] ?? 0);
-        $this->lakukanDisposisiKatim($orderId, $this->getUserId());
+        $this->requirePermission('pembayaran:edit', '/dashboard');
         header('Content-Type: application/json');
+        if (!$this->isKeuangan() && !$this->isSuperadmin()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Akses ditolak: hanya Tim Keuangan atau Superadmin.']);
+            return;
+        }
+        $orderId = (int)($params['id'] ?? 0);
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($orderId);
+        if (!$order) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Order tidak ditemukan.']);
+            return;
+        }
+        $statusOrd = strtolower(trim((string)($order['status'] ?? '')));
+        if (in_array($statusOrd, ['selesai', 'batal', 'ditolak'], true) && !$this->canEditSubmittedData(true, $orderId)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Order sudah selesai/batal dan terkunci.']);
+            return;
+        }
+        if (!$this->isOrderDealOrSelesai($order)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Penawaran order belum berstatus DEAL.']);
+            return;
+        }
+        $skbRows = $this->safeQuery(
+            "SELECT COUNT(*) AS cnt FROM opti_pembayaran WHERE order_id = ? AND is_kesanggupan_bayar = 1 AND status_verifikasi = 'terverifikasi'",
+            [$orderId]
+        );
+        $punyaSkb = ((int)($skbRows[0]['cnt'] ?? 0) > 0);
+        if (($order['status_keuangan'] ?? '') !== 'lunas' && !$punyaSkb) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Pembayaran harus berstatus LUNAS atau memiliki Surat Kesanggupan Bayar terverifikasi sebelum didisposisikan ke Ketua Tim.']);
+            return;
+        }
+        if (!empty($order['disposisi_katim_at']) && !$this->canEditSubmittedData(true, $orderId)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Order sudah didisposisikan ke Ketua Tim sebelumnya.']);
+            return;
+        }
+        $this->lakukanDisposisiKatim($orderId, $this->getUserId());
         echo json_encode(['success' => true]);
     }
 }

@@ -192,6 +192,7 @@ $f3->route('POST /order/@id/po-ttd/unggah', 'OrderController->unggahPoTtd');   /
 $f3->route('GET /order/@id/po-ttd', 'OrderController->lihatPoTtd');
 $f3->route('POST /order/@id/tunjuk-ketupel', 'OrderController->tunjukKetupel');   // Tahap 8: tunjuk / ganti Ketua Pelaksana PO
 $f3->route('GET /proposal', 'OrderController->proposalIndex');
+$f3->route('GET /tarif-parameter', 'OrderController->tarifParameterIndex');
 $f3->route('GET /order/@id/proposal', 'OrderController->proposalForm');
 $f3->route('POST /order/@id/proposal/simpan', 'OrderController->proposalSimpan');
 $f3->route('POST /order/@id/proposal/upload', 'OrderController->uploadProposalFile');
@@ -288,11 +289,10 @@ $f3->route('GET /pembayaran/tambah', 'PembayaranOptiController->tambah');
 $f3->route('POST /pembayaran/simpan', 'PembayaranOptiController->simpan');
 $f3->route('POST /pembayaran/@id/hapus', 'PembayaranOptiController->hapus');
 $f3->route('GET /pembayaran/bukti/@id', 'PembayaranOptiController->unduhBukti');
-$f3->route('GET /order/@id/invoice/buat', 'PembayaranOptiController->invoiceForm');
-$f3->route('POST /order/@id/invoice/simpan', 'PembayaranOptiController->invoiceSimpan');
-$f3->route('GET /order/@id/pembayaran/tambah', 'PembayaranOptiController->tambahDariOrder');
-$f3->route('POST /order/@id/pembayaran/simpan', 'PembayaranOptiController->simpanDariOrder');
-$f3->route('GET /pembayaran/bukti/@id', 'PembayaranOptiController->unduhBukti');
+$f3->route('GET /order/@id/invoice/buat', 'PembayaranController->invoiceForm');
+$f3->route('POST /order/@id/invoice/simpan', 'PembayaranController->invoiceSimpan');
+$f3->route('GET /order/@id/pembayaran/tambah', 'PembayaranController->tambahDariOrder');
+$f3->route('POST /order/@id/pembayaran/simpan', 'PembayaranController->simpanDariOrder');
 
 // ==========================================
 // ROUTE MODUL BAST & PENUTUPAN ORDER
@@ -580,6 +580,7 @@ $f3->route('GET /uploads/surat_masuk/@filename', function($f3, $params) {
 // ==========================================
 $f3->route('GET /notifikasi', 'NotificationController->index');
 $f3->route('GET /notifikasi/unread', 'NotificationController->getUnread');
+$f3->route('GET /cron/wa-queue', 'NotificationController->processWaQueue');
 $f3->route('POST /notifikasi/mark-read/@id', 'NotificationController->markRead');
 $f3->route('POST /notifikasi/mark-all-read', 'NotificationController->markAllRead');
 

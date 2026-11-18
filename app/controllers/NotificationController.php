@@ -44,6 +44,18 @@ class NotificationController extends Controller
     }
 
     /**
+     * GET /cron/wa-queue
+     * Memproses antrean notifikasi WA secara bertahap (aman dipanggil Task Scheduler / Cron)
+     */
+    public function processWaQueue($f3)
+    {
+        $result = WhatsAppService::processWaQueue($this->db, 10, 30);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true] + $result);
+        exit;
+    }
+
+    /**
      * POST /notifikasi/mark-all-read
      * Menandai seluruh notifikasi user saat ini telah dibaca
      */

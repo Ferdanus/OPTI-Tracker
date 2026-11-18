@@ -23,9 +23,13 @@ class BerkasController extends Controller {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Order tidak valid.'], 404);
         }
 
+        $hasKolomSampel = !empty($this->safeExec("SHOW COLUMNS FROM order_layanan LIKE 'file_bukti_sampel'"));
+        $hasKolomBuktiPermohonan = !empty($this->safeExec("SHOW COLUMNS FROM order_layanan LIKE 'file_bukti_permohonan'"));
         $order = $this->safeExec(
             "SELECT o.id, o.nomor_order, o.nomor_permintaan, o.judul_kegiatan, o.jenis_layanan_opti, o.id_surat_masuk, 
-                    o.status_penawaran, o.status_keuangan, c.nmcustomer, c.pt_cv
+                    o.status, o.status_proposal_biaya, o.status_penawaran, o.status_keuangan"
+                    . ($hasKolomBuktiPermohonan ? ", o.file_bukti_permohonan" : "")
+                    . ($hasKolomSampel ? ", o.file_bukti_sampel, o.tanggal_spm_mulai" : "") . ", c.nmcustomer, c.pt_cv
              FROM order_layanan o
              LEFT JOIN tb_customer c ON o.id_customer = c.id_customer
              WHERE o.id = ? LIMIT 1",
@@ -42,34 +46,81 @@ class BerkasController extends Controller {
         // 1. Surat Masuk Permohonan (Awal mula masuknya berkas permohonan)
         $items[] = $this->itemSuratMasuk($order);
 
-        // 2. Proposal Riset / Teknis (Jika ada proposal atau divisi selulosa)
-        if ($divisi === 'selulosa' || $this->adaProposal($orderId)) {
-            $items[] = $this->itemProposal($orderId);
+        // 1b. Bukti Permohonan Langsung (Jika diunggah manual pada Tahap 2)
+        if (!empty($order['file_bukti_permohonan'])) {
+            $items[] = [
+                'kategori'   => 'bukti_permohonan',
+                'label'      => 'Berkas Bukti Permohonan Langsung',
+                'sub'        => 'Dokumen bukti permohonan layanan yang diunggah manual oleh Tim Mitra',
+                'keterangan' => 'Berkas permohonan langsung dari mitra yang diunggah saat input order.',
+                'ikon'       => 'bi-file-earmark-arrow-up-fill',
+                'warna'      => 'slate',
+                'file_name'  => basename((string) $order['file_bukti_permohonan']),
+                'tipe'       => 'Lampiran Permohonan',
+                'ada'        => true,
+                'url'        => $this->f3->get('BASE') . '/' . ltrim((string) $order['file_bukti_permohonan'], '/\\')
+            ];
         }
 
-        // 3. Surat Penawaran Harga (SPH)
-        $items[] = $this->itemPenawaran($orderId);
+        // 2. Proposal Riset / Teknis (Jika ada proposal atau divisi selulosa)
+        if ($divisi === 'selulosa' || $this->adaProposal($orderId)) {
+            $items[] = $this->itemProposal($orderId, $order);
+        }
 
-        // 4. Surat Kesanggupan Bayar (SKB) / Respon Persetujuan DEAL
+        // 3. Surat Penawaran Harga (SPH) & Lampiran/Dokumen Deal
+        $items[] = $this->itemPenawaran($orderId);
+        foreach ($this->itemsDokumenPenawaranTambahan($orderId) as $extraSpItem) {
+            $items[] = $extraSpItem;
+        }
+
+        // 4. Surat Kesanggupan Bayar (SKB)
         $items[] = $this->itemSuratKesanggupan($orderId);
 
         // 5. Bukti Pembayaran / Transfer (Keuangan & PNBP)
         $items[] = $this->itemPembayaran($orderId);
 
-        // 6. PO Kegiatan Internal (Lembar Kerja Tim Laboratorium)
+        // 5b. Gambar Bukti Fisik Sampel (Opsional saat Aktivasi SPM)
+        if (!empty($order['file_bukti_sampel'])) {
+            $items[] = [
+                'kategori'   => 'bukti_sampel',
+                'label'      => 'Gambar Bukti Fisik Sampel',
+                'sub'        => 'Dokumentasi foto penerimaan sampel fisik pada tahap aktivasi SPM',
+                'keterangan' => 'Foto bukti fisik sampel yang diunggah oleh petugas saat aktivasi titik awal SPM.',
+                'ikon'       => 'bi-camera-fill',
+                'warna'      => 'slate',
+                'nomor'      => '-',
+                'tanggal'    => !empty($order['tanggal_spm_mulai']) ? date('d M Y', strtotime($order['tanggal_spm_mulai'])) : null,
+                'file_name'  => basename((string) $order['file_bukti_sampel']),
+                'tipe'       => 'Foto / Gambar',
+                'ada'        => true,
+                'url'        => $this->f3->get('BASE') . '/' . ltrim((string) $order['file_bukti_sampel'], '/')
+            ];
+        }
+
+        // 6. PO Kegiatan Internal & PO Bertanda Tangan + Kontrak PKS
         $items[] = $this->itemPoKegiatan($orderId);
+        foreach ($this->itemsPoTtdDanKontrak($orderId) as $extraPoItem) {
+            $items[] = $extraPoItem;
+        }
 
         // 7. Berita Acara Serah Terima (BAST & Laporan Akhir)
         $items[] = $this->itemBast($orderId);
 
         $faseMap = [
-            'surat_masuk'       => 'Registrasi & Permohonan Mitra',
-            'proposal'          => 'Kajian Teknis & Metodologi Riset',
-            'penawaran'         => 'Penawaran Tarif Resmi (SPH)',
-            'kesanggupan_bayar' => 'Kesepakatan & Komitmen Bayar (SKB)',
-            'pembayaran'        => 'Verifikasi Keuangan & Setoran PNBP',
-            'po_kegiatan'       => 'Pelaksanaan Kerja Teknis (PO Balai)',
-            'bast'              => 'Serah Terima Resmi & Penutupan (BAST)'
+            'surat_masuk'        => 'Registrasi & Permohonan Mitra',
+            'bukti_permohonan'   => 'Bukti Permohonan Langsung',
+            'proposal'           => 'Kajian Teknis & Metodologi Riset',
+            'penawaran'          => 'Penawaran Tarif Resmi (SPH)',
+            'lampiran_penawaran' => 'Lampiran Tambahan Penawaran',
+            'penawaran_ttd'      => 'Surat Penawaran Bertanda Tangan',
+            'bukti_persetujuan'  => 'Bukti Persetujuan / PO Klien',
+            'kesanggupan_bayar'  => 'Kesepakatan & Komitmen Bayar (SKB)',
+            'pembayaran'         => 'Verifikasi Keuangan & Setoran PNBP',
+            'bukti_sampel'       => 'Bukti Fisik Sampel (Aktivasi SPM)',
+            'po_kegiatan'        => 'Pelaksanaan Kerja Teknis (PO Balai)',
+            'po_ttd'             => 'PO Kegiatan Bertanda Tangan',
+            'pks_kontrak'        => 'Kontrak / Perjanjian Kerja Sama (PKS)',
+            'bast'               => 'Serah Terima Resmi & Penutupan (BAST)'
         ];
 
         $step = 1;
@@ -117,8 +168,7 @@ class BerkasController extends Controller {
         }
         $suratId = (int) $order[0]['id_surat_masuk'];
         $ctrl = new \SuratMasukController();
-        $f3->set('PARAMS.id', $suratId);
-        $ctrl->viewPdf();
+        $ctrl->previewPdf($f3, ['id' => $suratId]);
     }
 
     /** GET /penawaran/@id/lampiran -- id = tb_surat_penawaran.id atau order_id */
@@ -324,6 +374,113 @@ class BerkasController extends Controller {
         ];
     }
 
+    protected function itemsDokumenPenawaranTambahan($orderId): array {
+        $hasil = [];
+        $r = $this->safeExec(
+            "SELECT id, nomor_surat, file_lampiran_user, file_penawaran_ttd, file_bukti_persetujuan
+             FROM tb_surat_penawaran
+             WHERE order_id = ?
+             ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1",
+            [1 => $orderId]
+        );
+        if (empty($r)) { return $hasil; }
+        $sp = $r[0];
+        $spId = (int) $sp['id'];
+
+        if (!empty($sp['file_lampiran_user'])) {
+            $hasil[] = [
+                'kategori'   => 'lampiran_penawaran',
+                'label'      => 'Lampiran Tambahan Penawaran (Hal. 3+)',
+                'sub'        => 'Berkas lampiran tambahan yang digabungkan ke Surat Penawaran Resmi',
+                'keterangan' => 'Lampiran tambahan yang diunggah Tim Mitra pada formulir Surat Penawaran.',
+                'ikon'       => 'bi-paperclip',
+                'warna'      => 'slate',
+                'nomor'      => $sp['nomor_surat'] ?: '-',
+                'file_name'  => basename((string) $sp['file_lampiran_user']),
+                'ada'        => true,
+                'url'        => $this->f3->get('BASE') . '/' . ltrim((string) $sp['file_lampiran_user'], '/\\')
+            ];
+        }
+        if (!empty($sp['file_penawaran_ttd'])) {
+            $hasil[] = [
+                'kategori'   => 'penawaran_ttd',
+                'label'      => 'Surat Penawaran Bertanda Tangan',
+                'sub'        => 'Arsip Surat Penawaran Resmi yang telah ditandatangani (Tahap 5 Deal)',
+                'keterangan' => 'Surat Penawaran Bertanda Tangan telah ditautkan dari arsip surat keluar.',
+                'ikon'       => 'bi-file-earmark-check-fill',
+                'warna'      => 'slate',
+                'nomor'      => $sp['nomor_surat'] ?: '-',
+                'file_name'  => basename((string) $sp['file_penawaran_ttd']),
+                'ada'        => true,
+                'url'        => $this->f3->get('BASE') . '/surat-penawaran/' . $spId . '/dokumen-deal/penawaran_ttd/preview'
+            ];
+        }
+        if (!empty($sp['file_bukti_persetujuan'])) {
+            $hasil[] = [
+                'kategori'   => 'bukti_persetujuan',
+                'label'      => 'Bukti Persetujuan / PO Klien',
+                'sub'        => 'Dokumen bukti persetujuan resmi atau Purchase Order dari pihak mitra',
+                'keterangan' => 'Bukti persetujuan klien untuk penawaran DEAL telah diunggah.',
+                'ikon'       => 'bi-file-earmark-ruled-fill',
+                'warna'      => 'slate',
+                'nomor'      => $sp['nomor_surat'] ?: '-',
+                'file_name'  => basename((string) $sp['file_bukti_persetujuan']),
+                'ada'        => true,
+                'url'        => $this->f3->get('BASE') . '/surat-penawaran/' . $spId . '/dokumen-deal/bukti_persetujuan/preview'
+            ];
+        }
+        return $hasil;
+    }
+
+    protected function itemsPoTtdDanKontrak($orderId): array {
+        $hasil = [];
+        $hasTtd = !empty($this->safeExec("SHOW COLUMNS FROM po_kegiatan LIKE 'po_ttd_file'"));
+        $r = $this->safeExec(
+            "SELECT id, nomor_po" . ($hasTtd ? ", po_ttd_file" : "") . " FROM po_kegiatan WHERE order_id = ? ORDER BY id DESC LIMIT 1",
+            [1 => $orderId]
+        );
+        if (empty($r)) { return $hasil; }
+        $po = $r[0];
+        $poId = (int) $po['id'];
+
+        if (!empty($po['po_ttd_file'])) {
+            $hasil[] = [
+                'kategori'   => 'po_ttd',
+                'label'      => 'PO Kegiatan Bertanda Tangan',
+                'sub'        => 'Dokumen PO Kegiatan yang sudah ditandatangani Ketua Tim (Tahap 8)',
+                'keterangan' => 'PO bertanda tangan telah diunggah dan diteruskan ke proses Kontrak/PKS.',
+                'ikon'       => 'bi-pen-fill',
+                'warna'      => 'slate',
+                'nomor'      => $po['nomor_po'] ?: '-',
+                'file_name'  => basename((string) $po['po_ttd_file']),
+                'ada'        => true,
+                'url'        => $this->f3->get('BASE') . '/order/' . $orderId . '/po-ttd'
+            ];
+        }
+
+        $k = $this->safeExec(
+            "SELECT id, nomor_pks, status, tanggal_perjanjian FROM pks_kontrak WHERE po_id = ? AND status = 'selesai' LIMIT 1",
+            [1 => $poId]
+        );
+        if (!empty($k)) {
+            $pks = $k[0];
+            $hasil[] = [
+                'kategori'   => 'pks_kontrak',
+                'label'      => 'Perjanjian Kerja Sama (PKS)',
+                'sub'        => 'Dokumen Kontrak / PKS resmi yang diterbitkan oleh Humas (Tahap 9)',
+                'keterangan' => 'Dokumen Kontrak / PKS telah selesai dibuat dan siap dicetak/diunduh.',
+                'ikon'       => 'bi-file-earmark-lock2-fill',
+                'warna'      => 'slate',
+                'nomor'      => $pks['nomor_pks'] ?: '-',
+                'tanggal'    => $pks['tanggal_perjanjian'] ?? null,
+                'ada'        => true,
+                'url'        => $this->f3->get('BASE') . '/pks/' . $poId . '/pdf'
+            ];
+        }
+
+        return $hasil;
+    }
+
     protected function itemPoKegiatan($orderId) {
         $ada = false;
         $url = null;
@@ -370,7 +527,7 @@ class BerkasController extends Controller {
         return !empty($r);
     }
 
-    protected function itemProposal($orderId) {
+    protected function itemProposal($orderId, array $order = []) {
         $ada = false;
         $url = null;
         $judul = null;
@@ -378,7 +535,7 @@ class BerkasController extends Controller {
         $fileName = null;
 
         $r = $this->safeExec(
-            "SELECT id, file_proposal, judul_proposal, status_proposal, created_at, updated_at 
+            "SELECT id, file_proposal, judul_proposal, status_proposal, disetujui_ketua_at, created_at, updated_at 
              FROM opti_proposal_riset
              WHERE order_id = ? ORDER BY id DESC LIMIT 1",
             [1 => $orderId]
@@ -386,19 +543,43 @@ class BerkasController extends Controller {
         if (!empty($r)) {
             $pr = $r[0];
             $judul = $pr['judul_proposal'] ?? null;
-            $statusProposal = $pr['status_proposal'] ?? 'draft';
+            $statusProposal = strtolower(trim((string)($pr['status_proposal'] ?? 'draft')));
+            $statusPropBiaya = strtolower(trim((string)($order['status_proposal_biaya'] ?? '')));
+            $statusOrd = strtolower(trim((string)($order['status'] ?? '')));
+            if (!empty($pr['disetujui_ketua_at'])
+                || in_array($statusPropBiaya, ['siap_penawaran', 'disetujui'], true)
+                || in_array($statusOrd, ['siap_penawaran', 'penawaran', 'negosiasi', 'deal', 'po_terbit', 'selesai'], true)
+                || ($order['status_penawaran'] ?? '') === 'deal') {
+                $statusProposal = 'disetujui_ketua';
+            } elseif ($statusPropBiaya === 'menunggu_approval' && in_array($statusProposal, ['', 'draft', 'draft_disimpan'], true)) {
+                $statusProposal = 'diajukan';
+            }
+
             if (!empty($pr['file_proposal'])) {
                 $ada = true;
                 $fileName = basename($pr['file_proposal']);
-                $url = $this->f3->get('BASE') . '/proposal/' . (int) $pr['id'] . '/file';
+                $url = $this->f3->get('BASE') . '/order/' . (int) $orderId . '/proposal/file';
             } else {
                 $ada = true;
                 $url = $this->f3->get('BASE') . '/order/' . $orderId . '/proposal';
             }
         }
 
+        $statusLabelMap = [
+            'disetujui_ketua'    => 'Disetujui Ka. Tim',
+            'disetujui'          => 'Disetujui Ka. Tim',
+            'disetujui_pimpinan' => 'Disetujui',
+            'diajukan'           => 'Menunggu Review Ka. Tim',
+            'menunggu_approval'  => 'Menunggu Review Ka. Tim',
+            'perlu_revisi'       => 'Perlu Revisi',
+            'revisi'             => 'Perlu Revisi',
+            'draft_disimpan'     => 'Draft Disimpan',
+            'draft'              => 'Draft'
+        ];
+        $statusTeks = $statusLabelMap[$statusProposal] ?? ucwords(str_replace('_', ' ', (string)$statusProposal));
+
         $keterangan = $ada
-            ? "Proposal kajian teknis & metodologi riset telah disusun (" . ucwords(str_replace('_', ' ', (string)$statusProposal)) . ")."
+            ? "Proposal kajian teknis & metodologi riset telah disusun ({$statusTeks})."
             : "Proposal riset/kajian teknis belum disusun oleh PIC Teknis.";
 
         return [
@@ -407,11 +588,11 @@ class BerkasController extends Controller {
             'sub'             => 'Dokumen kajian metodologi, parameter analisis, dan perencanaan teknis',
             'keterangan'      => $keterangan,
             'ikon'            => 'bi-journal-text',
-            'warna'           => 'danger',
+            'warna'           => 'slate',
             'judul'           => $judul,
-            'status_proposal' => $statusProposal,
+            'status_proposal' => $statusTeks,
             'file_name'       => $fileName,
-            'tipe'            => 'PDF Dokumen',
+            'tipe'            => 'PDF / Word Dokumen',
             'ada'             => $ada,
             'url'             => $url
         ];

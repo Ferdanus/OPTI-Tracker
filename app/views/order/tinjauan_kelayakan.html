@@ -369,11 +369,70 @@ function cekStatusPilar() {
     updateTetapkanButtonState();
 }
 
+function updateTetapkanButtonState() {
+    var btn = document.getElementById('btnTetapkanKeputusan');
+    if (!btn) return;
+
+    var radioTidak = document.getElementById('kep_tidak_layak');
+    var isTidakLayak = radioTidak && radioTidak.checked;
+    var selectPic = document.getElementById('selectPicProposal');
+    var selectPicCadangan = document.getElementById('selectPicProposalCadangan');
+    var picVal = selectPic ? selectPic.value.trim() : '';
+    var picCadanganVal = selectPicCadangan ? selectPicCadangan.value.trim() : '';
+    var isSelulosa = '{{ @order.jenis_layanan_opti }}' === 'selulosa';
+
+    var checkSdm = document.getElementById('check_sdm');
+    var checkAlat = document.getElementById('check_alat');
+    var checkBahan = document.getElementById('check_bahan');
+    var checkMetode = document.getElementById('check_metode');
+    var allPillarsChecked = (checkSdm && checkSdm.checked) && (checkAlat && checkAlat.checked) && (checkBahan && checkBahan.checked) && (checkMetode && checkMetode.checked);
+
+    var feedbackCadangan = document.getElementById('feedbackPicProposalCadangan');
+    var isPicSame = (!isTidakLayak && picVal !== '' && picCadanganVal !== '' && picVal === picCadanganVal);
+
+    if (selectPicCadangan) {
+        if (isPicSame) {
+            selectPicCadangan.classList.add('is-invalid');
+            if (feedbackCadangan) feedbackCadangan.style.display = 'block';
+        } else {
+            selectPicCadangan.classList.remove('is-invalid');
+            if (feedbackCadangan) feedbackCadangan.style.display = 'none';
+        }
+    }
+
+    if (!isTidakLayak && !allPillarsChecked) {
+        btn.disabled = true;
+        btn.classList.add('disabled');
+        btn.style.opacity = '0.55';
+        btn.style.cursor = 'not-allowed';
+        btn.setAttribute('title', 'Seluruh 4 pilar kesiapan laboratorium harus dicentang siap untuk Dapat Dilaksanakan');
+    } else if (!isTidakLayak && isSelulosa && selectPic && picVal === '') {
+        btn.disabled = true;
+        btn.classList.add('disabled');
+        btn.style.opacity = '0.55';
+        btn.style.cursor = 'not-allowed';
+        btn.setAttribute('title', 'Pilih PIC Utama terlebih dahulu (Wajib untuk OPTI Selulosa)');
+    } else if (isPicSame) {
+        btn.disabled = true;
+        btn.classList.add('disabled');
+        btn.style.opacity = '0.55';
+        btn.style.cursor = 'not-allowed';
+        btn.setAttribute('title', 'PIC Cadangan tidak boleh sama dengan PIC Utama');
+    } else {
+        btn.disabled = false;
+        btn.classList.remove('disabled');
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.removeAttribute('title');
+    }
+}
+
 function toggleAlasanPenolakan() {
     var radioTidak = document.getElementById('kep_tidak_layak');
     var boxTolak = document.getElementById('boxAlasanPenolakan');
     var boxPic = document.getElementById('boxPicProposal');
     var selectPic = document.getElementById('selectPicProposal');
+    var selectPicCadangan = document.getElementById('selectPicProposalCadangan');
     var isSelulosa = '{{ @order.jenis_layanan_opti }}' === 'selulosa';
 
     if (radioTidak && radioTidak.checked) {
@@ -382,6 +441,9 @@ function toggleAlasanPenolakan() {
         if (selectPic) {
             selectPic.removeAttribute('required');
             selectPic.classList.remove('is-invalid');
+        }
+        if (selectPicCadangan) {
+            selectPicCadangan.classList.remove('is-invalid');
         }
     } else {
         if (boxTolak) boxTolak.style.display = 'none';
@@ -409,6 +471,16 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTetapkanButtonState();
         });
         selectPicEl.addEventListener('input', function() {
+            updateTetapkanButtonState();
+        });
+    }
+
+    var selectPicCadEl = document.getElementById('selectPicProposalCadangan');
+    if (selectPicCadEl) {
+        selectPicCadEl.addEventListener('change', function() {
+            updateTetapkanButtonState();
+        });
+        selectPicCadEl.addEventListener('input', function() {
             updateTetapkanButtonState();
         });
     }
@@ -451,9 +523,11 @@ function confirmTetapkanKeputusan() {
             return;
         }
     } else {
-        // Validasi Penunjukan PIC Proposal
+        // Validasi Penunjukan PIC Proposal (Hanya Wajib untuk OPTI Selulosa)
         var selectPic = form.querySelector('select[name="pic_proposal_id"]');
-        if (selectPic && (!selectPic.value || selectPic.value.trim() === '')) {
+        var selectPicCadangan = form.querySelector('select[name="pic_proposal_cadangan_id"]');
+        var isSelulosaOrder = '{{ @order.jenis_layanan_opti }}' === 'selulosa';
+        if (isSelulosaOrder && selectPic && (!selectPic.value || selectPic.value.trim() === '')) {
             selectPic.focus();
             selectPic.classList.add('is-invalid');
             var feedbackPic = document.getElementById('feedbackPicProposal');
@@ -464,8 +538,8 @@ function confirmTetapkanKeputusan() {
                 Swal.fire({
                     icon: 'warning',
                     iconColor: '#f59e0b',
-                    title: 'PIC Proposal Wajib Dipilih',
-                    html: 'Khusus untuk layanan <strong>OPTI Selulosa</strong>, Penunjukan PIC Proposal / Peneliti Pelaksana <strong>wajib diisi</strong> dan tidak opsional.',
+                    title: 'PIC Utama Wajib Dipilih',
+                    html: 'Khusus untuk layanan <strong>OPTI Selulosa</strong>, Penunjukan PIC Utama <strong>wajib diisi</strong> dan tidak opsional.',
                     confirmButtonText: 'Pilih PIC Sekarang',
                     customClass: {
                         popup: 'bg-white rounded-3 shadow border p-4',
@@ -476,13 +550,46 @@ function confirmTetapkanKeputusan() {
                     buttonsStyling: false
                 });
             } else {
-                alert('Khusus untuk layanan OPTI Selulosa, Penunjukan PIC Proposal / Peneliti Pelaksana wajib diisi.');
+                alert('Khusus untuk layanan OPTI Selulosa, Penunjukan PIC Utama wajib diisi.');
             }
             return;
         } else if (selectPic) {
             selectPic.classList.remove('is-invalid');
             var feedbackPic = document.getElementById('feedbackPicProposal');
             if (feedbackPic) feedbackPic.style.display = 'none';
+        }
+
+        // Cek duplikasi PIC Utama & PIC Cadangan
+        if (selectPic && selectPicCadangan && selectPic.value && selectPicCadangan.value && selectPic.value === selectPicCadangan.value) {
+            selectPicCadangan.focus();
+            selectPicCadangan.classList.add('is-invalid');
+            var feedbackCadangan = document.getElementById('feedbackPicProposalCadangan');
+            if (feedbackCadangan) feedbackCadangan.style.display = 'block';
+            updateTetapkanButtonState();
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    iconColor: '#f59e0b',
+                    title: 'PIC Cadangan Tidak Boleh Sama',
+                    html: 'PIC Cadangan tidak boleh orang yang sama dengan PIC Utama. Silakan pilih personil yang berbeda atau kosongkan jika tidak ada cadangan.',
+                    confirmButtonText: 'Perbaiki Pilihan',
+                    customClass: {
+                        popup: 'bg-white rounded-3 shadow border p-4',
+                        title: 'fw-bold text-dark fs-6 mb-1',
+                        htmlContainer: 'text-muted small mb-3',
+                        confirmButton: 'btn btn-primary btn-sm px-3.5 py-1.5 fw-semibold'
+                    },
+                    buttonsStyling: false
+                });
+            } else {
+                alert('PIC Cadangan tidak boleh sama dengan PIC Utama.');
+            }
+            return;
+        } else if (selectPicCadangan) {
+            selectPicCadangan.classList.remove('is-invalid');
+            var feedbackCadangan = document.getElementById('feedbackPicProposalCadangan');
+            if (feedbackCadangan) feedbackCadangan.style.display = 'none';
         }
     }
 

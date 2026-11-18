@@ -352,17 +352,23 @@ document.addEventListener('click', function (e) {
 
     if (divisi === 'lingkungan') {
         document.getElementById('mppLabel').textContent = 'Disposisikan ke PIC Proposal';
-        document.getElementById('mppSelectLabel').textContent = 'Pelaksana (otomatis dari PIC Proposal)';
-        document.getElementById('mppHintLingkungan').style.display = 'block';
+        document.getElementById('mppSelectLabel').textContent = picId ? 'Pelaksana (otomatis dari PIC Proposal)' : 'Ketua Pelaksana';
+        document.getElementById('mppHintLingkungan').style.display = picId ? 'block' : 'none';
         document.getElementById('mppBtnSubmit').innerHTML = '<i class="bi bi-send-check me-1"></i>Disposisikan';
 
         if (tomPelaksana) {
+            tomPelaksana.unlock();
             tomPelaksana.clear();
+            tomPelaksana.clearOptions();
+            DATA_PELAKSANA.filter(function(u){ return !u.divisi || u.divisi === 'lingkungan'; }).forEach(function (u) {
+                tomPelaksana.addOption({ value: u.id_user, text: u.nama_user });
+            });
             if (picId) {
                 if (!tomPelaksana.options[picId]) { tomPelaksana.addOption({ value: picId, text: picNama || ('User #' + picId) }); }
                 tomPelaksana.setValue(picId);
+                tomPelaksana.lock();
             }
-            tomPelaksana.lock();
+            tomPelaksana.refreshOptions(false);
         }
     } else {
         document.getElementById('mppLabel').textContent = 'Pilih Ketua Pelaksana';
@@ -373,6 +379,11 @@ document.addEventListener('click', function (e) {
         if (tomPelaksana) {
             tomPelaksana.unlock();
             tomPelaksana.clear();
+            tomPelaksana.clearOptions();
+            DATA_PELAKSANA.filter(function(u){ return !u.divisi || u.divisi === 'selulosa'; }).forEach(function (u) {
+                tomPelaksana.addOption({ value: u.id_user, text: u.nama_user });
+            });
+            tomPelaksana.refreshOptions(false);
         }
     }
 
