@@ -177,7 +177,17 @@ class RabExcel {
                     $v = ($mentah === '') ? null : (is_numeric($mentah) ? (float) $mentah : $mentah);
                 }
                 if ($v === null || $v === '') { continue; }
-                if (is_string($v)) { $v = trim(preg_replace('/ ?\n ?/', "\n", preg_replace('/[^\S\n]+/u', ' ', str_replace(["\r\n", "\r"], "\n", $v)))); if ($v === '') { continue; } }
+                if (is_string($v)) {
+                    // spasi di depan teks (cara umum membuat "menjorok" di Excel) dicatat sebagai level indent, lalu teksnya dirapikan seperti biasa
+                    $spasiAwal = preg_match('/^[ \t\x{00A0}]+/u', $v, $mj) ? mb_strlen($mj[0], 'UTF-8') : 0;
+                    $v = trim(preg_replace('/ ?\n ?/', "\n", preg_replace('/[^\S\n]+/u', ' ', str_replace(["\r\n", "\r"], "\n", $v)))); if ($v === '') { continue; }
+                    if ($spasiAwal > 0) {
+                        $lv = min(15, max(1, (int) ceil($spasiAwal / 3)));
+                        $g0 = isset($gaya[$noBaris][$kol]) ? $gaya[$noBaris][$kol] : [];
+                        if (empty($g0['i']) || $g0['i'] < $lv) { $g0['i'] = $lv; }
+                        $gaya[$noBaris][$kol] = $g0;
+                    }
+                }
                 $isi[$kol] = $v;
             }
             if ($isi) { ksort($isi); $baris[$noBaris] = $isi; }
@@ -186,7 +196,7 @@ class RabExcel {
     }
 
     /**
-     * Gaya tiap xf: ['fmt' => [xf => kode], 'gaya' => [xf => ['b'=>1,'a'=>'l|c|r','w'=>1]]].
+     * Gaya tiap xf: ['fmt' => [xf => kode], 'gaya' => [xf => ['b'=>1,'a'=>'l|c|r','w'=>1,'i'=>jorok]]].
      * Kode format: gen[:n] sep[:n] rp[:n] pct[:n] txt (n = jumlah desimal); format lain (tanggal, dsb.) tidak dicatat.
      */
     protected static function bacaStil(\ZipArchive $zip) {
@@ -217,6 +227,8 @@ class RabExcel {
                 if ($h === 'left') { $g['a'] = 'l'; } elseif ($h === 'center' || $h === 'centercontinuous') { $g['a'] = 'c'; } elseif ($h === 'right') { $g['a'] = 'r'; }
                 $w = strtolower((string) $xf->alignment['wrapText']);
                 if ($w === '1' || $w === 'true') { $g['w'] = 1; }
+                $ind = (int) $xf->alignment['indent'];   // menjorok (Increase Indent) di Excel
+                if ($ind > 0) { $g['i'] = min(15, $ind); }
             }
             if ($g) { $out['gaya'][$i] = $g; }
             $i++;
@@ -672,11 +684,42 @@ class RabExcel {
         foreach ($buku['sheets'] as $si => $shx) { foreach ($shx['baris'] as $no => $cellsx) { foreach ($cellsx as $kx => $vx) { if (is_string($vx) && strpos($vx, "\n") !== false) { $buku['sheets'][$si]['baris'][$no][$kx] = trim(preg_replace('/\s+/u', ' ', $vx)); } } } }
         $sheetsOut = []; $kategori = []; $rekapRows = []; $masalah = []; $koreksi = []; $nilaiKontrakExcel = null;
 
+        // ---- sheet pendukung: dirujuk lewat rumus dari sheet RAB lain (mis. Rincian Kebutuhan / Deskripsi yang diambil berdasarkan Kode).
+        // Nilainya sudah terbawa ke sheet RAB, jadi tidak dihitung lagi (kalau tidak, total jadi dobel).
+        $pendukung = [];
+        foreach ($buku['sheets'] as $sa) {
+            if (preg_match('/rekap|ringkasan|summary|resume|rangkuman/i', $sa['nama']) || empty($sa['rumus']) || !self::cariHeader($sa['baris'])) { continue; }
+            $dirujuk = [];
+            foreach ($sa['rumus'] as $rowF) {
+                foreach ($rowF as $f) {
+                    if (preg_match_all("/(?:'((?:[^']|'')+)'|([A-Za-z0-9_.]+))!/u", $f, $mm, PREG_SET_ORDER)) {
+                        foreach ($mm as $x) { $dirujuk[mb_strtolower(str_replace("''", "'", $x[1] !== '' ? $x[1] : $x[2]), 'UTF-8')] = true; }
+                    }
+                }
+            }
+            foreach ($buku['sheets'] as $sb) {
+                $kb = mb_strtolower($sb['nama'], 'UTF-8');
+                if ($sb['nama'] !== $sa['nama'] && isset($dirujuk[$kb])) { $pendukung[$kb][] = $sa['nama']; }
+            }
+        }
+        // saling merujuk = ambigu, jangan dilewati
+        foreach ($pendukung as $kb => $oleh) {
+            foreach ($buku['sheets'] as $sb) {
+                if (mb_strtolower($sb['nama'], 'UTF-8') !== $kb) { continue; }
+                foreach ($oleh as $namaA) { if (isset($pendukung[mb_strtolower($namaA, 'UTF-8')]) && in_array($sb['nama'], $pendukung[mb_strtolower($namaA, 'UTF-8')], true)) { unset($pendukung[$kb]); break 2; } }
+            }
+        }
+
         foreach ($buku['sheets'] as $sh) {
             $nama = $sh['nama']; $baris = $sh['baris'];
             $info = ['nama' => $nama, 'jenis' => 'lewati', 'alasan' => '', 'kategori_nama' => '', 'jumlah_item' => 0, 'total' => 0.0, 'baris_masalah' => 0, 'peran' => []];
             if (!$baris) { $info['alasan'] = 'Sheet kosong.'; $sheetsOut[] = $info; continue; }
 
+            $kn = mb_strtolower($nama, 'UTF-8');
+            if (isset($pendukung[$kn])) {
+                $info['alasan'] = 'Data pendukung: dirujuk lewat rumus oleh sheet ' . implode(', ', $pendukung[$kn]) . ', jadi tidak dihitung lagi.';
+                $sheetsOut[] = $info; continue;
+            }
             $hd = self::cariHeader($baris);
             if (!$hd) { $info['alasan'] = 'Tidak ada tabel biaya (judul kolom Uraian / Volume / Harga tidak ditemukan).'; $sheetsOut[] = $info; continue; }
             list($noHeader, $peran) = $hd;
@@ -775,12 +818,11 @@ class RabExcel {
         foreach ($pilih as $sh) {
             $t = self::htmlSheetDokumen($sh);
             if ($t === '') { continue; }
-            if (count($pilih) > 1) { $h .= '<div style="font-weight:bold;margin:8px 0 3px;">Sheet: ' . htmlspecialchars($sh['nama'], ENT_QUOTES, 'UTF-8') . '</div>'; }
+            if (count($pilih) > 1) { $h .= '<div style="font-weight:bold;font-size:10pt;margin:10px 0 3px;">' . htmlspecialchars($sh['nama'], ENT_QUOTES, 'UTF-8') . '</div>'; }
             $h .= $t;
         }
         if ($h === '') { return ''; }
-        $ket = 'Sumber: ' . ($namaBerkas !== '' ? htmlspecialchars($namaBerkas, ENT_QUOTES, 'UTF-8') . ', ' : '') . (count($pilih) > 1 ? 'sheet terpilih' : 'sheet &ldquo;' . htmlspecialchars($pilih[0]['nama'], ENT_QUOTES, 'UTF-8') . '&rdquo;') . '. Tampilan sama dengan file Excel (nilai sudah terhitung).';
-        return $h . '<div style="font-size:8pt;font-style:italic;color:#444;margin:3px 0 6px;">' . $ket . '</div>';
+        return $h;
     }
 
     protected static function nilaiSelDokumen($c) {
@@ -806,7 +848,8 @@ class RabExcel {
         $fmtSel = isset($sh['fmt']) ? (array) $sh['fmt'] : [];
         $gayaSel = isset($sh['gaya']) ? (array) $sh['gaya'] : [];
         $lebarSel = isset($sh['lebar']) ? (array) $sh['lebar'] : [];
-        $adaGaya = (bool) $gayaSel;
+        $adaGaya = false;   // true bila file punya gaya tebal / rata / bungkus (indent saja tidak dihitung, supaya tebal otomatis tetap jalan)
+        foreach ($gayaSel as $gSel) { $gSel = (array) $gSel; if (isset($gSel['b']) || isset($gSel['a']) || isset($gSel['w'])) { $adaGaya = true; break; } }   // gaya dikunci per alamat sel (mis. K17 => ['b'=>1])
         // 1. baris yang ada isinya
         $baris = []; $adaKol = []; $noBaris = [];
         foreach ($sh['baris'] as $br) {
@@ -839,6 +882,16 @@ class RabExcel {
             }
         }
         foreach ($kol as $k => $ci) { if (isset($lebarSel[$huruf($ci)]) && (int) $lebarSel[$huruf($ci)] > 0) { $bobot[$k] = max(2, (int) $lebarSel[$huruf($ci)] / 7); } }
+        // lebar dari Excel dipakai sebagai patokan, tapi tidak boleh lebih sempit dari isi angka / teks pendeknya (kalau tidak, "Rp 18.000.000" meluber ke kolom sebelah)
+        foreach ($info as $rr) {
+            foreach ($rr['c'] as $k => $x) {
+                if (!$x) { continue; }
+                $pj = mb_strlen($x[2]);
+                if ($x[0] === 'n') { $bobot[$k] = max($bobot[$k], 1.6 * $pj + 2.5); }
+                elseif ($rr['jenis'] === 'biasa' && $pj <= 14) { $bobot[$k] = max($bobot[$k], 1.7 * $pj + 3); }
+                elseif ($rr['jenis'] === 'judul' && $pj <= 9) { $bobot[$k] = max($bobot[$k], 1.9 * $pj + 3); }
+            }
+        }
         // sel gabungan -> colspan / rowspan (hanya pada baris yang tampil)
         $sp = []; $tt = [];
         foreach (isset($sh['merges']) ? (array) $sh['merges'] : [] as $mg) {
@@ -858,14 +911,24 @@ class RabExcel {
         $tb = 'border:1px solid #444;padding:1px 3px;font-size:7.5pt;line-height:1.25;vertical-align:middle;';
         $o = '<table style="border-collapse:collapse;width:100%;table-layout:fixed;margin:0;"><colgroup>';
         foreach ($lebar as $w) { $o .= '<col style="width:' . $w . '%;">'; }
-        $o .= '</colgroup><tr>';
+        // baris judul di awal tabel (judul tabel + judul kolom) dimasukkan ke <thead>: pemecah halaman pratinjau dan PDF mengulangnya di tiap halaman
+        // dan tidak meninggalkan judul sendirian di dasar halaman. Hanya bila ada baris judul kolom dan sesudahnya masih ada baris isi.
+        $nHead = 0; $adaJudulKol = false; $adaIsi = false;
+        foreach ($info as $rr0) {
+            if ($rr0['jenis'] === 'biasa') { $adaIsi = true; break; }
+            if ($rr0['jenis'] === 'judul') { $adaJudulKol = true; }
+            $nHead++;
+        }
+        if (!$adaJudulKol || !$adaIsi || $nHead > 6) { $nHead = 0; }
+        $o .= '</colgroup>' . ($nHead > 0 ? '<thead>' : '<tbody>') . '<tr>';
         foreach ($lebar as $w) { $o .= '<td style="width:' . $w . '%;padding:0;border:0;height:0;font-size:1px;line-height:1px;"></td>'; }
         $o .= '</tr>';
         $e = function ($t) { return nl2br(htmlspecialchars($t, ENT_QUOTES, 'UTF-8')); };
         foreach ($info as $bi => $r) {
+            if ($nHead > 0 && $bi === $nHead) { $o .= '</thead><tbody>'; }
             $c = $r['c']; $jenis = $r['jenis'];
             $tebalSel = function ($x, $biasa) use ($adaGaya) { return $adaGaya ? !empty($x[3]['b']) : $biasa; };
-            $ratakan = function ($x, $bawaan) { $a = isset($x[3]['a']) ? $x[3]['a'] : ''; if ($a === 'l') { return 'text-align:left;'; } if ($a === 'c') { return 'text-align:center;'; } if ($a === 'r') { return 'text-align:right;'; } return $bawaan; };
+            $ratakan = function ($x, $bawaan) { $a = isset($x[3]['a']) ? $x[3]['a'] : ''; $jorok = !empty($x[3]['i']) ? 'padding-left:' . (3 + 9 * (int) $x[3]['i']) . 'px;' : ''; if ($a === 'l') { return 'text-align:left;' . $jorok; } if ($a === 'c') { return 'text-align:center;' . $jorok; } if ($a === 'r') { return 'text-align:right;' . $jorok; } return $bawaan . $jorok; };
             if ($jenis === 'bagian') { $o .= '<tr><td colspan="' . $nk . '" style="' . $tb . $ratakan($c[0], 'text-align:center;') . ($tebalSel($c[0], true) ? 'font-weight:bold;' : '') . 'background:#f3f5f8;">' . $e($c[0][2]) . '</td></tr>'; continue; }
             if ($jenis === 'sub') { $p = $r['pertama']; $o .= '<tr>' . ($p > 0 ? '<td colspan="' . $p . '" style="' . $tb . '"></td>' : '') . '<td colspan="' . ($nk - $p) . '" style="' . $tb . $ratakan($c[$p], '') . ($tebalSel($c[$p], false) ? 'font-weight:bold;' : '') . '">' . $e($c[$p][2]) . '</td></tr>'; continue; }
             $o .= '<tr>';
@@ -898,7 +961,7 @@ class RabExcel {
             }
             $o .= '</tr>';
         }
-        return $o . '</table>';
+        return $o . '</tbody></table>';
     }
 
     /** Ringkasan satu kategori untuk tampilan tab (Ringkasan / Rincian) di form: kegiatan -> item (+ kelompok lokasi), tanpa isi sel mentah. */
@@ -1036,6 +1099,7 @@ class RabExcel {
                     if (!empty($g['b'])) { $o['b'] = 1; }
                     if (isset($g['a']) && in_array($g['a'], ['l', 'c', 'r'], true)) { $o['a'] = $g['a']; }
                     if (!empty($g['w'])) { $o['w'] = 1; }
+                    if (!empty($g['i']) && (int) $g['i'] > 0) { $o['i'] = min(15, (int) $g['i']); }
                     if ($o) { $gaya[(int) $m[2]][$kk] = $o; }
                 }
             }
@@ -1103,13 +1167,14 @@ class RabExcel {
         // daftar gaya (xf) dibuat sesuai kebutuhan: format angka + tebal + rata + bungkus teks
         $kustom = []; $xfIdx = []; $xfXml = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'];
         $gayaSel = function ($fm, $g) use (&$kustom, &$xfIdx, &$xfXml) {
-            $fm = ($fm === 'gen') ? '' : (string) $fm; $b = !empty($g['b']); $a = isset($g['a']) ? $g['a'] : ''; $w = !empty($g['w']);
-            if ($fm === '' && !$b && $a === '' && !$w) { return 0; }
-            $key = $fm . '|' . (int) $b . '|' . $a . '|' . (int) $w;
+            $fm = ($fm === 'gen') ? '' : (string) $fm; $b = !empty($g['b']); $a = isset($g['a']) ? $g['a'] : ''; $w = !empty($g['w']); $ind = !empty($g['i']) ? min(15, (int) $g['i']) : 0;
+            if ($fm === '' && !$b && $a === '' && !$w && $ind === 0) { return 0; }
+            $key = $fm . '|' . (int) $b . '|' . $a . '|' . (int) $w . '|' . $ind;
             if (isset($xfIdx[$key])) { return $xfIdx[$key]; }
             $nid = self::idNumFmt($fm, $kustom);
             $peta = ['l' => 'left', 'c' => 'center', 'r' => 'right'];
-            $al = ($a !== '' || $w) ? '<alignment' . ($a !== '' ? ' horizontal="' . $peta[$a] . '"' : '') . ($w ? ' wrapText="1"' : '') . '/>' : '';
+            $hz = ($a !== '') ? $peta[$a] : ($ind > 0 ? 'left' : '');   // indent di Excel hanya berlaku bersama rata kiri/kanan
+            $al = ($hz !== '' || $w) ? '<alignment' . ($hz !== '' ? ' horizontal="' . $hz . '"' : '') . ($ind > 0 ? ' indent="' . $ind . '"' : '') . ($w ? ' wrapText="1"' : '') . '/>' : '';
             $xfXml[] = '<xf numFmtId="' . $nid . '" fontId="' . ($b ? 1 : 0) . '" fillId="0" borderId="0" xfId="0"' . ($nid ? ' applyNumberFormat="1"' : '') . ($b ? ' applyFont="1"' : '') . ($al !== '' ? ' applyAlignment="1">' . $al . '</xf>' : '/>');
             return $xfIdx[$key] = count($xfXml) - 1;
         };

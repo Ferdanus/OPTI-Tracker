@@ -24,6 +24,10 @@
     .po-idx-table td:last-child .btn, .po-idx-table td:last-child a { white-space: nowrap; }
     tr.po-unread td { font-weight: 700; background: #f8fafc; }
     .po-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2563eb; margin-right: 6px; vertical-align: middle; }
+    /* Penanda "belum dibuka": titik di pojok kanan atas tombol aksi utama (hilang otomatis begitu kelas po-unread dilepas) */
+    tr.po-unread > td:last-child .btn-primary { position: relative; }
+    tr.po-unread > td:last-child .btn-primary::after { content: ''; position: absolute; top: -5px; right: -5px; width: 11px; height: 11px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 0 2px #f8fafc; animation: poUnreadPulse 1.6s ease-out 1; pointer-events: none; }
+    @keyframes poUnreadPulse { 0% { box-shadow: 0 0 0 2px #f8fafc, 0 0 0 0 rgba(37, 99, 235, .5); } 100% { box-shadow: 0 0 0 2px #f8fafc, 0 0 0 10px rgba(37, 99, 235, 0); } }
     .po-baca { font-size: .73rem; font-weight: 600; margin-top: 2px; }
     .po-baca-belum { color: #b45309; } .po-baca-sudah { color: #047857; }
     .po-posisi { font-weight: 700; font-size: .8rem; line-height: 1.3; }
@@ -210,7 +214,6 @@
                                         </check>
                                     </td>
                                     <td>
-                                        <check if="{{ @p.belum_dibaca && @tab_aktif != 'berjalan' }}"><span class="po-dot" title="Belum Anda buka"></span></check>
                                         <check if="{{ @p.url_lihat && @p.layanan == 'kalibrasi' }}">
                                             <a href="{{ @p.url_lihat }}" data-po-kal="{{ @p.po_id }}" data-lihat="{{ @p.url_lihat }}" data-nomor="{{ @p.nomor_po }}" data-order="{{ @p.nomor_order }}" data-mitra="{{ @p.nama_mitra }}" data-status="{{ @p.po_status }}" data-edit="{{ @p.hanya_lihat ? '' : @p.url_edit }}" class="fw-bold text-primary small font-monospace text-decoration-none d-block" style="word-break: break-all;" title="{{ @p.nomor_po }}">{{ @p.nomor_po ?: '(belum bernomor)' }}</a>
                                         </check>
@@ -335,7 +338,6 @@
                                     </td>
                                     <td>
                                         <check if="{{ @p.po_id }}">
-                                            <check if="{{ @p.belum_dibaca && @tab_aktif != 'berjalan' }}"><span class="po-dot" title="Belum Anda buka"></span></check>
                                             <a href="javascript:void(0)" onclick="bukaPreviewPo({{ @p.po_id }}, '{{ @p.po_status }}')" class="fw-bold text-primary small font-monospace text-decoration-none d-block" style="word-break: break-all;" title="{{ @p.nomor_po }}">{{ @p.nomor_po ?: '(belum bernomor)' }}</a>
                                             <check if="{{ @p.po_created_at }}">
                                                 <div class="text-muted small d-flex align-items-center gap-1" style="font-size: 0.73rem;"><i class="bi bi-calendar3"></i><span>Dibuat {{ date('d/m/Y H:i', strtotime(@p.po_created_at)) }}</span></div>

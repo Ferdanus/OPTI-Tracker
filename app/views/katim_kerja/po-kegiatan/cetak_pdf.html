@@ -405,7 +405,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <repeat group="{{ @group.kegiatan }}" value="{{ @keg }}">
+                        <repeat group="{{ isset(@chunk.kegiatan_tampil) && @chunk.kegiatan_tampil ? @chunk.kegiatan_tampil : @group.kegiatan }}" value="{{ @keg }}">
                             <tr>
                                 <td class="kegiatan-col">{{ @keg.nama }}</td>
                                 <repeat group="{{ @chunk.kolom }}" value="{{ @k }}">

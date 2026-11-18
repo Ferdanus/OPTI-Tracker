@@ -299,16 +299,6 @@
 
         <div class="po-section-title"><span class="po-no">{{ @po.nomor_rab ?: 5 }}.</span> <span>RENCANA ANGGARAN BIAYA (RAB)</span></div>
 
-        <!-- [BARU] RAB dari file Excel: penanda sumber + "Lihat Excel" (jendela hanya-lihat). Hanya tampil di layar, tidak ikut cetak/PDF. -->
-        <check if="{{ @po.rab_excel }}">
-            <div class="po-xl-src no-print">
-                <span class="po-xl-ket"><b>Bersumber dari file Excel</b> &middot; {{ @po.rab_excel.nama }}<check if="{{ @po.rab_excel.waktu != '-' }}"> &middot; diunggah {{ @po.rab_excel.waktu }}</check></span>
-                <span class="po-xl-sp"></span>
-                <span class="po-xl-tag">penanda ini tidak ikut tercetak</span>
-                <a href="{{ @po.rab_excel.url_unduh }}" class="po-xl-btn" target="_blank" rel="noopener">Unduh Excel</a>
-            </div>
-        </check>
-
         <!-- [BARU] RAB dari Excel: yang tampil HANYA tabel sheet Excel apa adanya (Nilai Kontrak dan rekap kategori sudah ada di barisnya), tanpa tabel Penerimaan/Pengeluaran bertingkat. -->
         <check if="{{ @po.rab_excel.html }}">
             {{ @po.rab_excel.html | raw }}
@@ -652,7 +642,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <repeat group="{{ @group.kegiatan }}" value="{{ @keg }}">
+                                <repeat group="{{ isset(@chunk.kegiatan_tampil) && @chunk.kegiatan_tampil ? @chunk.kegiatan_tampil : @group.kegiatan }}" value="{{ @keg }}">
                                     <tr>
                                         <td>{{ @keg.nama }}</td>
                                         <repeat group="{{ @chunk.kolom }}" value="{{ @k }}">

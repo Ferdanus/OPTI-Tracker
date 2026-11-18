@@ -1019,7 +1019,7 @@ var XL = (function () {
         if (wb.isFormula(sh, a)) cls.push('xl-f');
         if (this.edited[sh + '!' + a]) cls.push('xl-edt');
         if (this.flashSet[sh + '!' + a]) cls.push('xl-flash');
-        if (g) { if (g.b) st += 'font-weight:700;'; if (g.a && AL[g.a]) st += 'text-align:' + AL[g.a] + ';'; if (g.w) cls.push('xl-wr'); }
+        if (g) { if (g.b) st += 'font-weight:700;'; if (g.a && AL[g.a]) st += 'text-align:' + AL[g.a] + ';'; if (g.i > 0) st += 'padding-left:' + (4 + 9 * g.i) + 'px;'; if (g.w) cls.push('xl-wr'); }
         inner = esc(text);
         // teks panjang meluber ke sel kosong di kanannya, seperti Excel
         if (text !== '' && typeof res.v === 'string' && !res.e && !mgA && !(g && (g.w || (g.a && g.a !== 'l'))) && !this.showF) {

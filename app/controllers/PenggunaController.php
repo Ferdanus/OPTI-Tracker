@@ -1184,6 +1184,14 @@ class PenggunaController extends Controller {
         foreach ($roleKeys as $siOpti) {
             $this->upsertSingleRoleMap($idUser, $siOpti);
         }
+        $this->sinkronTimPelaksana();
+    }
+
+    /** Samakan Tim Pelaksana PO dengan Data Pengguna (selulosa / lingkungan). Gagal pun tidak boleh mengganggu simpan / cabut role. */
+    private function sinkronTimPelaksana() {
+        try {
+            if (class_exists('MasterTimPelaksanaController')) { \MasterTimPelaksanaController::sinkronDariPengguna($this->db); }
+        } catch (\Throwable $e) {}
     }
 
     private function upsertSingleRoleMap(int $idUser, string $siOpti) {
@@ -1272,6 +1280,7 @@ class PenggunaController extends Controller {
     private function syncOptiUserMap(int $idUser, string $siOpti) {
         if (empty($siOpti) || $siOpti === 'user') {
             $this->db->exec("UPDATE opti_user_map SET is_active = 0, status_tampil = 'hide' WHERE id_user = ?", array(1 => $idUser));
+            $this->sinkronTimPelaksana();
             return;
         }
 

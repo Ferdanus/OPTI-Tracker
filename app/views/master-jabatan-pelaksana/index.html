@@ -64,6 +64,58 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
 .mtp-pg button.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .mtp-pg button:disabled{opacity:.45;cursor:not-allowed}
 .mtp-pg select{border:1px solid var(--bd);border-radius:8px;padding:3px 6px;font:inherit;background:#fff;color:var(--ink)}
+.mtp-pg b{color:var(--ink)}
+.mtp-pgtop{padding:10px 16px}
+.mtp-pgr{min-width:54px;text-align:center;font-weight:700;color:var(--ink);align-self:center;font-variant-numeric:tabular-nums}
+.mtp-pgtop .mtp-pgs{gap:6px}
+.mtp-ckc{width:44px;padding-right:0!important}
+.mtp input[type=checkbox].mtp-ck:disabled{opacity:.35;cursor:not-allowed}
+.mtp-tbl tbody tr.mtp-pilih{background:#f8fafc}
+.mtp-float{position:fixed;left:50%;bottom:22px;transform:translate(-50%,160%);opacity:0;pointer-events:none;background:#0f172a;color:#fff;border-radius:14px;padding:10px 12px 10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 14px 34px rgba(15,23,42,.35);transition:transform .35s cubic-bezier(.2,.9,.25,1.1),opacity .2s;z-index:1500;max-width:calc(100vw - 24px)}
+.mtp-float.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.mtp-float .cnt b{font-size:1rem}
+.mtp-float .lnk{background:none;border:0;color:#cbd5e1;font-size:.8rem;font-weight:600;text-decoration:underline;padding:4px}
+.mtp-float .lnk:hover{color:#fff}
+.mtp-float .mtp-btn{background:transparent;border-color:#475569;color:#e2e8f0;padding:7px 12px}
+.mtp-float .mtp-btn:hover:not(:disabled){background:#1e293b;border-color:#94a3b8;color:#fff}
+.mtp-float .mtp-btn.dng-f{background:#dc2626;border-color:#dc2626;color:#fff}
+.mtp-float .mtp-btn.dng-f:hover:not(:disabled){background:#b91c1c;border-color:#b91c1c}
+.mtp-ro .mtp-float{display:none!important}
+/* ---- popup hapus banyak: ringkas + daftar nama dilipat ---- */
+.mtp-bkm{max-width:440px}
+.mtp-bk.bk-show{animation:bkFade .2s ease-out}
+.mtp-bk.bk-show .mtp-bkm{animation:bkPop .3s cubic-bezier(.2,.9,.25,1.1)}
+.mtp-bk.bk-out{animation:bkFadeOut .2s ease-in forwards}
+.mtp-bk.bk-out .mtp-bkm{animation:bkPopOut .2s ease-in forwards}
+.mtp-bkm.bk-shake{animation:bkShake .4s!important}
+@keyframes bkFade{from{opacity:0}to{opacity:1}}
+@keyframes bkFadeOut{to{opacity:0}}
+@keyframes bkPop{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes bkPopOut{to{opacity:0;transform:scale(.96) translateY(6px)}}
+@keyframes bkShake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.mtp-bkm h3{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.bk-ic{width:34px;height:34px;border-radius:10px;background:#fef2f2;color:#b91c1c;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.mtp-bk.bk-show .bk-ic i{display:inline-block;animation:bkWiggle .6s .25s ease-in-out}
+@keyframes bkWiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg)}40%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(5deg)}}
+.mtp-bkm p{margin:0 0 12px;font-size:.86rem}
+.bk-sum{display:flex;align-items:center;gap:14px;border:1px solid var(--bd);background:#f8fafc;border-radius:12px;padding:12px 14px;margin:0 0 10px}
+.bk-n{width:46px;height:46px;border-radius:12px;background:#0f172a;color:#fff;font-weight:800;font-size:1.15rem;display:inline-flex;align-items:center;justify-content:center;flex:none;font-variant-numeric:tabular-nums}
+.bk-t{flex:1;min-width:0;font-weight:700}
+.bk-t small{display:block;color:var(--mut);font-weight:500;font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-tg{background:none;border:0;font-weight:700;font-size:.8rem;text-decoration:underline;color:var(--ink);display:inline-flex;gap:4px;align-items:center;white-space:nowrap}
+.bk-tg i{transition:transform .25s}
+.bk-tg[aria-expanded=true] i{transform:rotate(180deg)}
+.bk-fold{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+.bk-fold.open{grid-template-rows:1fr}
+.bk-fold>div{overflow:hidden}
+.bk-names{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 8px;max-height:200px;overflow-y:auto}
+.bk-names span{background:#f1f5f9;border:1px solid var(--bd);border-radius:99px;padding:3px 10px;font-size:.78rem;font-weight:600;opacity:0;transform:translateY(4px)}
+.bk-fold.open .bk-names span{animation:bkChip .3s ease-out forwards;animation-delay:var(--d,0ms)}
+@keyframes bkChip{to{opacity:1;transform:none}}
+.bk-spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:bkSpin .7s linear infinite}
+@keyframes bkSpin{to{transform:rotate(360deg)}}
+.mtp-tbl tbody tr.mtp-hilang{opacity:0;transform:translateX(16px);transition:opacity .3s,transform .3s}
+@media (prefers-reduced-motion:reduce){.mtp-bk,.mtp-bk *,.bk-fold,.mtp-tbl tbody tr.mtp-hilang{animation:none!important;transition:none!important}.bk-names span{opacity:1;transform:none}}
 .mtp-empty{text-align:center;color:var(--mut);padding:40px 16px}
 .mtp-lock{display:inline-flex;align-items:center;gap:6px;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;border-radius:999px;font-size:.78rem;font-weight:700;padding:4px 12px}
 .mtp-pad{padding:22px}
@@ -111,11 +163,13 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
       <button type="button" class="mtp-tab" data-st="aktif"><span class="dt" style="background:#16a34a"></span>Aktif<span class="c" id="cAktif">{{ @mtp_n_aktif }}</span></button>
       <button type="button" class="mtp-tab" data-st="nonaktif"><span class="dt" style="background:#dc2626"></span>Nonaktif<span class="c" id="cNon">{{ @mtp_n_non }}</span></button>
     </div>
-    <div class="mtp-scroll"><table class="mtp-tbl">
-      <thead><tr><th style="width:60px">No.</th><th>Nama Jabatan</th><th>Layanan</th><th>Status</th><th class="r">Aksi</th></tr></thead>
+    <div class="mtp-pg mtp-pgtop" id="pgJabTop"></div>
+    <div class="mtp-scroll"><table class="mtp-tbl" data-no-paginate="true">
+      <thead><tr><th class="mtp-ckc mtp-w"><input type="checkbox" class="mtp-ck" id="ckSemua" title="Pilih semua jabatan nonaktif"></th><th style="width:60px">No.</th><th>Nama Jabatan</th><th>Layanan</th><th>Status</th><th class="r">Aksi</th></tr></thead>
       <tbody id="tbJab">
         <repeat group="{{ @mtp_jab_rows }}" value="{{ @j }}">
         <tr class="{{ @j.aktif ? '' : 'nonaktif' }}" data-id="{{ @j.id }}" data-cari="{{ @j.cari }}" data-lay="{{ @j.lay }}" data-aktif="{{ @j.aktif }}">
+          <td class="mtp-ckc keep mtp-w"><input type="checkbox" class="mtp-ck" data-ck="{{ @j.id }}"{{ @j.aktif ? ' disabled title="Nonaktifkan dulu untuk memilih"' : '' }}></td>
           <td class="mtp-no">{{ @j.no }}</td>
           <td><span class="mtp-jab{{ @j.aktif ? '' : ' off' }}"><i class="bi bi-award"></i>{{ @j.nama }}</span></td>
           <td><span class="mtp-lay">{{ @j.layanan }}</span></td>
@@ -123,8 +177,8 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
           <td class="r keep"><button type="button" class="mtp-ibtn" data-jedit="{{ @j.id }}" title="Ubah nama"><i class="bi bi-pencil-square"></i></button><button type="button" class="mtp-ibtn dng" data-jhapus="{{ @j.id }}" title="{{ @j.aktif ? 'Nonaktifkan dulu untuk menghapus' : 'Hapus' }}"{{ @j.aktif ? ' disabled' : '' }}><i class="bi bi-trash"></i></button></td>
         </tr>
         </repeat>
-        <check if="{{ @mtp_n_semua == 0 }}"><tr><td colspan="5"><div class="mtp-empty">Belum ada jabatan. Klik Tambah Jabatan untuk membuat yang pertama.</div></td></tr></check>
-        <tr id="trKosong" hidden><td colspan="5"><div class="mtp-empty">Belum ada jabatan yang cocok.</div></td></tr>
+        <check if="{{ @mtp_n_semua == 0 }}"><tr><td colspan="6"><div class="mtp-empty">Belum ada jabatan. Klik Tambah Jabatan untuk membuat yang pertama.</div></td></tr></check>
+        <tr id="trKosong" hidden><td colspan="6"><div class="mtp-empty">Belum ada jabatan yang cocok.</div></td></tr>
       </tbody></table></div>
     <div class="mtp-pg" id="pgJab"></div>
   </div>
@@ -143,7 +197,7 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
     </div>
   </div>
   <div class="mtp-card mtp-pad">
-    <div class="mtp-scroll"><table class="mtp-tbl">
+    <div class="mtp-scroll"><table class="mtp-tbl" data-no-paginate="true">
       <thead><tr><th style="width:60px">No.</th><th>Nama Jabatan</th><th style="width:60px"></th></tr></thead>
       <tbody id="cRows"></tbody></table></div>
     <button type="button" class="mtp-btn" id="cAddRow" style="margin-top:12px"><i class="bi bi-plus-lg"></i> Tambah baris</button>
@@ -161,7 +215,7 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
     <div><h2 class="mtp-title" style="font-size:1.4rem" id="eJudul">Ubah jabatan</h2><p class="mtp-sub">Yang bisa diubah hanya nama. Perubahan nama ikut memperbarui PO yang belum selesai; PO yang sudah selesai tetap seperti saat disimpan. Status diatur lewat switch di tabel.</p></div>
   </div>
   <div class="mtp-card mtp-pad">
-    <div class="mtp-scroll"><table class="mtp-tbl">
+    <div class="mtp-scroll"><table class="mtp-tbl" data-no-paginate="true">
       <thead><tr><th style="width:60px">No.</th><th>Nama Jabatan</th><th>Layanan</th><th style="width:60px"></th></tr></thead>
       <tbody id="eRows"></tbody></table></div>
     <div class="mtp-actions">
@@ -175,6 +229,19 @@ table.mtp-tbl{width:100%;border-collapse:collapse}
   <h3 id="dlgT">Konfirmasi</h3><p id="dlgP"></p>
   <div class="mtp-actions" style="margin-top:18px;padding-top:0;border:0"><button type="button" class="mtp-btn" id="dlgNo">Batal</button><button type="button" class="mtp-btn pri" id="dlgYes">Ya, lanjut</button></div>
 </div></div>
+<div class="mtp-overlay mtp-bk" id="bk" hidden><div class="mtp-modal mtp-bkm" role="dialog" aria-modal="true" aria-labelledby="bkT">
+  <h3 id="bkT"><span class="bk-ic"><i class="bi bi-trash"></i></span>Hapus jabatan?</h3>
+  <p>Jabatan yang dihapus hilang dari daftar pilihan dan tidak bisa dikembalikan. Isi PO yang sudah ada tidak berubah.</p>
+  <div class="bk-sum"><span class="bk-n" id="bkN">0</span><div class="bk-t"><span id="bkJml"></span><small id="bkRingkas"></small></div><button type="button" class="bk-tg" id="bkTg" aria-expanded="false" aria-controls="bkFold"><span id="bkTgT">Lihat daftar</span> <i class="bi bi-chevron-down"></i></button></div>
+  <div class="bk-fold" id="bkFold"><div><div class="bk-names" id="bkNames"></div></div></div>
+  <div class="mtp-actions" style="margin-top:14px;padding-top:0;border:0"><button type="button" class="mtp-btn" id="bkNo">Batal</button><button type="button" class="mtp-btn pri" id="bkYes"><i class="bi bi-trash"></i> Ya, hapus</button></div>
+</div></div>
+<div class="mtp-float mtp-w" id="mtpFloat" role="region" aria-label="Aksi jabatan terpilih">
+  <span class="cnt"><b id="fN">0</b> jabatan dipilih</span>
+  <button type="button" class="lnk" id="fSemua">Pilih semua nonaktif (<span id="fSemuaN">0</span>)</button>
+  <button type="button" class="mtp-btn" id="fBatal">Batal</button>
+  <button type="button" class="mtp-btn dng-f" id="fHapus"><i class="bi bi-trash"></i> Hapus</button>
+</div>
 <div class="mtp-toast" id="toast"></div>
 </div>
 
@@ -215,11 +282,15 @@ function pager(total,el){
   if(PG.page>pages){PG.page=pages}
   var from=total?(PG.page-1)*PG.size+1:0,to=Math.min(total,PG.page*PG.size);
   var nums=[];for(var i=1;i<=pages;i++){if(i==1||i==pages||Math.abs(i-PG.page)<=1){nums.push(i)}else if(nums[nums.length-1]!=='...'){nums.push('...')}}
-  var btns='<button type="button" data-pg="'+(PG.page-1)+'"'+(PG.page<=1?' disabled':'')+'>&laquo;</button>'+nums.map(function(n){return n==='...'?'<button type="button" disabled>&hellip;</button>':'<button type="button" data-pg="'+n+'" class="'+(n==PG.page?'on':'')+'">'+n+'</button>'}).join('')+'<button type="button" data-pg="'+(PG.page+1)+'"'+(PG.page>=pages?' disabled':'')+'>&raquo;</button>';
-  el.innerHTML='<div>Menampilkan '+from+' sampai '+to+' dari '+total+' data &nbsp;&middot;&nbsp; Tampil <select data-size="1">'+[10,25,50].map(function(n){return '<option'+(n==PG.size?' selected':'')+'>'+n+'</option>'}).join('')+'</select> per halaman</div><div class="mtp-pgs">'+btns+'</div>';
+  var btns='<button type="button" data-pg="'+(PG.page-1)+'"'+(PG.page<=1?' disabled':'')+' aria-label="Sebelumnya">&lsaquo;</button>'+nums.map(function(n){return n==='...'?'<button type="button" disabled>&hellip;</button>':'<button type="button" data-pg="'+n+'" class="'+(n==PG.page?'on':'')+'">'+n+'</button>'}).join('')+'<button type="button" data-pg="'+(PG.page+1)+'"'+(PG.page>=pages?' disabled':'')+' aria-label="Berikutnya">&rsaquo;</button>';
+  el.innerHTML='<div>Tampil <select data-size="1">'+[10,25,50].map(function(n){return '<option'+(n==PG.size?' selected':'')+'>'+n+'</option>'}).join('')+'</select> per halaman</div><div class="mtp-pgs">'+btns+'</div>';
+  var atas=document.getElementById(el.id+'Top');
+  if(atas)atas.innerHTML='<div>Menampilkan <b>'+from+'&ndash;'+to+'</b> dari <b>'+total+'</b> data</div><div class="mtp-pgs"><button type="button" data-pg="'+(PG.page-1)+'"'+(PG.page<=1?' disabled':'')+' aria-label="Sebelumnya">&lsaquo;</button><span class="mtp-pgr">'+PG.page+' / '+pages+'</span><button type="button" data-pg="'+(PG.page+1)+'"'+(PG.page>=pages?' disabled':'')+' aria-label="Berikutnya">&rsaquo;</button></div>';
 }
 function setPager(el){
-  el.addEventListener('click',function(e){var b=e.target.closest('[data-pg]');if(!b||b.disabled)return;PG.page=+b.dataset.pg;saring()});
+  var klik=function(e){var b=e.target.closest('[data-pg]');if(!b||b.disabled)return;PG.page=+b.dataset.pg;saring()};
+  el.addEventListener('click',klik);
+  var atas=document.getElementById(el.id+'Top');if(atas)atas.addEventListener('click',klik);
   el.addEventListener('change',function(e){var z=e.target.closest('[data-size]');if(!z)return;PG.size=+z.value;PG.page=1;saring()});
 }
 
@@ -244,6 +315,7 @@ function saring(ulang){
   });
   $('trKosong').hidden=total>0||rows.length===0;
   $('cSemua').textContent=nSemua;$('cAktif').textContent=nAktif;$('cNon').textContent=nSemua-nAktif;
+  CK_CAND=cocok.filter(function(tr){return tr.dataset.aktif==='0'}).map(function(tr){return tr.dataset.id});ckRender();
   pager(total,$('pgJab'));
   Array.prototype.forEach.call(document.querySelectorAll('#tabs [data-st]'),function(b){b.classList.toggle('on',b.dataset.st===ST)});
 }
@@ -262,6 +334,7 @@ $('tbJab').addEventListener('change',function(e){
       tr.dataset.aktif=mau?'1':'0';tr.classList.toggle('nonaktif',!mau);
       var chip=tr.querySelector('.mtp-jab');if(chip)chip.classList.toggle('off',!mau);
       var hb=tr.querySelector('[data-jhapus]');if(hb){hb.disabled=mau;hb.title=mau?'Nonaktifkan dulu untuk menghapus':'Hapus'}
+      var ck=tr.querySelector('[data-ck]');if(ck){ck.disabled=mau;ck.title=mau?'Nonaktifkan dulu untuk memilih':'';if(mau){delete SEL[tr.dataset.id]}}
       var j=jabBy(a.dataset.jakt);if(j)j.aktif=mau?1:0;
       hitungTab();saring();if(r.pesan)toast(r.pesan);
     }).catch(function(err){a.checked=!mau;toast(err.message,1)});
@@ -273,6 +346,62 @@ function hapusIds(ids){
 $('tbJab').addEventListener('click',function(e){
   var ed=e.target.closest('[data-jedit]');if(ed){bukaEdit([+ed.dataset.jedit]);return}
   var h=e.target.closest('[data-jhapus]');if(h)hapusIds([+h.dataset.jhapus])});
+/* ===== pilih beberapa lalu hapus (hanya jabatan nonaktif) ===== */
+var SEL={},CK_CAND=[];   /* SEL = id yang dicentang; CK_CAND = id nonaktif yang cocok dengan filter/tab sekarang (semua halaman) */
+function ckRender(){
+  Object.keys(SEL).forEach(function(id){if(CK_CAND.indexOf(id)<0)delete SEL[id]});   /* pilihan yang sudah tersaring keluar dibuang */
+  barisSemua().forEach(function(tr){var c=tr.querySelector('[data-ck]');if(c){var on=!!SEL[tr.dataset.id];c.checked=on;tr.classList.toggle('mtp-pilih',on)}});
+  var n=Object.keys(SEL).length,h=$('ckSemua');
+  if(h){h.disabled=!CK_CAND.length;h.checked=n>0&&n===CK_CAND.length}
+  $('fN').textContent=n;$('fSemuaN').textContent=CK_CAND.length;$('fSemua').hidden=n>=CK_CAND.length;
+  $('mtpFloat').classList.toggle('show',n>0);
+}
+$('tbJab').addEventListener('change',function(e){var c=e.target.closest('[data-ck]');if(!c)return;if(c.checked){SEL[c.dataset.ck]=1}else{delete SEL[c.dataset.ck]}ckRender()});
+$('ckSemua').addEventListener('change',function(){SEL={};if(this.checked){CK_CAND.forEach(function(id){SEL[id]=1})}ckRender()});
+$('fSemua').addEventListener('click',function(){CK_CAND.forEach(function(id){SEL[id]=1});ckRender()});
+$('fBatal').addEventListener('click',function(){SEL={};ckRender()});
+$('fHapus').addEventListener('click',function(){var ids=Object.keys(SEL).map(Number);if(ids.length)bkBuka(ids)});
+
+/* popup hapus banyak: ringkas (jumlah + satu nama), daftar lengkap dilipat; ada animasi buka/tutup, angka naik, chip bermunculan, baris hilang */
+var BK={ids:[],sibuk:false},BK_GERAK=!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+function bkHitung(n){
+  var el=$('bkN');if(!BK_GERAK){el.textContent=n;return}
+  el.textContent=0;var t0=null,dur=600;
+  setTimeout(function(){el.textContent=n},dur+120);
+  (function f(ts){if(t0===null)t0=ts;var p=Math.min(1,(ts-t0)/dur);el.textContent=Math.round(n*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(performance.now());
+}
+function bkBuka(ids){
+  var nama=ids.map(function(id){var j=jabBy(id);return j?j.nama:''}).filter(Boolean),o=$('bk');
+  BK.ids=ids;BK.sibuk=false;
+  $('bkJml').textContent=ids.length+' jabatan nonaktif';
+  $('bkRingkas').textContent=(nama[0]||'')+(ids.length>1?' dan '+(ids.length-1)+' lainnya':'');
+  $('bkNames').innerHTML=nama.map(function(n,i){return '<span style="--d:'+Math.min(i*35,420)+'ms">'+esc(n)+'</span>'}).join('');
+  $('bkTg').hidden=ids.length<2;$('bkFold').classList.remove('open');$('bkTg').setAttribute('aria-expanded','false');$('bkTgT').textContent='Lihat daftar';
+  $('bkYes').disabled=false;$('bkNo').disabled=false;$('bkYes').innerHTML='<i class="bi bi-trash"></i> Ya, hapus '+ids.length;
+  o.hidden=false;o.classList.remove('bk-out');void o.offsetWidth;o.classList.add('bk-show');
+  bkHitung(ids.length);$('bkYes').focus();
+}
+function bkTutup(paksa){
+  if(BK.sibuk&&!paksa)return;var o=$('bk');if(o.hidden)return;
+  o.classList.add('bk-out');setTimeout(function(){o.hidden=true;o.classList.remove('bk-out','bk-show')},BK_GERAK?220:0);
+}
+$('bkTg').addEventListener('click',function(){var b=$('bkFold').classList.toggle('open');this.setAttribute('aria-expanded',b?'true':'false');$('bkTgT').textContent=b?'Tutup daftar':'Lihat daftar'});
+$('bkNo').addEventListener('click',function(){bkTutup()});
+$('bk').addEventListener('click',function(e){if(e.target===$('bk'))bkTutup()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('bk').hidden)bkTutup()});
+$('bkYes').addEventListener('click',function(){
+  if(BK.sibuk)return;BK.sibuk=true;
+  $('bkYes').disabled=true;$('bkNo').disabled=true;$('bkYes').innerHTML='<span class="bk-spin"></span> Menghapus...';
+  post('/hapus',{ids:JSON.stringify(BK.ids)}).then(function(j){
+    BK.ids.forEach(function(id){var tr=document.querySelector('#tbJab tr[data-id="'+id+'"]');if(tr)tr.classList.add('mtp-hilang')});
+    SEL={};ckRender();bkTutup(true);
+    setTimeout(function(){muatUlang(j.pesan)},BK_GERAK?450:0);
+  }).catch(function(e){
+    BK.sibuk=false;$('bkYes').disabled=false;$('bkNo').disabled=false;$('bkYes').innerHTML='<i class="bi bi-trash"></i> Ya, hapus '+BK.ids.length;
+    toast(e.message,1);var m=document.querySelector('.mtp-bkm');m.classList.add('bk-shake');setTimeout(function(){m.classList.remove('bk-shake')},450);
+  });
+});
+
 
 function tampilView(v){['viewList','viewCreate','viewEdit'].forEach(function(x){$(x).hidden=x!==v});window.scrollTo(0,0)}
 
