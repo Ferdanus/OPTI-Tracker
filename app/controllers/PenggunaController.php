@@ -150,7 +150,19 @@ class PenggunaController extends Controller {
                 'layanan' => 'lingkungan',
                 'role_map' => 'pjt_lingkungan',
                 'akses_opti' => 1,
-                'akses_po' => 0
+                'akses_po' => 1
+            ),
+            'kepala_lab_lingkungan' => array(
+                'label' => 'Kepala Lab Lingkungan',
+                'badge_class' => 'role-badge role-badge-tk-lingkungan',
+                'badge_style' => '',
+                'icon' => 'bi-person-workspace',
+                'category' => 'teknis',
+                'desc' => 'Kepala Laboratorium pemeriksa & pemberi catatan review PO layanan Lingkungan',
+                'layanan' => 'lingkungan',
+                'role_map' => 'kepala_lab_lingkungan',
+                'akses_opti' => 1,
+                'akses_po' => 1
             ),
             'pic_po_pengujian' => array(
                 'label' => 'PO Pengujian',
@@ -403,7 +415,9 @@ class PenggunaController extends Controller {
             'tk_lingkungan'             => 'tim_kerja_lingkungan',
             'pic_proposal_selulosa'     => 'tim_kerja_selulosa',
             'pic_proposal_lingkungan'   => 'tim_kerja_lingkungan',
-            'penanggung_jawab_teknis_lingkungan' => 'pjt_lingkungan'
+            'penanggung_jawab_teknis_lingkungan' => 'pjt_lingkungan',
+            'kalab_lingkungan'          => 'kepala_lab_lingkungan',
+            'kepala_lab'                => 'kepala_lab_lingkungan'
         );
         return $roleAliases[$roleKey] ?? $roleKey;
     }
@@ -430,6 +444,9 @@ class PenggunaController extends Controller {
         }
         if ($mapRole === 'pjt_lingkungan' || ($mapRole === 'pjt' && $mapLayanan === 'lingkungan')) {
             return 'pjt_lingkungan';
+        }
+        if ($mapRole === 'kepala_lab_lingkungan' || ($mapRole === 'kepala_lab' && $mapLayanan === 'lingkungan')) {
+            return 'kepala_lab_lingkungan';
         }
         if ($mapRole === 'tim_mitra' || $mapRole === 'admin_order') {
             return 'tim_mitra_industri';
@@ -922,13 +939,29 @@ class PenggunaController extends Controller {
      * Route: POST /pengguna/simpan
      */
     public function simpan($f3) {
+        $this->saveUserRoles($f3, false);
+    }
+
+    /**
+     * Perbarui Role Pengguna SILOPTI (Mendukung Multi-Role)
+     * Route: POST /pengguna/ubah
+     */
+    public function ubah($f3) {
+        $this->saveUserRoles($f3, true);
+    }
+
+    /**
+     * Shared handler untuk simpan & ubah multi-role pengguna ke tb_arsipuser.si_opti dan opti_user_map.
+     */
+    private function saveUserRoles($f3, bool $isUpdate) {
         if (!$this->isLoggedIn()) {
             $f3->reroute('/login');
             return;
         }
 
         if (!$this->isSuperadmin()) {
-            $this->setFlashError('Akses Ditolak: Pendaftaran role pengguna hanya dapat dilakukan oleh Super Administrator.');
+            $aksi = $isUpdate ? 'Perubahan' : 'Pendaftaran';
+            $this->setFlashError("Akses Ditolak: {$aksi} role pengguna hanya dapat dilakukan oleh Super Administrator.");
             $f3->reroute('/dashboard');
             return;
         }
@@ -937,7 +970,13 @@ class PenggunaController extends Controller {
         $rawRoleInput = trim($f3->get('POST.role_sistem') ?? '');
 
         if ($idUser <= 0) {
-            $this->setFlashError('Pilih pegawai yang valid dari database.');
+            $this->setFlashError($isUpdate ? 'ID pengguna tidak valid.' : 'Pilih pegawai yang valid dari database.');
+            $f3->reroute('/pengguna');
+            return;
+        }
+
+        if ($isUpdate && $idUser === 9006) {
+            $this->setFlashError('Peran Super Administrator Utama bersifat permanen dan tidak dapat diubah.');
             $f3->reroute('/pengguna');
             return;
         }
@@ -951,12 +990,13 @@ class PenggunaController extends Controller {
 
         $roles = self::getRoleOptions();
         $ketuaRoles = self::getKetuaRoles();
+        $occupiedList = null;
         $validRoles = array();
         $roleLabels = array();
 
         foreach ($selectedRoles as $rs) {
             if ($rs === 'superadmin') {
-                $this->setFlashError('Role Super Administrator bersifat permanen dan tidak dapat ditetapkan kepada pengguna lain.');
+                $this->setFlashError('Peran Super Administrator Utama bersifat permanen dan tidak dapat ditetapkan kepada pengguna lain.');
                 $f3->reroute('/pengguna');
                 return;
             }
@@ -965,17 +1005,17 @@ class PenggunaController extends Controller {
             }
             $normRole = self::normalizeRoleKey($rs);
             if (isset($ketuaRoles[$normRole])) {
-                $occupiedList = self::getOccupiedKetuaList($this->db);
-                if (isset($occupiedList[$normRole])) {
+                if ($occupiedList === null) {
+                    $occupiedList = self::getOccupiedKetuaList($this->db);
+                }
+                if (isset($occupiedList[$normRole]) && (int)$occupiedList[$normRole]['id_user'] !== $idUser) {
                     $occ = $occupiedList[$normRole];
-                    if ((int)$occ['id_user'] !== $idUser) {
-                        $roleTitle = $ketuaRoles[$normRole];
-                        $currKetuaName = $occ['nama_user'];
-                        $currKetuaId = $occ['id_user'];
-                        $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Posisi {$roleTitle} hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>{$currKetuaName}</strong> terlebih dahulu.");
-                        $f3->reroute('/pengguna');
-                        return;
-                    }
+                    $roleTitle = $ketuaRoles[$normRole];
+                    $currKetuaName = $occ['nama_user'];
+                    $currKetuaId = $occ['id_user'];
+                    $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Posisi {$roleTitle} hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>{$currKetuaName}</strong> terlebih dahulu.");
+                    $f3->reroute('/pengguna');
+                    return;
                 }
             }
             $validRoles[] = $rs;
@@ -990,116 +1030,12 @@ class PenggunaController extends Controller {
 
         $userCheck = $this->db->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user = ?", array(1 => $idUser));
         if (empty($userCheck)) {
-            $this->setFlashError('Data pegawai tidak ditemukan di database.');
+            $this->setFlashError($isUpdate ? 'Data pengguna tidak ditemukan.' : 'Data pegawai tidak ditemukan di database.');
             $f3->reroute('/pengguna');
             return;
         }
 
         $namaUser = $userCheck[0]['nama_user'];
-        $primaryRole = $validRoles[0];
-        $siOptiCsv = implode(', ', $validRoles);
-        $this->ensureSiOptiColumnWidth();
-
-        // Update tb_arsipuser dengan semua role (comma-separated)
-        $this->db->exec(
-            "UPDATE tb_arsipuser SET si_opti = ? WHERE id_user = ?",
-            array(1 => $siOptiCsv, 2 => $idUser)
-        );
-
-        // Sinkronisasi seluruh multi-role ke opti_user_map
-        $this->syncMultiOptiUserMap($idUser, $validRoles);
-
-        $roleLabelText = implode(', ', $roleLabels);
-        $this->setFlashSuccess("Pengguna <strong>{$namaUser}</strong> berhasil didaftarkan sebagai <strong>{$roleLabelText}</strong>.");
-        $f3->reroute('/pengguna');
-    }
-
-    /**
-     * Perbarui Role Pengguna SILOPTI (Mendukung Multi-Role)
-     * Route: POST /pengguna/ubah
-     */
-    public function ubah($f3) {
-        if (!$this->isLoggedIn()) {
-            $f3->reroute('/login');
-            return;
-        }
-
-        if (!$this->isSuperadmin()) {
-            $this->setFlashError('Akses Ditolak: Perubahan role pengguna hanya dapat dilakukan oleh Super Administrator.');
-            $f3->reroute('/dashboard');
-            return;
-        }
-
-        $idUser = (int)($f3->get('POST.id_user') ?? 0);
-        $rawRoleInput = trim($f3->get('POST.role_sistem') ?? '');
-
-        if ($idUser <= 0) {
-            $this->setFlashError('ID pengguna tidak valid.');
-            $f3->reroute('/pengguna');
-            return;
-        }
-
-        if ($idUser === 9006) {
-            $this->setFlashError('Peran Super Administrator Utama bersifat permanen dan tidak dapat diubah.');
-            $f3->reroute('/pengguna');
-            return;
-        }
-
-        $selectedRoles = array_values(array_unique(array_filter(array_map('trim', explode(',', $rawRoleInput)))));
-        if (empty($selectedRoles)) {
-            $this->setFlashError('Pilih minimal 1 role yang valid.');
-            $f3->reroute('/pengguna');
-            return;
-        }
-
-        $roles = self::getRoleOptions();
-        $ketuaRoles = self::getKetuaRoles();
-        $validRoles = array();
-        $roleLabels = array();
-
-        foreach ($selectedRoles as $rs) {
-            if ($rs === 'superadmin') {
-                $this->setFlashError('Peran Super Administrator Utama bersifat permanen dan tidak dapat dialihkan ke pengguna lain.');
-                $f3->reroute('/pengguna');
-                return;
-            }
-            if (!isset($roles[$rs])) {
-                continue;
-            }
-            $normRole = self::normalizeRoleKey($rs);
-            if (isset($ketuaRoles[$normRole])) {
-                $occupiedList = self::getOccupiedKetuaList($this->db);
-                if (isset($occupiedList[$normRole])) {
-                    $occ = $occupiedList[$normRole];
-                    if ((int)$occ['id_user'] !== $idUser) {
-                        $roleTitle = $ketuaRoles[$normRole];
-                        $currKetuaName = $occ['nama_user'];
-                        $currKetuaId = $occ['id_user'];
-                        $this->setFlashError("Peran <strong>{$roleTitle}</strong> saat ini sudah dijabat oleh <strong>{$currKetuaName}</strong> (#{$currKetuaId}). Posisi {$roleTitle} hanya dapat diisi oleh maksimal 1 orang. Silakan ubah/cabut peran dari <strong>{$currKetuaName}</strong> terlebih dahulu.");
-                        $f3->reroute('/pengguna');
-                        return;
-                    }
-                }
-            }
-            $validRoles[] = $rs;
-            $roleLabels[] = $roles[$rs]['label'];
-        }
-
-        if (empty($validRoles)) {
-            $this->setFlashError('Role yang dipilih tidak valid.');
-            $f3->reroute('/pengguna');
-            return;
-        }
-
-        $userCheck = $this->db->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user = ?", array(1 => $idUser));
-        if (empty($userCheck)) {
-            $this->setFlashError('Data pengguna tidak ditemukan.');
-            $f3->reroute('/pengguna');
-            return;
-        }
-
-        $namaUser = $userCheck[0]['nama_user'];
-        $primaryRole = $validRoles[0];
         $siOptiCsv = implode(', ', $validRoles);
         $this->ensureSiOptiColumnWidth();
 
@@ -1111,7 +1047,11 @@ class PenggunaController extends Controller {
         $this->syncMultiOptiUserMap($idUser, $validRoles);
 
         $roleLabelText = implode(', ', $roleLabels);
-        $this->setFlashSuccess("Role untuk <strong>{$namaUser}</strong> berhasil diperbarui menjadi <strong>{$roleLabelText}</strong>.");
+        if ($isUpdate) {
+            $this->setFlashSuccess("Role untuk <strong>{$namaUser}</strong> berhasil diperbarui menjadi <strong>{$roleLabelText}</strong>.");
+        } else {
+            $this->setFlashSuccess("Pengguna <strong>{$namaUser}</strong> berhasil didaftarkan sebagai <strong>{$roleLabelText}</strong>.");
+        }
         $f3->reroute('/pengguna');
     }
 
@@ -1225,6 +1165,16 @@ class PenggunaController extends Controller {
             $layanan = 'lingkungan';
             $aksesOpti = 1;
             $aksesPo = 0;
+        } elseif ($siOpti === 'pjt_lingkungan') {
+            $roleOpti = 'pjt_lingkungan';
+            $layanan = 'lingkungan';
+            $aksesOpti = 1;
+            $aksesPo = 1;
+        } elseif ($siOpti === 'kepala_lab_lingkungan' || $siOpti === 'kalab_lingkungan' || $siOpti === 'kepala_lab') {
+            $roleOpti = 'kepala_lab_lingkungan';
+            $layanan = 'lingkungan';
+            $aksesOpti = 1;
+            $aksesPo = 1;
         } elseif ($siOpti === 'tim_mitra_industri' || $siOpti === 'admin_order' || $siOpti === 'tim_mitra') {
             $roleOpti = 'tim_mitra';
             $layanan = 'mitra';
@@ -1316,6 +1266,16 @@ class PenggunaController extends Controller {
             $layanan = 'lingkungan';
             $aksesOpti = 1;
             $aksesPo = 0;
+        } elseif ($siOpti === 'pjt_lingkungan') {
+            $roleOpti = 'pjt_lingkungan';
+            $layanan = 'lingkungan';
+            $aksesOpti = 1;
+            $aksesPo = 1;
+        } elseif ($siOpti === 'kepala_lab_lingkungan' || $siOpti === 'kalab_lingkungan' || $siOpti === 'kepala_lab') {
+            $roleOpti = 'kepala_lab_lingkungan';
+            $layanan = 'lingkungan';
+            $aksesOpti = 1;
+            $aksesPo = 1;
         } elseif ($siOpti === 'tim_mitra_industri' || $siOpti === 'admin_order' || $siOpti === 'tim_mitra') {
             $roleOpti = 'tim_mitra';
             $layanan = 'mitra';

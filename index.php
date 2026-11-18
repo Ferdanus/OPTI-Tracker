@@ -185,6 +185,7 @@ $f3->route('GET /order/@id/rancop-selulosa', 'OrderController->rancopSelulosa');
 $f3->route('POST /order/@id/rancop-selulosa', 'OrderController->simpanRancopSelulosa');
 $f3->route('GET /order/@id/biaya-lingkungan', 'OrderController->biayaLingkungan');
 $f3->route('POST /order/@id/biaya-lingkungan', 'OrderController->biayaLingkunganPost');
+$f3->route('POST /order/@id/biaya-lingkungan/review', 'OrderController->reviewBiayaLingkunganPost');
 $f3->route('GET /order/@id/form-pelayanan', 'OrderController->formPelayanan');
 $f3->route('POST /order/@id/form-pelayanan', 'OrderController->formPelayananPost');
 $f3->route('POST /order/@id/tunjuk-pic', 'OrderController->tunjukPicProposal');
@@ -450,7 +451,6 @@ $f3->route('GET /po-kegiatan/daftar/data', 'PoReviewController->data');         
 $f3->route('GET /po-kegiatan/notif', 'PoReviewController->notifJson');
 $f3->route('GET /po-kegiatan/@id/review', 'PoReviewController->detail');        // rincian + catatan
 $f3->route('POST /po-kegiatan/@id/baca', 'PoReviewController->baca');          // tandai kiriman terbaca (dipanggil saat PO dibuka)
-$f3->route('GET /debug-riwayat/@id', 'PoReviewController->debugRiwayat');   // SEMENTARA: telusuri Riwayat Aktivitas yang tidak tercatat (superadmin saja); hapus setelah selesai
 $f3->route('POST /po-kegiatan/@id/dibuka', 'PoReviewController->baca');          // alias route lama
 $f3->route('POST /po-kegiatan/@id/catatan', 'PoReviewController->catatanTambah'); // Ketua Tim: tambah catatan (draf)
 $f3->route('POST /po-kegiatan/@id/catatan/@nid', 'PoReviewController->catatanAksi');   // hapus / selesai / batalselesai / buka / batalbuka

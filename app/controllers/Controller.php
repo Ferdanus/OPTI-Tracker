@@ -121,6 +121,12 @@ class Controller {
             'po:view',
             'alert:manage'
         ),
+        'kepala_lab_lingkungan' => array(
+            'surat_masuk:view',
+            'order:view',
+            'po:view',
+            'alert:manage'
+        ),
         'admin_kontrak' => array(
             'surat_masuk:view',
             'order:view',
@@ -179,6 +185,7 @@ class Controller {
         $this->f3->set('is_ppk', $role === 'ppk');
         $this->f3->set('is_tim_kerja', $role === 'tim_kerja');
         $this->f3->set('is_pjt_lingkungan', $this->isPjtLingkungan());
+        $this->f3->set('is_kepala_lab_lingkungan', $this->isKepalaLabLingkungan());
         // Role layanan (bukan analis OPTI): Tim Kerja Pengujian -> menu Dashboard, Daftar PO & Review PO khusus Pengujian
         $this->f3->set('is_tim_pengujian', $role === 'tim_kerja_pengujian');
         // Role layanan Sertifikasi (Tim Kerja & Ketua Tim Sertifikasi) -> menu Daftar PO (terkunci Sertifikasi) & Review PO
@@ -358,7 +365,7 @@ class Controller {
 
         $notifPo = array('lingkungan' => 0, 'selulosa' => 0);
 try {
-    if (in_array($role, array('tim_kerja', 'ketua_tim', 'superadmin'))) {
+    if (in_array($role, array('tim_kerja', 'ketua_tim', 'kepala_lab_lingkungan', 'superadmin'))) {
         $sqlPo = "SELECT o.jenis_layanan_opti AS divisi, COUNT(*) AS c
                   FROM order_layanan o
                   WHERE o.ketua_pelaksana_id IS NOT NULL
@@ -370,14 +377,14 @@ try {
         if ($role === 'tim_kerja') {
             $sqlPo .= " AND o.ketua_pelaksana_id = ?";
             $paramsPo[1] = (int)$userId;
-        } elseif ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) {
+        } elseif (($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') && in_array($layanan, array('selulosa', 'lingkungan'))) {
             $sqlPo .= " AND o.jenis_layanan_opti = ?";
             $paramsPo[1] = $layanan;
         }
 
         $sqlPo .= " GROUP BY o.jenis_layanan_opti";
 
-        if ($role === 'ketua_tim') {
+        if ($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') {
             // Ketua Tim tidak menyusun PO, jadi badge Daftar PO = jumlah PO di tab "Perlu Tindakan" divisinya (menunggu review / keputusan / review revisi Ketua Tim),
             // bukan order yang belum dibuatkan PO (itu pekerjaan Ketua Pelaksana).
             $sqlPo = "SELECT o.jenis_layanan_opti AS divisi, COUNT(DISTINCT p.id) AS c
@@ -985,6 +992,14 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
     public function isPjtLingkungan(): bool {
         $r = $this->getUserRole();
         return $r === 'pjt_lingkungan' || ($r === 'pjt' && strtolower($this->getUserLayanan()) === 'lingkungan');
+    }
+
+    /**
+     * Cek apakah role aktif adalah Kepala Lab Lingkungan (Reviewer PO Lingkungan)
+     */
+    public function isKepalaLabLingkungan(): bool {
+        $r = $this->getUserRole();
+        return $r === 'kepala_lab_lingkungan' || ($r === 'kepala_lab' && strtolower($this->getUserLayanan()) === 'lingkungan');
     }
 
     /**

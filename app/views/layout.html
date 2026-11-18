@@ -2129,7 +2129,7 @@
               
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
-                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan || @is_tim_pengujian || @is_role_sertifikasi }}">
+                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan || @is_tim_pengujian || @is_role_sertifikasi || @is_pjt_lingkungan || @is_kepala_lab_lingkungan }}">
                     <li class="sidebar-section-label">Pelaksanaan Teknis</li>
                     
 
@@ -2167,7 +2167,7 @@
                             </a>
                         </li>
                     </check>
-                    <check if="{{ (@is_ketua_tim && @user_layanan == 'lingkungan') || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') }}">
+                    <check if="{{ (@is_ketua_tim && @user_layanan == 'lingkungan') || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') || @is_pjt_lingkungan || @is_kepala_lab_lingkungan }}">
                         <li>
                             <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Daftar Petunjuk Operasional">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
