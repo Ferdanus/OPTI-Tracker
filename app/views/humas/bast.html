@@ -1,0 +1,150 @@
+<!--
+    app/views/humas/bast.html
+    Halaman BAST di menu Humas: BAST yang sudah dikirim Ketua Tim (tab Perlu Nomor) dan yang sudah selesai (tab Selesai).
+    Humas membuka BAST lewat tombol "Isi Nomor": memberi nomor urut, memilih pejabat yang mengetahui, lalu Selesai.
+    Fragment (dirender di dalam layout lewat BastController::halamanHumas()). Class berawalan "dbh-", id berawalan "dbh".
+-->
+<style>
+    .dbh-root {
+        --dbh-primary: var(--color-primary, #334155);
+        --dbh-border: var(--color-border, #e2e8f0);
+        --dbh-muted: var(--color-text-muted, #64748b);
+        --dbh-text: var(--color-text-main, #0f172a);
+        --dbh-display: var(--font-display, inherit);
+        color: var(--dbh-text);
+    }
+    .dbh-root *, .dbh-root *::before, .dbh-root *::after { box-sizing: border-box; }
+    .dbh-root [hidden] { display: none !important; }
+    .dbh-root button { font-family: inherit; cursor: pointer; }
+    .dbh-head { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; }
+    .dbh-head h1 { font-size: 1.45rem; font-weight: 800; margin: 0; font-family: var(--dbh-display); }
+    .dbh-head i { font-size: 1.4rem; }
+    .dbh-sub { margin: 0 0 18px; color: var(--dbh-muted); font-size: .88rem; }
+    .dbh-card { background: #fff; border: 1px solid var(--dbh-border); border-radius: 12px; box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+    .dbh-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; max-width: 640px; }
+    .dbh-mc { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; padding: 16px 20px; font: inherit; color: inherit; width: 100%; transition: transform .18s, border-color .2s; }
+    .dbh-mc:hover { transform: translateY(-2px); border-color: #94a3b8; }
+    .dbh-mc.on { border-color: var(--dbh-primary); box-shadow: 0 0 0 1px var(--dbh-primary); }
+    .dbh-mc .l { font-size: .7rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--dbh-muted); }
+    .dbh-mc .n { font-size: 1.9rem; font-weight: 800; line-height: 1.15; margin: 3px 0 2px; font-variant-numeric: tabular-nums; }
+    .dbh-mc .h { font-size: .75rem; color: var(--dbh-muted); }
+    .dbh-mc.red .n { color: #dc2626; }
+    .dbh-ib { width: 44px; height: 44px; border-radius: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; color: var(--dbh-primary); display: grid; place-items: center; font-size: 1.2rem; flex: none; }
+    .dbh-mc.red .dbh-ib { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+    .dbh-bar { padding: 12px 14px; margin-bottom: 14px; }
+    .dbh-sbox { display: flex; align-items: stretch; border: 1px solid var(--dbh-border); border-radius: 9px; background: #fff; max-width: 420px; overflow: hidden; }
+    .dbh-sbox:focus-within { border-color: var(--dbh-primary); }
+    .dbh-sbox > span { display: grid; place-items: center; padding: 0 11px; color: var(--dbh-muted); background: #f1f5f9; border-right: 1px solid var(--dbh-border); }
+    .dbh-sbox input { font: inherit; font-size: .85rem; border: 0; background: transparent; padding: .55rem .75rem; width: 100%; min-width: 0; color: inherit; }
+    .dbh-sbox input:focus { outline: 0; }
+    .dbh-tw { overflow-x: auto; }
+    .dbh-t { width: 100%; border-collapse: collapse; font-size: .85rem; min-width: 760px; }
+    .dbh-t th { text-align: left; font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--dbh-muted); padding: 11px 14px; border-bottom: 1px solid var(--dbh-border); background: #f8fafc; white-space: nowrap; }
+    .dbh-t td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    .dbh-t tr:last-child td { border-bottom: 0; }
+    .dbh-t .ord { font-weight: 700; }
+    .dbh-t .pt { font-weight: 600; }
+    .dbh-t .sm { font-size: .75rem; color: var(--dbh-muted); margin-top: 2px; }
+    .dbh-t .jd { max-width: 340px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .dbh-chip { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; white-space: nowrap; }
+    .dbh-chip.baru { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+    .dbh-chip.buka { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .dbh-chip.ok { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+    .dbh-act { display: flex; gap: 6px; flex-wrap: wrap; }
+    .dbh-b { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600; padding: .4rem .8rem; border-radius: 8px; border: 1px solid var(--dbh-border); background: #fff; color: inherit; text-decoration: none; white-space: nowrap; }
+    .dbh-b:hover { border-color: #94a3b8; color: inherit; }
+    .dbh-b.pri { background: var(--dbh-primary); border-color: var(--dbh-primary); color: #fff; }
+    .dbh-b.pri:hover { background: #1e293b; color: #fff; }
+    .dbh-empty { padding: 42px 16px; text-align: center; color: var(--dbh-muted); }
+    .dbh-empty i { font-size: 2rem; display: block; margin-bottom: 8px; opacity: .6; }
+    .dbh-ft { padding: 10px 14px; font-size: .78rem; color: var(--dbh-muted); border-top: 1px solid var(--dbh-border); }
+    @media (max-width: 575.98px) { .dbh-metrics { grid-template-columns: 1fr; } }
+</style>
+
+<div class="dbh-root" id="dbhRoot">
+    <div class="dbh-head"><i class="bi bi-patch-check"></i><h1>BAST</h1></div>
+    <p class="dbh-sub">BAST yang dikirim Ketua Tim. Buka lewat <b>Isi Nomor</b>, isi nomor urut dan pilih pejabat yang mengetahui, lalu klik Selesai. Tanggal BAST otomatis hari Anda memberi nomor.</p>
+
+    <div class="dbh-metrics">
+        <button type="button" class="dbh-card dbh-mc red" id="dbhMcPerlu" data-tab="perlu">
+            <div><div class="l">Perlu nomor</div><div class="n" id="dbhNPerlu">0</div><div class="h">Dikirim Ketua Tim, menunggu Humas</div></div>
+            <div class="dbh-ib"><i class="bi bi-hourglass-split"></i></div>
+        </button>
+        <button type="button" class="dbh-card dbh-mc" id="dbhMcSelesai" data-tab="selesai">
+            <div><div class="l">Selesai</div><div class="n" id="dbhNSelesai">0</div><div class="h">Sudah bernomor</div></div>
+            <div class="dbh-ib"><i class="bi bi-check2-circle"></i></div>
+        </button>
+    </div>
+
+    <div class="dbh-card dbh-bar">
+        <div class="dbh-sbox"><span><i class="bi bi-search"></i></span><input type="search" id="dbhCari" placeholder="Cari nomor order, perusahaan, judul, atau Ketua Tim" autocomplete="off"></div>
+    </div>
+
+    <div class="dbh-card">
+        <div class="dbh-tw"><table class="dbh-t" id="dbhTabel"></table></div>
+        <div class="dbh-empty" id="dbhKosong" hidden></div>
+        <div class="dbh-ft" id="dbhFt"></div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var DATA = {{ @bast_humas_json | raw }};
+    var tab = {{ @bast_humas_tab | raw }};
+    var kata = '';
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    var BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    function tgl(s, jam) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(s || '');
+        if (!m) { return ''; }
+        return parseInt(m[3], 10) + ' ' + BLN[parseInt(m[2], 10) - 1] + ' ' + m[1] + (jam && m[4] ? ', ' + m[4] + ':' + m[5] : '');
+    }
+    function cocok(r) {
+        if (!kata) { return true; }
+        var h = [r.nomor_order, r.perusahaan, r.judul, r.katim, r.nomor_bast, r.pks_nomor].join(' ').toLowerCase();
+        return h.indexOf(kata) >= 0;
+    }
+    function baris(r) {
+        var tengah = tab === 'perlu'
+            ? '<td>' + esc(r.katim || '-') + (r.pengirim && r.pengirim !== r.katim ? '<div class="sm">Dikirim oleh ' + esc(r.pengirim) + '</div>' : '') + '</td>' +
+              '<td>' + esc(tgl(r.dikirim_at, true) || '-') + '</td>' +
+              '<td>' + (r.dibuka_at ? '<span class="dbh-chip buka"><i class="bi bi-eye"></i> Dibuka ' + esc(tgl(r.dibuka_at, true)) + '</span>' : '<span class="dbh-chip baru"><i class="bi bi-envelope"></i> Belum dibuka</span>') + '</td>'
+            : '<td>' + esc(r.katim || '-') + '</td>' +
+              '<td><span class="dbh-chip ok"><i class="bi bi-patch-check"></i> ' + esc(r.nomor_bast) + '</span><div class="sm">' + esc(tgl(r.tanggal_bast)) + '</div></td>';
+        var aksi = tab === 'perlu'
+            ? '<a class="dbh-b pri" href="' + esc(r.url_isi) + '"><i class="bi bi-pencil-square"></i> Isi Nomor</a>'
+            : '<a class="dbh-b" href="' + esc(r.url_isi) + '"><i class="bi bi-eye"></i> Buka</a><a class="dbh-b" href="' + esc(r.url_unduh) + '"><i class="bi bi-file-earmark-word"></i> Unduh Word</a>';
+        return '<tr><td><a class="ord" href="' + esc(r.url_order) + '">#' + esc(r.nomor_order) + '</a><div class="sm">' + esc(r.layanan) + '</div></td>' +
+            '<td><div class="pt">' + esc(r.perusahaan) + '</div><div class="sm jd">' + esc(r.judul) + '</div></td>' + tengah + '<td><div class="dbh-act">' + aksi + '</div></td></tr>';
+    }
+    function gambar() {
+        var semua = DATA[tab] || [], rows = semua.filter(cocok);
+        $('dbhNPerlu').textContent = (DATA.perlu || []).length;
+        $('dbhNSelesai').textContent = (DATA.selesai || []).length;
+        $('dbhMcPerlu').classList.toggle('on', tab === 'perlu');
+        $('dbhMcSelesai').classList.toggle('on', tab === 'selesai');
+        var kepala = tab === 'perlu'
+            ? '<tr><th>Order</th><th>Perusahaan dan pekerjaan</th><th>Ketua Tim (Pihak Kedua)</th><th>Dikirim</th><th>Status</th><th></th></tr>'
+            : '<tr><th>Order</th><th>Perusahaan dan pekerjaan</th><th>Ketua Tim (Pihak Kedua)</th><th>Nomor BAST</th><th></th></tr>';
+        $('dbhTabel').innerHTML = '<thead>' + kepala + '</thead><tbody>' + rows.map(baris).join('') + '</tbody>';
+        $('dbhTabel').hidden = !rows.length;
+        var k = $('dbhKosong');
+        k.hidden = !!rows.length;
+        if (!rows.length) {
+            k.innerHTML = '<i class="bi ' + (tab === 'perlu' ? 'bi-inbox' : 'bi-archive') + '"></i>' +
+                (kata ? 'Tidak ada BAST yang cocok dengan pencarian.' : (tab === 'perlu' ? 'Belum ada BAST yang menunggu nomor. BAST muncul di sini setelah Ketua Tim mengirimnya.' : 'Belum ada BAST yang selesai.'));
+        }
+        $('dbhFt').textContent = rows.length + (kata ? ' dari ' + semua.length : '') + ' BAST';
+    }
+    document.querySelectorAll('.dbh-mc').forEach(function (b) {
+        b.addEventListener('click', function () {
+            tab = b.getAttribute('data-tab');
+            try { history.replaceState(null, '', '?tab=' + tab); } catch (e) {}
+            gambar();
+        });
+    });
+    $('dbhCari').addEventListener('input', function () { kata = this.value.trim().toLowerCase(); gambar(); });
+    gambar();
+})();
+</script>

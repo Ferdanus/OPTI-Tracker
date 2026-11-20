@@ -111,9 +111,16 @@ class PoHumasController extends Controller {
                 if ($item['diverifikasi']) { $selesai[] = $item; } else { $baru[] = $item; }
             }
             // PO Sertifikasi yang sudah disetujui Ketua Tim Sertifikasi: digabung ke daftar yang sama
-            foreach ($this->barisSertifikasi() as $r) {
+            $barisSert = $this->barisSertifikasi();
+            foreach ($barisSert as $r) {
                 $item = $this->petakan($r);
                 if ($item['diverifikasi']) { $selesai[] = $item; } else { $baru[] = $item; }
+            }
+            // Humas tidak lagi memakai halaman ini untuk PO OPTI (dibaca lewat menu PKS). Tanpa PO Sertifikasi, buka langsung ke daftar PKS.
+            // Mode embed (panel Lihat PO di detail order) tetap memakai halaman ini.
+            if ((string) $f3->get('GET.embed') === '' && (string) $this->getUserRole() === 'humas' && empty($barisSert)) {
+                $f3->reroute('/pks');
+                return;
             }
             // yang sudah diverifikasi: terbaru di atas berdasarkan waktu verifikasi
             usort($selesai, function ($a, $b) { return strcmp((string) $b['tgl_verifikasi'], (string) $a['tgl_verifikasi']); });
@@ -818,7 +825,7 @@ class PoHumasController extends Controller {
 
     /**
      * POST /po-humas/@id/kontrak -- Humas menandai kontrak untuk PO ini sudah dibuat (nomor kontrak opsional).
-     * Syarat: PO sudah aktif dan PO bertanda tangan sudah di-upload Ketua Tim. Efek: BAST (Tahap 9) di detail order terbuka,
+     * Syarat: PO sudah aktif dan PO bertanda tangan sudah di-upload Ketua Tim. Efek: BAST (Tahap 11) di detail order bisa terbuka (setelah Laporan Akhir selesai),
      * Ketua Tim dan Ketua Pelaksana diberi tahu. Pembuatan kontraknya sendiri (modul Kontrak) disambungkan terpisah.
      */
     public function tandaiKontrak($f3, $params) {
@@ -861,13 +868,13 @@ class PoHumasController extends Controller {
         $o = $this->safeExec("SELECT nomor_order, ketua_pelaksana_id, jenis_layanan_opti FROM order_layanan WHERE id = ? LIMIT 1", [1 => (int) $po['order_id']]);
         $o = !empty($o) ? $o[0] : [];
         try {
-            \PoReviewController::catatRiwayatOrder($this->db, $id, $uid, 'Humas membuat kontrak' . ($nomor !== '' ? ' (' . $nomor . ')' : '') . '. Tahap 9 (BAST) terbuka.', 'kontrak_humas');
+            \PoReviewController::catatRiwayatOrder($this->db, $id, $uid, 'Humas membuat kontrak' . ($nomor !== '' ? ' (' . $nomor . ')' : '') . '. BAST (Tahap 11) terbuka setelah Laporan Akhir selesai.', 'kontrak_humas');
             $katim = $this->katimPerDivisi();
             $div = (string) ($o['jenis_layanan_opti'] ?? '');
             $penerima = [isset($katim[$div]) ? (int) $katim[$div] : 0, (int) ($o['ketua_pelaksana_id'] ?? 0)];
             \PoReviewController::kabari(
                 $this->db, $penerima, 'Kontrak Sudah Dibuat',
-                'Humas sudah membuat kontrak untuk PO ' . $po['nomor_po'] . ' (Order #' . (isset($o['nomor_order']) ? $o['nomor_order'] : '-') . '). Tahap 9 (BAST) sudah terbuka.',
+                'Humas sudah membuat kontrak untuk PO ' . $po['nomor_po'] . ' (Order #' . (isset($o['nomor_order']) ? $o['nomor_order'] : '-') . '). BAST (Tahap 11) terbuka setelah Laporan Akhir selesai.',
                 '/order/' . (int) $po['order_id']
             );
         } catch (\Throwable $e) {

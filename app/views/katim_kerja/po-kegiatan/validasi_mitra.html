@@ -498,17 +498,16 @@
     .dpo-pager-container .pagination .page-link:hover { color: #0f172a; background-color: #f1f5f9; border-color: #cbd5e1; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06); }
     .dpo-pager-container .pagination .page-item.active .page-link { background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important; border-color: #1e293b !important; color: #ffffff !important; font-weight: 700; box-shadow: 0 3px 8px -1px rgba(15, 23, 42, 0.28); cursor: default; }
     .dpo-pager-container .pagination .page-item.disabled .page-link { color: #94a3b8; background-color: #f8fafc; border-color: #e2e8f0; box-shadow: none; cursor: not-allowed; pointer-events: none; opacity: 0.65; }
-    /* Ukuran kolom tabel disamakan dengan Daftar PO Ketua Tim / Humas: tanpa scrollbar horizontal, nomor tidak terpotong */
-    .hm-idx-table { zoom: .9; }
-    .hm-idx-table th, .hm-idx-table td { padding-left: .5rem; padding-right: .5rem; width: auto !important; }
-    .hm-idx-table td:nth-child(2) .fw-bold { word-break: normal !important; overflow-wrap: normal; white-space: nowrap; }
-    .hm-idx-table td:nth-child(3) { white-space: nowrap; }
-    .hm-idx-table td:nth-child(4), .hm-idx-table th:nth-child(4) { min-width: 160px; }
-    .hm-idx-table td:nth-child(4) .fw-semibold { word-break: normal; overflow-wrap: normal; }
-    .hm-idx-table td:nth-child(4) .small { white-space: nowrap; }
-    .hm-idx-table td:nth-child(6), .hm-idx-table th:nth-child(6) { min-width: 120px; }
-    .hm-idx-table td:nth-child(7) * { white-space: nowrap; }
+    /* Gaya tabel disamakan dengan Daftar Order / Daftar PO (header bg-light, kolom No. & Tgl Order, Judul Kegiatan & Klien, pill Divisi OPTI, Estimasi Biaya, Status Alur, Keterangan).
+       Nomor PO / Nomor Order tidak boleh terpotong di tengah. */
+    .hm-idx-table td:nth-child(2) { white-space: nowrap; }
+    .hm-idx-table td:nth-child(3) .fw-bold { word-break: normal !important; overflow-wrap: normal; white-space: nowrap; }
+    .hm-idx-table td:nth-child(4), .hm-idx-table th:nth-child(4) { min-width: 260px; }
     .hm-idx-table td:last-child .btn, .hm-idx-table td:last-child a { white-space: nowrap; }
+    /* Penanda "belum dibuka": titik di pojok kanan atas tombol aksi utama (sama dengan Daftar PO; hilang otomatis begitu kelas po-unread dilepas) */
+    tr.po-unread > td:last-child .btn-primary { position: relative; }
+    tr.po-unread > td:last-child .btn-primary::after { content: ''; position: absolute; top: -5px; right: -5px; width: 11px; height: 11px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 0 2px #f8fafc; animation: poUnreadPulse 1.6s ease-out 1; pointer-events: none; }
+    @keyframes poUnreadPulse { 0% { box-shadow: 0 0 0 2px #f8fafc, 0 0 0 0 rgba(37, 99, 235, .5); } 100% { box-shadow: 0 0 0 2px #f8fafc, 0 0 0 10px rgba(37, 99, 235, 0); } }
 </style>
 <!-- Mode panel tunggal: dibuka dari detail order di dalam iframe (?embed=1&buka=ID). Hanya slide verifikasi yang tampil, daftar disembunyikan. -->
 <style>
@@ -574,7 +573,7 @@
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">PO Aktif</span>
                     <h3 class="fw-bold mb-0 mt-1" style="color: #059669;" id="mAktif">0</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Diverifikasi PPK BLU</span>
+                    <span class="small text-muted" style="font-size: 0.75rem;">PO sudah bertanda tangan</span>
                 </div>
                 <div class="metric-icon-box" style="background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
                     <i class="bi bi-check-circle-fill"></i>
@@ -625,6 +624,7 @@
                             <option value="">Semua Posisi</option>
                             <option value="ppk">Verifikasi PPK BLU</option>
                             <option value="revisi">Sedang Direvisi</option>
+                            <option value="ttd">Menunggu Tanda Tangan</option>
                         </select></div>
                     </div>
                     <div class="col-12 col-sm-auto">
@@ -868,17 +868,17 @@
     }
     function tabAsal(p, t) {
         if (t !== 'semua') { return t; }
-        if (p.ppk_valid_at) { return 'po_selesai'; }
+        if (p.ppk_valid_at && p.ttd_at) { return 'po_selesai'; }   // PO Aktif = sudah diverifikasi PPK BLU DAN PO bertanda tangan sudah di-upload
         return DATA_PERLU.indexOf(p) !== -1 ? 'perlu' : 'disetujui';
     }
     function dataTab(t) {
         if (t === 'semua') { return gabungSemua(); }
         if (t === 'perlu') { return DATA_PERLU; }
-        if (t === 'disetujui') { return DATA_DISETUJUI.filter(function (p) { return !p.ppk_valid_at; }); }   // yang sudah diverifikasi PPK BLU pindah ke tab PO Selesai
-        return DATA_DISETUJUI.filter(function (p) { return !!p.ppk_valid_at; });   // PO Selesai = sudah diverifikasi PPK BLU
+        if (t === 'disetujui') { return DATA_DISETUJUI.filter(function (p) { return !(p.ppk_valid_at && p.ttd_at); }); }   // Sedang Berjalan: termasuk PO yang menunggu tanda tangan
+        return DATA_DISETUJUI.filter(function (p) { return !!(p.ppk_valid_at && p.ttd_at); });   // PO Aktif = PO bertanda tangan sudah di-upload
     }
     // Tanggal acuan bulan/tahun per tab: masuk ke Tim Mitra (perlu diverifikasi), diverifikasi Tim Mitra (sudah disetujui), diverifikasi PPK BLU (PO selesai)
-    function tglAcuan(p, t) { t = tabAsal(p, t); return (t === 'perlu' ? p.dikirim : (t === 'disetujui' ? p.tgl_validasi : p.ppk_valid_at)) || ''; }
+    function tglAcuan(p, t) { t = tabAsal(p, t); return (t === 'perlu' ? p.dikirim : (t === 'disetujui' ? p.tgl_validasi : (p.ttd_at || p.ppk_valid_at))) || ''; }
     function bulanTahun(s) { var m = /^(\d{4})-(\d{2})/.exec(s || ''); return m ? { b: String(+m[2]), t: m[1] } : null; }
     function semuaAktif(t) { return semuaEks === null ? (t === 'perlu' || tab === 'semua') : semuaEks; }   // di tab Semua, semua tab dihitung tanpa filter bulan supaya angkanya cocok
     function isiOpsiFilter() {
@@ -953,17 +953,54 @@
     function tglKecil(s) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(s || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] + (m[4] ? ' ' + m[4] + ':' + m[5] : '') : ''; }
     // Kolom Dokumen PO: nomor + Dibuat + Dikirim (sama seperti Daftar PO Ketua Tim)
     function dokCell(p, t) {
-        var h = (t === 'perlu' && isUnread(p) ? '<span class="po-dot" title="Belum dibaca"></span>' : '') +
-            '<span class="fw-bold text-primary d-block" style="word-break: break-all;" title="' + esc(p.nomor) + '">' + esc(p.nomor) + '</span>';
+        var h = '<span class="fw-bold text-primary small font-monospace d-block" style="word-break: break-all;" title="' + esc(p.nomor) + '">' + esc(p.nomor || '(belum bernomor)') + '</span>';
         var dibuat = tglKecil(p.dibuat_at), kirim = tglKecil(p.kirim_at || p.dikirim);
         if (dibuat) { h += subLine('bi-calendar3', 'Dibuat ' + dibuat.substring(0, 10)); }
         if (kirim) { h += subLine('bi-send-check', 'Dikirim ' + kirim); }
         return h;
     }
+    // Kolom No. & Tgl Order (sama dengan Daftar Order): nomor order, nomor permintaan, tanggal order, durasi
+    function orderCell(p) {
+        var h = '<div class="fw-bold text-primary small font-monospace">' + esc(p.order || '-') + '</div>';
+        if (p.nomor_permintaan) { h += '<div class="text-muted font-monospace" style="font-size: 0.72rem;">' + esc(p.nomor_permintaan) + '</div>'; }
+        if (p.tanggal_order) { h += '<div class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-calendar3 me-1"></i>' + esc(p.tanggal_order) + '</div>'; }
+        if (p.punya_info_order) {
+            h += '<div class="mt-1" style="font-size: 0.72rem;">' + (p.durasi_ditentukan
+                ? '<span class="badge ' + esc(p.durasi_badge_class || 'bg-success-subtle text-success border border-success-subtle') + ' px-1.5 py-0.5" title="' + esc(p.durasi_tooltip) + '"><i class="bi bi-clock me-1"></i>' + esc(p.durasi_tampil) + '</span>'
+                : '<span class="text-muted fst-italic">Belum ditentukan</span>') + '</div>';
+        }
+        return h;
+    }
+    // Kolom Judul Kegiatan & Klien: saluran permohonan, nama mitra, judul kegiatan
+    function judulCell(p) {
+        var h = '';
+        if (p.punya_info_order) {
+            h += '<div class="d-flex align-items-center flex-wrap gap-1 mb-1"><span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: ' + esc(p.media_label) + '"><i class="bi ' + esc(p.media_icon) + ' me-1 text-secondary"></i>' + esc(p.media_label) + '</span></div>';
+        }
+        h += '<div class="text-dark d-flex align-items-start gap-1.5 mb-1" style="font-size: 0.95rem;"><i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.95rem;"></i><span class="text-dark fw-bold" style="line-height: 1.35;">' + esc(p.mitra || '-') + '</span></div>' +
+            '<div class="fw-normal text-secondary mb-1" style="font-size: 0.8rem; line-height: 1.4;" title="' + esc(p.judul) + '">' + esc(p.judul || '-') + '</div>';
+        return h;
+    }
+    // Kolom Estimasi Biaya: nilai, terbayar, sisa (sama dengan Daftar Order)
+    function biayaCell(p) {
+        var h = '<div class="fw-bold text-dark small">Rp ' + esc(p.eb_acuan || '0') + '</div>';
+        if (p.eb_terbayar) { h += '<div class="text-success" style="font-size: 0.725rem;">' + (p.eb_lunas ? '<i class="bi bi-check2 me-1"></i>' : '') + 'Terbayar Rp ' + esc(p.eb_terbayar) + '</div>'; }
+        if (p.eb_sisa) { h += '<div class="text-danger fw-semibold" style="font-size: 0.725rem;">Sisa Rp ' + esc(p.eb_sisa) + '</div>'; }
+        return h;
+    }
+    // Kolom Status Alur: nama tahap (pill) yang sama dengan Daftar PO
+    function alurPill(p) {
+        var o = posisiRinci(p), label = o.key === 'revisi' ? 'Revisi PPK BLU' : o.teks;
+        var kelas = o.cls === 'blue' ? 'blue' : (o.cls === 'emerald' ? 'emerald' : 'rose');
+        return '<span class="status-pill status-pill-' + kelas + '" style="white-space: nowrap;">' + esc(label) + '</span>';
+    }
+    // Kolom Keterangan: pelaksana, keterangan tahap, pemegang, dan penanda sudah dibuka
     function posisiCell(p) {
         var o = posisiRinci(p);
-        var h = '<div class="po-posisi po-posisi-' + o.cls + '">' + esc(o.teks) + '</div>' +
-            '<div class="text-muted small" style="font-size: 0.73rem;"><i class="bi bi-person-fill me-1"></i>' + esc(o.oleh) + '</div>';
+        var h = '';
+        if (p.pembuat) { h += '<div class="text-muted" style="font-size: 0.75rem;">Pelaksana: ' + esc(p.pembuat) + '</div>'; }
+        h += '<div class="fw-semibold" style="font-size: 0.82rem;">' + esc(o.teks) + '</div>' +
+            '<div class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-person-fill me-1"></i>' + esc(o.oleh) + '</div>';
         if (o.nama) {
             h += o.baca ? '<div class="po-baca po-baca-sudah"><i class="bi bi-envelope-open me-1"></i>Dibuka ' + fmt(o.baca) + '</div>'
                         : '<div class="po-baca po-baca-belum"><i class="bi bi-envelope me-1"></i>Belum dibuka ' + esc(o.nama) + '</div>';
@@ -1019,9 +1056,9 @@
         $('hmReset').hidden = !filterAktif();
         $('hmSemua').checked = semuaAktif(tab);
         if (tab === 'disetujui') {   // jumlah per posisi ditampilkan di pilihan filter, supaya bisa memantau sekilas
-            var hit = { ppk: 0, revisi: 0 };
+            var hit = { ppk: 0, revisi: 0, ttd: 0 };
             dasar.disetujui.forEach(function (p) { var c = posisiRinci(p).key; if (hit[c] !== undefined) { hit[c]++; } });
-            var nama = { '': 'Semua Posisi (' + dasar.disetujui.length + ')', ppk: 'Verifikasi PPK BLU (' + hit.ppk + ')', revisi: 'Sedang Direvisi (' + hit.revisi + ')' };
+            var nama = { '': 'Semua Posisi (' + dasar.disetujui.length + ')', ppk: 'Verifikasi PPK BLU (' + hit.ppk + ')', revisi: 'Sedang Direvisi (' + hit.revisi + ')', ttd: 'Menunggu Tanda Tangan (' + hit.ttd + ')' };
             Array.prototype.forEach.call($('hmStatus').options, function (o) { o.textContent = nama[o.value]; });
         }
         var rows = dasar[tab].filter(tab === 'perlu' ? cocokBaca : function () { return true; }).filter(tab === 'disetujui' ? cocokStatus : function () { return true; });
@@ -1047,10 +1084,12 @@
                 '<h6 class="fw-bold text-dark mt-2 mb-1">Tidak Ada Data PO</h6><p class="text-muted small mb-0">' + pesan + '</p></div>';
             return;
         }
-        var tbl = '<div class="table-responsive"><table class="table table-hover align-middle mb-0 hm-idx-table" data-page-size="5"><thead class="table-light"><tr>' +
-            '<th class="text-center" style="width: 45px;">No</th><th style="width: 190px;">Dokumen PO</th><th style="width: 150px;">No. Order</th><th style="width: 195px;">Mitra Industri &amp; Pelaksana</th>' +
-            '<th style="width: 120px;">Divisi</th><th>Judul Kegiatan</th><th style="width: 200px;">Status PO</th>' +
-            '<th class="text-center" style="width: 190px;">Aksi</th></tr></thead><tbody>' +
+        var alur = (t !== 'perlu');   // tab Perlu Tindakan: kolom Status Alur & Keterangan tidak ditampilkan
+        var tbl = '<div class="table-responsive"><table class="table table-hover align-middle mb-0 hm-idx-table" data-page-size="5"><thead class="bg-light"><tr>' +
+            '<th class="text-center" style="width: 40px;">No</th><th style="width: 155px;">No. &amp; Tgl Order</th><th style="width: 185px;">Nomor PO</th>' +
+            '<th style="min-width: 260px;">Judul Kegiatan &amp; Klien</th><th class="text-center" style="width: 110px;">Divisi OPTI</th>' +
+            '<th class="text-end text-nowrap" style="width: 150px;">Estimasi Biaya</th>' + (alur ? '<th class="text-center" style="width: 150px;">Status Alur</th>' +
+            '<th style="min-width: 190px;">Keterangan</th>' : '') + '<th class="text-center" style="width: 190px;">Aksi</th></tr></thead><tbody>' +
             rows.map(function (p, i) {
                 var ta = tabAsal(p, t);
                 var tombol = ta === 'perlu'
@@ -1058,14 +1097,13 @@
                     : '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" data-open="' + p.id + '" title="Lihat PO (hanya lihat)"><i class="bi bi-eye me-1"></i>Lihat</button>';
                 var detail = p.order_id ? '<a href="' + BASE + '/order/' + p.order_id + '" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>' : '';
                 return '<tr class="' + (ta === 'perlu' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
-                    '<td class="text-center text-muted small fw-semibold">' + (awal + i + 1) + '</td>' +
+                    '<td class="text-center text-muted small">' + (awal + i + 1) + '</td>' +
+                    '<td>' + orderCell(p) + '</td>' +
                     '<td>' + dokCell(p, ta) + '</td>' +
-                    '<td><span class="fw-semibold text-dark">' + esc(p.order || '-') + '</span></td>' +
-                    '<td><div class="fw-semibold text-dark mb-0.5" style="font-size: 0.84rem;">' + esc(p.mitra || '-') + '</div>' +
-                        subLine('bi-person text-secondary', 'PIC: ' + esc(p.pembuat || 'Ketua Pelaksana')).replace('0.73rem', '0.75rem') + '</td>' +
-                    '<td>' + divisiPill(p.divisi) + '</td>' +
-                    '<td><div class="text-dark small" style="font-size: 0.82rem; line-height: 1.35;" title="' + esc(p.judul) + '">' + esc(p.judul || '-') + '</div></td>' +
-                    '<td>' + posisiCell(p) + '</td>' +
+                    '<td>' + judulCell(p) + '</td>' +
+                    '<td class="text-center"><span class="badge rounded-pill bg-light text-dark border px-2.5 py-1 fw-semibold text-nowrap" style="font-size: 0.75rem;">' + esc(divisiLabel(p.divisi) || 'Belum Ditentukan') + '</span></td>' +
+                    '<td class="text-end text-nowrap">' + biayaCell(p) + '</td>' +
+                    (alur ? '<td class="text-center">' + alurPill(p) + '</td><td>' + posisiCell(p) + '</td>' : '') +
                     '<td class="text-center"><div class="d-inline-flex gap-1 align-items-center">' + tombol + detail + '</div></td></tr>';
             }).join('') + '</tbody></table></div>';
         $('hmList').innerHTML = tbl;

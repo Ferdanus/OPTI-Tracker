@@ -50,6 +50,20 @@
     .dpk-ft.bad { color: #dc2626; font-weight: 600; }
     .dpk-ft.bad a { color: #dc2626; font-weight: 700; text-decoration: underline; }
     .dpk-ft.ok, .dpk-ft.muted { color: #64748b; }
+    /* Tombol Simpan sebagai Draft: gelap + titik = ada yang perlu disimpan; putih + centang = draft sudah tersimpan (tidak bisa diklik) */
+    .dpk-root #dpkSimpan { border-radius: 999px; padding-left: 1.1rem; padding-right: 1.1rem; transition: background-color .2s, color .2s, border-color .2s, transform .1s; }
+    .dpk-root #dpkSimpan:active:not(.dpk-s-bersih) { transform: scale(.98); }
+    .dpk-root #dpkSimpan.dpk-s-kotor { background: #111827; border-color: #111827; color: #fff; }
+    .dpk-root #dpkSimpan.dpk-s-kotor:hover { background: #000; border-color: #000; color: #fff; }
+    .dpk-root #dpkSimpan.dpk-s-bersih { background: #fff; border-color: #dbe0e7; color: #64748b; cursor: default; box-shadow: none; }
+    .dpk-root #dpkSimpan.dpk-s-bersih:hover, .dpk-root #dpkSimpan.dpk-s-bersih:active, .dpk-root #dpkSimpan.dpk-s-bersih:focus { background: #fff; border-color: #dbe0e7; color: #64748b; box-shadow: none; }
+    #dpkSimpan .dpk-sl { display: inline-flex; align-items: center; gap: .5rem; animation: dpkSlIn .25s ease; }
+    #dpkSimpan .dpk-sd { width: 8px; height: 8px; border-radius: 50%; background: #fff; flex: none; animation: dpkSdP 1.6s ease-in-out infinite; }
+    #dpkSimpan .dpk-sp { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: dpkSpin .7s linear infinite; flex: none; }
+    @keyframes dpkSlIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+    @keyframes dpkSdP { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,.5); } 50% { box-shadow: 0 0 0 5px rgba(255,255,255,0); } }
+    @keyframes dpkSpin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { #dpkSimpan .dpk-sl, #dpkSimpan .dpk-sd, #dpkSimpan .dpk-sp { animation: none; } }
     @media (max-width: 767.98px) { .dpk-root .po-sticky-bar .dpk-bar-r { margin-left: 0; width: 100%; flex-wrap: wrap; } .dpk-root .po-sticky-bar .dpk-bar-r .btn { flex: 1 1 auto; } }
 
     /* ---------- Tombol umum (popup, logo) ---------- */
@@ -80,6 +94,17 @@
     .pp-root .pp-rte.dpk-rte .pp-rte-body { max-height: 320px; overflow-y: auto; outline: none; }
     .pp-root .pp-rte.dpk-rte .pp-rte-body:empty::before { content: attr(data-placeholder); color: #94a3b8; font-style: italic; pointer-events: none; }
     .pp-root .pp-rte.dpk-rte .pp-rte-body div { margin: 0; }
+    /* Editor poin bernomor (Ruang lingkup): tiap baris = satu poin, bernomor (1), (2), ... sama dengan pratinjau dan dokumen Word. Baris kosong tidak dinomori. */
+    .pp-root .pp-rte.dpk-rte .pp-rte-body.dpk-num { counter-reset: poin; }
+    .pp-root .pp-rte.dpk-rte .pp-rte-body.dpk-num > div { position: relative; padding-left: 36px; counter-increment: poin; counter-reset: alfa; }
+    /* jenis poin: tanpa atribut = poin bernomor (1); data-t=a = sub-poin huruf (a.); data-t=b = sub-poin bullet */
+    .pp-root .pp-rte.dpk-rte .pp-rte-body.dpk-num > div[data-t="a"] { padding-left: 72px; counter-increment: alfa; counter-reset: none; }
+    .pp-root .pp-rte.dpk-rte .pp-rte-body.dpk-num > div[data-t="a"]::before { content: counter(alfa, lower-alpha) '.'; left: 36px; }
+    .pp-root .pp-rte.dpk-rte .pp-rte-body.dpk-num > div[data-t="b"] { padding-left: 72px; counter-increment: none; counter-reset: none; }
+    .pp-root .pp-rte.dpk-rte .pp-rte-body.dpk-num > div[data-t="b"]::before { content: '\2022'; left: 36px; }
+    .pp-root .pp-rte.dpk-rte .pp-rte-body.dpk-num > div::before { content: '(' counter(poin) ')'; position: absolute; left: 0; top: 0; user-select: none; -webkit-user-select: none; pointer-events: none; }
+    .pp-root .pp-rte.dpk-rte .pp-rte-body.dpk-num > div:has(> br:only-child) { counter-increment: none; counter-reset: none; }
+    .pp-root .pp-rte.dpk-rte .pp-rte-body.dpk-num > div:has(> br:only-child)::before { content: none; }
     .pp-root .pp-rte.dpk-rte.ro { border-color: #e2e8f0; }
     .pp-root .pp-rte.dpk-rte.ro .pp-rte-body { background: #f8fafc; color: #475569; cursor: default; }
     .pp-root .pp-rte.dpk-rte.ro .pp-rte-bar { opacity: .5; pointer-events: none; }
@@ -114,6 +139,12 @@
     .dpk-logo-frame { width: var(--dpk-logo-w); height: var(--dpk-logo-h); border: 1px dashed #cbd5e1; background: #fff; display: flex; align-items: center; justify-content: flex-start; flex-shrink: 0; }
     .dpk-logo-frame img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
     .dpk-logo-ok .k { font-size: .72rem; color: var(--dpk-muted); flex: 1 1 140px; }
+    .dpk-linkrow { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+    .dpk-linkrow[hidden] { display: none; }
+    .dpk-linkrow input { flex: 1 1 auto; min-width: 0; border: 1px solid #cbd5e1; border-radius: 10px; padding: 7px 12px; font-size: .82rem; background: #fff; color: var(--dpk-text); }
+    .dpk-linkrow input:focus { outline: none; border-color: #64748b; box-shadow: 0 0 0 3px rgba(100, 116, 139, .15); }
+    .dpk-linkrow .dpk-btn { flex: none; white-space: nowrap; }
+    .dpk-linkhint { font-size: .72rem; color: var(--dpk-muted); margin-top: 4px; }
 
     /* ---------- Pratinjau dokumen ---------- */
     /* Kertas Letter 8,5 x 11 inci (816 x 1056 px) dengan margin sama seperti di Word: atas 2 cm, kiri/kanan 2,54 cm, bawah 0,25 cm. Footer (nomor halaman + tabel paraf) selalu menempel di bawah tiap halaman. */
@@ -350,10 +381,10 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         var RT_TAG = /<\/?(?:b|i|u|div|p|br|strong|em|span|font|ul|ol|li)\b/i;
         function rtParse(v) {
             v = String(v == null ? '' : v);
-            var lines = [], cur = null;
-            function ambil() { if (!cur) { cur = []; lines.push(cur); } return cur; }
+            var lines = [], cur = null, tpNow = 'n';
+            function ambil() { if (!cur) { cur = []; cur.tp = tpNow; lines.push(cur); } return cur; }
             if (!RT_TAG.test(v)) {
-                v.split(/\r?\n/).forEach(function (l) { lines.push([{ t: l, b: 0, i: 0, u: 0 }]); });
+                v.split(/\r?\n/).forEach(function (l) { var a0 = [{ t: l, b: 0, i: 0, u: 0 }]; a0.tp = 'n'; lines.push(a0); });
             } else {
                 var doc = new DOMParser().parseFromString('<body>' + v + '</body>', 'text/html');
                 (function jalan(node, b, i, u) {
@@ -368,7 +399,15 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                         var tag = c.nodeName.toLowerCase();
                         if (tag === 'script' || tag === 'style') { continue; }
                         if (tag === 'br') { ambil(); cur = null; continue; }
-                        if (/^(div|p|li|ul|ol)$/.test(tag)) { cur = null; jalan(c, b, i, u); cur = null; continue; }
+                        if (/^(div|p|li|ul|ol)$/.test(tag)) {
+                            cur = null;
+                            var simpanTp = tpNow, dt = (c.getAttribute('data-t') || '').toLowerCase();
+                            if (dt === 'a' || dt === 'b' || dt === 'n') { tpNow = dt; }
+                            else if (tag === 'ul') { tpNow = 'b'; }
+                            else if (tag === 'ol') { tpNow = (/^a/.test((c.getAttribute('type') || '').toLowerCase()) || /lower-alpha/.test((c.getAttribute('style') || '').toLowerCase())) ? 'a' : 'n'; }
+                            jalan(c, b, i, u);
+                            tpNow = simpanTp; cur = null; continue;
+                        }
                         var nb = b, ni = i, nu = u, st = (c.getAttribute('style') || '').toLowerCase();
                         if (tag === 'b' || tag === 'strong') { nb = 1; }
                         if (tag === 'i' || tag === 'em') { ni = 1; }
@@ -392,6 +431,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                     g[g.length - 1].t = g[g.length - 1].t.replace(/\s+$/, '');
                     g = g.filter(function (r) { return r.t !== ''; });
                 }
+                g.tp = (runs.tp === 'a' || runs.tp === 'b') ? runs.tp : 'n';
                 return g;
             });
             while (hasil.length && !rtTeksBaris(hasil[0])) { hasil.shift(); }
@@ -413,14 +453,29 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             var lines = rtParse(v);
             if (!lines.length) { return ''; }
             var gaya = false;
-            lines.forEach(function (l) { l.forEach(function (r) { if (r.b || r.i || r.u) { gaya = true; } }); });
+            lines.forEach(function (l) { if (l.tp && l.tp !== 'n') { gaya = true; } l.forEach(function (r) { if (r.b || r.i || r.u) { gaya = true; } }); });
             var teks = lines.map(rtTeksBaris).join('\n');
             if (!gaya && !RT_TAG.test(teks)) { return teks; }
-            return lines.map(function (l) { return '<div>' + (rtBarisHtml(l) || '<br>') + '</div>'; }).join('');
+            return lines.map(function (l) { return '<div' + rtAtr(l) + '>' + (rtBarisHtml(l) || '<br>') + '</div>'; }).join('');
         }
-        function rtEditor(v) { return rtParse(v).map(function (l) { return '<div>' + (rtBarisHtml(l) || '<br>') + '</div>'; }).join(''); }
+        function rtAtr(l) { return (l.tp === 'a' || l.tp === 'b') ? ' data-t="' + l.tp + '"' : ''; }
+        function rtEditor(v) { return rtParse(v).map(function (l) { return '<div' + rtAtr(l) + '>' + (rtBarisHtml(l) || '<br>') + '</div>'; }).join(''); }
         function rtInline(v) { return rtParse(v).map(rtBarisHtml).join('<br>'); }
         function rtPoin(v) { return rtParse(v).filter(function (l) { return rtTeksBaris(l) !== ''; }).map(rtBarisHtml); }
+        function rtPoinT(v) { return rtParse(v).filter(function (l) { return rtTeksBaris(l) !== ''; }).map(function (l) { return { h: rtBarisHtml(l), t: l.tp || 'n' }; }); }
+        /* Toolbar editor poin (Ruang lingkup): sama dengan editor PO untuk B/I/U dan daftar, tetapi tiap tombol ikut ke pratinjau dan dokumen Word. */
+        var RT_BAR_LIST = '<div class="pp-rte-bar">' +
+            '<button type="button" tabindex="-1" data-rt="bold" title="Tebal (Ctrl+B)"><b>B</b></button>' +
+            '<button type="button" tabindex="-1" data-rt="italic" title="Miring (Ctrl+I)"><i>I</i></button>' +
+            '<button type="button" tabindex="-1" data-rt="underline" title="Garis bawah (Ctrl+U)"><u>U</u></button><span class="sep"></span>' +
+            '<button type="button" tabindex="-1" data-rt="list-n" title="Penomoran angka (1) (2) (3): poin utama"><i class="bi bi-list-ol"></i></button>' +
+            '<button type="button" tabindex="-1" data-rt="list-a" title="Penomoran huruf (a. b. c.): sub-poin"><span style="font-weight:700;font-size:.78rem;">a.</span></button>' +
+            '<button type="button" tabindex="-1" data-rt="list-b" title="Bullet: sub-poin"><i class="bi bi-list-ul"></i></button>' +
+            '<button type="button" tabindex="-1" data-rt="outdent" title="Naikkan jadi poin utama (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>' +
+            '<button type="button" tabindex="-1" data-rt="indent" title="Turunkan jadi sub-poin (Tab)"><i class="bi bi-text-indent-left"></i></button><span class="sep"></span>' +
+            '<button type="button" tabindex="-1" data-rt="undo" title="Urungkan"><i class="bi bi-arrow-counterclockwise"></i></button>' +
+            '<button type="button" tabindex="-1" data-rt="redo" title="Ulangi"><i class="bi bi-arrow-clockwise"></i></button><span class="sep"></span>' +
+            '<button type="button" tabindex="-1" data-rt="removeFormat" title="Hapus format"><i class="bi bi-eraser"></i></button></div>';
         var RT_BAR = '<div class="pp-rte-bar">' +
             '<button type="button" tabindex="-1" data-rt="bold" title="Tebal (Ctrl+B)"><b>B</b></button>' +
             '<button type="button" tabindex="-1" data-rt="italic" title="Miring (Ctrl+I)"><i>I</i></button>' +
@@ -430,7 +485,42 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             '<button type="button" tabindex="-1" data-rt="removeFormat" title="Hapus format"><i class="bi bi-eraser"></i></button></div>';
         function rtPerintah(host, cmd) {
             host.focus();
+            if (/^(list-[nab]|indent|outdent)$/.test(cmd)) { if (host.classList.contains('dpk-num')) { rtJenisBaris(host, cmd); } return; }
             document.execCommand(cmd, false, null);
+        }
+        /* Ubah jenis poin pada baris yang dipilih (editor poin): n = (1), a = sub-poin huruf, b = sub-poin bullet. Tombol yang sedang aktif ditekan lagi = kembali ke poin utama. */
+        function rtJenisBaris(host, cmd) {
+            rapikanBarisNomor(host);
+            var sel = window.getSelection(), baris = [];
+            if (!host.children.length) {
+                var d0 = document.createElement('div'); d0.appendChild(document.createElement('br')); host.appendChild(d0);
+                var r0 = document.createRange(); r0.setStart(d0, 0); r0.collapse(true); sel.removeAllRanges(); sel.addRange(r0);
+                baris = [d0];
+            } else if (sel.rangeCount) {
+                var r = sel.getRangeAt(0);
+                Array.prototype.forEach.call(host.children, function (d) { if (r.intersectsNode(d)) { baris.push(d); } });
+            }
+            var tujuan = (cmd === 'list-a') ? 'a' : ((cmd === 'list-b') ? 'b' : '');
+            var semuaIni = !!tujuan && baris.length > 0 && baris.every(function (d) { return (d.getAttribute('data-t') || 'n') === tujuan; });
+            baris.forEach(function (d) {
+                var t = d.getAttribute('data-t') || 'n', baru = t;
+                if (cmd === 'list-n' || cmd === 'outdent') { baru = 'n'; }
+                else if (tujuan) { baru = semuaIni ? 'n' : tujuan; }
+                else if (cmd === 'indent') { baru = (t === 'n') ? 'a' : t; }
+                if (baru === 'n') { d.removeAttribute('data-t'); } else { d.setAttribute('data-t', baru); }
+            });
+            host.dispatchEvent(new Event('input', { bubbles: true }));
+            tandaiTombolJenis();
+        }
+        function tandaiTombolJenis() {
+            document.querySelectorAll('.dpk-rte .pp-rte-bar button[data-rt^="list-"].on').forEach(function (x) { x.classList.remove('on'); });
+            var sel = window.getSelection(), n = sel && sel.anchorNode ? sel.anchorNode : null;
+            var h = n ? (n.nodeType === 1 ? n : n.parentNode).closest('.pp-rte-body.dpk-num') : null;
+            if (!h || n === h) { return; }
+            var d = n; while (d && d.parentNode !== h) { d = d.parentNode; }
+            if (!d || d.nodeType !== 1) { return; }
+            var t = d.getAttribute('data-t') || 'n';
+            var b = h.closest('.dpk-rte').querySelector('[data-rt="list-' + t + '"]'); if (b) { b.classList.add('on'); }
         }
     
         var SATUAN = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
@@ -466,7 +556,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             { id: 'tetap', judul: 'Data BBSPJIS (tetap)', lipat: true }
         ];
         var FIELDS = [
-            { id: 'nomorUrut', sec: 'nomor', label: 'Nomor urut PKS', src: 'manual', type: 'urut', req: true, ph: 'mis. 12', hint: 'Isi angkanya saja. Bulan dan tahun nomor ikut tanggal perjanjian. Urut yang sama boleh dipakai kalau bulan atau tahunnya berbeda.', ph2: '.....' },
+            { id: 'nomorUrut', sec: 'nomor', label: 'Nomor urut PKS', src: 'manual', type: 'urut', req: true, ph: 'mis. 12', hint: 'Isi angkanya saja. Bulan dan tahun nomor ikut tanggal perjanjian. Urut mulai lagi dari 1 tiap tahun, jadi satu angka hanya boleh dipakai sekali dalam setahun.', ph2: '.....' },
             { id: 'nomorPihakPertama', sec: 'nomor', label: 'Nomor perjanjian versi klien', src: 'manual', ph: 'Opsional', ph2: '.........................' },
             { id: 'tanggal', sec: 'nomor', label: 'Tanggal perjanjian', src: 'auto', type: 'autodate', req: false, derived: 'tanggal', ph2: '..............' },
             { id: 'perusahaan', sec: 'pihak1', label: 'Nama perusahaan', src: 'db', req: true, ph2: 'PT .........................' },
@@ -475,7 +565,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             { id: 'ttdJabatan', sec: 'pihak1', label: 'Jabatan penandatangan', src: 'manual', req: true, ph: 'mis. Direktur Utama', ph2: '..........................' },
             { id: 'logoKlien', sec: 'pihak1', label: 'Logo perusahaan', src: 'manual', type: 'logo' },
             { id: 'judul', sec: 'tugas', label: 'Judul pekerjaan', src: 'db', type: 'textarea', rich: true, ph: 'Tulis judul pekerjaan', rows: 2, req: true, ph2: '.........................................' },
-            { id: 'ruangLingkup', sec: 'lingkup', label: 'Ruang lingkup (satu poin per baris)', src: 'db', type: 'textarea', rich: true, ph: 'Satu poin per baris, tekan Enter untuk poin baru', rows: 5, req: true, ph2: '.....................................................' },
+            { id: 'ruangLingkup', sec: 'lingkup', label: 'Ruang lingkup (satu poin per baris)', src: 'db', type: 'textarea', rich: true, nomor: true, ph: 'Satu poin per baris, tekan Enter untuk poin baru', rows: 5, req: true, ph2: '.....................................................' },
             { id: 'mulai', sec: 'waktu', label: 'Tanggal mulai', src: 'db', type: 'date', req: true, ph2: '..........' },
             { id: 'selesai', sec: 'waktu', label: 'Tanggal selesai', src: 'db', type: 'date', req: true, derived: 'durasi', ph2: '..........' },
             { id: 'biaya', sec: 'biayaS', label: 'Nilai kontrak (Rp)', src: 'db', type: 'money', req: true, hint: 'Nominal penawaran yang disepakati (deal), atau total penerimaan RAB.', derived: 'terbilang', ph2: 'Rp 00.000.000,00 (terbilang)' },
@@ -483,8 +573,8 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             { id: 'upNama', sec: 'notif', label: 'UP (nama kontak)', src: 'db', req: true, ph2: '.............................' },
             { id: 'upJabatan', sec: 'notif', label: 'Jabatan kontak', src: 'manual', ph: 'Opsional', ph2: '.............................' },
             { id: 'alamatNotif', sec: 'notif', label: 'Alamat', src: 'db', type: 'textarea', rich: true, ph: 'Tulis alamat pemberitahuan', rows: 2, req: true, hint: 'Default sama dengan alamat perusahaan.', ph2: '............................................' },
-            { id: 'telepon', sec: 'notif', label: 'Telepon', src: 'db', req: true, ph2: '............................................' },
-            { id: 'whatsapp', sec: 'notif', label: 'Whats App', src: 'manual', ph: 'Opsional', ph2: '............................................' },
+            { id: 'telepon', sec: 'notif', label: 'Telepon', src: 'db', type: 'angka', ph: 'Angka saja, boleh dikosongkan', ph2: '............................................' },
+            { id: 'whatsapp', sec: 'notif', label: 'Whats App', src: 'manual', type: 'angka', ph: 'Angka saja, boleh dikosongkan', ph2: '............................................' },
             { id: 'email', sec: 'notif', label: 'Email', src: 'db', ph: 'Opsional', ph2: '............................................' },
             { id: 'kepalaNama', sec: 'tetap', label: 'Nama Kepala (Pihak Kedua)', src: 'master', req: true, ph2: '..........................' },
             { id: 'kepalaJabatan', sec: 'tetap', label: 'Jabatan', src: 'master', req: true, ph2: '..........................' },
@@ -547,6 +637,23 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         var hapusLogoFlag = false;
         var dirty = false;
         var sedangProses = false;
+        var sedangSimpan = false;                    // true hanya selama Simpan sebagai Draft berjalan
+        var sigSimpan = null;                        // "sidik jari" isian saat terakhir tersimpan (null = belum diambil)
+        function sig() { return JSON.stringify(vals) + '|' + (logoFile ? logoFile.name + ':' + logoFile.size : '') + '|' + (hapusLogoFlag ? 1 : 0); }
+        /* Ada perubahan: dianggap kotor hanya kalau isiannya memang beda dari yang tersimpan (diketik lalu dikembalikan = bersih lagi) */
+        function tandaiUbah() { dirty = sigSimpan === null ? true : sig() !== sigSimpan; segarkanDraft(); }
+        function tandaiBersih() { dirty = false; sigSimpan = sig(); segarkanDraft(); }
+        function segarkanDraft() {
+            var b = $('dpkSimpan');
+            if (!b) { return; }
+            var bersih = !dirty && status === 'draft' && !sedangSimpan;
+            b.classList.toggle('dpk-s-bersih', bersih);
+            b.classList.toggle('dpk-s-kotor', !bersih);
+            b.setAttribute('aria-disabled', bersih ? 'true' : 'false');
+            b.innerHTML = sedangSimpan ? '<span class="dpk-sl"><span class="dpk-sp"></span>Menyimpan...</span>'
+                : bersih ? '<span class="dpk-sl"><i class="bi bi-check2"></i> Draft tersimpan</span>'
+                : '<span class="dpk-sl">' + (dirty ? '<span class="dpk-sd"></span>' : '<i class="bi bi-save"></i>') + 'Simpan sebagai Draft</span>';
+        }
     
         /* ---------- Form ---------- */
         function fmtVal(f, v) { return f.type === 'money' ? (v ? rp(v) : '') : (v == null ? '' : v); }
@@ -555,8 +662,13 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             var ada = !!logoSrc;
             return '<div id="dpkLogoBox">' + (ada
                 ? '<div class="dpk-logo-ok"><div class="dpk-logo-frame"><img src="' + logoSrc + '" alt="Logo perusahaan"></div><div class="k">Ukuran di dokumen 6,6 x 2,28 cm, sama dengan kotak logo di template Word. Proporsi logo tidak berubah.</div>' +
-                  '<button type="button" class="dpk-btn sm" data-logo="pilih"><i class="bi bi-arrow-repeat"></i>Ganti</button><button type="button" class="dpk-btn sm" data-logo="hapus"><i class="bi bi-trash"></i>Hapus</button></div>'
-                : '<div class="dpk-drop" id="dpkDrop" tabindex="0" role="button" aria-label="Unggah logo perusahaan"><i class="bi bi-cloud-arrow-up"></i><b>Klik atau seret logo ke sini</b><div>PNG, JPG, atau WEBP. Latar otomatis jadi putih dan ruang kosong dipotong. Maksimal 2 MB.</div></div>') + '</div>';
+                  '<button type="button" class="dpk-btn sm" data-logo="pilih"><i class="bi bi-arrow-repeat"></i>Ganti</button><button type="button" class="dpk-btn sm" data-logo="link"><i class="bi bi-link-45deg"></i>Pakai link</button><button type="button" class="dpk-btn sm" data-logo="hapus"><i class="bi bi-trash"></i>Hapus</button></div>'
+                : '<div class="dpk-drop" id="dpkDrop" tabindex="0" role="button" aria-label="Unggah logo perusahaan"><i class="bi bi-cloud-arrow-up"></i><b>Klik atau seret logo ke sini</b><div>PNG, JPG, atau WEBP. Latar otomatis jadi putih dan ruang kosong dipotong. Maksimal 2 MB.</div></div>') + linkLogoHtml(!ada) + '</div>';
+        }
+        function linkLogoHtml(tampil) {
+            return '<div class="dpk-linkrow" id="dpkLinkRow"' + (tampil ? '' : ' hidden') + '><input type="url" id="dpkLogoLink" placeholder="Atau tempel link gambar logo, misal https://perusahaan.com/logo.png" autocomplete="off" aria-label="Link gambar logo">' +
+                '<button type="button" class="dpk-btn sm" id="dpkLogoLinkBtn" data-logo="ambil"><i class="bi bi-download"></i>Ambil</button></div>' +
+                '<div class="dpk-linkhint" id="dpkLinkHint"' + (tampil ? '' : ' hidden') + '>Pakai alamat gambarnya langsung (klik kanan logo di website, lalu Salin alamat gambar). PNG, JPG, atau WEBP, maksimal 2 MB.</div>';
         }
     
         var IKON = { nomor: 'bi-hash', pihak1: 'bi-building', tugas: 'bi-briefcase', lingkup: 'bi-list-check', waktu: 'bi-calendar-range', biayaS: 'bi-cash-coin', kewajiban: 'bi-journal-check', notif: 'bi-envelope-paper', tetap: 'bi-bank' };
@@ -590,15 +702,15 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             else if (f.type === 'check') {
                 kontrol = '<label class="dpk-chk"><input type="checkbox" class="form-check-input" id="' + idn + '" data-fid="' + f.id + '"' + (vals[f.id] ? ' checked' : '') + '>Ya, klien menyiapkan sampel</label>';
             } else if (f.rich) {
-                kontrol = '<div class="dpk-fin"><div class="pp-rte dpk-rte' + (locked ? ' ro' : '') + '" id="dpk_rte_' + f.id + '">' + RT_BAR +
-                    '<div class="pp-rte-body" id="' + idn + '" data-fid="' + f.id + '" data-rich="1" contenteditable="' + (locked ? 'false' : 'true') + '" spellcheck="true" role="textbox" aria-multiline="true" aria-label="' + esc(f.label) +
+                kontrol = '<div class="dpk-fin"><div class="pp-rte dpk-rte' + (locked ? ' ro' : '') + '" id="dpk_rte_' + f.id + '">' + (f.nomor ? RT_BAR_LIST : RT_BAR) +
+                    '<div class="pp-rte-body' + (f.nomor ? ' dpk-num' : '') + '" id="' + idn + '" data-fid="' + f.id + '" data-rich="1" contenteditable="' + (locked ? 'false' : 'true') + '" spellcheck="true" role="textbox" aria-multiline="true" aria-label="' + esc(f.label) +
                     '" data-placeholder="' + esc(f.ph || '') + '" style="min-height:' + ((f.rows || 2) > 2 ? 130 : 76) + 'px">' + rtEditor(vals[f.id]) + '</div></div>' +
                     (ubah ? '<button type="button" class="dpk-un" data-un="' + f.id + '">Ubah</button>' : '') + '</div>';
             } else if (f.type === 'textarea') {
                 kontrol = '<div class="dpk-fin"><textarea class="form-control form-control-sm dpk-input' + (locked ? ' ro' : '') + '" id="' + idn + '" data-fid="' + f.id + '" rows="' + (f.rows || 2) + '"' + (locked ? ' readonly' : '') + '>' + esc(vals[f.id]) + '</textarea>' + (ubah ? '<button type="button" class="dpk-un" data-un="' + f.id + '">Ubah</button>' : '') + '</div>';
             } else {
                 var tipe = f.type === 'date' ? 'date' : 'text';
-                kontrol = '<div class="dpk-fin"><input class="form-control form-control-sm dpk-input' + (locked ? ' ro' : '') + '" type="' + tipe + '" id="' + idn + '" data-fid="' + f.id + '"' + (f.type === 'money' || f.type === 'urut' ? ' inputmode="numeric"' : '') + (f.type === 'urut' ? ' maxlength="9"' : '') + ' value="' + esc(fmtVal(f, vals[f.id])) + '"' + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '') + (locked ? ' readonly' : '') + ' autocomplete="off">' + (ubah ? '<button type="button" class="dpk-un" data-un="' + f.id + '">Ubah</button>' : '') + '</div>';
+                kontrol = '<div class="dpk-fin"><input class="form-control form-control-sm dpk-input' + (locked ? ' ro' : '') + '" type="' + tipe + '" id="' + idn + '" data-fid="' + f.id + '"' + (f.type === 'money' || f.type === 'urut' || f.type === 'angka' ? ' inputmode="numeric"' : '') + (f.type === 'urut' ? ' maxlength="9"' : f.type === 'angka' ? ' maxlength="20"' : '') + ' value="' + esc(fmtVal(f, vals[f.id])) + '"' + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '') + (locked ? ' readonly' : '') + ' autocomplete="off">' + (ubah ? '<button type="button" class="dpk-un" data-un="' + f.id + '">Ubah</button>' : '') + '</div>';
             }
             var label = '<label class="form-label"' + (f.type === 'logo' ? '' : ' for="' + idn + '"') + '>' + esc(f.label) + (f.req ? wjHtml(f.id) : '') + '</label>';
             var lebar = (f.type === 'textarea' || f.type === 'logo' || f.type === 'check' || PENUH[f.id]) ? 'col-12' : 'col-12 col-md-6';
@@ -677,8 +789,16 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             else { btn.textContent = unlocked[fid] ? 'Kunci' : 'Ubah'; btn.classList.remove('rst'); }
         }
     
-        /* ---------- Cek nomor urut bentrok (urut + bulan + tahun sama dengan PKS lain) ---------- */
-        var cekTimer = null, cekSeq = 0, urutBentrok = '';
+        /* ---------- Cek nomor urut bentrok (urut + tahun sama dengan PKS lain) ---------- */
+        var cekTimer = null, cekSeq = 0, urutBentrok = '', sedangCek = false;
+        /* Tombol Selesai terkunci selama nomor urut bentrok (atau masih diperiksa); Simpan sebagai Draft tetap bisa. */
+        function segarkanSelesai() {
+            var b = $('dpkSelesai');
+            if (!b) { return; }
+            var bentrok = urutBentrok !== '' && urutBentrok === String(vals.nomorUrut || '');
+            b.disabled = !!(sedangProses || bentrok || sedangCek);
+            b.title = bentrok ? 'Nomor urut sudah dipakai. Isi ulang nomor urutnya dulu.' : '';
+        }
         function tulisCek(kelas, teks) {
             var e = $('dpkCekUrut');
             if (!e) { return; }
@@ -689,23 +809,28 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         function cekUrut() {
             var u = String(vals.nomorUrut || '');
             urutBentrok = '';
-            if (u === '') { tulisCek('', ''); return; }
+            if (u === '') { sedangCek = false; tulisCek('', ''); segarkanSelesai(); return; }
             var n = ++cekSeq;
+            sedangCek = true; segarkanSelesai();
             tulisCek('wait', 'Memeriksa nomor...');
             fetch(BASE + '/pks/' + poAktif.id + '/cek-nomor?urut=' + encodeURIComponent(u), { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(function (r) { return r.json(); })
                 .then(function (j) {
                     if (n !== cekSeq) { return; }
-                    if (!j || !j.ok) { tulisCek('', ''); return; }
+                    sedangCek = false;
+                    if (!j || !j.ok) { tulisCek('', ''); segarkanSelesai(); return; }
                     if (j.bentrok) { urutBentrok = u; tulisCek('bad', j.pesan); }
                     else { tulisCek('ok', 'Nomor tersedia: ' + j.nomor); }
+                    segarkanSelesai();
                 })
-                .catch(function () { if (n === cekSeq) { tulisCek('', ''); } });
+                .catch(function () { if (n === cekSeq) { sedangCek = false; tulisCek('', ''); segarkanSelesai(); } });
         }
         function cekUrutTunda() {
             clearTimeout(cekTimer);
             urutBentrok = '';
-            tulisCek('wait', 'Memeriksa nomor...');
+            sedangCek = String(vals.nomorUrut || '') !== '';
+            segarkanSelesai();
+            tulisCek(sedangCek ? 'wait' : '', sedangCek ? 'Memeriksa nomor...' : '');
             cekTimer = setTimeout(cekUrut, 400);
         }
 
@@ -842,8 +967,18 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 '<p class="c"><b>MENGINGAT</b></p>' +
                 '<p>PIHAK PERTAMA dan PIHAK KEDUA selanjutnya secara bersama-sama disebut PARA PIHAK bersepakat mengadakan Perjanjian Kerja Sama pekerjaan &rdquo;' + judul + '&rdquo;, dengan ketentuan sebagaimana dijelaskan dalam pasal-pasal berikut ini:</p>';
     
-            var lingkup = poin.length
-                ? poin.map(function (x, i) { return li('(' + (i + 1) + ')', V('ruangLingkup', x)); }).join('')
+            var poinT = rtPoinT(vals.ruangLingkup);
+            var lingkup = poinT.length
+                ? (function () {
+                    var k = 0, hrf = 0, o = '';
+                    poinT.forEach(function (x) {
+                        var isi = V('ruangLingkup', x.h);
+                        if (x.t === 'a') { hrf++; o += li(String.fromCharCode(97 + ((hrf - 1) % 26)) + '.', isi, true); }
+                        else if (x.t === 'b') { o += li('&bull;', isi, true); }
+                        else { k++; hrf = 0; o += li('(' + k + ')', isi); }
+                    });
+                    return o;
+                })()
                 : li('(1)', V('ruangLingkup', '')) + li('(2)', '.....................................................') + li('(3)', '.....................................................');
     
             var jangka = 'Jangka waktu pelaksanaan pekerjaan adalah ' + V('selesai', n ? n + ' (' + esc(terbilang(n)) + ') hari' : '') + ', terhitung sejak tanggal ' + V('mulai', m ? m.tgl : '') + ' bulan ' + V('mulai', m ? m.bulan : '') + ' tahun ' + V('mulai', m ? m.tahun : '') + ' sampai dengan tanggal ' + V('selesai', s ? s.tgl : '') + ' bulan ' + V('selesai', s ? s.bulan : '') + ' tahun ' + V('selesai', s ? s.tahun : '') + ', dan sejak Perjanjian Kerja Sama ditandatangani oleh PARA PIHAK.';
@@ -1096,7 +1231,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 img.onload = function () {
                     var h = img.naturalWidth > 0 && img.naturalHeight > 0 ? logoKePng(img) : null;
                     if (!h || h.file.size > LOGO_MAKS_BYTE) { toast('Logo gagal dikonversi ke PNG. Coba file lain.', true); return; }
-                    logoSrc = h.uri; logoFile = h.file; hapusLogoFlag = false; dirty = true;
+                    logoSrc = h.uri; logoFile = h.file; hapusLogoFlag = false; tandaiUbah();
                     $('dpkLogoBox').outerHTML = logoFieldHtml(); renderDoc();
                     toast('Logo terpasang. Latar dibuat putih dan ruang kosong di sekeliling logo dipotong otomatis.');
                 };
@@ -1106,7 +1241,42 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             rd.onerror = function () { toast('Logo gagal dibaca. Coba file lain.', true); };
             rd.readAsDataURL(file);
         }
-        function hapusLogo() { logoSrc = ''; logoFile = null; hapusLogoFlag = true; dirty = true; $('dpkLogoBox').outerHTML = logoFieldHtml(); renderDoc(); }
+        function hapusLogo() { logoSrc = ''; logoFile = null; hapusLogoFlag = true; tandaiUbah(); $('dpkLogoBox').outerHTML = logoFieldHtml(); renderDoc(); }
+
+        /* Logo dari link: server yang mengunduh gambarnya (menghindari blokir CORS), lalu diproses sama persis dengan unggahan file. */
+        var sedangAmbilLogo = false;
+        function bukaLinkLogo() {
+            var row = $('dpkLinkRow'), hint = $('dpkLinkHint');
+            if (!row) { return; }
+            var tampil = row.hasAttribute('hidden');
+            if (tampil) { row.removeAttribute('hidden'); if (hint) { hint.removeAttribute('hidden'); } var i = $('dpkLogoLink'); if (i) { i.focus(); } }
+            else { row.setAttribute('hidden', ''); if (hint) { hint.setAttribute('hidden', ''); } }
+        }
+        function ambilLogoLink() {
+            if (sedangAmbilLogo) { return; }
+            var inp = $('dpkLogoLink'), btn = $('dpkLogoLinkBtn');
+            var url = inp ? inp.value.trim() : '';
+            if (!url) { toast('Tempel dulu link gambar logonya.', true); if (inp) { inp.focus(); } return; }
+            sedangAmbilLogo = true;
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i>Mengambil'; }
+            var fd = new FormData(); fd.append('csrf_token', CSRF); fd.append('url', url);
+            fetch(BASE + '/pks/' + poAktif.id + '/logo-link', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(function (r) {
+                var tipe = r.headers.get('Content-Type') || '';
+                if (tipe.indexOf('application/json') !== -1) {
+                    return r.json().then(function (j) { throw new Error(j && j.pesan ? j.pesan : 'Logo dari link gagal diambil.'); });
+                }
+                if (!r.ok) { throw new Error('Server membalas ' + r.status + '. Coba lagi atau unggah file logonya.'); }
+                return r.blob();
+            }).then(function (blob) {
+                sedangAmbilLogo = false;
+                var b0 = $('dpkLogoLinkBtn'); if (b0) { b0.disabled = false; b0.innerHTML = '<i class="bi bi-download"></i>Ambil'; }
+                setLogo(new File([blob], 'logo-link', { type: blob.type }));
+            }).catch(function (e) {
+                sedangAmbilLogo = false;
+                var b = $('dpkLogoLinkBtn'); if (b) { b.disabled = false; b.innerHTML = '<i class="bi bi-download"></i>Ambil'; }
+                toast(e && e.message ? e.message : 'Logo dari link gagal diambil.', true);
+            });
+        }
     
         /* ---------- Sinkron form dan pratinjau ---------- */
         function kilas(fid, gulir) {
@@ -1148,11 +1318,12 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
     
         function kunciTombol(v) {
             sedangProses = v;
-            $('dpkSimpan').disabled = v; $('dpkSelesai').disabled = v;
+            $('dpkSimpan').disabled = v;
+            segarkanSelesai();
         }
     
         function terapkanHasilSimpan(j) {
-            dirty = false; status = j.status; logoFile = null; hapusLogoFlag = false;
+            status = j.status; logoFile = null; hapusLogoFlag = false; tandaiBersih();
             if (j.nomor_terbit && j.nomor_pks) { nomorTetap = j.nomor_pks; updNomor(); renderDoc(); }
             if (typeof j.logoUrl === 'string') { logoSrc = j.logoUrl; $('dpkLogoBox').outerHTML = logoFieldHtml(); renderDoc(); }
             updHint();
@@ -1160,12 +1331,14 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
     
         function simpanDraft() {
             if (sedangProses) { return Promise.resolve(false); }
+            if (!dirty && status === 'draft') { return Promise.resolve(true); }   // sudah tersimpan: tidak ada yang perlu dikirim
+            sedangSimpan = true; segarkanDraft();
             kunciTombol(true);
             return kirim('simpan').then(function (j) {
                 terapkanHasilSimpan(j);
                 toast('Draft tersimpan. PKS untuk ' + poAktif.nomor + ' ada di tab Draft.');
                 return true;
-            }).catch(function (e) { toast(e.message, true); return false; }).then(function (ok) { kunciTombol(false); return ok; });
+            }).catch(function (e) { toast(e.message, true); return false; }).then(function (ok) { sedangSimpan = false; kunciTombol(false); segarkanDraft(); return ok; });
         }
     
         function selesai() {
@@ -1178,7 +1351,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 return;
             }
             if (hariAntara(vals.mulai, vals.selesai) === 0) { toast('Tanggal selesai harus sama atau setelah tanggal mulai.', true); keField('selesai'); return; }
-            if (urutBentrok !== '' && urutBentrok === String(vals.nomorUrut)) { toast('Nomor urut ' + vals.nomorUrut + ' sudah dipakai di bulan dan tahun yang sama. Ganti angkanya dulu.', true); keField('nomorUrut'); return; }
+            if (urutBentrok !== '' && urutBentrok === String(vals.nomorUrut)) { toast('Nomor urut ' + vals.nomorUrut + ' sudah dipakai di tahun yang sama. Isi ulang nomor urutnya dulu.', true); keField('nomorUrut'); return; }
             var ke = function () { return (DALAM_DETAIL && poAktif.order_id) ? BASE + '/order/' + poAktif.order_id + '?tahap=9' : BASE + '/pks?tab=selesai&pesan=selesai'; };
             if (!nomorTetap && typeof KontrakNomorDialog !== 'undefined') {
                 // Belum punya nomor: dialog "Generate Nomor Kontrak" (sama dengan Generate Nomor PO); nomor terbit di server saat Selesai
@@ -1253,6 +1426,53 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             if (F[fid].rich) { el.innerHTML = rtEditor(v); } else { el.value = fmtVal(F[fid], v); }
         }
 
+        /* Editor poin bernomor: pastikan SETIAP poin berada di <div>-nya sendiri (teks lepas di awal editor, <br> di antara teks, atau Enter yang menyisipkan <br>
+           dijadikan baris/div tersendiri), supaya nomornya selalu pas dan sama dengan hasil di pratinjau dan Word. Posisi kursor dipertahankan. */
+        function rapikanBarisNomor(el) {
+            var kids = Array.prototype.slice.call(el.childNodes), bersih = true;
+            kids.forEach(function (n) {
+                if (n.nodeType === 1 && /^(DIV|P)$/.test(n.nodeName)) {
+                    var adaBr = false, adaIsi = false;
+                    Array.prototype.forEach.call(n.childNodes, function (c) {
+                        if (c.nodeType === 1 && c.nodeName === 'BR') { adaBr = true; } else if (!(c.nodeType === 3 && c.nodeValue === '')) { adaIsi = true; }
+                    });
+                    if (adaBr && adaIsi) { bersih = false; }
+                } else { bersih = false; }
+            });
+            if (bersih) { return; }
+            var sel = window.getSelection(), an = (sel && sel.rangeCount) ? sel.anchorNode : null, ao = sel ? sel.anchorOffset : 0;
+            var baris = [], cur = null, tpAktif = '';
+            function baru() { var d = document.createElement('div'); if (tpAktif) { d.setAttribute('data-t', tpAktif); } baris.push(d); return d; }
+            function proses(n) {
+                if (n.nodeType === 1 && n.nodeName === 'BR') {
+                    if (cur) { cur = null; } else { var k = baru(); k.appendChild(document.createElement('br')); }
+                    return;
+                }
+                if (!cur) { cur = baru(); }
+                cur.appendChild(n);
+            }
+            kids.forEach(function (n) {
+                if (n.nodeType === 1 && /^(DIV|P)$/.test(n.nodeName)) {
+                    cur = null;
+                    tpAktif = n.getAttribute('data-t') || '';
+                    var anak = Array.prototype.slice.call(n.childNodes);
+                    if (!anak.length) { var k = baru(); k.appendChild(document.createElement('br')); }
+                    anak.forEach(proses);
+                    cur = null; tpAktif = '';
+                } else { tpAktif = ''; proses(n); }
+            });
+            baris.forEach(function (d) { if (!d.firstChild) { d.appendChild(document.createElement('br')); } });
+            while (el.firstChild) { el.removeChild(el.firstChild); }
+            baris.forEach(function (d) { el.appendChild(d); });
+            if (sel && baris.length) {
+                try {
+                    var r = document.createRange();
+                    if (an && an !== el && el.contains(an)) { r.setStart(an, Math.min(ao, an.nodeType === 3 ? an.nodeValue.length : an.childNodes.length)); r.collapse(true); }
+                    else { r.selectNodeContents(baris[baris.length - 1]); r.collapse(false); }
+                    sel.removeAllRanges(); sel.addRange(r);
+                } catch (x) {}
+            }
+        }
         function onInput(e) {
             var el = e.target, fid = el.getAttribute('data-fid');
             if (!fid) { return; }
@@ -1264,14 +1484,19 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 el.value = angka ? rp(angka) : '';
             } else if (f.rich) {
                 vals[fid] = rtSimpan(el.innerHTML);
-                if (!(el.textContent || '').trim() && el.innerHTML !== '') { el.innerHTML = ''; }
+                if (!(el.textContent || '').trim() && el.innerHTML !== '' && !el.querySelector('[data-t]')) { el.innerHTML = ''; }
+                if (f.nomor) { rapikanBarisNomor(el); }
+            } else if (f.type === 'angka') {
+                var an = String(el.value).replace(/\D/g, '').slice(0, 20);
+                if (el.value !== an) { el.value = an; }
+                vals[fid] = an;
             } else if (fid === 'nomorUrut') {
                 var u = String(el.value).replace(/\D/g, '').replace(/^0+/, '').slice(0, 9);
                 if (el.value !== u) { el.value = u; }
                 vals[fid] = u;
                 cekUrutTunda();
             } else { vals[fid] = el.value; }
-            dirty = true;
+            tandaiUbah();
             if (fid === 'alamatPerusahaan' && !unlocked.alamatNotif && String(vals.alamatNotif) === String(dbv.alamatNotif)) {
                 dbv.alamatNotif = vals[fid]; vals.alamatNotif = vals[fid];
                 tulisKontrol('alamatNotif', vals[fid]);
@@ -1297,7 +1522,10 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             if (t.closest('[data-dpk-lihat]')) { setMode('preview'); return; }
             if ((el = t.closest('[data-logo]'))) {
                 var aksi = el.getAttribute('data-logo');
-                if (aksi === 'hapus') { hapusLogo(); } else { $('dpk_logoKlien').click(); }
+                if (aksi === 'hapus') { hapusLogo(); }
+                else if (aksi === 'link') { bukaLinkLogo(); }
+                else if (aksi === 'ambil') { ambilLogoLink(); }
+                else { $('dpk_logoKlien').click(); }
                 return;
             }
             if (t.closest('#dpkDrop')) { $('dpk_logoKlien').click(); return; }
@@ -1305,7 +1533,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 var fid = el.getAttribute('data-un'), inp = $('dpk_' + fid);
                 if (String(vals[fid]) !== String(dbv[fid])) { vals[fid] = dbv[fid]; tulisKontrol(fid, dbv[fid]); unlocked[fid] = false; }
                 else { unlocked[fid] = !unlocked[fid]; if (unlocked[fid] && !F[fid].rich) { inp.focus(); } }
-                dirty = true;
+                tandaiUbah();
                 updMeta(fid); updDerived(); renderDoc(); updProgress();
                 if (unlocked[fid] && F[fid].rich) { inp.focus(); }
                 return;
@@ -1358,7 +1586,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 var h = HUMAS.filter(function (x) { return x.nama === nm; })[0];
                 vals.kedUpNama = nm;
                 if (h) { vals.kedWa = h.wa; dbv.kedWa = h.wa; tulisKontrol('kedWa', h.wa); updMeta('kedWa'); }
-                dirty = true;
+                tandaiUbah();
                 renderDoc(); updProgress();
                 kilas('kedUpNama', false);
                 return;
@@ -1370,7 +1598,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             if (!p) { return; }
             vals.kepalaNama = p.nama; vals.kepalaJabatan = p.jabatan;
             $('dpk_kepalaNama').value = p.nama; $('dpk_kepalaJabatan').value = p.jabatan;
-            dirty = true;
+            tandaiUbah();
             renderDoc(); updProgress();
             kilas('kepalaNama', false);
         });
@@ -1408,15 +1636,20 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 var on = false; try { on = document.queryCommandState(c); } catch (x) {}
                 var b = w.querySelector('[data-rt="' + c + '"]'); if (b && on) { b.classList.add('on'); }
             });
+            tandaiTombolJenis();
         });
         $('dpk_logoKlien').addEventListener('change', function () { setLogo(this.files && this.files[0]); this.value = ''; });
         $('dpkForm').addEventListener('keydown', function (e) {
             if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'dpkDrop') { e.preventDefault(); $('dpk_logoKlien').click(); }
+            if (e.key === 'Enter' && e.shiftKey && e.target.classList && e.target.classList.contains('dpk-num')) { e.preventDefault(); document.execCommand('insertParagraph'); }   // Shift+Enter = poin baru juga
+            if (e.key === 'Tab' && !e.ctrlKey && !e.altKey && !e.metaKey && e.target.classList && e.target.classList.contains('dpk-num')) { e.preventDefault(); rtPerintah(e.target, e.shiftKey ? 'outdent' : 'indent'); }   // Tab = sub-poin, Shift+Tab = poin utama
+            if (e.key === 'Enter' && e.target.id === 'dpkLogoLink') { e.preventDefault(); ambilLogoLink(); }
         });
         ['dragenter', 'dragover'].forEach(function (n) { $('dpkForm').addEventListener(n, function (e) { if (e.target.closest && e.target.closest('#dpkDrop')) { e.preventDefault(); $('dpkDrop').classList.add('over'); } }); });
         ['dragleave', 'drop'].forEach(function (n) { $('dpkForm').addEventListener(n, function () { var d = $('dpkDrop'); if (d) { d.classList.remove('over'); } }); });
         $('dpkForm').addEventListener('drop', function (e) { if (e.target.closest && e.target.closest('#dpkDrop')) { e.preventDefault(); setLogo(e.dataTransfer.files && e.dataTransfer.files[0]); } });
         $('dpkSorot').addEventListener('change', function () { $('dpkPages').classList.toggle('dpk-hl', this.checked); });
+        sigSimpan = sig(); segarkanDraft();
         $('dpkSimpan').addEventListener('click', simpanDraft);
         $('dpkSelesai').addEventListener('click', selesai);
         $('dpkDlgYes').addEventListener('click', function () { tutupDialog('ya'); });

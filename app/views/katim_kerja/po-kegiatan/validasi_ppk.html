@@ -523,6 +523,10 @@
 <style>
     /* Tampilan daftar disamakan dengan halaman Daftar PO lain (kartu, filter, tab, tabel, pagination) */
     tr.po-unread td { font-weight: 700; background: #f8fafc; }
+    /* Penanda "belum dibuka": titik di pojok kanan atas tombol aksi utama (sama dengan Daftar PO; hilang otomatis begitu kelas po-unread dilepas) */
+    tr.po-unread > td:last-child .btn-primary { position: relative; }
+    tr.po-unread > td:last-child .btn-primary::after { content: ''; position: absolute; top: -5px; right: -5px; width: 11px; height: 11px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 0 2px #f8fafc; animation: poUnreadPulse 1.6s ease-out 1; pointer-events: none; }
+    @keyframes poUnreadPulse { 0% { box-shadow: 0 0 0 2px #f8fafc, 0 0 0 0 rgba(37, 99, 235, .5); } 100% { box-shadow: 0 0 0 2px #f8fafc, 0 0 0 10px rgba(37, 99, 235, 0); } }
     .po-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2563eb; margin-right: 6px; vertical-align: middle; }
     .po-baca { font-size: .73rem; font-weight: 600; margin-top: 2px; }
     .po-baca-belum { color: #b45309; } .po-baca-sudah { color: #047857; }
@@ -1192,13 +1196,12 @@
                 rows.map(function (p, i) {
                     var ta = tabAsal(p, t), o = p.ord || {};
                     var tombol = '<button type="button" class="btn btn-sm btn-primary py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" data-open="' + p.id + '" title="' + (ta === 'perlu' ? 'Review PO (buka panel)' : 'Lihat PO (hanya lihat)') + '"><i class="bi bi-eye"></i> <span>' + (ta === 'perlu' ? 'Review' : 'Lihat') + '</span></button>';
-                    var dot = (ta === 'perlu' && isUnread(p)) ? '<span class="po-dot" title="Belum dibaca"></span>' : '';
                     return '<tr class="' + (ta === 'perlu' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
                         '<td class="text-center text-muted small">' + (awal + i + 1) + '</td>' +
                         '<td>' + ordCell(p) + '</td>' +
                         '<td><div class="d-flex align-items-center flex-wrap gap-1 mb-1">' + mediaBadge(o.media) +
                             '<span class="badge bg-light text-dark border rounded-pill px-2 py-0.5 fw-semibold font-monospace" style="font-size: 0.68rem;" title="Nomor PO"><i class="bi bi-file-earmark-text me-1 text-primary"></i>' + esc(p.nomor) + '</span></div>' +
-                            '<div class="fw-semibold text-dark mb-1 d-flex align-items-start gap-1" title="' + esc(p.mitra) + '">' + dot + '<i class="bi bi-building text-secondary flex-shrink-0 mt-1" style="font-size: 0.85rem;"></i><span style="line-height: 1.35;">' + esc(p.mitra || '-') + '</span></div>' +
+                            '<div class="fw-semibold text-dark mb-1 d-flex align-items-start gap-1" title="' + esc(p.mitra) + '"><i class="bi bi-building text-secondary flex-shrink-0 mt-1" style="font-size: 0.85rem;"></i><span style="line-height: 1.35;">' + esc(p.mitra || '-') + '</span></div>' +
                             '<div class="small text-muted mt-0.5" style="line-height: 1.35;" title="' + esc(p.judul) + '">' + esc(p.judul || '-') + '</div></td>' +
                         '<td class="text-center">' + divisiBadge(p.divisi) + '</td>' +
                         '<td class="text-end">' + biayaCell(p) + '</td>' +

@@ -16,12 +16,19 @@ class BastController extends Controller {
                         'ttdNama' => 'Nama Pihak Pertama', 'ttdJabatan' => 'Jabatan Pihak Pertama', 'judul' => 'Judul pekerjaan', 'pksNomor' => 'Nomor PKS',
                         'pksTanggal' => 'Tanggal PKS', 'keduaNama' => 'Nama Pihak Kedua', 'keduaJabatan' => 'Jabatan Pihak Kedua',
                         'mengetahuiNama' => 'Pejabat yang mengetahui', 'mengetahuiJabatan' => 'Jabatan pejabat yang mengetahui');
+    /** Isian wajib saat Ketua Tim mengirim ke Humas (nomor, tanggal, dan pejabat yang mengetahui diisi Humas belakangan) */
+    const WAJIB_KIRIM = array('perusahaan' => 'Perusahaan', 'alamat' => 'Alamat perusahaan', 'ttdNama' => 'Nama Pihak Pertama', 'ttdJabatan' => 'Jabatan Pihak Pertama',
+                              'judul' => 'Judul pekerjaan', 'pksNomor' => 'Nomor PKS', 'pksTanggal' => 'Tanggal PKS', 'keduaNama' => 'Nama Pihak Kedua', 'keduaJabatan' => 'Jabatan Pihak Kedua');
     /** Isian yang dikunci dari PKS kalau PKS-nya ada */
     const DARI_PKS = array('perusahaan', 'alamat', 'ttdNama', 'ttdJabatan', 'judul', 'pksNomor', 'pksTanggal');
 
     /**
-     * Menampilkan form pembuatan / edit BAST (form + pratinjau dokumen live)
-     * Route: GET /order/@id/bast/buat
+     * Form BAST (form + pratinjau dokumen live), isinya mengikuti peran:
+     *  - Ketua Tim layanan order ini: lengkapi jabatan + NIP Pihak Kedua, lalu "Kirim ke Humas".
+     *  - Humas / Admin PKS: isi nomor urut dan pilih pejabat yang mengetahui, lalu "Selesai" (tanggal BAST = hari nomor diberikan).
+     *  - Superadmin: semua isian. Yang lain (termasuk Tim Mitra): hanya melihat.
+     * Draf BAST dibuat otomatis oleh sistem (OptiBast::siapkanDraf) begitu PO bertanda tangan + PKS + Laporan Akhir selesai.
+     * Route: GET /order/@id/bast  dan  /order/@id/bast/buat
      */
     public function formBast($f3, $params) {
         $this->requirePermission('order:view', '/order');
@@ -37,28 +44,36 @@ class BastController extends Controller {
             return;
         }
 
+        $sessionUser = $f3->get('SESSION.user') ?? [];
+        $userId = (int)($sessionUser['id'] ?? ($this->getUserId() ?? 0));
+        $userNama = $sessionUser['nama'] ?? ($sessionUser['nama_lengkap'] ?? ($_SESSION['nama_lengkap'] ?? 'Sistem'));
+        \OptiBast::siapkanDraf($this->db, $orderId, $userId, (string) $userNama);   // order lama / hook yang terlewat
+
         $bastModel = new OptiBast($this->db);
         $bast = $bastModel->getByOrderId($orderId);
+        $mode = $this->modeBast($order);
+        $urlKembali = ($mode === 'humas') ? '/humas/bast' : '/order/' . $orderId;
 
-        if (!$this->isTimMitra() && !$this->isAdminOrder() && !$this->isSuperadmin()) {
-            $this->setFlashError('Akses ditolak: pengelolaan BAST hanya dapat dilakukan oleh Tim Mitra Industri.');
-            $f3->reroute('/order/' . $orderId);
+        if (empty($bast)) {
+            if ($mode !== 'penuh' || (!$this->poTtdSudahDiunggah($orderId) && !$this->canEditSubmittedData(true, $orderId))) {
+                $this->setFlashError('BAST belum tersedia. BAST dibuat otomatis setelah PO bertanda tangan diunggah, PKS dibuat Humas, dan Laporan Akhir (Tahap 10) diselesaikan.');
+                $f3->reroute($urlKembali);
+                return;
+            }
+        }
+        $st = strtolower(trim((string) ($bast['status_bast'] ?? '')));
+        if ($mode === 'humas' && $st === \OptiBast::ST_DRAF) {
+            $this->setFlashError('BAST ini belum dikirim Ketua Tim. Humas baru bisa memberi nomor setelah Ketua Tim mengirimnya.');
+            $f3->reroute('/humas/bast');
             return;
         }
-        $_ordBastCheck = (new OrderLayanan($this->db))->getDetail($orderId);
-        $_statusOrdBast = strtolower(trim((string)($_ordBastCheck['status'] ?? '')));
-        $_statusBast = strtolower(trim((string)($bast['status_bast'] ?? '')));
-        if (($_statusOrdBast === 'selesai' || (!empty($bast) && in_array($_statusBast, ['disetujui', 'selesai', 'terbit'], true))) && !$this->canEditSubmittedData(true, $orderId)) {
-            $this->setFlashError('Dokumen BAST / Order sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.');
-            $f3->reroute('/order/' . $orderId);
-            return;
+        if ($mode === 'humas' && $st === \OptiBast::ST_KIRIM && empty($bast['dibuka_humas_at'])) {
+            try { $bastModel->tandaiDibuka((int) $bast['id']); $bast['dibuka_humas_at'] = date('Y-m-d H:i:s'); } catch (\Throwable $e) {}
         }
 
-        if (empty($bast) && !$this->poTtdSudahDiunggah($orderId) && !$this->canEditSubmittedData(true, $orderId)) {
-            $this->setFlashError('BAST belum bisa dibuat: upload dulu PO yang sudah ditandatangani, lalu tunggu Humas membuat PKS (Tahap 9).');
-            $f3->reroute("/order/{$orderId}");
-            return;
-        }
+        $terkunci = ($st === \OptiBast::ST_SELESAI) && !$this->canEditSubmittedData(true, $orderId);
+        $boleh = $terkunci ? array() : $this->bolehEdit($mode, $st, $bast);
+        $aksi  = $terkunci ? array('draft' => false, 'kirim' => false, 'selesai' => false) : $this->aksiBoleh($mode, $st);
 
         $pks = $this->ambilPks($orderId);
         $pejabat = $this->daftarPejabat();
@@ -68,8 +83,9 @@ class BastController extends Controller {
             'nomorUrut' => '', 'tanggal' => date('Y-m-d'),
             'perusahaan' => '', 'alamat' => '', 'ttdNama' => '', 'ttdJabatan' => '', 'judul' => '', 'pksNomor' => '', 'pksTanggal' => '',
             'keduaNama' => '', 'keduaJabatan' => '', 'keduaNip' => '',
-            'mengetahuiNama' => $kepala['nama'], 'mengetahuiJabatan' => $kepala['jabatan'],
+            'mengetahuiNama' => '', 'mengetahuiJabatan' => '',
         );
+        if (empty($bast) && $mode === 'penuh') { $v['mengetahuiNama'] = $kepala['nama']; $v['mengetahuiJabatan'] = $kepala['jabatan']; }   // BAST manual (Superadmin): usulan awal Kepala Balai
         if ($pks) {
             $v['perusahaan'] = $this->namaPerusahaan($pks, $order);
             $v['alamat']     = $this->teksPolos($pks['alamat_perusahaan']);
@@ -88,24 +104,39 @@ class BastController extends Controller {
         $nomorTerbit = '';
         $fileUrl = '';
         if (!empty($bast)) {
-            $status = ($bast['status_bast'] === 'selesai') ? 'selesai' : 'draft';
-            $v['nomorUrut'] = (string) ($bast['nomor_urut'] ?? '');
-            if (!empty($bast['tanggal_bast'])) { $v['tanggal'] = substr((string) $bast['tanggal_bast'], 0, 10); }
-            if ($status === 'selesai' && !empty($bast['id_nomor_urut'])) { $nomorTerbit = (string) $bast['nomor_bast']; }
-            $peta = array('perusahaan' => 'pihak_pertama_perusahaan', 'alamat' => 'pihak_pertama_alamat', 'ttdNama' => 'pihak_pertama_nama', 'ttdJabatan' => 'pihak_pertama_jabatan',
-                          'judul' => 'judul_pekerjaan', 'pksNomor' => 'pks_nomor', 'keduaNama' => 'pihak_kedua_nama', 'keduaJabatan' => 'pihak_kedua_jabatan',
-                          'keduaNip' => 'pihak_kedua_nip', 'mengetahuiNama' => 'mengetahui_nama', 'mengetahuiJabatan' => 'mengetahui_jabatan');
-            foreach ($peta as $id => $kol) {
+            $status = ($st === \OptiBast::ST_SELESAI) ? 'selesai' : ($st === \OptiBast::ST_KIRIM ? 'dikirim' : 'draft');
+            $dariBast = $this->nilaiDariBast($bast);
+            foreach ($dariBast as $id => $nilai) {
                 if ($pks && in_array($id, self::DARI_PKS, true)) { continue; }   // PKS jadi sumber kebenaran
-                if (isset($bast[$kol]) && trim((string) $bast[$kol]) !== '') { $v[$id] = (string) $bast[$kol]; }
+                if (trim((string) $nilai) !== '') { $v[$id] = (string) $nilai; }
             }
-            if (!$pks && !empty($bast['pks_tanggal'])) { $v['pksTanggal'] = substr((string) $bast['pks_tanggal'], 0, 10); }
+            if ($mode === 'humas' && $status !== 'selesai') { $v['tanggal'] = date('Y-m-d'); }   // tanggal BAST = hari Humas memberi nomor
+            elseif ($status !== 'selesai' && $mode !== 'penuh') { $v['tanggal'] = ''; }          // belum bernomor: tanggal baru ada saat Humas memberi nomor
+            if ($status === 'selesai' && !empty($bast['id_nomor_urut'])) { $nomorTerbit = (string) $bast['nomor_bast']; }
             if (!empty($bast['file_dokumen_bast'])) { $fileUrl = $f3->get('BASE') . '/' . $bast['file_dokumen_bast']; }
         }
+
+        $info = array('dikirimAt' => '', 'dikirimOleh' => '', 'dibukaHumas' => '');
+        if (!empty($bast['dikirim_at'])) {
+            $info['dikirimAt'] = date('d-m-Y H:i', strtotime((string) $bast['dikirim_at']));
+            if (!empty($bast['dikirim_oleh'])) {
+                try {
+                    $u = $this->db->exec('SELECT nama_user FROM tb_arsipuser WHERE id_user = ? LIMIT 1', array(1 => (int) $bast['dikirim_oleh']));
+                    $info['dikirimOleh'] = !empty($u) ? (string) $u[0]['nama_user'] : '';
+                } catch (\Throwable $e) {}
+            }
+        }
+        if (!empty($bast['dibuka_humas_at'])) { $info['dibukaHumas'] = date('d-m-Y H:i', strtotime((string) $bast['dibuka_humas_at'])); }
 
         $data = array(
             'order' => array('id' => $orderId, 'nomor' => (string) ($order['nomor_order'] ?? $orderId), 'perusahaan' => (string) ($order['nama_perusahaan'] ?? '')),
             'status' => $status,
+            'mode' => $mode,
+            'boleh' => array_values($boleh),
+            'aksi' => $aksi,
+            'terkunci' => $terkunci,
+            'info' => $info,
+            'kembaliUrl' => $f3->get('BASE') . $urlKembali,
             'nomorTerbit' => $nomorTerbit,
             'pksAda' => (bool) $pks,
             'vals' => $v,
@@ -114,12 +145,10 @@ class BastController extends Controller {
         );
         $f3->set('bast_json', json_encode($data, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP));
         $f3->set('order', $order);
+        $f3->set('bast_kembali', $f3->get('BASE') . $urlKembali);
 
-        // Audit Tahap 9: BAST dibuka/dikelola Tim Mitra (First Time Only)
-        $sessionUser = $f3->get('SESSION.user') ?? [];
-        $userId = (int)($sessionUser['id'] ?? ($this->getUserId() ?? 0));
-        $userNama = $sessionUser['nama'] ?? ($sessionUser['nama_lengkap'] ?? 'Tim Mitra');
-        if ($userId > 0 && $orderId > 0) {
+        // Audit Tahap 9: BAST dibuka Tim Mitra / Superadmin (First Time Only)
+        if ($userId > 0 && $orderId > 0 && ($this->isTimMitra() || $this->isSuperadmin())) {
             \StageAudit::recordDibaca($this->db, $orderId, 9, $userId, $userNama, 'Tim Mitra');
             try {
                 $hasLogged = $this->db->exec(
@@ -135,14 +164,67 @@ class BastController extends Controller {
         $this->render('bast/form.html', "Berita Acara Serah Terima - Order #{$order['nomor_order']}", 'order');
     }
 
-    /** POST /order/@id/bast/draft */
-    public function simpanBast($f3, $params) {
-        $this->prosesSimpan($f3, (int)($params['id'] ?? 0), false);
+    /* ---------- peran dan hak edit ---------- */
+
+    /** penuh = Superadmin; humas = Humas / Admin PKS; katim = Ketua Tim layanan order ini; lihat = selain itu (termasuk Tim Mitra). */
+    protected function modeBast(array $order) {
+        if ($this->isSuperadmin()) { return 'penuh'; }
+        $role = (string) $this->getUserRole();
+        if ($role === 'humas' || $role === 'admin_kontrak') { return 'humas'; }
+        if ($this->isKetuaTim() && $this->isKetuaTimForOrder($order)) { return 'katim'; }
+        return 'lihat';
     }
 
-    /** POST /order/@id/bast/selesai */
+    /** Isian yang boleh diubah mode ini pada status BAST ini ('berkas' = unggah BAST bertanda tangan). Selain itu terkunci. */
+    protected function bolehEdit($mode, $st, $bast) {
+        if ($mode === 'penuh') {
+            return array('nomorUrut', 'tanggal', 'perusahaan', 'alamat', 'ttdNama', 'ttdJabatan', 'judul', 'pksNomor', 'pksTanggal', 'keduaNama', 'keduaJabatan', 'keduaNip', 'mengetahuiNama', 'mengetahuiJabatan', 'berkas');
+        }
+        if ($mode === 'katim' && $st === \OptiBast::ST_DRAF) {
+            $b = array('keduaJabatan', 'keduaNip');
+            if (!$bast || trim((string) ($bast['pihak_kedua_nama'] ?? '')) === '') { $b[] = 'keduaNama'; }   // belum ada Ketua Tim terdaftar: diketik sendiri
+            return $b;
+        }
+        if ($mode === 'humas' && ($st === \OptiBast::ST_KIRIM || $st === \OptiBast::ST_SELESAI)) {
+            return array('nomorUrut', 'mengetahuiNama', 'mengetahuiJabatan', 'berkas');
+        }
+        return array();
+    }
+
+    /** Tombol aksi yang berlaku untuk mode + status ini. */
+    protected function aksiBoleh($mode, $st) {
+        $a = array('draft' => false, 'kirim' => false, 'selesai' => false);
+        if ($mode === 'penuh') { $a['draft'] = true; $a['selesai'] = true; }
+        elseif ($mode === 'katim' && $st === \OptiBast::ST_DRAF) { $a['draft'] = true; $a['kirim'] = true; }
+        elseif ($mode === 'humas' && ($st === \OptiBast::ST_KIRIM || $st === \OptiBast::ST_SELESAI)) { $a['draft'] = true; $a['selesai'] = true; }
+        return $a;
+    }
+
+    /** Baris opti_bast -> nilai isian form (kunci sama dengan input form). */
+    protected function nilaiDariBast(array $b) {
+        $peta = array('nomorUrut' => 'nomor_urut', 'perusahaan' => 'pihak_pertama_perusahaan', 'alamat' => 'pihak_pertama_alamat', 'ttdNama' => 'pihak_pertama_nama',
+                      'ttdJabatan' => 'pihak_pertama_jabatan', 'judul' => 'judul_pekerjaan', 'pksNomor' => 'pks_nomor', 'keduaNama' => 'pihak_kedua_nama',
+                      'keduaJabatan' => 'pihak_kedua_jabatan', 'keduaNip' => 'pihak_kedua_nip', 'mengetahuiNama' => 'mengetahui_nama', 'mengetahuiJabatan' => 'mengetahui_jabatan');
+        $h = array();
+        foreach ($peta as $id => $kol) { $h[$id] = isset($b[$kol]) ? (string) $b[$kol] : ''; }
+        $h['tanggal']    = !empty($b['tanggal_bast']) ? substr((string) $b['tanggal_bast'], 0, 10) : '';
+        $h['pksTanggal'] = !empty($b['pks_tanggal']) ? substr((string) $b['pks_tanggal'], 0, 10) : '';
+        return $h;
+    }
+
+    /** POST /order/@id/bast/draft */
+    public function simpanBast($f3, $params) {
+        $this->prosesSimpan($f3, (int)($params['id'] ?? 0), 'draft');
+    }
+
+    /** POST /order/@id/bast/kirim : Ketua Tim mengirim BAST ke Humas (menunggu nomor). */
+    public function kirimBast($f3, $params) {
+        $this->prosesSimpan($f3, (int)($params['id'] ?? 0), 'kirim');
+    }
+
+    /** POST /order/@id/bast/selesai : Humas memberi nomor (BAST selesai). */
     public function selesaiBast($f3, $params) {
-        $this->prosesSimpan($f3, (int)($params['id'] ?? 0), true);
+        $this->prosesSimpan($f3, (int)($params['id'] ?? 0), 'selesai');
     }
 
     /** GET /order/@id/bast/cek-nomor?urut=12&tanggal=2026-10-21 : bentrok kalau urut + bulan + tahun sama dengan BAST lain. */
@@ -221,35 +303,55 @@ class BastController extends Controller {
     }
 
     /**
-     * Simpan BAST (draft atau selesai). Selesai: nomor didaftarkan (bast_nomor_urut), BAST berstatus selesai,
-     * dan order otomatis ditutup (Order Selesai) lewat OptiBast::tutupOrder.
+     * Simpan BAST. $aksi: 'draft' (simpan), 'kirim' (Ketua Tim -> Humas), 'selesai' (Humas memberi nomor).
+     * Selesai: nomor didaftarkan (bast_nomor_urut), BAST berstatus selesai, dan order otomatis ditutup (Order Selesai) lewat OptiBast::tutupOrder
+     * (kelanjutan setelah Humas memberi nomor belum diputuskan, jadi perilaku lama dipertahankan).
+     * Isian yang boleh diubah dibatasi menurut peran (bolehEdit); isian lain selalu diambil dari data tersimpan, bukan dari kiriman form.
      */
-    protected function prosesSimpan($f3, $orderId, $final) {
-        $this->izinkanJson('order:edit');
+    protected function prosesSimpan($f3, $orderId, $aksi) {
+        $this->izinkanJson('order:view');
         \OptiBast::pastikanSkema($this->db);
 
         $orderModel = new OrderLayanan($this->db);
         $order = $orderModel->getDetail($orderId);
         if (!$order) { $this->json(array('ok' => false, 'pesan' => "Order #{$orderId} tidak ditemukan."), 404); }
 
-        if (!$this->isTimMitra() && !$this->isAdminOrder() && !$this->isSuperadmin()) {
-            $this->json(array('ok' => false, 'pesan' => 'Akses ditolak: pengelolaan BAST hanya dapat dilakukan oleh Tim Mitra Industri.'), 403);
-        }
-
+        $final = ($aksi === 'selesai');
+        $kirim = ($aksi === 'kirim');
         $bastModel = new OptiBast($this->db);
         $lama = $bastModel->getByOrderId($orderId);
-        $statusOrder = strtolower(trim((string) ($order['status'] ?? '')));
-        $statusLama  = strtolower(trim((string) ($lama['status_bast'] ?? '')));
-        if (($statusOrder === 'selesai' || (!empty($lama) && in_array($statusLama, array('disetujui', 'selesai', 'terbit'), true))) && !$this->canEditSubmittedData(true, $orderId)) {
-            $this->json(array('ok' => false, 'pesan' => 'Dokumen BAST / Order sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.'), 423);
-        }
-        if (empty($lama) && !$this->poTtdSudahDiunggah($orderId) && !$this->canEditSubmittedData(true, $orderId)) {
-            $this->json(array('ok' => false, 'pesan' => 'BAST belum bisa dibuat: upload dulu PO bertanda tangan, lalu tunggu Humas membuat PKS.'), 409);
-        }
-        if ($lama && $lama['status_bast'] === 'selesai') { $final = true; }   // BAST yang sudah selesai tidak kembali jadi draft
+        $mode = $this->modeBast($order);
+        $statusLama = $lama ? strtolower(trim((string) ($lama['status_bast'] ?? ''))) : '';
 
+        if (!$lama) {
+            if ($mode !== 'penuh') { $this->json(array('ok' => false, 'pesan' => 'BAST belum tersedia. BAST dibuat otomatis setelah PO bertanda tangan, PKS, dan Laporan Akhir selesai.'), 409); }
+            if (!$this->poTtdSudahDiunggah($orderId) && !$this->canEditSubmittedData(true, $orderId)) {
+                $this->json(array('ok' => false, 'pesan' => 'BAST belum bisa dibuat: upload dulu PO bertanda tangan, lalu tunggu Humas membuat PKS.'), 409);
+            }
+        }
+        if ($statusLama === \OptiBast::ST_SELESAI && !$this->canEditSubmittedData(true, $orderId)) {
+            $this->json(array('ok' => false, 'pesan' => 'Dokumen BAST sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.'), 423);
+        }
+        $aksiOk = $this->aksiBoleh($mode, $statusLama);
+        if (empty($aksiOk[$aksi])) {
+            if ($mode === 'lihat') { $pesan = 'Anda tidak punya akses untuk mengubah BAST ini.'; }
+            elseif ($mode === 'katim' && $statusLama !== \OptiBast::ST_DRAF) { $pesan = 'BAST ini sudah dikirim ke Humas dan tidak bisa diubah lagi oleh Ketua Tim.'; }
+            elseif ($mode === 'humas') { $pesan = 'BAST ini belum dikirim Ketua Tim, jadi Humas belum bisa memberi nomor.'; }
+            else { $pesan = 'Tindakan ini tidak tersedia untuk peran Anda pada BAST ini.'; }
+            $this->json(array('ok' => false, 'pesan' => $pesan), 403);
+        }
+        if ($statusLama === \OptiBast::ST_SELESAI) { $final = true; $kirim = false; }   // BAST yang sudah selesai tidak kembali jadi draft
+
+        // ---- isian: hanya yang boleh diubah peran ini yang diambil dari form ----
+        $boleh = $this->bolehEdit($mode, $statusLama, $lama);
+        $post = $this->bacaInput($f3);
+        if ($lama) {
+            $v = $this->nilaiDariBast($lama);
+            foreach ($boleh as $id) { if (array_key_exists($id, $post)) { $v[$id] = $post[$id]; } }
+        } else {
+            $v = $post;
+        }
         $pks = $this->ambilPks($orderId);
-        $v = $this->bacaInput($f3);
         if ($pks) {   // data dari PKS dikunci, tidak bisa diubah lewat form
             $v['perusahaan'] = $this->namaPerusahaan($pks, $order);
             $v['alamat']     = $this->teksPolos($pks['alamat_perusahaan']);
@@ -259,11 +361,14 @@ class BastController extends Controller {
             $v['pksNomor']   = (string) $pks['nomor_pks'];
             $v['pksTanggal'] = $pks['tanggal_perjanjian'] ? substr((string) $pks['tanggal_perjanjian'], 0, 10) : '';
         }
+        if ($mode === 'humas') {   // tanggal BAST = hari Humas memberi nomor (BAST yang sudah selesai tetap pada tanggalnya)
+            $v['tanggal'] = ($statusLama === \OptiBast::ST_SELESAI && $this->tanggalValid((string) $v['tanggal']) !== '') ? $v['tanggal'] : date('Y-m-d');
+        }
         if ($v['tanggal'] === '') { $v['tanggal'] = date('Y-m-d'); }
 
-        if ($final) {
+        if ($final || $kirim) {
             $kosong = array(); $label = array();
-            foreach (self::WAJIB as $id => $lbl) {
+            foreach (($final ? self::WAJIB : self::WAJIB_KIRIM) as $id => $lbl) {
                 if (trim((string) $v[$id]) === '') { $kosong[] = $id; $label[] = $lbl; }
             }
             if ($kosong) {
@@ -271,10 +376,10 @@ class BastController extends Controller {
             }
         }
 
-        // ---- berkas BAST bertanda tangan (opsional) ----
+        // ---- berkas BAST bertanda tangan (opsional, Humas / Superadmin) ----
         $fileDokumen = $lama ? ($lama['file_dokumen_bast'] ?: null) : null;
         $fileBaru = null;
-        if (!empty($_FILES['file_bast']['name']) && (int) $_FILES['file_bast']['error'] === UPLOAD_ERR_OK) {
+        if (in_array('berkas', $boleh, true) && !empty($_FILES['file_bast']['name']) && (int) $_FILES['file_bast']['error'] === UPLOAD_ERR_OK) {
             $ext = strtolower(pathinfo($_FILES['file_bast']['name'], PATHINFO_EXTENSION));
             if (!in_array($ext, array('pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg'), true) || (int) $_FILES['file_bast']['size'] > 10 * 1024 * 1024) {
                 $this->json(array('ok' => false, 'pesan' => 'Berkas BAST harus PDF, DOC, DOCX, JPG, atau PNG dan maksimal 10 MB.'), 422);
@@ -304,6 +409,7 @@ class BastController extends Controller {
             $nomorBast = ($lama && strpos((string) $lama['nomor_bast'], 'DRAFT-') === 0) ? (string) $lama['nomor_bast'] : ('DRAFT-' . $orderId);
         }
 
+        $statusBaru = $final ? \OptiBast::ST_SELESAI : ($kirim ? \OptiBast::ST_KIRIM : ($statusLama === \OptiBast::ST_KIRIM ? \OptiBast::ST_KIRIM : \OptiBast::ST_DRAF));
         $uid = (int) ($this->getUserId() ?? 0);
         try {
             $bastId = $bastModel->simpanFormulir(array(
@@ -315,7 +421,7 @@ class BastController extends Controller {
                 'pihak_kedua_nama' => $v['keduaNama'], 'pihak_kedua_jabatan' => $v['keduaJabatan'], 'pihak_kedua_nip' => $v['keduaNip'],
                 'judul_pekerjaan' => $v['judul'], 'mengetahui_nama' => $v['mengetahuiNama'], 'mengetahui_jabatan' => $v['mengetahuiJabatan'],
                 'pks_nomor' => $v['pksNomor'], 'pks_tanggal' => $v['pksTanggal'] !== '' ? $v['pksTanggal'] : null,
-                'file_dokumen_bast' => $fileDokumen, 'status_bast' => $final ? 'selesai' : 'draft',
+                'file_dokumen_bast' => $fileDokumen, 'status_bast' => $statusBaru,
             ), $lama ? (int) $lama['id'] : null);
         } catch (\Throwable $e) {
             if ($fileBaru) { @unlink($fileBaru); }
@@ -324,7 +430,14 @@ class BastController extends Controller {
             $this->json(array('ok' => false, 'pesan' => 'Gagal menyimpan BAST. Detail: ' . $e->getMessage()), 500);
         }
 
-        $pertamaKali = !($lama && $lama['status_bast'] === 'selesai');
+        $unama = (string) ($_SESSION['nama_lengkap'] ?? 'Pengguna');
+        if ($kirim) {
+            try { $bastModel->tandaiDikirim($bastId, $uid); } catch (\Throwable $e) { error_log('[BAST] tandaiDikirim: ' . $e->getMessage()); }
+            try { $this->logActivity($orderId, 'bast', 'kirim_bast_humas', 'Kirim BAST ke Humas (menunggu nomor)'); } catch (\Throwable $e) {}
+            $this->kabariHumasBast($order, $unama);
+        }
+
+        $pertamaKali = !($lama && $statusLama === \OptiBast::ST_SELESAI);
         if ($final) {
             try {
                 $this->logActivity($orderId, 'bast', 'terbitkan_bast', ($pertamaKali ? 'Terbitkan' : 'Perbarui') . " BAST No. {$nomorBast} (Selesai)");
@@ -351,19 +464,77 @@ class BastController extends Controller {
                             'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua', 'judul' => 'BAST Resmi Diterbitkan',
                             'pesan' => "Dokumen BAST No. {$nomorBast} untuk Order #{$order['nomor_order']} {$order['nama_perusahaan']} telah berhasil diterbitkan.",
                             'tipe' => 'success', 'icon' => 'bi-file-earmark-check-fill', 'link_url' => "/order/{$orderId}",
-                            'created_by' => (int) $this->getUserId(), 'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra',
+                            'created_by' => (int) $this->getUserId(), 'created_by_name' => $unama,
                         ));
                     } catch (\Throwable $e) {}
                 }
             }
         }
 
+        $statusKeluar = $final ? 'selesai' : ($statusBaru === \OptiBast::ST_KIRIM ? 'dikirim' : 'draft');
         $this->json(array(
-            'ok' => true, 'status' => $final ? 'selesai' : 'draft', 'nomor_bast' => $final ? $nomorBast : '',
+            'ok' => true, 'status' => $statusKeluar, 'nomor_bast' => $final ? $nomorBast : '',
             'nomor_terbit' => (bool) $final,
             'fileUrl' => $fileDokumen ? ($f3->get('BASE') . '/' . $fileDokumen) : '',
-            'redirect' => $f3->get('BASE') . '/order/' . $orderId,
+            'redirect' => $f3->get('BASE') . ($mode === 'humas' ? '/humas/bast?tab=selesai' : '/order/' . $orderId),
         ));
+    }
+
+    /** Beri tahu Humas (lonceng) bahwa Ketua Tim mengirim BAST. Gagal kirim tidak menggagalkan penyimpanan. */
+    protected function kabariHumasBast($order, $pengirim) {
+        $orderId = (int) $order['id'];
+        try {
+            \NotificationService::send($this->db, array(
+                'order_id' => $orderId, 'target_role' => 'humas', 'target_layanan' => 'semua',
+                'judul' => 'BAST Menunggu Nomor',
+                'pesan' => 'Ketua Tim ' . $pengirim . ' mengirim BAST Order #' . (string) ($order['nomor_order'] ?? $orderId) . ' ' . (string) ($order['nama_perusahaan'] ?? '') . '. Isi nomor urut dan pilih pejabat yang mengetahui.',
+                'tipe' => 'primary', 'icon' => 'bi-file-earmark-text', 'link_url' => '/humas/bast',
+                'created_by' => (int) ($this->getUserId() ?? 0), 'created_by_name' => $pengirim,
+            ));
+        } catch (\Throwable $e) {
+            error_log('[BAST] notifikasi Humas gagal: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Halaman BAST di menu Humas: daftar BAST yang sudah dikirim Ketua Tim (Perlu Nomor) dan yang sudah selesai.
+     * Route: GET /humas/bast
+     */
+    public function halamanHumas($f3) {
+        $this->requireAuth();
+        $role = (string) $this->getUserRole();
+        if (!$this->isSuperadmin() && $role !== 'humas' && $role !== 'admin_kontrak') {
+            $f3->error(403, 'Halaman BAST hanya untuk Humas, Admin PKS, dan Superadmin.');
+            exit;
+        }
+        \OptiBast::pastikanSkema($this->db);
+        $base = (string) $f3->get('BASE');
+        $petakan = function ($rows) use ($base) {
+            $h = array();
+            foreach ($rows as $r) {
+                $oid = (int) $r['order_id'];
+                $h[] = array(
+                    'id' => (int) $r['id'], 'order_id' => $oid, 'nomor_order' => (string) $r['nomor_order'],
+                    'perusahaan' => (string) $r['pihak_pertama_perusahaan'], 'judul' => (string) $r['judul_pekerjaan'],
+                    'layanan' => ucwords(str_replace('_', ' ', (string) $r['jenis_layanan_opti'])),
+                    'katim' => (string) $r['pihak_kedua_nama'], 'pengirim' => (string) ($r['pengirim'] ?? ''),
+                    'pks_nomor' => (string) $r['pks_nomor'],
+                    'dikirim_at' => !empty($r['dikirim_at']) ? (string) $r['dikirim_at'] : '',
+                    'dibuka_at' => !empty($r['dibuka_humas_at']) ? (string) $r['dibuka_humas_at'] : '',
+                    'nomor_bast' => (string) $r['nomor_bast'],
+                    'tanggal_bast' => !empty($r['tanggal_bast']) ? substr((string) $r['tanggal_bast'], 0, 10) : '',
+                    'url_isi' => $base . '/order/' . $oid . '/bast/buat',
+                    'url_unduh' => $base . '/order/' . $oid . '/bast/unduh',
+                    'url_order' => $base . '/order/' . $oid,
+                );
+            }
+            return $h;
+        };
+        $data = array('perlu' => $petakan(\OptiBast::daftarHumas($this->db, \OptiBast::ST_KIRIM)), 'selesai' => $petakan(\OptiBast::daftarHumas($this->db, \OptiBast::ST_SELESAI)));
+        $tab = (string) $f3->get('GET.tab');
+        $f3->set('bast_humas_json', json_encode($data, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP));
+        $f3->set('bast_humas_tab', json_encode($tab === 'selesai' ? 'selesai' : 'perlu'));
+        $this->render('humas/bast.html', 'BAST', 'bast_humas');
     }
 
     /** Notifikasi ke Tim Mitra dan Ketua Tim layanan order ini. Gagal kirim tidak menggagalkan penyimpanan. */
@@ -550,6 +721,9 @@ class BastController extends Controller {
             if (!$this->poTtdSudahDiunggah($orderId) && !$this->canEditSubmittedData(true, $orderId)) {
                 throw new \Exception('Order belum bisa ditutup: upload dulu PO yang sudah ditandatangani, lalu tunggu Humas membuat kontrak (Tahap 8).');
             }
+            if ($bast && $statusBast !== 'selesai' && !$this->isSuperadmin()) {
+                throw new \Exception('Order belum bisa ditutup: BAST belum diberi nomor oleh Humas.');
+            }
 
             if (!$bast) {
                 // Buat BAST otomatis jika belum ada sebelum closing
@@ -653,6 +827,21 @@ class BastController extends Controller {
                 return false;
             }
         }
-        return !empty($r[0]['po_ttd_file']) && !empty($r[0]['kontrak_dibuat_at']);
+        return !empty($r[0]['po_ttd_file']) && !empty($r[0]['kontrak_dibuat_at']) && $this->laporanAkhirSelesai($orderId);
+    }
+
+    /**
+     * LAPORAN AKHIR (ditambahkan Kaa): syarat BAST berikutnya, tahap Laporan Akhir (di antara PKS dan BAST) sudah diselesaikan
+     * (file laporan boleh kosong). Order lama (sudah berstatus selesai / pelaksanaan selesai) tidak dikunci.
+     */
+    protected function laporanAkhirSelesai($orderId) {
+        try {
+            \OrderLayanan::ensureColumns($this->db);
+            $r = $this->db->exec('SELECT status, status_pelaksanaan, laporan_akhir_selesai_at FROM order_layanan WHERE id = ? LIMIT 1', array(1 => (int) $orderId));
+        } catch (\Throwable $e) {
+            return false;
+        }
+        if (empty($r)) { return false; }
+        return !empty($r[0]['laporan_akhir_selesai_at']) || ($r[0]['status'] ?? '') === 'selesai' || ($r[0]['status_pelaksanaan'] ?? '') === 'laporan_selesai';
     }
 }

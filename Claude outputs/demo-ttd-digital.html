@@ -1,0 +1,77 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Demo TTD digital pada PO</title><style>
+:root{--bg:#f1f5f9;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--pri:#334155;--ok:#15803d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,'Segoe UI',Arial,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 48px}h1{font-size:1.25rem;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px;align-items:start}@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}.card h2{font-size:1rem;margin:0 0 4px}.card p.d{margin:0 0 12px;color:var(--muted);font-size:.85rem}
+.btn{border:1.5px solid var(--pri);background:#fff;color:var(--pri);font:inherit;font-weight:700;padding:7px 14px;border-radius:9px;cursor:pointer}.btn.on{background:var(--pri);color:#fff}.btn.pri{background:var(--pri);color:#fff}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}.lbl{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:10px 0 6px}
+.drop{display:block;border:2px dashed #94a3b8;border-radius:12px;padding:14px;text-align:center;color:var(--muted);cursor:pointer}
+.chk{background-image:linear-gradient(45deg,#e5e7eb 25%,transparent 25%),linear-gradient(-45deg,#e5e7eb 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e5e7eb 75%),linear-gradient(-45deg,transparent 75%,#e5e7eb 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;height:110px}
+.chk img{max-height:100px;max-width:100%}input[type=range]{width:100%}.hint{font-size:.8rem;color:var(--muted)}
+.paper{transition:filter .2s}body.cetak .paper{filter:grayscale(1) contrast(1.1)}body.cetak .layar{display:none!important}
+.ok{color:var(--ok);font-weight:700}
+
+.sheet{position:relative;background:#fff;color:#000;font-family:'Times New Roman',Times,serif;font-size:13px;padding:26px 30px 24px;border:1px solid #cbd5e1;box-shadow:0 1px 8px rgba(15,23,42,.1)}
+.sheet .lorem{color:#333;font-size:12px;text-align:justify;margin:0 0 10px}
+.ptd{margin-top:12px;font-weight:700}
+.ptd .tgl{text-align:right;font-weight:400;margin-bottom:10px}
+.ptd table{width:100%;border-collapse:collapse;table-layout:fixed;border:0}
+.ptd td{border:0;padding:0;vertical-align:top;text-align:center;font-weight:700}
+.ptd .gap{height:84px;position:relative;vertical-align:middle}
+.ptd .nm{text-decoration:underline}
+.ptd .ttd{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:70px;max-width:92%}
+.ptd .cap{position:absolute;left:60%;top:64%;transform:translate(-50%,-50%) rotate(-9deg);display:inline-block;border:2px solid #5b9a74;color:#5b9a74;font:700 13px/1.2 Arial,sans-serif;letter-spacing:2px;padding:2px 9px;background:rgba(255,255,255,.35)}
+.ptd .meng{margin-top:14px}
+.ptd .qrspace{border:1.5px dashed #94a3b8;color:#64748b;font:400 10px/1.3 Arial,sans-serif;width:150px;height:62px;margin:0 auto;display:flex;align-items:center;justify-content:center;text-align:center}
+.ptd .kecil{font:400 9px/1.3 Arial,sans-serif;color:#555;margin-top:4px}
+
+</style></head><body><div class="wrap">
+<h1>Demo: TTD digital pada PO</h1>
+<p class="sub">Kiri: halaman upload TTD di profil (latar putih dihapus otomatis). Kanan: dokumen PO di layar (TTD + cap APPROVE) dan saat dicetak (hanya TTD). Nama dan data hanya contoh.</p>
+<div class="grid">
+ <section class="card"><h2>Profil Saya &rsaquo; Tanda Tangan</h2><p class="d">Upload sekali, dipakai di semua dokumen yang kamu approve.</p>
+  <label class="drop" id="drop"><input type="file" id="file" accept="image/*" hidden><b>Klik untuk pilih foto TTD</b><br><span class="hint">Foto tanda tangan di kertas putih (PNG/JPG)</span></label>
+  <div class="row" style="margin-top:8px"><button class="btn" id="contoh">Pakai TTD contoh</button><button class="btn" id="reset">Kembali ke contoh awal</button></div>
+  <div class="lbl">Pembersihan latar otomatis</div><input type="range" id="thr" min="120" max="250" value="215"><div class="hint">Geser kalau sisa latar masih terlihat atau goresan TTD terpotong.</div>
+  <div class="lbl">Hasil (latar transparan)</div><div class="chk"><img id="prev" alt="Hasil TTD"></div>
+  <p class="hint" style="margin-top:8px">Disimpan di folder privat (bukan publik) dan resolusinya diperkecil. Baru tampil di dokumen setelah kamu menekan Approve.</p></section>
+ <section class="card"><h2>Dokumen PO</h2><p class="d">Pilih keadaan dokumen dan mode tampilan.</p>
+  <div class="row"><span class="hint" style="min-width:64px">Keadaan:</span><button class="btn" data-s="0">Belum approve</button><button class="btn" data-s="1">Katim approve</button><button class="btn on" data-s="2">Katim + PPK approve</button></div>
+  <div class="row"><span class="hint" style="min-width:64px">Tampilan:</span><button class="btn on" id="mL">Di layar</button><button class="btn" id="mC">Saat dicetak</button><span class="hint" id="note"></span></div>
+  <div class="paper sheet"><p class="lorem">Demikian Purchase Order ini dibuat untuk dilaksanakan sebagaimana mestinya.</p><div id="ttdhost"></div></div>
+ </section></div></div>
+<script>
+var SIG_PPK='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgMTEwIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiMxMTE4MjciIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KPHBhdGggZD0iTTIyIDg0IEMzMCAzMCA0MCAxNiA1MiAyMCBDNjAgMjQgNTAgNTYgNDQgNzAgQzcwIDQwIDk0IDMwIDEwNCAzOCBDMTEyIDQ2IDkwIDcwIDEwMCA3NCBDMTIwIDc4IDEyOCAzNiAxNDIgMzQgQzE1MiAzNCAxNDIgNjYgMTU0IDcwIEMxNzAgNzQgMTkwIDQ2IDIwMiA1MCBDMjEwIDU0IDIwMCA3MCAyMTQgNzIiLz4KPHBhdGggZD0iTTYwIDU4IEMxMDAgNzAgMTUwIDYyIDIwNiA4MCIgc3Ryb2tlLXdpZHRoPSIyLjIiLz48cGF0aCBkPSJNMTUwIDIyIEMxNzAgMTAgMTk2IDE2IDIwNiAzMCIgc3Ryb2tlLXdpZHRoPSIyLjIiLz48L2c+PC9zdmc+', SIG_KATIM='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgMTEwIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiMxZTNhOGEiIHN0cm9rZS13aWR0aD0iMy4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgo8cGF0aCBkPSJNMTQgNzggQzIwIDQwIDM0IDE4IDQ0IDIyIEM1NCAyOCAzNiA3MCAzMCA4OCBDNDYgNjQgNjIgNDAgNzIgNDQgQzgwIDQ4IDY2IDc0IDcyIDc2IEM4NCA3NiA5NiA1MCAxMDYgNTIgQzExMiA1NCAxMDQgNzIgMTEyIDcyIEMxMzAgNzAgMTQwIDQwIDE1MCA0NCBDMTYwIDUwIDE0MCA4NCAxNTggNzggQzE3NiA3MCAxOTYgNDAgMjA2IDQ2IEMyMTQgNTIgMTk2IDgyIDIyNiA2NiIvPgo8cGF0aCBkPSJNMjAgOTQgQzcwIDg2IDE0MCAxMDAgMjIyIDg4IiBzdHJva2Utd2lkdGg9IjIuNCIvPjwvZz48L3N2Zz4=', SIG_DEF='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgMTEwIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiMxZTNhOGEiIHN0cm9rZS13aWR0aD0iMy4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgo8cGF0aCBkPSJNMTQgNzggQzIwIDQwIDM0IDE4IDQ0IDIyIEM1NCAyOCAzNiA3MCAzMCA4OCBDNDYgNjQgNjIgNDAgNzIgNDQgQzgwIDQ4IDY2IDc0IDcyIDc2IEM4NCA3NiA5NiA1MCAxMDYgNTIgQzExMiA1NCAxMDQgNzIgMTEyIDcyIEMxMzAgNzAgMTQwIDQwIDE1MCA0NCBDMTYwIDUwIDE0MCA4NCAxNTggNzggQzE3NiA3MCAxOTYgNDAgMjA2IDQ2IEMyMTQgNTIgMTk2IDgyIDIyNiA2NiIvPgo8cGF0aCBkPSJNMjAgOTQgQzcwIDg2IDE0MCAxMDAgMjIyIDg4IiBzdHJva2Utd2lkdGg9IjIuNCIvPjwvZz48L3N2Zz4=', katim=SIG_DEF, state=2, cetak=false;
+var raw=null;
+function render(){
+  var kOn=state>=1, pOn=state>=2;
+  var h='<div class="ptd"><div class="tgl">Majalaya, &nbsp; November 2026</div>'+
+  '<table><tr><td style="width:45%"><div>Menyetujui,</div><div>Pejabat Pembuat Komitmen BLU</div></td><td style="width:10%">&nbsp;</td><td style="width:45%"><div>Pelaksana Kegiatan,</div><div>Ketua Tim Kerja</div></td></tr>'+
+  '<tr><td class="gap">'+(pOn?'<img class="ttd" src="'+SIG_PPK+'">'+(cetak?'':'<span class="cap">APPROVE</span>'):'')+'&nbsp;</td><td>&nbsp;</td><td class="gap">'+(kOn?'<img class="ttd" src="'+katim+'">'+(cetak?'':'<span class="cap">APPROVE</span>'):'')+'&nbsp;</td></tr>'+
+  '<tr><td><div class="nm">Nama PPK BLU</div><div>NIP. 19800101 200501 1 001</div></td><td>&nbsp;</td><td><div class="nm">Nama Ketua Tim</div><div>NIP. 19820202 200602 2 002</div></td></tr></table>'+
+  '<table class="meng"><tr><td style="width:15%">&nbsp;</td><td><div>Mengetahui,</div><div>Kepala Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa,</div><div style="height:66px;display:flex;align-items:center;justify-content:center">'+(cetak?'':'<div class="qrspace layar">ruang QR TTE<br>Kepala Balai</div>')+'</div><div class="nm">Nama Kepala Balai</div><div>NIP. 19750303 199903 1 003</div></td><td style="width:15%">&nbsp;</td></tr></table></div>';
+  document.getElementById('ttdhost').innerHTML=h;
+  document.body.classList.toggle('cetak',cetak);
+  document.getElementById('mL').classList.toggle('on',!cetak);document.getElementById('mC').classList.toggle('on',cetak);
+  document.getElementById('note').textContent=cetak?'Cap APPROVE tidak tercetak, hanya TTD.':'Cap APPROVE menimpa TTD (khusus layar).';
+  document.getElementById('prev').src=katim;
+}
+document.querySelectorAll('[data-s]').forEach(function(b){b.addEventListener('click',function(){state=+b.dataset.s;document.querySelectorAll('[data-s]').forEach(function(x){x.classList.toggle('on',x===b)});render();});});
+document.getElementById('mL').onclick=function(){cetak=false;render()};document.getElementById('mC').onclick=function(){cetak=true;render()};
+function proses(){
+  if(!raw){katim=SIG_DEF;render();return}
+  var c=document.createElement('canvas'),w=Math.min(600,raw.naturalWidth||raw.width),k=w/(raw.naturalWidth||raw.width);
+  c.width=w;c.height=Math.round((raw.naturalHeight||raw.height)*k);var x=c.getContext('2d');x.drawImage(raw,0,0,c.width,c.height);
+  var d=x.getImageData(0,0,c.width,c.height),p=d.data,t=+document.getElementById('thr').value;
+  for(var i=0;i<p.length;i+=4){var l=0.299*p[i]+0.587*p[i+1]+0.114*p[i+2];
+    if(l>=t){p[i+3]=0}else if(l>t-40){p[i+3]=Math.round(255*(t-l)/40)}
+    // goresan dibuat biru tua supaya seragam
+    if(p[i+3]>0){p[i]=30;p[i+1]=58;p[i+2]=138}}
+  x.putImageData(d,0,0);katim=c.toDataURL('image/png');render();
+}
+document.getElementById('file').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var im=new Image();im.onload=function(){raw=im;proses()};im.src=URL.createObjectURL(f);});
+document.getElementById('thr').addEventListener('input',proses);
+document.getElementById('contoh').onclick=function(){raw=null;katim=SIG_KATIM;render()};document.getElementById('reset').onclick=function(){raw=null;katim=SIG_DEF;render()};
+render();
+</script></body></html>

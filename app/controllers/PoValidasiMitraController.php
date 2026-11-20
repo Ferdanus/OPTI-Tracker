@@ -139,6 +139,48 @@ class PoValidasiMitraController extends Controller {
             $r['nama_katim']   = isset($peta[$idk]) ? $peta[$idk] : '';
             $hasil[] = $this->petakan($r);
         }
+        return $this->perkayaInfoOrder($hasil);
+    }
+
+    /**
+     * Info order untuk tabel yang disamakan dengan Daftar Order / Daftar PO: nomor permintaan, tanggal order, saluran permohonan, durasi dan Estimasi Biaya.
+     * Diambil dari model order yang sama dengan Daftar Order; kalau gagal, daftar tetap tampil tanpa info tambahan.
+     */
+    protected function perkayaInfoOrder(array $hasil) {
+        $info = [];
+        try {
+            $ids = [];
+            foreach ($hasil as $h) { if (!empty($h['order_id'])) { $ids[] = (int) $h['order_id']; } }
+            if ($ids) {
+                $model = new \OrderLayanan($this->db);
+                foreach ($model->allWithRelasi('', '', '', 'all', 'semua', 'all', array_values(array_unique($ids))) as $ro) { $info[(int) $ro['id']] = $ro; }
+            }
+        } catch (\Throwable $e) { $info = []; }
+        $petaMedia = [
+            'whatsapp' => ['WhatsApp', 'bi-chat-dots'], 'telepon' => ['Telepon', 'bi-telephone'], 'email' => ['E-mail', 'bi-envelope-at'],
+            'fax' => ['Fax', 'bi-printer'], 'datang_langsung' => ['Datang Langsung', 'bi-building'], 'website' => ['Website', 'bi-laptop'],
+        ];
+        foreach ($hasil as &$h) {
+            $ro = isset($info[(int) ($h['order_id'] ?? 0)]) ? $info[(int) $h['order_id']] : null;
+            $pm = $petaMedia[$ro ? (string) ($ro['media_permohonan'] ?? '') : ''] ?? ['Surat', 'bi-envelope-paper'];
+            $acuan = $ro ? (float) (($ro['estimasi_biaya'] ?? 0) ?: ($ro['biaya_po'] ?? 0)) : (float) ($h['nilai'] ?? 0);
+            $bayar = $ro ? (float) ($ro['total_terbayar'] ?? 0) : (float) ($h['terbayar'] ?? 0);
+            $lunas = $ro ? !empty($ro['bayar_lunas']) : !empty($h['lunas']);
+            $h['punya_info_order'] = $ro !== null;
+            $h['nomor_permintaan'] = $ro ? (string) ($ro['nomor_permintaan'] ?? '') : '';
+            $h['tanggal_order']    = ($ro && !empty($ro['tanggal_masuk'])) ? date('d/m/Y', strtotime($ro['tanggal_masuk'])) : '';
+            $h['media_label']      = $pm[0];
+            $h['media_icon']       = $pm[1];
+            $h['durasi_ditentukan'] = $ro ? !empty($ro['durasi_ditentukan']) : false;
+            $h['durasi_tampil']    = $ro ? (string) ($ro['durasi_tampil'] ?? '') : '';
+            $h['durasi_badge_class'] = $ro ? (string) ($ro['durasi_badge_class'] ?? '') : '';
+            $h['durasi_tooltip']   = $ro ? (string) ($ro['durasi_tooltip'] ?? '') : '';
+            $h['eb_acuan']         = number_format($acuan, 0, ',', '.');
+            $h['eb_terbayar']      = $bayar > 0 ? number_format($bayar, 0, ',', '.') : '';
+            $h['eb_lunas']         = $lunas;
+            $h['eb_sisa']          = (!$lunas && $bayar > 0 && $ro) ? number_format((float) ($ro['sisa_tagihan_order'] ?? 0), 0, ',', '.') : '';
+        }
+        unset($h);
         return $hasil;
     }
 

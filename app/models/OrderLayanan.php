@@ -74,7 +74,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 'unlocked_reason' => 'VARCHAR(255) NULL',
                 // durasi SPM (dipakai simpan proposal, penawaran, dan perhitungan jadwal); dibuat otomatis kalau belum ada di database
                 'spm_durasi_nilai' => 'INT(11) NULL',
-                'spm_durasi_satuan' => "VARCHAR(50) NULL DEFAULT 'Hari Kerja'"
+                'spm_durasi_satuan' => "VARCHAR(50) NULL DEFAULT 'Hari Kerja'",
+                // LAPORAN AKHIR (ditambahkan Kaa): tahap opsional di antara PKS dan BAST. Selesai = laporan_akhir_selesai_at terisi (file boleh kosong).
+                'laporan_akhir_file' => 'VARCHAR(255) NULL',
+                'laporan_akhir_nama' => 'VARCHAR(255) NULL',
+                'laporan_akhir_at' => 'DATETIME NULL',
+                'laporan_akhir_oleh' => 'VARCHAR(150) NULL',
+                'laporan_akhir_selesai_at' => 'DATETIME NULL',
+                'laporan_akhir_selesai_oleh' => 'VARCHAR(150) NULL'
             ];
             foreach ($cols as $col => $def) {
                 try {

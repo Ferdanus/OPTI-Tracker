@@ -2112,8 +2112,8 @@
                     </li>
                 </check>
 
-                <!-- Daftar PO Humas (verifikasi PO + Map Kendali) -- Sub Tim Humas (superadmin lewat menu Daftar PO di Pelaksanaan Teknis) -->
-                <check if="{{ @is_humas }}">
+                <!-- Daftar PO Humas: hanya untuk verifikasi PO Sertifikasi. PO OPTI dibaca Humas lewat menu PKS (tombol Lihat PO), jadi menu ini disembunyikan bila tidak ada PO Sertifikasi. -->
+                <check if="{{ @is_humas && @humas_po_sert_ada }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'po_humas' ? 'active' : '' }}" href="{{ @BASE }}/po-humas" title="Daftar PO Humas">
                             <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
@@ -2129,7 +2129,7 @@
               
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
-                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan || @is_tim_pengujian || @is_role_sertifikasi }}">
+                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_pjt_lingkungan || @is_keuangan || @is_tim_pengujian || @is_role_sertifikasi }}">
                     <li class="sidebar-section-label">Pelaksanaan Teknis</li>
                     
 
@@ -2167,7 +2167,7 @@
                             </a>
                         </li>
                     </check>
-                    <check if="{{ (@is_ketua_tim && @user_layanan == 'lingkungan') || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') }}">
+                    <check if="{{ (@is_ketua_tim && @user_layanan == 'lingkungan') || (@is_tim_kerja && @divisi_tim_kerja == 'lingkungan') || @is_pjt_lingkungan }}">
                         <li>
                             <a class="sidebar-link {{ @active_menu == 'po_lingkungan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan" title="Daftar Petunjuk Operasional">
                                 <i class="bi bi-clipboard-check"></i> <span>Daftar PO</span>
@@ -2262,6 +2262,17 @@
                             </check>
                         </a>
                     </li>
+                    <!-- BAST: daftar BAST yang dikirim Ketua Tim, Humas memberi nomor dan memilih pejabat yang mengetahui -->
+                    <check if="{{ @is_superadmin || @is_admin_kontrak || @is_humas }}">
+                        <li>
+                            <a class="sidebar-link {{ @active_menu == 'bast_humas' ? 'active' : '' }}" href="{{ @BASE }}/humas/bast" title="BAST: beri nomor dan pilih pejabat yang mengetahui">
+                                <i class="bi bi-patch-check"></i> <span>BAST</span>
+                                <check if="{{ @jumlah_notif_bast_humas > 0 }}">
+                                    <span class="badge rounded-pill ms-auto sidebar-notif-badge" style="font-size: 0.68rem; padding: 0.25em 0.6em; background-color: #e11d48; color: #ffffff;">{{ @jumlah_notif_bast_humas }}</span>
+                                </check>
+                            </a>
+                        </li>
+                    </check>
                     <!-- Superadmin: melihat menu PKS sebagaimana Tim Mitra (cetak, tanda tangan klien, upload) -->
                     <check if="{{ @is_superadmin }}">
                         <li>

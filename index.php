@@ -121,6 +121,18 @@ $f3->route('GET /logout', 'AuthController->logout');
 $f3->route('POST /logout', 'AuthController->logout');
 $f3->route('GET /profil', 'AuthController->profileGet');
 $f3->route('POST /profil/simpan', 'AuthController->profilePost');
+// ===== TTD DIGITAL (ditambahkan Kaa, mulai): tanda tangan gambar milik pengguna, dipakai di dokumen PO =====
+$f3->route('GET /profil/ttd/status', 'TtdPenggunaController->status');
+$f3->route('GET /profil/ttd/gambar', 'TtdPenggunaController->gambar');
+$f3->route('POST /profil/ttd/unggah', 'TtdPenggunaController->unggah');
+$f3->route('POST /profil/ttd/hapus', 'TtdPenggunaController->hapus');
+// ===== TTD DIGITAL (selesai) =====
+// ===== LAPORAN AKHIR (ditambahkan Kaa, mulai): Tahap 10 di antara PKS dan BAST, opsional =====
+$f3->route('POST /order/@id/laporan-akhir/unggah', 'LaporanAkhirController->unggah');
+$f3->route('POST /order/@id/laporan-akhir/hapus', 'LaporanAkhirController->hapus');
+$f3->route('POST /order/@id/laporan-akhir/selesai', 'LaporanAkhirController->selesai');
+$f3->route('GET /order/@id/laporan-akhir', 'LaporanAkhirController->lihat');
+// ===== LAPORAN AKHIR (selesai) =====
 
 $f3->route('GET /dashboard', 'DashboardOptiController->index');
 
@@ -303,6 +315,8 @@ $f3->route('POST /order/@id/bast/simpan', 'BastController->simpanBast');
 $f3->route('POST /order/@id/bast/tutup', 'BastController->tutupOrder');
 $f3->route('POST /order/@id/bast/draft', 'BastController->simpanBast');
 $f3->route('POST /order/@id/bast/selesai', 'BastController->selesaiBast');
+$f3->route('POST /order/@id/bast/kirim', 'BastController->kirimBast');
+$f3->route('GET /humas/bast', 'BastController->halamanHumas');
 $f3->route('GET /order/@id/bast/cek-nomor', 'BastController->cekNomor');
 $f3->route('GET /order/@id/bast/unduh', 'BastController->unduh');
 
@@ -467,6 +481,14 @@ $f3->route('POST /po-kegiatan/@id/catatan/@nid', 'PoReviewController->catatanAks
 $f3->route('POST /po-kegiatan/@id/minta-revisi', 'PoReviewController->mintaRevisi');
 $f3->route('POST /po-kegiatan/@id/kirim-revisi', 'PoReviewController->kirimRevisi');
 $f3->route('POST /po-kegiatan/@id/setujui', 'PoReviewController->setujui');
+$f3->route('POST /po-kegiatan/@id/libatkan-pjt', 'PoReviewController->libatkanPjt');   // Ketua Tim melibatkan PJT Lingkungan
+$f3->route('POST /po-kegiatan/@id/tarik-pjt', 'PoReviewController->tarikPjt');
+$f3->route('POST /po-kegiatan/@id/pjt-acc', 'PoReviewController->pjtAcc');   // PJT: ACC
+$f3->route('POST /po-kegiatan/@id/pjt-masukan', 'PoReviewController->pjtMasukan');
+$f3->route('POST /po-kegiatan/@id/pjt-catatan', 'PoReviewController->pjtCatatanTambah');   // PJT: tambah catatan per bagian (draf)
+$f3->route('POST /po-kegiatan/@id/pjt-catatan/@nid', 'PoReviewController->pjtCatatanHapus');   // PJT: hapus draf catatannya   // PJT: kirim masukan ke Ketua Tim
+$f3->route('GET /po-kegiatan/@id/baseline', 'PoReviewController->baseline');   // salinan PO terakhir yang ditinjau pengguna (tanda merah perubahan)
+$f3->route('POST /po-kegiatan/@id/pjt-tinjau', 'PoReviewController->tinjauPjt');   // Ketua Tim: masukan PJT sudah ditinjau
 $f3->route('POST /po-kegiatan/@id/buka-kembali', 'PoReviewController->bukaKembali');
 $f3->route('GET /po-kegiatan/@id/po-ttd', 'PoReviewController->lihatPoTtd');   // tab PO TTD di slide Ketua Tim / Ketua Pelaksana
 $f3->route('GET /po-kegiatan/@id/po-ttd-mitra', 'PoValidasiMitraController->lihatPoTtd');   // tab PO TTD di slide Tim Mitra
@@ -603,12 +625,14 @@ $f3->route('POST /push/unsubscribe', 'PushController->unsubscribe');
 $f3->route('GET /pks',               'PksKontrakController->index');
 $f3->route('GET /pks/@id/form',      'PksKontrakController->form');
 $f3->route('GET /pks/@id/po-ttd',    'PksKontrakController->poTtd');       // slide "Lihat PO": PO bertanda tangan milik kontrak ini
+$f3->route('POST /pks/@id/baca',     'PksKontrakController->baca');        // Humas membuka "Lihat PO" di daftar PKS: catat waktu baca (dipakai Map Kendali)
 $f3->route('GET /pks/@id/cek-nomor', 'PksKontrakController->cekNomor');   // cek bentrok nomor urut (urut + bulan + tahun) saat mengetik
 $f3->route('POST /pks/@id/simpan',   'PksKontrakController->simpan');
 $f3->route('POST /pks/@id/selesai',  'PksKontrakController->selesai');
 $f3->route('GET /pks/@id/unduh',     'PksKontrakController->unduh');
 $f3->route('GET /pks/@id/pdf',       'PksKontrakController->pdf');
 $f3->route('GET /pks/@id/logo',      'PksKontrakController->logo');
+$f3->route('POST /pks/@id/logo-link', 'PksKontrakController->logoLink');   // ambil logo klien dari link gambar
 
 // pks-mitra (menu PKS untuk Tim Mitra: lihat/cetak PKS dari Humas, upload PKS bertanda tangan klien)
 $f3->route('GET /pks-mitra',                'PksMitraController->index');

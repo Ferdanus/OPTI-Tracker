@@ -676,6 +676,8 @@ class PoRevisiPpkController extends Controller {
         if ((int) $diubah === 0) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Status PO sudah berubah. Muat ulang halaman.'], 409);
         }
+        // Bekukan gambar TTD PPK BLU untuk PO ini (dokumen lama tidak ikut berubah bila TTD akun diganti / pejabat berganti).
+        try { if (class_exists('PoTtdSnapshot')) { \PoTtdSnapshot::bekukan($this->db, (int) $po['id'], 'ppk'); } } catch (\Throwable $eSnap) { error_log('[PoTtdSnapshot] ' . $eSnap->getMessage()); }
 
         $this->pesan($po, $uid, 'katim', 'PPK BLU', 'memverifikasi PO.');
         $tujuan = self::idKatim($this->db, $po['jenis_layanan_opti']);

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo penanda approve di blok tanda tangan PO</title>
+<style>
+  :root { --bg:#f1f5f9; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --pri:#334155; --ok:#15803d; --okbg:#ecfdf3; --warn:#b45309; --warnbg:#fffbeb; --bad:#b91c1c; --badbg:#fef2f2; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui,'Segoe UI',Arial,sans-serif; }
+  .wrap { max-width:1180px; margin:0 auto; padding:20px 16px 48px; }
+  h1 { font-size:1.25rem; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 16px; }
+  .bar { position:sticky; top:0; z-index:5; background:var(--bg); padding:10px 0 12px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; border-bottom:1px solid var(--line); margin-bottom:18px; }
+  .seg { display:inline-flex; border:1.5px solid var(--pri); border-radius:10px; overflow:hidden; }
+  .seg button { border:0; background:#fff; color:var(--pri); font:inherit; font-weight:700; padding:8px 16px; cursor:pointer; }
+  .seg button.on { background:var(--pri); color:#fff; }
+  .hint { color:var(--muted); font-size:.85rem; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(480px,1fr)); gap:22px; }
+  @media (max-width:560px){ .grid { grid-template-columns:1fr; } }
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px 14px 16px; min-width:0; }
+  .card h2 { font-size:1rem; margin:0 0 2px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .tag { font-size:.7rem; font-weight:700; padding:2px 9px; border-radius:99px; border:1px solid; }
+  .tag.bad { color:var(--bad); background:var(--badbg); border-color:#fecaca; }
+  .tag.ok { color:var(--ok); background:var(--okbg); border-color:#bbf7d0; }
+  .tag.rec { color:#fff; background:var(--ok); border-color:var(--ok); }
+  .card p.d { margin:2px 0 10px; color:var(--muted); font-size:.85rem; }
+  .pros { margin:10px 0 0; font-size:.82rem; color:var(--muted); }
+  .pros b { color:var(--ink); }
+
+  /* ===== lembar dokumen (meniru blok PoTtd::htmlBlok: Menyetujui PPK BLU | Pelaksana Kegiatan, lalu Mengetahui Kepala Balai) ===== */
+  .sheet { position:relative; background:#fff; border:1px solid #cbd5e1; box-shadow:0 1px 6px rgba(15,23,42,.08); padding:22px 26px 20px; font-family:'Times New Roman',Times,serif; color:#000; font-size:12.5px; overflow:hidden; }
+  .sheet .lorem { color:#444; font-weight:400; text-align:justify; margin:0 0 10px; font-size:11.5px; }
+  .ptd { margin-top:10px; font-weight:700; }
+  .ptd .tgl { text-align:right; font-weight:400; margin-bottom:10px; }
+  .ptd table { width:100%; border-collapse:collapse; table-layout:fixed; border:0; }
+  .ptd td { border:0; padding:0; vertical-align:top; text-align:center; font-weight:700; }
+  .ptd .gap { height:62px; position:relative; }
+  .ptd .nm { text-decoration:underline; }
+  .ptd .nip { font-weight:700; }
+  .ptd .meng { margin-top:14px; }
+  .ptd .meng td { width:70%; }
+
+  /* A. baris teks elektronik */
+  .el { font-weight:400; font-size:9.5px; line-height:1.25; color:#14532d; border:1px solid #14532d; border-radius:3px; padding:3px 5px; margin:6px auto 0; max-width:92%; text-align:left; }
+  .el b { font-weight:700; }
+  /* B. cap SVG */
+  .cap { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(-8deg); width:88px; opacity:.9; }
+  .ptd.capmode .gap { height:100px; }
+  /* C. QR + nomor */
+  .qrbox { display:flex; gap:10px; align-items:center; margin-top:12px; padding-top:8px; border-top:1px dashed #94a3b8; font-weight:400; font-size:9.5px; line-height:1.3; text-align:left; }
+  .qrbox canvas, .qrbox svg { width:64px; height:64px; flex:none; image-rendering:pixelated; }
+  .qrbox .mono { font-family:'Courier New',monospace; font-weight:700; }
+  /* D. watermark DRAFT */
+  .wm { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .wm span { font:700 74px/1 Arial,sans-serif; letter-spacing:.12em; color:rgba(185,28,28,.16); transform:rotate(-24deg); border:6px solid rgba(185,28,28,.16); padding:4px 20px; }
+  /* Kondisi sekarang: tulisan APPROVE lewat CSS (hanya layar) */
+  .now-approve { position:absolute; left:50%; top:46%; transform:translate(-50%,-50%) rotate(-12deg); font:800 34px/1 Arial,sans-serif; letter-spacing:.08em; color:rgba(21,128,61,.55); border:5px solid rgba(21,128,61,.55); border-radius:8px; padding:4px 14px; pointer-events:none; }
+
+  /* ===== simulasi cetak: hitam-putih, tanpa latar, elemen khusus layar hilang ===== */
+  body.cetak .grid .sheet { filter:grayscale(1) contrast(1.15); background:#fff; box-shadow:none; }
+  body.cetak .screen-only { display:none !important; }
+  body.cetak .sheet { border-color:#000; }
+  .banner { display:none; font-size:.85rem; font-weight:600; color:var(--warn); background:var(--warnbg); border:1px solid #fde68a; padding:6px 12px; border-radius:8px; }
+  body.cetak .banner { display:block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Demo: penanda "approve" di blok tanda tangan PO Lingkungan</h1>
+  <p class="sub">Semua contoh memakai susunan yang sama dengan dokumen PO: Menyetujui PPK BLU (kiri), Pelaksana Kegiatan / Ketua Tim (kanan), lalu Mengetahui Kepala Balai. Nama dan data di bawah hanya contoh.</p>
+
+  <div class="bar">
+    <div class="seg" role="group" aria-label="Mode tampilan">
+      <button type="button" id="bLayar" class="on">Tampilan layar</button>
+      <button type="button" id="bCetak">Simulasi cetak</button>
+    </div>
+    <span class="banner" id="banner">Simulasi cetak: hitam-putih, tanpa latar, elemen khusus layar dihilangkan.</span>
+    <span class="hint">Klik "Simulasi cetak" untuk lihat mana yang bertahan di kertas.</span>
+  </div>
+
+  <div class="grid">
+
+    <!-- 0. Kondisi sekarang -->
+    <section class="card">
+      <h2>Sekarang <span class="tag bad">hilang saat print</span></h2>
+      <p class="d">Tulisan "APPROVE" digambar lewat CSS di layar saja.</p>
+      <div class="sheet">
+        <p class="lorem">… demikian Purchase Order ini dibuat untuk dilaksanakan sebagaimana mestinya.</p>
+        <div class="ptd" data-ttd></div>
+        <div class="now-approve screen-only">APPROVE</div>
+      </div>
+      <p class="pros"><b>Masalah:</b> menimpa area tanda tangan, dan tidak ikut ke versi cetak / PDF.</p>
+    </section>
+
+    <!-- A -->
+    <section class="card">
+      <h2>A. Baris teks elektronik <span class="tag ok">tercetak</span></h2>
+      <p class="d">Satu baris kecil di bawah tiap nama: siapa menyetujui dan kapan. Teks biasa, selalu ikut tercetak.</p>
+      <div class="sheet">
+        <p class="lorem">… demikian Purchase Order ini dibuat untuk dilaksanakan sebagaimana mestinya.</p>
+        <div class="ptd" data-ttd data-el="1"></div>
+      </div>
+      <p class="pros"><b>Kelebihan:</b> paling sederhana dan paling aman. <b>Kekurangan:</b> tampilannya biasa saja.</p>
+    </section>
+
+    <!-- B -->
+    <section class="card">
+      <h2>B. Cap "TERVERIFIKASI" (gambar SVG) <span class="tag ok">tercetak</span></h2>
+      <p class="d">Cap bergaya stempel, berupa gambar inline sehingga ikut tercetak. Ditaruh di sisi ruang tanda tangan.</p>
+      <div class="sheet">
+        <p class="lorem">… demikian Purchase Order ini dibuat untuk dilaksanakan sebagaimana mestinya.</p>
+        <div class="ptd capmode" data-ttd data-cap="1"></div>
+      </div>
+      <p class="pros"><b>Kelebihan:</b> terlihat jelas dan "resmi". <b>Kekurangan:</b> bisa mengganggu kalau PO dicetak lalu ditandatangani basah.</p>
+    </section>
+
+    <!-- C -->
+    <section class="card">
+      <h2>C. QR code + nomor verifikasi <span class="tag ok">tercetak</span></h2>
+      <p class="d">Pojok bawah dokumen. QR dipindai untuk membuka halaman status PO yang asli, jadi susah dipalsukan.</p>
+      <div class="sheet">
+        <p class="lorem">… demikian Purchase Order ini dibuat untuk dilaksanakan sebagaimana mestinya.</p>
+        <div class="ptd" data-ttd data-qr="1"></div>
+      </div>
+      <p class="pros"><b>Kelebihan:</b> bisa dicek keasliannya. <b>Kekurangan:</b> perlu halaman verifikasi baru. (QR di demo ini hanya gambar contoh.)</p>
+    </section>
+
+    <!-- D -->
+    <section class="card">
+      <h2>D. Watermark "DRAFT" sebelum disetujui <span class="tag ok">tercetak</span></h2>
+      <p class="d">Dibalik: selama belum diverifikasi, dokumen ada watermark DRAFT. Begitu disetujui, dokumen bersih tanpa tulisan approve.</p>
+      <div style="display:grid;gap:10px">
+        <div class="sheet">
+          <div class="wm"><span>DRAFT</span></div>
+          <p class="lorem">Belum diverifikasi:</p>
+          <div class="ptd" data-ttd></div>
+        </div>
+        <div class="sheet">
+          <p class="lorem">Sudah diverifikasi (bersih):</p>
+          <div class="ptd" data-ttd></div>
+        </div>
+      </div>
+      <p class="pros"><b>Kelebihan:</b> lazim di dokumen resmi, dokumen akhir tetap rapi. <b>Kekurangan:</b> tidak ada tanda "sudah disetujui" di dokumen akhir.</p>
+    </section>
+
+    <!-- E -->
+    <section class="card">
+      <h2>E. Gabungan A + C <span class="tag rec">rekomendasi</span></h2>
+      <p class="d">Baris teks di bawah nama penanda tangan, ditambah QR di pojok bawah.</p>
+      <div class="sheet">
+        <p class="lorem">… demikian Purchase Order ini dibuat untuk dilaksanakan sebagaimana mestinya.</p>
+        <div class="ptd" data-ttd data-el="1" data-qr="1"></div>
+      </div>
+      <p class="pros"><b>Kelebihan:</b> terbaca di kertas dan bisa dicek keasliannya. <b>Kekurangan:</b> kerjanya paling banyak.</p>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  var CAP = '<svg class="cap" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-label="Cap terverifikasi">' +
+    '<circle cx="60" cy="60" r="54" fill="none" stroke="#15803d" stroke-width="4"/><circle cx="60" cy="60" r="46" fill="none" stroke="#15803d" stroke-width="1.5"/>' +
+    '<path id="ar" d="M 18 60 A 42 42 0 0 1 102 60" fill="none"/><text font-family="Arial" font-weight="700" font-size="7.5" fill="#15803d" letter-spacing="1"><textPath href="#ar" startOffset="50%" text-anchor="middle">BBSPJI SELULOSA</textPath></text>' +
+    '<text x="60" y="58" text-anchor="middle" font-family="Arial" font-weight="800" font-size="11" fill="#15803d" letter-spacing=".3">TERVERIFIKASI</text>' +
+    '<text x="60" y="73" text-anchor="middle" font-family="Arial" font-size="8" fill="#15803d">8 NOV 2026 · 18:50</text></svg>';
+
+  function qrSvg() {
+    // gambar contoh bergaya QR (bukan QR sungguhan): tiga pola sudut + titik acak tetap
+    var n = 21, s = '', seed = 7;
+    function r() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    function finder(x, y) { return '<rect x="' + x + '" y="' + y + '" width="7" height="7" fill="#000"/><rect x="' + (x + 1) + '" y="' + (y + 1) + '" width="5" height="5" fill="#fff"/><rect x="' + (x + 2) + '" y="' + (y + 2) + '" width="3" height="3" fill="#000"/>'; }
+    for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) {
+      var inF = (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+      if (!inF && r() > 0.52) { s += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="#000"/>'; }
+    }
+    return '<svg viewBox="0 0 ' + n + ' ' + n + '" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="' + n + '" height="' + n + '" fill="#fff"/>' + s + finder(0, 0) + finder(n - 7, 0) + finder(0, n - 7) + '</svg>';
+  }
+
+  function elLine(peran, nama) {
+    return '<div class="el"><b>Disetujui secara elektronik</b><br>' + nama + ' &middot; ' + peran + '<br>8 Nov 2026, 18:50 WIB &middot; No. PO-LNG-0007</div>';
+  }
+
+  document.querySelectorAll('[data-ttd]').forEach(function (el) {
+    var useEl = el.hasAttribute('data-el'), useCap = el.hasAttribute('data-cap'), useQr = el.hasAttribute('data-qr');
+    var h = '<div class="tgl">Majalaya, &nbsp; November 2026</div>' +
+      '<table><tr><td style="width:45%"><div>Menyetujui,</div><div>Pejabat Pembuat Komitmen BLU</div></td><td style="width:10%">&nbsp;</td><td style="width:45%"><div>Pelaksana Kegiatan,</div><div>Ketua Tim Kerja</div></td></tr>' +
+      '<tr><td class="gap">' + (useCap ? CAP.replace('id="ar"', 'id="ar1"').replace('#ar"', '#ar1"') : '') + '&nbsp;</td><td>&nbsp;</td><td class="gap">&nbsp;</td></tr>' +
+      '<tr><td><div class="nm">Nama PPK BLU</div><div class="nip">NIP. 19800101 200501 1 001</div>' + (useEl ? elLine('PPK BLU', 'Nama PPK BLU') : '') + '</td><td>&nbsp;</td>' +
+      '<td><div class="nm">Nama Ketua Tim</div><div class="nip">NIP. 19820202 200602 2 002</div>' + (useEl ? elLine('Ketua Tim', 'Nama Ketua Tim') : '') + '</td></tr></table>' +
+      '<table class="meng"><tr><td style="width:15%">&nbsp;</td><td><div>Mengetahui,</div><div>Kepala Balai Besar Standardisasi dan Pelayanan Jasa Industri Selulosa,</div><div style="height:50px">&nbsp;</div><div class="nm">Nama Kepala Balai</div><div class="nip">NIP. 19750303 199903 1 003</div>' + (useEl ? elLine('Kepala Balai', 'Nama Kepala Balai') : '') + '</td><td style="width:15%">&nbsp;</td></tr></table>' +
+      (useQr ? '<div class="qrbox">' + qrSvg() + '<div>Dokumen ini sudah diverifikasi sistem OPTI-Tracker.<br>Pindai QR untuk memeriksa keaslian.<br><span class="mono">Kode: PO-LNG-0007-8F3A21</span></div></div>' : '');
+    el.innerHTML = h;
+  });
+
+  var bL = document.getElementById('bLayar'), bC = document.getElementById('bCetak');
+  function mode(cetak) { document.body.classList.toggle('cetak', cetak); bL.classList.toggle('on', !cetak); bC.classList.toggle('on', cetak); }
+  bL.addEventListener('click', function () { mode(false); });
+  bC.addEventListener('click', function () { mode(true); });
+})();
+</script>
+</body>
+</html>

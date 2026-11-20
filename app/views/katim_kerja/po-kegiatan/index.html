@@ -129,8 +129,8 @@
                             <option value="ppk" {{ @filter_jenis == 'ppk' ? 'selected' : '' }}>Revisi PPK BLU</option>
                         </select></div>
                     </div>
-                    <div class="col-6 col-sm-auto {{ @tab_aktif == 'tindakan' ? '' : 'd-none' }}" data-filter-tab="tindakan">
-                        <div class="sel-a"><span class="sel-a-ic"><i class="bi bi-funnel"></i></span><select name="tindak" class="sel-a-select" aria-label="Filter Jenis Tindakan" {{ @tab_aktif == 'tindakan' ? '' : 'disabled' }}>
+                    <div class="col-6 col-sm-auto {{ (@tab_aktif == 'tindakan' || @tab_aktif == 'tinjau') ? '' : 'd-none' }}" data-filter-tab="tindakan">
+                        <div class="sel-a"><span class="sel-a-ic"><i class="bi bi-funnel"></i></span><select name="tindak" class="sel-a-select" aria-label="Filter Jenis Tindakan" {{ (@tab_aktif == 'tindakan' || @tab_aktif == 'tinjau') ? '' : 'disabled' }}>
                             <option value="" {{ !@filter_tindak ? 'selected' : '' }}>Semua Tindakan</option>
                             <option value="baru" {{ @filter_tindak == 'baru' ? 'selected' : '' }}>Review PO Baru</option>
                             <option value="revisi" {{ @filter_tindak == 'revisi' ? 'selected' : '' }}>Review Hasil Revisi</option>
@@ -153,24 +153,41 @@
             <div class="d-flex align-items-center gap-2 flex-wrap" id="poTabs">
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'semua' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=semua&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-list-ul"></i>Semua <span class="count-chip">{{ @tab_counts.semua ?: 0 }}</span></a>
                 <check if="{{ @tampil_tab_tindakan && @tindakan_di_awal }}">
-                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'tindakan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <i class="bi bi-lock-fill po-kunci" title="Tugas Anda: selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip chip-danger">{{ @tab_counts.tindakan ?: 0 }}</span></a>
+                <a data-no-loader="true" data-tabs="tindakan,tinjau,ttd" class="po-tab filter-tab-pill {{ @tindakan_aktif ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <i class="bi bi-lock-fill po-kunci" title="Tugas Anda: selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip chip-danger">{{ @tab_counts.tindakan ?: 0 }}</span></a>
+                </check>
+<check if="{{ @tampil_tab_perlu }}">
+                <a data-no-loader="true" data-tabs="perlu,masuk,revisi,ttd" class="po-tab filter-tab-pill {{ @perlu_aktif ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=perlu&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <i class="bi bi-lock-fill po-kunci" title="Tugas Anda: selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip chip-danger">{{ @tab_counts.perlu ?: 0 }}</span></a>
                 </check>
                 <check if="{{ @tampil_tab_pembuat }}">
-                <check if="{{ @tampil_tab_masuk }}">
-                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'masuk' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=masuk&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-inbox"></i>PO Masuk <i class="bi bi-lock-fill po-kunci" title="Tugas Anda: selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip chip-danger">{{ @tab_counts.masuk ?: 0 }}</span></a>
-                </check>
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'draft' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=draft&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-pencil-square"></i>Draft <i class="bi bi-lock-fill po-kunci" title="Tugas Anda: selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip">{{ @tab_counts.draft ?: 0 }}</span></a>
                 </check>
-                <check if="{{ @tampil_tab_revisi }}">
-                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'revisi' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=revisi&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-arrow-repeat"></i>Revisi <i class="bi bi-lock-fill po-kunci" title="Tugas Anda: selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip">{{ @tab_counts.revisi ?: 0 }}</span></a>
-                </check>
                 <check if="{{ @tampil_tab_tindakan && !@tindakan_di_awal }}">
-                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'tindakan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-exclamation-circle"></i>Perlu Tindakan <i class="bi bi-lock-fill po-kunci" title="Tugas Anda: selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip chip-danger">{{ @tab_counts.tindakan ?: 0 }}</span></a>
+                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'tindakan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-person-check"></i>Review Ketua Tim <i class="bi bi-lock-fill po-kunci" title="Tugas Anda: selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip chip-danger">{{ @tab_counts.tindakan ?: 0 }}</span></a>
                 </check>
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'berjalan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=berjalan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-hourglass-split"></i>Sedang Berjalan <span class="count-chip">{{ @tab_counts.berjalan ?: 0 }}</span></a>
-                <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'ttd' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=ttd&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-pen"></i>Menunggu Tanda Tangan <i class="bi bi-lock-fill po-kunci" title="Selalu tampil semua, tidak ikut filter periode"></i> <span class="count-chip chip-danger">{{ @tab_counts.ttd ?: 0 }}</span></a>
                 <a data-no-loader="true" class="po-tab filter-tab-pill {{ @tab_aktif == 'disetujui' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=disetujui&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}"><i class="bi bi-check2-circle"></i>PO Aktif <span class="count-chip">{{ @tab_counts.disetujui ?: 0 }}</span></a>
             </div>
+<check if="{{ @tampil_tab_perlu }}">
+        <div id="poSub"><div class="po-subwrap {{ @perlu_aktif ? 'open' : '' }}" id="poSubWrap"><div class="po-subinner"><div class="po-subrow" role="tablist" aria-label="Jenis tindakan">
+            <a data-no-loader="true" role="tab" class="po-tab po-sub {{ @tab_aktif == 'perlu' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=perlu&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}">Semua <span class="count-chip">{{ @tab_counts.perlu ?: 0 }}</span></a>
+            <check if="{{ @tampil_tab_masuk }}">
+            <a data-no-loader="true" role="tab" class="po-tab po-sub {{ @tab_aktif == 'masuk' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=masuk&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}">PO Masuk <span class="count-chip">{{ @tab_counts.masuk ?: 0 }}</span></a>
+            </check>
+            <a data-no-loader="true" role="tab" class="po-tab po-sub {{ @tab_aktif == 'revisi' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=revisi&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}">Revisi <span class="count-chip">{{ @tab_counts.revisi ?: 0 }}</span></a>
+            <check if="{{ @tampil_tab_ttd }}">
+            <a data-no-loader="true" role="tab" class="po-tab po-sub {{ @tab_aktif == 'ttd' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=ttd&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}">Menunggu Tanda Tangan <span class="count-chip">{{ @tab_counts.ttd ?: 0 }}</span></a>
+            </check>
+            <span class="po-subind" aria-hidden="true"></span>
+        </div></div></div></div>
+        </check>
+<check if="{{ @sub_katim }}">
+        <div id="poSub"><div class="po-subwrap {{ @tindakan_aktif ? 'open' : '' }}" id="poSubWrap"><div class="po-subinner"><div class="po-subrow" role="tablist" aria-label="Jenis tindakan">
+            <a data-no-loader="true" role="tab" class="po-tab po-sub {{ @tab_aktif == 'tindakan' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tindakan&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}">Semua <span class="count-chip">{{ @tab_counts.tindakan ?: 0 }}</span></a>
+            <a data-no-loader="true" role="tab" class="po-tab po-sub {{ @tab_aktif == 'tinjau' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=tinjau&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}">Review <span class="count-chip">{{ @tab_counts.tinjau ?: 0 }}</span></a>
+            <a data-no-loader="true" role="tab" class="po-tab po-sub {{ @tab_aktif == 'ttd' ? 'active' : '' }}" href="{{ @BASE }}/po-kegiatan?tab=ttd&amp;divisi={{ @divisi }}&amp;bulan={{ @bulan_filter }}&amp;tahun={{ @tahun_filter }}&amp;q={{ @q_url }}{{ @semua_param }}">Menunggu Tanda Tangan <span class="count-chip">{{ @tab_counts.ttd ?: 0 }}</span></a>
+            <span class="po-subind" aria-hidden="true"></span>
+        </div></div></div></div>
+        </check>
         </div>
 
         <div id="poTable">
@@ -1367,7 +1384,7 @@ function downloadPoPDF() {
     var form = document.getElementById('formFilterPo');
     if (!form) return;
     var timer = null, reqId = 0;
-    var REGIONS = ['poTabs', 'poTable', 'poModals'];
+    var REGIONS = ['poTabs', 'poSub', 'poTable', 'poModals'];
     var btnReset = document.getElementById('btnResetFilter');
 
     function urlDariForm() {
@@ -1403,7 +1420,7 @@ function downloadPoPDF() {
         [['posisi', 'berjalan'], ['jenis', 'revisi'], ['tindak', 'tindakan']].forEach(function (x) {
             var sel = form.elements[x[0]];
             if (!sel) return;
-            var on = (tab === x[1]);
+            var on = (tab === x[1]) || (x[1] === 'tindakan' && tab === 'tinjau');
             var col = sel.closest('[data-filter-tab]');
             if (col) { col.classList.toggle('d-none', !on); }
             sel.disabled = !on;
@@ -1494,12 +1511,61 @@ function downloadPoPDF() {
         return p;
     }
 
+    // ---- Sub-tab Perlu Tindakan: garis penanda bergeser, baris sub-tab mengembang dari tab utama, baris tabel masuk berurutan ----
+    var tabTerakhir = form.elements.tab ? form.elements.tab.value : '', timerBaris = null;
+    function kurangGerak() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+    function subSnap() {
+        var w = document.getElementById('poSubWrap');
+        if (!w) return null;
+        var ind = w.querySelector('.po-subind');
+        return { open: w.classList.contains('open'), x: ind && ind.getAttribute('data-x') !== null ? parseFloat(ind.getAttribute('data-x')) : null, w: ind && ind.getAttribute('data-w') !== null ? parseFloat(ind.getAttribute('data-w')) : null };
+    }
+    function subPos(w, snap) {
+        var row = w.querySelector('.po-subrow'), ind = row ? row.querySelector('.po-subind') : null, act = row ? row.querySelector('a.po-sub.active') : null;
+        if (!row || !ind) return;
+        row.classList.add('js');
+        if (!act) { ind.style.opacity = '0'; return; }
+        var x = act.offsetLeft, wd = act.offsetWidth;
+        ind.setAttribute('data-x', x); ind.setAttribute('data-w', wd);
+        ind.style.transition = 'none';
+        ind.style.opacity = '1';
+        if (snap && snap.x !== null && snap.w !== null && !kurangGerak()) { ind.style.transform = 'translateX(' + snap.x + 'px)'; ind.style.width = snap.w + 'px'; }
+        else { ind.style.transform = 'translateX(' + x + 'px)'; ind.style.width = wd + 'px'; }
+        void ind.offsetWidth;
+        ind.style.transition = '';
+        ind.style.transform = 'translateX(' + x + 'px)'; ind.style.width = wd + 'px';
+    }
+    function subAnim(snap) {
+        var w = document.getElementById('poSubWrap');
+        if (!w) return;
+        var buka = w.classList.contains('open');
+        if (snap && snap.open !== buka && !kurangGerak()) {
+            w.classList.toggle('open', snap.open);   // mulai dari keadaan sebelumnya, lalu berganti: mengembang / menguncup
+            void w.offsetHeight;
+            w.classList.toggle('open', buka);
+        }
+        subPos(w, snap && snap.open && buka ? snap : null);
+    }
+    function animasiBaris() {
+        var t = document.getElementById('poTable');
+        if (!t || kurangGerak()) return;
+        var rs = t.querySelectorAll('tbody tr');
+        for (var i = 0; i < rs.length && i < 14; i++) { rs[i].style.setProperty('--i', i); rs[i].classList.add('po-r-in'); }
+        clearTimeout(timerBaris);
+        timerBaris = setTimeout(function () { Array.prototype.forEach.call(t.querySelectorAll('.po-r-in'), function (r) { r.classList.remove('po-r-in'); }); }, 900);
+    }
+
     function terapkan(html, url, opsi) {
         var doc = new DOMParser().parseFromString(html, 'text/html');
+        var snap = subSnap(), tBaru = '';
+        try { tBaru = new URL(url, window.location.href).searchParams.get('tab') || ''; } catch (e) {}
         REGIONS.forEach(function (id) {
             var baru = doc.getElementById(id), lama = document.getElementById(id);
             if (baru && lama) { lama.innerHTML = baru.innerHTML; }
         });
+        subAnim(snap);
+        if (tBaru && tBaru !== tabTerakhir) { animasiBaris(); }
+        if (tBaru) { tabTerakhir = tBaru; }
         sinkronForm(doc, !!(opsi && opsi.sinkronQ));
         if (opsi && opsi.gulir) { var tb = document.getElementById('poTabs'); if (tb && tb.scrollIntoView) { tb.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }
         try { history.replaceState(null, '', url); } catch (e) {}
@@ -1511,7 +1577,7 @@ function downloadPoPDF() {
         prefTimer = setTimeout(function () {
             var wrap = document.getElementById('poTabs');
             if (!wrap || document.hidden) return;
-            var hrefs = Array.prototype.map.call(wrap.querySelectorAll('a.po-tab:not(.active)'), function (a) { return a.getAttribute('href'); });
+            var hrefs = Array.prototype.map.call(document.querySelectorAll('#poTabs a.po-tab:not(.active), #poSubWrap.open a.po-tab:not(.active)'), function (a) { return a.getAttribute('href'); });
             (function lanjut(i) {
                 if (i >= hrefs.length) return;
                 var k = kunci(hrefs[i]), c = cache[k];
@@ -1556,11 +1622,15 @@ function downloadPoPDF() {
     function aktifkanTabSegera(a) {
         var wrap = document.getElementById('poTabs');
         if (!wrap) return;
-        Array.prototype.forEach.call(wrap.querySelectorAll('a.po-tab'), function (x) { x.classList.toggle('active', x === a); });
-        try {
-            var t = new URL(a.getAttribute('href'), window.location.href).searchParams.get('tab');
-            if (t && form.elements.tab) { form.elements.tab.value = t; }
-        } catch (e) {}
+        var t = '';
+        try { t = new URL(a.getAttribute('href'), window.location.href).searchParams.get('tab') || ''; } catch (e) {}
+        Array.prototype.forEach.call(document.querySelectorAll('#poTabs a.po-tab, #poSub a.po-tab'), function (x) {
+            var on = (x === a), grup = x.getAttribute('data-tabs');
+            if (!on && grup && t) { on = grup.split(',').indexOf(t) > -1; }   // tab utama Perlu Tindakan tetap aktif selama sub-tabnya dibuka
+            if (!on && !grup && t) { try { on = new URL(x.getAttribute('href'), window.location.href).searchParams.get('tab') === t; } catch (e) {} }
+            x.classList.toggle('active', on);
+        });
+        if (t && form.elements.tab) { form.elements.tab.value = t; }
         aturFilterTab();
     }
 
@@ -1580,13 +1650,13 @@ function downloadPoPDF() {
     if (btnReset) {
         btnReset.addEventListener('click', function () {
             clearTimeout(timer);
-            var tab = form.elements.tab ? form.elements.tab.value : 'masuk';
+            var tab = form.elements.tab ? form.elements.tab.value : 'perlu';
             muat(form.getAttribute('action') + '?tab=' + encodeURIComponent(tab), { sinkronQ: true });
         });
     }
 
     document.addEventListener('click', function (e) {
-        var a = e.target.closest('#poTabs a.po-tab, #poTable .pagination a.page-link');
+        var a = e.target.closest('#poTabs a.po-tab, #poSub a.po-tab, #poTable .pagination a.page-link');
         if (!a) return;
         var li = a.closest('li.page-item');
         e.preventDefault();
@@ -1624,6 +1694,9 @@ function downloadPoPDF() {
     aturFilterTab();
     aturPeriode();
     perbaruiReset();
+    subAnim(null);
+    window.addEventListener('resize', function () { subAnim(null); });
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(function () { subAnim(null); }); }
     jadwalkanPrefetch();
 })();
 </script>
@@ -1904,6 +1977,26 @@ window.addEventListener('message', function (e) {
     .filter-tab-pill.active { color: #fff !important; background-color: var(--color-primary, #334155) !important; border-color: var(--color-primary, #334155) !important; box-shadow: 0 2px 6px rgba(51,65,85,.25) !important; }
     .filter-tab-pill.active .count-chip { background-color: rgba(255,255,255,.25) !important; border-color: transparent !important; color: #fff !important; }
     .filter-tab-pill.active i { color: #fff !important; }
+    /* ==== Sub-tab di dalam tab Perlu Tindakan (garis bawah, penanda bergeser) ==== */
+    #poSub .po-subwrap { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s cubic-bezier(.4,0,.2,1), opacity .22s ease; }
+    #poSub .po-subwrap.open { grid-template-rows: 1fr; opacity: 1; }
+    #poSub .po-subinner { overflow: hidden; min-height: 0; visibility: hidden; transition: visibility 0s linear .3s; }
+    #poSub .po-subwrap.open .po-subinner { visibility: visible; transition-delay: 0s; }
+    .po-subrow { position: relative; display: flex; flex-wrap: nowrap; gap: 1.4rem; margin-top: 10px; border-bottom: 1px solid #e2e8f0; overflow-x: auto; scrollbar-width: none; }
+    .po-subrow::-webkit-scrollbar { display: none; }
+    .po-sub { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem .1rem; font-size: .8rem; font-weight: 600; color: #64748b; text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent; transition: color .2s; flex: 0 0 auto; }
+    .po-sub:hover { color: #0f172a; }
+    .po-sub.active { color: #0f172a; font-weight: 700; }
+    .po-subrow:not(.js) .po-sub.active { border-bottom-color: var(--color-primary, #334155); }
+    .po-subind { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; border-radius: 3px 3px 0 0; background: var(--color-primary, #334155); opacity: 0; pointer-events: none; transition: transform .32s cubic-bezier(.4,0,.2,1), width .32s cubic-bezier(.4,0,.2,1); }
+    .po-sub .count-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 9999px; font-size: .72rem; font-weight: 700; background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; transition: all .2s; }
+    .po-sub.active .count-chip { background-color: var(--color-primary, #334155); border-color: var(--color-primary, #334155); color: #fff; }
+    @keyframes poRowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .po-r-in { animation: poRowIn .34s cubic-bezier(.2,.7,.2,1) backwards; animation-delay: calc(var(--i, 0) * 30ms); }
+    @media (prefers-reduced-motion: reduce) {
+        #poSub .po-subwrap, #poSub .po-subinner, .po-subind, .po-sub { transition: none !important; }
+        .po-r-in { animation: none !important; }
+    }
     .dpx-pill-group { display: inline-flex; gap: 2px; padding: 3px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 9999px; }
     .dpx-pill { position: relative; margin: 0; cursor: pointer; }
     .dpx-pill input { position: absolute; opacity: 0; pointer-events: none; }

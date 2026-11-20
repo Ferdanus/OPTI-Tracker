@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo Tahap Laporan Akhir</title>
+<style>
+  :root{--navy:#0f172a;--navy2:#1e293b;--mut:#64748b;--line:#e2e8f0;--bg:#f1f5f9;--ok:#198754;--okbg:#ecfdf3;--warn:#b45309;--warnbg:#fffbeb;--blue:#2563eb;--bluebg:#eff6ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--navy);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:20px 16px 48px}
+  .wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+  h1{font-size:1.05rem;margin:0}
+  .sub{color:var(--mut);font-size:.82rem;margin:2px 0 0}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .card.pad0{padding:0;overflow:hidden}
+  /* switcher */
+  .sw{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .sw .lbl{font-size:.72rem;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-right:4px}
+  .sw button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-size:.8rem;font-weight:600;color:var(--mut);cursor:pointer}
+  .sw button.on{background:var(--navy2);border-color:var(--navy2);color:#fff}
+  /* stepper */
+  .st-scroll{overflow-x:auto;padding-bottom:4px}
+  .st{display:flex;justify-content:space-between;align-items:flex-start;position:relative;min-width:900px;padding:8px 4px 0}
+  .st:before{content:"";position:absolute;top:24px;left:30px;right:30px;height:2px;background:var(--line)}
+  .sp{position:relative;z-index:2;background:#fff;padding:0 4px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px}
+  .c{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700}
+  .c.done{background:var(--ok);color:#fff}.c.current{background:var(--navy2);color:#fff}.c.waiting{background:#f8fafc;color:#94a3b8;border:1.5px solid #cbd5e1}
+  .c.skip{background:#fff;color:var(--ok);border:1.5px dashed var(--ok)}
+  .t{font-size:.72rem;font-weight:600;color:var(--mut);white-space:nowrap}
+  .t.current{color:var(--navy);font-weight:700}.t.done{color:#15803d}
+  .opt{font-size:.58rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--blue);background:var(--bluebg);border-radius:4px;padding:0 5px;line-height:1.5;margin-top:-1px}
+  .sp.new .c{box-shadow:0 0 0 4px #dbeafe}
+  /* tahap card */
+  .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .hd .no{background:var(--navy2);color:#fff;border-radius:6px;font-size:.72rem;font-weight:700;padding:2px 8px}
+  .hd h2{font-size:.98rem;margin:0}
+  .badge{font-size:.7rem;font-weight:700;border-radius:999px;padding:2px 10px;border:1px solid}
+  .badge.opt2{color:var(--blue);background:var(--bluebg);border-color:#bfdbfe}
+  .badge.run{color:var(--warn);background:var(--warnbg);border-color:#fde68a}
+  .badge.ok{color:#15803d;background:var(--okbg);border-color:#bbf7d0}
+  .badge.gray{color:var(--mut);background:#f8fafc;border-color:var(--line)}
+  .bd{padding:18px}
+  .note{display:flex;gap:10px;background:var(--bluebg);border:1px solid #bfdbfe;color:#1e3a8a;border-radius:8px;padding:10px 12px;font-size:.82rem}
+  .note.warn{background:var(--warnbg);border-color:#fde68a;color:#78350f}
+  .note b{font-weight:700}
+  .prog{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0 4px}
+  .prog i{display:block;height:100%;background:var(--navy2);border-radius:99px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .opsi{border:1.5px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .opsi h3{font-size:.9rem;margin:0;display:flex;gap:8px;align-items:center}
+  .opsi p{margin:0;color:var(--mut);font-size:.8rem}
+  .opsi.pri{border-color:var(--navy2)}
+  .drop{border:1.5px dashed #94a3b8;border-radius:8px;padding:16px;text-align:center;background:#f8fafc;cursor:pointer;font-size:.82rem;color:var(--mut)}
+  .drop:hover{background:#f1f5f9;border-color:var(--navy2)}
+  .drop b{color:var(--navy);display:block;font-size:.86rem}
+  .file{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff;min-width:0}
+  .file .ic{width:38px;height:44px;border-radius:5px;background:#fee2e2;color:#b91c1c;font-size:.62rem;font-weight:800;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;flex:none}
+  .file .nm{font-weight:600;font-size:.86rem;overflow-wrap:anywhere}.file .mt{font-size:.74rem;color:var(--mut)}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:8px;padding:8px 14px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer;display:inline-flex;gap:6px;align-items:center;justify-content:center}
+  .btn.dark{background:var(--navy2);border-color:var(--navy2);color:#fff}
+  .btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .btn.sm{padding:5px 10px;font-size:.76rem}
+  select{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;font:inherit;font-size:.82rem;background:#fff;color:var(--navy)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .info{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:14px}
+  .info div{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+  .info small{display:block;color:var(--mut);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .info span{font-weight:600;font-size:.84rem}
+  .next{display:flex;gap:10px;align-items:center;border-top:1px solid var(--line);padding:12px 18px;background:#f8fafc;font-size:.82rem;color:var(--mut);flex-wrap:wrap}
+  /* konfirmasi inline */
+  .konf{border:1.5px solid var(--navy2);border-radius:10px;padding:14px;background:#fff;margin-top:14px}
+  .konf h4{margin:0 0 4px;font-size:.9rem}
+  .hidden{display:none!important}
+  /* daftar order mock */
+  table{border-collapse:collapse;width:100%;font-size:.82rem}
+  th{background:#f8fafc;text-align:left;color:var(--mut);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;padding:8px 12px;border-bottom:1px solid var(--line)}
+  td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .chip{display:inline-flex;gap:5px;align-items:center;font-size:.7rem;font-weight:700;border-radius:999px;padding:2px 9px;border:1px solid}
+  .chip.g{color:#15803d;background:var(--okbg);border-color:#bbf7d0}.chip.y{color:var(--warn);background:var(--warnbg);border-color:#fde68a}.chip.s{color:var(--mut);background:#f8fafc;border-color:var(--line)}
+  .tbl{overflow-x:auto}
+  .legend{font-size:.78rem;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div>
+    <h1>Demo: tahap baru "Laporan Akhir" di Detail Order</h1>
+    <p class="sub">Posisinya di antara Kontrak PKS dan BAST. Sifatnya opsional (karena ada laporan yang rahasia). Klik tombol status di bawah buat lihat tiap kondisinya.</p>
+  </div>
+
+  <div class="card sw" id="sw">
+    <span class="lbl">Kondisi</span>
+    <button data-s="1" class="on">1. Pengujian berjalan</button>
+    <button data-s="2">2. Pengujian selesai</button>
+    <button data-s="3">3. Laporan diunggah</button>
+    <button data-s="4">4. Selesai tanpa laporan</button>
+  </div>
+
+  <div class="card">
+    <div class="st-scroll"><div class="st" id="stepper"></div></div>
+  </div>
+
+  <div class="card pad0" id="cardLaporan">
+    <div class="hd">
+      <span class="no">Tahap 10</span>
+      <h2>Laporan Akhir</h2>
+      <span class="badge opt2">Opsional</span>
+      <span class="badge" id="stBadge"></span>
+    </div>
+    <div class="bd" id="body"></div>
+    <div class="next" id="next"></div>
+  </div>
+
+  <div class="card pad0">
+    <div style="padding:14px 18px 6px"><b style="font-size:.9rem">Efeknya di Daftar Order</b><div class="legend">Satu penanda kecil di kolom status supaya kelihatan laporan akhirnya ada atau tidak, tanpa membuka detail.</div></div>
+    <div class="tbl"><table>
+      <thead><tr><th>No. Order</th><th>Klien</th><th>Layanan</th><th>Tahap</th><th>Laporan Akhir</th></tr></thead>
+      <tbody>
+        <tr><td>ORD-2026-0118</td><td>PT Kertas Nusantara</td><td>Lingkungan</td><td>Laporan Akhir</td><td id="rowNow"></td></tr>
+        <tr><td>ORD-2026-0102</td><td>PT Sinar Pulp Lestari</td><td>Selulosa</td><td>BAST</td><td><span class="chip g">&#10003; Laporan diunggah</span></td></tr>
+        <tr><td>ORD-2026-0097</td><td>CV Mitra Industri</td><td>Lingkungan</td><td>Selesai</td><td><span class="chip s">&#128274; Tanpa laporan (rahasia)</span></td></tr>
+        <tr><td>ORD-2026-0121</td><td>PT Bumi Serat</td><td>Selulosa</td><td>Kontrak PKS</td><td><span class="chip s">&mdash;</span></td></tr>
+      </tbody></table></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var S = 1, dipilih = null, tampilKonf = false;
+  var tahap = [
+    ['Profil'],['Form Pelayanan'],['Kaji Kelayakan'],['Tarif &amp; Parameter'],['Penawaran'],['Pembayaran'],['Aktivasi SPM'],['PO Kegiatan'],['Kontrak PKS'],['Laporan Akhir'],['BAST']
+  ];
+  function stepper(){
+    var h='';
+    tahap.forEach(function(t,i){
+      var n=i+1, st, isi=String(n), cls='';
+      if(n<=9){ st='done'; isi='&#10003;'; }
+      else if(n===10){
+        if(S===1){ st='waiting'; }
+        else if(S===2){ st='current'; }
+        else if(S===3){ st='done'; isi='&#10003;'; }
+        else { st='skip'; isi='&#10003;'; }
+        cls=' new';
+      } else { st = (S>=3)?'current':'waiting'; }
+      var tx = st==='skip'?'done':st;
+      h+='<div class="sp'+cls+'"><div class="c '+st+'">'+isi+'</div><div class="t '+tx+'">'+t[0]+'</div>'+(n===10?'<div class="opt">opsional</div>':'')+'</div>';
+    });
+    document.getElementById('stepper').innerHTML=h;
+  }
+  function isiBody(){
+    var b=document.getElementById('body'), bd=document.getElementById('stBadge'), nx=document.getElementById('next'), row=document.getElementById('rowNow'), h='';
+    if(S===1){
+      bd.className='badge run'; bd.textContent='Menunggu pengujian selesai';
+      h='<div class="note"><span>&#9432;</span><div><b>Belum bisa diisi.</b> Tahap ini terbuka otomatis begitu seluruh parameter uji pada order ini selesai dikerjakan.</div></div>'+
+        '<div style="margin-top:14px"><div class="row" style="justify-content:space-between"><b style="font-size:.84rem">Progres pengujian</b><span class="legend">8 dari 12 parameter selesai</span></div><div class="prog"><i style="width:66%"></i></div></div>'+
+        '<div class="grid"><div class="opsi" style="opacity:.55"><h3>Unggah Laporan Akhir</h3><p>PDF, maks. 30 MB.</p><button class="btn dark" disabled>Unggah PDF</button></div>'+
+        '<div class="opsi" style="opacity:.55"><h3>Selesaikan tanpa laporan</h3><p>Untuk laporan yang bersifat rahasia.</p><button class="btn" disabled>Selesaikan order</button></div></div>';
+      nx.innerHTML='<span>Berikutnya:</span><b style="color:var(--navy)">Tahap 11 · BAST</b><span>(terbuka setelah tahap ini selesai)</span>';
+      row.innerHTML='<span class="chip s">&mdash; Belum waktunya</span>';
+    }
+    else if(S===2){
+      bd.className='badge run'; bd.textContent='Perlu keputusan Anda';
+      h='<div class="note"><span>&#10003;</span><div><b>Semua parameter uji sudah selesai.</b> Unggah laporan akhir kalau ada, atau selesaikan tanpa laporan. Dua-duanya sah, mengunggah laporan tidak wajib.</div></div>'+
+        '<div class="grid">'+
+        '<div class="opsi pri"><h3>&#128196; Unggah Laporan Akhir</h3><p>Hanya PDF, maks. 30 MB. File hanya bisa dilihat tim internal yang punya akses order ini.</p>'+
+          (dipilih?'<div class="file"><div class="ic">PDF</div><div style="min-width:0;flex:1"><div class="nm">'+dipilih+'</div><div class="mt">1,8 MB &middot; siap diunggah</div></div><button class="btn sm" id="ganti">Ganti</button></div>'
+                  :'<div class="drop" id="drop"><b>Klik atau seret file PDF ke sini</b>Contoh: Laporan_Akhir_ORD-2026-0118.pdf</div>')+
+          '<button class="btn dark" id="btnUnggah"'+(dipilih?'':' disabled')+'>Unggah &amp; selesaikan order</button></div>'+
+        '<div class="opsi"><h3>&#128274; Selesaikan tanpa laporan</h3><p>Pilih ini kalau laporan bersifat rahasia atau memang tidak dibutuhkan. Alasannya dicatat.</p>'+
+          '<select id="alasan"><option>Rahasia (permintaan klien)</option><option>Klien tidak memerlukan laporan tertulis</option><option>Dikirim langsung ke klien di luar sistem</option><option>Lainnya</option></select>'+
+          '<button class="btn" id="btnTanpa">Selesaikan tanpa laporan</button></div>'+
+        '</div>'+
+        (tampilKonf?'<div class="konf"><h4>Selesaikan tanpa laporan akhir?</h4><div class="legend" style="margin-bottom:10px">Alasan akan dicatat bersama nama dan waktu. Laporan masih bisa diunggah belakangan kalau nanti ada.</div><div class="row"><button class="btn ok" id="ya">Ya, selesaikan</button><button class="btn" id="batal">Batal</button></div></div>':'');
+      nx.innerHTML='<span>Berikutnya:</span><b style="color:var(--navy)">Tahap 11 · BAST</b><span>(terbuka setelah tahap ini selesai)</span>';
+      row.innerHTML='<span class="chip y">&#9201; Menunggu keputusan</span>';
+    }
+    else if(S===3){
+      bd.className='badge ok'; bd.textContent='Selesai';
+      h='<div class="file"><div class="ic">PDF</div><div style="min-width:0;flex:1"><div class="nm">'+(dipilih||'Laporan_Akhir_ORD-2026-0118.pdf')+'</div><div class="mt">1,8 MB &middot; PDF</div></div><div class="row"><button class="btn sm">Lihat</button><button class="btn sm">Unduh</button></div></div>'+
+        '<div class="info"><div><small>Diunggah oleh</small><span>Ketua Pelaksana</span></div><div><small>Tanggal</small><span>18 Nov 2026, 10.42</span></div><div><small>Status order</small><span>Pengujian selesai</span></div><div><small>Akses file</small><span>Hanya tim internal</span></div></div>'+
+        '<div class="row" style="margin-top:12px"><button class="btn sm">Ganti file</button><span class="legend">Penggantian file dicatat di riwayat.</span></div>';
+      nx.innerHTML='<span>Berikutnya:</span><b style="color:var(--navy)">Tahap 11 · BAST</b><span>sudah terbuka &rarr;</span><button class="btn dark sm">Lanjut ke BAST</button>';
+      row.innerHTML='<span class="chip g">&#10003; Laporan diunggah</span>';
+    }
+    else {
+      bd.className='badge gray'; bd.textContent='Selesai tanpa laporan';
+      h='<div class="note warn"><span>&#128274;</span><div><b>Order diselesaikan tanpa laporan akhir.</b> Tidak ada file yang tersimpan di sistem untuk order ini.</div></div>'+
+        '<div class="info"><div><small>Alasan</small><span>Rahasia (permintaan klien)</span></div><div><small>Dicatat oleh</small><span>Ketua Pelaksana</span></div><div><small>Tanggal</small><span>18 Nov 2026, 10.42</span></div><div><small>Status order</small><span>Pengujian selesai</span></div></div>'+
+        '<div class="row" style="margin-top:12px"><button class="btn sm">Unggah laporan (jika nanti ada)</button></div>';
+      nx.innerHTML='<span>Berikutnya:</span><b style="color:var(--navy)">Tahap 11 · BAST</b><span>sudah terbuka &rarr;</span><button class="btn dark sm">Lanjut ke BAST</button>';
+      row.innerHTML='<span class="chip s">&#128274; Tanpa laporan (rahasia)</span>';
+    }
+    b.innerHTML=h;
+    var d=document.getElementById('drop'); if(d){ d.onclick=function(){ dipilih='Laporan_Akhir_ORD-2026-0118.pdf'; isiBody(); }; }
+    var g=document.getElementById('ganti'); if(g){ g.onclick=function(){ dipilih=null; isiBody(); }; }
+    var u=document.getElementById('btnUnggah'); if(u&&dipilih){ u.onclick=function(){ set(3); }; }
+    var t=document.getElementById('btnTanpa'); if(t){ t.onclick=function(){ tampilKonf=true; isiBody(); }; }
+    var y=document.getElementById('ya'); if(y){ y.onclick=function(){ set(4); }; }
+    var bt=document.getElementById('batal'); if(bt){ bt.onclick=function(){ tampilKonf=false; isiBody(); }; }
+  }
+  function set(n){
+    S=n; tampilKonf=false; if(n!==3 && n!==2){ dipilih=null; }
+    Array.prototype.forEach.call(document.querySelectorAll('#sw button'),function(x){ x.classList.toggle('on', x.getAttribute('data-s')==String(n)); });
+    stepper(); isiBody();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#sw button'),function(x){ x.onclick=function(){ dipilih=null; set(parseInt(x.getAttribute('data-s'),10)); }; });
+  set(1);
+})();
+</script>
+</body>
+</html>

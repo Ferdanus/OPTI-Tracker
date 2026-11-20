@@ -8775,15 +8775,17 @@ setTimeout(function () {
             // catatan: window.__poEmbedTop baru terpasang sesudah DOMContentLoaded, sedangkan skrip ini jalan lebih awal, jadi deteksi bingkai dilakukan di sini
             var dalamTahap8 = false;
             try { dalamTahap8 = (window.self !== window.top) && /[?&]embed=1(&|$)/.test(window.location.search); } catch (e) {}
-            if (dalamTahap8 && bk) {
-                document.getElementById('rvHit').textContent = 'Simpan draft: perubahan tersimpan dan form tetap terbuka, status review tidak berubah. Simpan dan setujui: perubahan tersimpan dan PO langsung disetujui. Ketua Pelaksana diberi tahu lewat tab Alur.';
+            // Ketua Tim yang mengedit PO saat review: tombolnya "Simpan draft" dan "Kirim ke Mitra" (simpan, setujui, lalu langsung diteruskan ke Tim Mitra); tidak ada lagi "Simpan perubahan".
+            // Revisi PPK BLU (PPK_KATIM) yang diperbaiki langsung di halaman biasa tetap memakai alurnya sendiri di bawah.
+            if (bk && (dalamTahap8 || !PPK_KATIM)) {
+                document.getElementById('rvHit').textContent = 'Simpan draft: perubahan tersimpan dan form tetap terbuka, status review tidak berubah. Kirim ke Mitra: perubahan tersimpan lalu PO disetujui dan langsung diteruskan ke Tim Mitra. Ketua Pelaksana diberi tahu lewat tab Alur.';
                 if (PPK_KATIM) { document.getElementById('rvHit').textContent = 'Simpan draft: perubahan tersimpan dan form tetap terbuka, status revisi PPK BLU tidak berubah. Setujui dan kirim ke PPK BLU: perubahan tersimpan lalu hasil revisi disetujui dan dikirim ke PPK BLU. Batal: kembali ke detail order tanpa menyimpan.'; }
                 bk.innerHTML = '<i class="bi bi-save me-1"></i> Simpan draft';
                 bk.classList.remove('btn-primary'); bk.classList.add('btn-outline-secondary');
                 var bs = document.createElement('button');
                 bs.type = 'button'; bs.id = 'rvSetujuBtn';
                 bs.className = 'btn btn-primary px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2';
-                bs.innerHTML = '<i class="bi bi-check2-circle"></i> <span>Simpan dan setujui</span>';
+                bs.innerHTML = '<i class="bi bi-send-check"></i> <span>Kirim ke Mitra</span>';
                 bk.insertAdjacentElement('afterend', bs);
                 var bb = null;
                 if (PPK_KATIM) {   // review hasil revisi PPK BLU: tombol setujui mengirim ke PPK BLU (bukan ke Humas), dan ada tombol Batal
@@ -8795,7 +8797,10 @@ setTimeout(function () {
                     bk.insertAdjacentElement('beforebegin', bb);
                 }
                 function ordKe() { var oi = document.querySelector('#formPo [name="order_id"]'); return BASE + '/order/' + (oi ? oi.value : ''); }
-                function keDetail() { try { window.top.location.href = ordKe(); } catch (e) { window.location.href = ordKe(); } }
+                function keDetail() {
+                    if (!dalamTahap8) { window.location.href = BASE + '/po-kegiatan/daftar'; return; }   // halaman edit biasa: kembali ke Daftar Review PO
+                    try { window.top.location.href = ordKe(); } catch (e) { window.location.href = ordKe(); }
+                }
                 // pemberitahuan singkat "Draft tersimpan" di dalam form (tanpa memuat ulang halaman)
                 function tampilToast(teks, galat) {
                     // di Tahap 8 (iframe detail order) notif dipasang di halaman induk, tepat di bawah bar atas (di bawah nama pengguna) di kanan
@@ -8871,14 +8876,14 @@ setTimeout(function () {
                 bs.addEventListener('click', function () {
                     if (bs.disabled || sedangSimpan) { return; }
                     if (typeof window.poValidasiSebelumKirim === 'function' && !window.poValidasiSebelumKirim()) { return; }
-                    (PPK_KATIM ? konfirmasiKirim('Setujui dan kirim ke PPK BLU?', 'Perubahan di form disimpan, lalu hasil revisi disetujui dan dikirim ke PPK BLU.', 'Ya, kirim', 'bi-send-check') : konfirmasiKirim('Simpan dan setujui PO ini?', 'Perubahan di form disimpan, lalu PO disetujui dan diteruskan ke Humas untuk diverifikasi.', 'Simpan dan setujui', 'bi-check2-circle')).then(function (ya) {
+                    (PPK_KATIM ? konfirmasiKirim('Setujui dan kirim ke PPK BLU?', 'Perubahan di form disimpan, lalu hasil revisi disetujui dan dikirim ke PPK BLU.', 'Ya, kirim', 'bi-send-check') : konfirmasiKirim('Kirim PO ke Tim Mitra?', 'Perubahan di form disimpan, lalu PO disetujui dan langsung diteruskan ke Tim Mitra untuk diverifikasi. Humas hanya dapat melihat.', 'Kirim ke Mitra', 'bi-send-check')).then(function (ya) {
                         if (ya) { simpanKatim(true); }
                     });
                 });
             }
             // Halaman edit biasa (bukan di Tahap 8 detail order): tambahkan "Simpan draft" di samping "Simpan perubahan".
             // Draft tersimpan lewat fetch, form tetap terbuka dan status review / revisi PPK BLU tidak berubah.
-            if (!dalamTahap8 && bk) {
+            if (!dalamTahap8 && bk && PPK_KATIM) {
                 var bd2 = document.createElement('button');
                 bd2.type = 'button'; bd2.id = 'rvDraftBtn';
                 bd2.className = 'btn btn-outline-secondary px-4 py-2 rounded-pill shadow-xs fw-semibold';

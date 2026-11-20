@@ -102,7 +102,7 @@
             align-items: center;
             justify-content: space-between;
             position: relative;
-            min-width: 780px;
+            min-width: 860px;
             padding: 1rem 0.5rem 0.25rem 0.5rem;
         }
         .stepper-progress-container::before {
@@ -1264,7 +1264,7 @@
             opacity: 0.65;
         }
 
-        /* Layar besar (>=1280px): semua tahap (10 tahap termasuk BAST) satu baris; laptop kecil (992px-1279px) 2 baris x 5 kolom agar tidak berhimpitan */
+        /* Layar besar (>=1280px): semua tahap (11 tahap termasuk Laporan Akhir & BAST) satu baris; laptop kecil (992px-1279px) 2 baris x 6 kolom agar tidak berhimpitan */
         @media (min-width: 1280px) {
             .stage-nav-grid {
                 grid-template-columns: none;
@@ -1278,7 +1278,7 @@
         }
         @media (min-width: 992px) and (max-width: 1279.98px) {
             .stage-nav-grid {
-                grid-template-columns: repeat(5, minmax(0, 1fr));
+                grid-template-columns: repeat(6, minmax(0, 1fr));
                 gap: 6px;
             }
             .stage-nav-text { font-size: 0.7rem; }
@@ -2198,8 +2198,18 @@
                         <span class="step-text {{ @stepper[10].state }}">Kontrak PKS</span>
                     </a>
 
-                    <!-- Step 10: BAST (nomor internal 9) -->
-                    <a href="#cardBast" data-stage="9" class="step-checkpoint {{ (9 > @max_accessible_step || @kontrak_panel.menunggu) ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 10: Berita Acara Serah Terima (BAST)">
+                    <!-- Step 10: Laporan Akhir (nomor internal 11) -- ditambahkan Kaa -->
+                    <a href="#cardLaporanAkhir" data-stage="11" class="step-checkpoint {{ !@laporan_akhir.akses ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 10: Laporan Akhir (opsional)">
+                        <div class="step-circle {{ @stepper[11].state }}">
+                            <check if="{{ @stepper[11].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
+                            <check if="{{ @stepper[11].state == 'current' }}"><i class="bi bi-journal-check"></i></check>
+                            <check if="{{ @stepper[11].state == 'waiting' }}"><i class="bi bi-journal-text"></i></check>
+                        </div>
+                        <span class="step-text {{ @stepper[11].state }}">Laporan Akhir</span>
+                    </a>
+
+                    <!-- Step 11: BAST (nomor internal 9) -->
+                    <a href="#cardBast" data-stage="9" class="step-checkpoint {{ (9 > @max_accessible_step || @kontrak_panel.menunggu) ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 11: Berita Acara Serah Terima (BAST)">
                         <div class="step-circle {{ @stepper[9].state }}">
                             <check if="{{ @stepper[9].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[9].state == 'current' }}"><i class="bi bi-patch-check-fill"></i></check>
@@ -2611,11 +2621,31 @@
                     </div>
                 </button>
             </li>
-            <!-- Tahap 10: BAST (nomor internal 9) -->
+            <!-- Tahap 10: Laporan Akhir (nomor internal 11) -- ditambahkan Kaa -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @active_step == 11 ? 'active' : '' }} {{ !@laporan_akhir.akses ? 'disabled' : '' }}" id="tab-stage-11" {{ @laporan_akhir.akses ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-11"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-11" aria-selected="{{ @active_step == 11 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">10</span>
+                        <span class="stage-nav-text">Laporan Akhir</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ @stepper[11].state == 'done' }}">
+                            <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
+                            <false>
+                                <check if="{{ @stepper[11].state == 'current' }}">
+                                    <true><span class="badge stage-status-badge stage-badge-aktif">Aktif</span></true>
+                                    <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                </button>
+            </li>
+            <!-- Tahap 11: BAST (nomor internal 9) -->
             <li class="stage-nav-item" role="presentation">
                 <button class="stage-nav-btn {{ @active_step == 9 ? 'active' : '' }} {{ (9 > @max_accessible_step || @kontrak_panel.menunggu) ? 'disabled' : '' }}" id="tab-stage-9" {{ (9 <= @max_accessible_step && !@kontrak_panel.menunggu) ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-9"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-9" aria-selected="{{ @active_step == 9 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
-                        <span class="stage-nav-badge">10</span>
+                        <span class="stage-nav-badge">11</span>
                         <span class="stage-nav-text">BAST</span>
                     </div>
                     <div class="stage-nav-status-row">
@@ -6565,7 +6595,7 @@
                                     </a>
                                     <check if="{{ @order.status_pelaksanaan == 'laporan_selesai' || !empty(@bast) }}">
                                         <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" onclick="switchStage(9, true)">
-                                            Lanjut ke Tahap 9 (BAST) <i class="bi bi-arrow-right ms-1"></i>
+                                            Lanjut ke Tahap 11 (BAST) <i class="bi bi-arrow-right ms-1"></i>
                                         </button>
                                     </check>
                                 </div>
@@ -7044,7 +7074,7 @@
                                                     </div>
                                                 </div>
                                                 <check if="{{ !@po_alur.ttd.kontrak_ada }}">
-                                                    <div class="pt-next"><span class="pt-dot"></span><div><b>Diteruskan ke Humas.</b> Humas membuat PKS di Tahap 9. BAST (Tahap 10) terbuka setelah PKS selesai.</div></div>
+                                                    <div class="pt-next"><span class="pt-dot"></span><div><b>PO Aktif penuh.</b> Laporan Akhir (Tahap 10) sudah terbuka. PKS dibuat Humas di Tahap 9, dan BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir selesai.</div></div>
                                                 </check>
                                                 </check>
                                             </true>
@@ -7110,8 +7140,8 @@
                                             el.classList.remove('pt-shake'); void el.offsetWidth; el.classList.add('pt-shake');
                                             if (pesan) {
                                                 pesan.textContent = el.getAttribute('data-ttd') === '1'
-                                                    ? 'Humas membuat PKS di Tahap 9. BAST (Tahap 10) terbuka setelah PKS selesai.'
-                                                    : 'Upload PO yang sudah ditandatangani dulu. Setelah itu Humas membuat PKS di Tahap 9, lalu BAST (Tahap 10) terbuka.';
+                                                    ? 'Laporan Akhir (Tahap 10) sudah terbuka. BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir selesai.'
+                                                    : 'Upload PO yang sudah ditandatangani dulu. Setelah itu Laporan Akhir (Tahap 10) terbuka, dan BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir selesai.';
                                             }
                                         };
                                         var inp = document.getElementById('poTtdFile');
@@ -7256,7 +7286,7 @@
                                             var o = bukaDlg(
                                                 '<div class="pt-big"><i class="bi bi-file-earmark-check"></i></div>' +
                                                 '<h5>Sudah yakin file PO ini benar?</h5>' +
-                                                '<p>Cek kembali file di bawah. Jika sudah benar, PO langsung Aktif penuh dan otomatis diteruskan ke Humas untuk dibuatkan PKS.</p>' +
+                                                '<p>Cek kembali file di bawah. Jika sudah benar, PO langsung Aktif penuh dan Laporan Akhir (Tahap 10) terbuka.</p>' +
                                                 '<div class="pt-sum"><span>Nomor PO</span><b>' + esc(NOMOR_PO || '-') + '</b><span>File</span><b>' + esc(ringkasIsi()) + '</b><span>Ukuran</span><b>' + mb(totalByte()) + '</b></div>' +
                                                 '<div class="pt-hint">Pastikan nomor PO sesuai, dokumen sudah ditandatangani, semua halaman terbaca jelas, dan urutan halaman benar. File tidak dapat diganti setelah di-upload.</div>' +
                                                 '<div class="pt-foot"><button type="button" class="btn btn-outline-dark fw-semibold" data-pt="cek">Cek lagi</button><button type="button" class="btn btn-dark fw-semibold" data-pt="ya"><i class="bi bi-cloud-arrow-up me-1"></i>Ya, upload PO</button></div>');
@@ -7312,7 +7342,7 @@
                                                 var r = null; try { r = JSON.parse(x.responseText); } catch (e) {}
                                                 if (r && r.success) {
                                                     bar.style.width = '100%';
-                                                    tag.innerHTML = '<span class="pt-tag">' + (foto ? (jml > 1 ? 'Foto digabung ke PDF dan ' : 'Foto diubah ke PDF dan ') : '') + 'PO diteruskan ke Humas</span>';
+                                                    tag.innerHTML = '<span class="pt-tag">' + (foto ? (jml > 1 ? 'Foto digabung ke PDF dan ' : 'Foto diubah ke PDF dan ') : '') + 'PO berhasil diunggah</span>';
                                                     setTimeout(function () { window.location.reload(); }, 500);
                                                 } else {
                                                     gagal((r && r.message) ? r.message : 'Gagal meng-upload file. Coba lagi.');
@@ -7559,6 +7589,15 @@
         <!-- End of Pane Stage 10 (Kontrak) -->
 
         <!-- ======================================================== -->
+        <!-- PANE TAHAP 10: LAPORAN AKHIR (nomor internal 11)          -->
+        <!-- Ditambahkan Kaa. Isi kartu: order/_laporan_akhir.html     -->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @active_step == 11 ? 'show active' : '' }}" id="pane-stage-11" role="tabpanel" aria-labelledby="tab-stage-11">
+            <include href="order/_laporan_akhir.html" />
+        </div>
+        <!-- End of Pane Stage 11 (Laporan Akhir) -->
+
+        <!-- ======================================================== -->
         <!-- PANE TAHAP 10: BERITA ACARA SERAH TERIMA (BAST) & LHU    -->
         <!-- (nomor internal 9)                                       -->
         <!-- ======================================================== -->
@@ -7567,7 +7606,7 @@
                 <div class="system-section-header">
                     <div>
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
-                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">10</span>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">11</span>
                             <i class="bi bi-patch-check-fill text-primary fs-5"></i> Berita Acara Serah Terima (BAST)
                         </h6>
                         <div class="d-none align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
@@ -7580,35 +7619,40 @@
                     <check if="{{ !empty(@bast) }}">
                         <check if="{{ @bast.status_bast == 'selesai' }}">
                             <true><span class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i> BAST Diterbitkan</span></true>
-                            <false><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-pencil-square me-1"></i> Draft BAST</span></false>
+                            <false>
+                                <check if="{{ @bast.status_bast == 'proses_ttd' }}">
+                                    <true><span class="badge bg-info-subtle text-info-emphasis border border-info-subtle"><i class="bi bi-send-check me-1"></i> Menunggu Nomor Humas</span></true>
+                                    <false><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-pencil-square me-1"></i> Draft BAST</span></false>
+                                </check>
+                            </false>
                         </check>
                     </check>
                     <check if="{{ empty(@bast) }}">
                         <check if="{{ @po_bast_terbuka }}">
-                            <span class="badge bg-info-subtle text-info border border-info-subtle">Siap Penerbitan BAST</span>
+                            <span class="badge bg-info-subtle text-info border border-info-subtle">BAST Sedang Disiapkan</span>
                         </check>
                         <check if="{{ !@po_bast_terbuka }}">
-                            <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu {{ @kontrak_panel.tampil ? 'PKS' : 'PO' }})</span>
+                            <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu {{ @kontrak_panel.tampil ? ((@kontrak_panel.ada && !@laporan_akhir.selesai) ? 'Laporan Akhir' : 'PKS') : 'PO' }})</span>
                         </check>
                     </check>
                 </div>
 
                 <div class="p-4">
-                    <!-- Opsi Penerbitan BAST jika belum diterbitkan -->
+                    <!-- BAST kosong: dibuat otomatis oleh sistem saat PO bertanda tangan + PKS + Laporan Akhir selesai -->
                     <check if="{{ empty(@bast) }}">
                         <check if="{{ @po_bast_terbuka }}">
                             <div class="p-3 bg-white rounded-3 border shadow-xs d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>
                                     <div class="fw-bold text-dark small mb-0.5">
-                                        <i class="bi bi-patch-check text-primary me-1"></i> Penerbitan Berita Acara Serah Terima (BAST) &amp; LHU
+                                        <i class="bi bi-magic text-primary me-1"></i> BAST disiapkan otomatis dari PKS
                                     </div>
                                     <span class="text-muted small">
-                                        Penerbitan dokumen serah terima hasil pengujian kepada pelanggan untuk penutupan resmi siklus layanan.
+                                        Draf BAST dibuat sistem. Ketua Tim melengkapi jabatan dan NIP Pihak Kedua, lalu mengirimnya ke Humas untuk diberi nomor.
                                     </span>
                                 </div>
-                                <check if="{{ (@is_tim_mitra || @is_admin_order || @is_superadmin) && (!@is_order_selesai || @can_koreksi) }}">
+                                <check if="{{ @bast_mode == 'penuh' }}">
                                     <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" onclick="triggerStageRead(9)">
-                                        <i class="bi bi-file-earmark-plus"></i> Terbitkan Dokumen BAST
+                                        <i class="bi bi-file-earmark-plus"></i> Buat BAST
                                     </a>
                                 </check>
                             </div>
@@ -7616,13 +7660,59 @@
                         <check if="{{ !@po_bast_terbuka }}">
                             <div class="p-3 text-center text-muted bg-light rounded-3 small">
                                 <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
-                                Berita Acara Serah Terima (BAST) dapat diterbitkan setelah PO bertanda tangan di-upload dan <strong>PKS selesai dibuat Humas</strong> pada <strong>Tahap 9 (PKS)</strong>.
+                                Berita Acara Serah Terima (BAST) disiapkan otomatis setelah <strong>PKS selesai dibuat Humas</strong> pada <strong>Tahap 9 (PKS)</strong> dan order diselesaikan lewat <strong>Laporan Akhir</strong> pada <strong>Tahap 10</strong>.
                             </div>
                         </check>
                     </check>
 
-                    <!-- Informasi BAST jika sudah diterbitkan -->
+                    <!-- BAST sudah ada: draft (Ketua Tim melengkapi) -> dikirim ke Humas -> selesai (bernomor) -->
                     <check if="{{ !empty(@bast) }}">
+                        <check if="{{ @bast_embed }}">
+                            <true>
+                                <style>
+                                    .system-section-card:has(#btWrap) { overflow:clip; }
+                                    .bt-frame { margin:12px -1.5rem 0; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; background:#fff; }   /* selebar kartu, sama dengan bingkai PO dan PKS */
+                                    .bt-frame:not(.bt-full) { position:sticky; top:75px; z-index:40; }
+                                    .bt-fh { background:#f1f5f9; border-bottom:1px solid #cbd5e1; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#1e293b; }
+                                    .bt-frame iframe { display:block; width:100%; height:calc(100vh - 75px - 46px); min-height:420px; border:0; background:#fff; }
+                                    .bt-frame.bt-full { position:fixed; inset:0; margin:0; z-index:1060; border:0; display:flex; flex-direction:column; }
+                                    .bt-frame.bt-full iframe { flex:1; height:auto; min-height:0; }
+                                </style>
+                                <div class="small text-secondary mb-1">
+                                    <check if="{{ @bast_mode == 'humas' }}">
+                                        <true>Dikirim Ketua Tim. Isi <b>nomor urut</b> dan pilih <b>pejabat yang mengetahui</b> di bawah, lalu klik <b>Selesai</b>. Tanggal BAST otomatis hari ini.</true>
+                                        <false>
+                                            <check if="{{ @bast_mode == 'katim' }}">
+                                                <true>BAST sudah disiapkan otomatis dari PKS. Lengkapi <b>jabatan</b> dan <b>NIP</b> Anda di bawah, lalu klik <b>Kirim ke Humas</b>.</true>
+                                                <false>Isi BAST di bawah. Ketua Tim melengkapi lalu mengirim ke Humas, Humas memberi nomor.</false>
+                                            </check>
+                                        </false>
+                                    </check>
+                                </div>
+                                <div class="bt-frame" id="btWrap">
+                                    <div class="bt-fh">
+                                        <span><b>Berita Acara Serah Terima (BAST)</b> &middot; Order #{{ @order.nomor_order }}</span>
+                                        <span class="d-inline-flex gap-1">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="btFull"><i class="bi bi-arrows-fullscreen me-1"></i><span>Layar penuh</span></button>
+                                        </span>
+                                    </div>
+                                    <iframe id="btFrame" src="{{ @bast_embed_url }}" title="Form BAST" loading="lazy"></iframe>
+                                </div>
+                                <script>
+                                (function () {
+                                    var wrap = document.getElementById('btWrap'), full = document.getElementById('btFull');
+                                    if (!wrap || !full) { return; }
+                                    function penuh(on) {
+                                        wrap.classList.toggle('bt-full', on);
+                                        document.body.style.overflow = on ? 'hidden' : '';
+                                        full.querySelector('span').textContent = on ? 'Tutup layar penuh' : 'Layar penuh';
+                                    }
+                                    full.addEventListener('click', function () { penuh(!wrap.classList.contains('bt-full')); });
+                                    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && wrap.classList.contains('bt-full')) { penuh(false); } });
+                                })();
+                                </script>
+                            </true>
+                            <false>
                         <div class="p-3 bg-white rounded-3 border border-primary-subtle shadow-xs">
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div>
@@ -7635,27 +7725,61 @@
                                                 <strong class="text-dark font-monospace">{{ @bast.nomor_bast }}</strong>
                                             </true>
                                             <false>
-                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-bold px-2 py-0.5">
-                                                    <i class="bi bi-pencil-square me-1"></i> Draft BAST
-                                                </span>
-                                                <span class="text-muted small">Belum bernomor, belum diterbitkan</span>
+                                                <check if="{{ @bast.status_bast == 'proses_ttd' }}">
+                                                    <true>
+                                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle fw-bold px-2 py-0.5">
+                                                            <i class="bi bi-send-check me-1"></i> Menunggu Nomor dari Humas
+                                                        </span>
+                                                        <span class="text-muted small">{{ @bast.dibuka_humas_at ? 'Sudah dibuka Humas' : 'Belum dibuka Humas' }}</span>
+                                                    </true>
+                                                    <false>
+                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-bold px-2 py-0.5">
+                                                            <i class="bi bi-pencil-square me-1"></i> Draft BAST
+                                                        </span>
+                                                        <span class="text-muted small">Menunggu Ketua Tim melengkapi dan mengirim ke Humas</span>
+                                                    </false>
+                                                </check>
                                             </false>
                                         </check>
                                     </div>
                                     <div class="small text-secondary">
-                                        Tanggal: <strong>{{ date('d M Y', strtotime(@bast.tanggal_bast)) }}</strong> &bull; Pihak Pertama: <strong>{{ @bast.pihak_pertama_nama ?: '-' }}</strong>
+                                        <check if="{{ @bast.status_bast == 'selesai' }}">
+                                            <true>Tanggal: <strong>{{ date('d M Y', strtotime(@bast.tanggal_bast)) }}</strong> &bull; Pihak Pertama: <strong>{{ @bast.pihak_pertama_nama ?: '-' }}</strong></true>
+                                            <false>
+                                                Pihak Kedua (Ketua Tim): <strong>{{ @bast.pihak_kedua_nama ?: '-' }}</strong>
+                                                <check if="{{ @bast.status_bast == 'proses_ttd' && @bast.dikirim_at }}">
+                                                    &bull; Dikirim: <strong>{{ date('d M Y, H:i', strtotime(@bast.dikirim_at)) }}</strong>
+                                                </check>
+                                            </false>
+                                        </check>
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center flex-wrap gap-2">
                                     <check if="{{ @bast.status_bast == 'selesai' }}">
                                         <true>
                                             <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1"><i class="bi bi-eye me-1"></i> Buka BAST</a>
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/unduh" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1"><i class="bi bi-file-earmark-word me-1"></i> Unduh Word</a>
                                         </true>
                                         <false>
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" onclick="triggerStageRead(9)"><i class="bi bi-pencil-square me-1"></i> Lanjutkan Draft BAST</a>
+                                            <check if="{{ @bast_mode == 'katim' && @bast.status_bast != 'proses_ttd' }}">
+                                                <true>
+                                                    <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" onclick="triggerStageRead(9)"><i class="bi bi-pencil-square me-1"></i> Lengkapi dan Kirim ke Humas</a>
+                                                </true>
+                                                <false>
+                                                    <check if="{{ @bast_mode == 'humas' }}">
+                                                        <true>
+                                                            <check if="{{ @bast.status_bast == 'proses_ttd' }}">
+                                                                <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" onclick="triggerStageRead(9)"><i class="bi bi-pencil-square me-1"></i> Isi Nomor</a>
+                                                            </check>
+                                                        </true>
+                                                        <false>
+                                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" onclick="triggerStageRead(9)"><i class="bi bi-eye me-1"></i> {{ @bast_mode == 'penuh' ? 'Buka BAST' : 'Lihat BAST' }}</a>
+                                                        </false>
+                                                    </check>
+                                                </false>
+                                            </check>
                                         </false>
                                     </check>
-                                    <a href="{{ @BASE }}/order/{{ @order.id }}/bast/unduh" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1"><i class="bi bi-file-earmark-word me-1"></i> Unduh Word</a>
                                     <check if="{{ @bast.file_dokumen_bast }}">
                                         <button type="button" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" data-title="Dokumen BAST" data-subtitle="Nomor: {{ @bast.nomor_bast }}">
                                             <i class="bi bi-file-earmark-pdf-fill me-1"></i> Unduh Berkas BAST
@@ -7664,6 +7788,8 @@
                                 </div>
                             </div>
                         </div>
+                            </false>
+                        </check>
                     </check>
                 </div>
             </div>
@@ -10065,8 +10191,9 @@ function switchStage(stageNum, smoothScroll, targetSelector) {
     if (!stageNum) return;
     // Proteksi: Tidak boleh melompat ke tahapan di masa depan (melebihi current_step)
     // Tahap Kontrak (nomor internal 10) punya aturan akses sendiri: terbuka kalau tombol tabnya aktif
-    var tabKontrak = (stageNum === 10) ? document.getElementById('tab-stage-10') : null;
-    if (stageNum === 10 ? (!tabKontrak || tabKontrak.disabled) : (stageNum > maxAccessibleStep)) {
+    // Laporan Akhir (nomor internal 11, ditambahkan Kaa) sama: terbuka kalau tombol tabnya aktif
+    var tabKontrak = (stageNum === 10 || stageNum === 11) ? document.getElementById('tab-stage-' + stageNum) : null;
+    if ((stageNum === 10 || stageNum === 11) ? (!tabKontrak || tabKontrak.disabled) : (stageNum > maxAccessibleStep)) {
         return;
     }
 
@@ -10153,7 +10280,9 @@ document.addEventListener('DOMContentLoaded', function() {
         '#cardBast': 9,
         '#pane-stage-9': 9,
         '#cardKontrak': 10,
-        '#pane-stage-10': 10
+        '#pane-stage-10': 10,
+        '#cardLaporanAkhir': 11,
+        '#pane-stage-11': 11
     };
 
     // Inisialisasi Upload 3 Dokumen Penawaran DEAL
@@ -10687,7 +10816,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             var stage = parseInt(cp.getAttribute('data-stage'), 10) || (idx + 1);
             if (cp.classList.contains('disabled')) { return; }
-            if (stage === 10 || stage <= maxAccessibleStep) {
+            if (stage === 10 || stage === 11 || stage <= maxAccessibleStep) {
                 switchStage(stage, true);
             }
         });

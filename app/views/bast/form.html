@@ -5,7 +5,9 @@
     Nomor BAST "B/<urut>/BBSPJIS/HK/<romawi>/<tahun>": urut diisi manual, unik per urut + bulan + tahun (deret BAST sendiri). Selesai = order selesai.
     Data Pihak Pertama dan dasar PKS diambil dari PKS yang sudah selesai (dikunci); order lama tanpa PKS: diketik manual.
     Class berawalan "dpk-" (sama dengan form PKS), kertas pratinjau "dbt-sheet".
+    Dibuka di dalam Detail Order (kartu Tahap 11) lewat ?embed=1 (seperti PO dan PKS): class html "dpk-dlm" menyembunyikan tombol Kembali dan judul ganda.
 -->
+<script>(function () { try { if (window.self !== window.top && /[?&]embed=1(&|$)/.test(window.location.search)) { document.documentElement.classList.add('dpk-dlm'); } } catch (e) {} })();</script>
 <style>
     .dpk-root {
         --dpk-primary: #1e293b; --dpk-primary-hover: #0f172a; --dpk-primary-light: #f1f5f9;
@@ -275,9 +277,9 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
     <div class="pp-root dpk-root" id="dpkRoot">
         <div class="pp-head">
             <div class="d-flex align-items-center gap-3">
-                <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-sm btn-outline-secondary pp-back" data-dpk-act="kembali"><i class="bi bi-arrow-left"></i> <span>Kembali</span></a>
+                <a href="{{ @bast_kembali }}" class="btn btn-sm btn-outline-secondary pp-back" data-dpk-act="kembali"><i class="bi bi-arrow-left"></i> <span>Kembali</span></a>
                 <div>
-                    <div class="d-flex align-items-center flex-wrap gap-2"><h1>Buat Berita Acara Serah Terima (BAST)</h1><span class="pp-tag" id="dpkTag">Draft</span></div>
+                    <div class="d-flex align-items-center flex-wrap gap-2"><h1>Berita Acara Serah Terima (BAST)</h1><span class="pp-tag" id="dpkTag">Draft</span></div>
                     <p id="dpkSub"></p>
                 </div>
             </div>
@@ -297,13 +299,14 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
 
                 <div class="po-sticky-bar" id="dpkBottomBar">
                     <div>
-                        <a href="{{ @BASE }}/order/{{ @order.id }}" class="btn btn-outline-secondary" id="dpkBtnKembali" data-dpk-act="kembali">Kembali</a>
+                        <a href="{{ @bast_kembali }}" class="btn btn-outline-secondary" id="dpkBtnKembali" data-dpk-act="kembali">Kembali</a>
                         <button type="button" class="btn btn-outline-secondary btn-sm d-xl-none" data-dpk-lihat="1"><i class="bi bi-file-earmark-text me-1"></i>Lihat Preview</button>
                     </div>
                     <div class="dpk-bar-r">
-                        <button type="button" class="btn btn-outline-secondary" id="dpkSimpan"><i class="bi bi-save me-1"></i> Simpan sebagai Draft</button>
                         <span class="dpk-ft" id="dpkHint"></span>
-                        <button type="button" class="btn btn-primary" id="dpkSelesai"><i class="bi bi-check2-circle me-1"></i> Selesai</button>
+                        <button type="button" class="btn btn-outline-secondary" id="dpkSimpan" hidden><i class="bi bi-save me-1"></i> <span id="dpkSimpanT">Simpan</span></button>
+                        <button type="button" class="btn btn-primary" id="dpkKirim" hidden><i class="bi bi-send me-1"></i> Kirim ke Humas</button>
+                        <button type="button" class="btn btn-primary" id="dpkSelesai" hidden><i class="bi bi-check2-circle me-1"></i> Selesai</button>
                     </div>
                 </div>
             </div>
@@ -347,6 +350,13 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         var BASE = '{{ @BASE }}';
         var CSRF = '{{ @csrf_token }}';
         var DATA = {{ @bast_json | raw }};
+        var DALAM_DETAIL = document.documentElement.classList.contains('dpk-dlm');   // dibuka di kartu BAST Detail Order: selesai / kirim -> halaman induk dimuat ulang di Tahap 11
+        function pergiHalaman(url) {
+            var w = window;
+            try { if (DALAM_DETAIL && window.top && window.top !== window) { w = window.top; } } catch (e) {}
+            w.location.href = url;
+        }
+        function tujuanSelesai(j) { return DALAM_DETAIL ? BASE + '/order/' + DATA.order.id + '?tahap=9' : (j && j.redirect) || DATA.kembaliUrl; }
         var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
         var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
         var ROMAWI = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
@@ -395,8 +405,8 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             { id: 'pksNomor', sec: 'dasar', label: 'Nomor PKS', src: 'db', req: true, ph2: '..........' },
             { id: 'pksTanggal', sec: 'dasar', label: 'Tanggal PKS', src: 'db', req: true, type: 'date', ph2: '..........' },
             { id: 'keduaNama', sec: 'kedua', label: 'Nama', src: 'master', req: true, ph2: '..........' },
+            { id: 'keduaNip', sec: 'kedua', label: 'NIP', src: 'manual', ph: 'Mis. 19800101 200501 1 001, boleh dikosongkan', ph2: '' },
             { id: 'keduaJabatan', sec: 'kedua', label: 'Jabatan', src: 'master', req: true, ph2: '..........' },
-            { id: 'keduaNip', sec: 'kedua', label: 'NIP', src: 'manual', ph: 'Opsional, mis. 19800101 200501 1 001', ph2: '' },
             { id: 'mengetahuiNama', sec: 'tahu', label: 'Nama', src: 'master', req: true, ph2: '..........' },
             { id: 'mengetahuiJabatan', sec: 'tahu', label: 'Jabatan', src: 'master', req: true, ph2: '..........' }
         ];
@@ -404,7 +414,15 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         var SRC = {}, F = {};
         FIELDS.forEach(function (f) { SRC[f.id] = f.src; F[f.id] = f; });
         var SRC_LABEL = { db: ['bi-lock', 'Dari PKS'], manual: ['bi-pencil', 'Manual'], master: ['bi-person-badge', 'Master'] };
-        var REQ = FIELDS.filter(function (f) { return f.req; });
+        var MODE = DATA.mode || 'lihat';              // 'penuh' (Superadmin) | 'humas' | 'katim' | 'lihat'
+        var BOLEH = {}; (DATA.boleh || []).forEach(function (id) { BOLEH[id] = true; });
+        var AKSI = DATA.aksi || {};
+        var WHO = { nomorUrut: 'Humas', tanggal: 'Humas', mengetahuiNama: 'Humas', mengetahuiJabatan: 'Humas', keduaNama: 'Ketua Tim', keduaJabatan: 'Ketua Tim', keduaNip: 'Ketua Tim' };
+        var BUKAN_WAJIB_KATIM = { nomorUrut: 1, tanggal: 1, mengetahuiNama: 1, mengetahuiJabatan: 1 };   // diisi Humas belakangan
+        // Isian wajib sesuai peran: Katim = sampai kirim ke Humas; Humas / Superadmin = semua; lihat saja = tidak ada penanda
+        var REQ = FIELDS.filter(function (f) { return f.req && (MODE === 'katim' ? !BUKAN_WAJIB_KATIM[f.id] : (MODE === 'lihat' ? false : true)) && (AKSI.draft || AKSI.kirim || AKSI.selesai); });
+        var REQ_SET = {}; REQ.forEach(function (f) { REQ_SET[f.id] = true; });
+        function dapatUbah(fid) { return !!BOLEH[fid] && !(PKS_ADA && !!DARI_PKS[fid]); }
         var PKS_ADA = !!DATA.pksAda;
         var PEJABAT = DATA.pejabat || [];
 
@@ -416,6 +434,18 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         var sedangProses = false;
 
         function terkunci(f) { return PKS_ADA && !!DARI_PKS[f.id]; }
+        function adaPilih(kunci) {   // pilihan pejabat dari master: Pihak Kedua hanya Superadmin, pejabat yang mengetahui untuk Humas / Superadmin
+            if (!PEJABAT.length) { return false; }
+            return kunci === 'kedua' ? (MODE === 'penuh') : !!BOLEH.mengetahuiNama;
+        }
+        function hintHtml(f) {
+            var t = f.hint || '';
+            if (f.id === 'nomorUrut') { t = BOLEH.nomorUrut ? f.hint : 'Diisi Humas saat memberi nomor BAST.'; }
+            else if (f.id === 'tanggal') { t = MODE === 'penuh' ? '' : 'Otomatis: tanggal saat Humas memberi nomor BAST.'; }
+            else if (f.id === 'keduaJabatan' && BOLEH.keduaJabatan && MODE === 'katim') { t = 'Isi jabatan Anda sebagai Pihak Kedua.'; }
+            else if (f.id === 'keduaNip' && BOLEH.keduaNip && MODE === 'katim') { t = 'Isi NIP Anda. Boleh dikosongkan.'; }
+            return t ? '<div class="dpk-hint">' + esc(t) + '</div>' : '';
+        }
 
         /* ---------- Turunan tanggal dan nomor ---------- */
         function infoTanggal(s) {
@@ -446,14 +476,19 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             });
             if (cocok < 0 && vals[namaId]) { opsi += '<option value="cur" selected>' + esc(vals[namaId]) + ' - ' + esc(vals[jabId]) + ' (tersimpan)</option>'; }
             else if (cocok >= 0) { opsi = opsi.replace('<option value="' + cocok + '">', '<option value="' + cocok + '" selected>'); }
-            return '<div class="col-12"><div class="dpk-f" data-ff="' + namaId + '"><div class="dpk-fl"><label class="form-label" for="dbt_pilih_' + kunci + '">Pilih ' + esc(label) + wjHtml(namaId) + '</label>' +
+            return '<div class="col-12"><div class="dpk-f" data-ff="' + namaId + '"><div class="dpk-fl"><label class="form-label" for="dbt_pilih_' + kunci + '">Pilih ' + esc(label) + (REQ_SET[namaId] ? wjHtml(namaId) : '') + '</label>' +
                 '<span class="dpk-src master"><i class="bi bi-person-badge"></i>Master</span></div>' +
                 '<select class="form-select form-select-sm" id="dbt_pilih_' + kunci + '" data-pilih="' + kunci + '">' + opsi + '</select></div></div>';
         }
 
         function fieldHtml(f) {
-            var kunci = terkunci(f) || (f.src === 'master' && PEJABAT.length > 0);
+            var pilihSec = (f.sec === 'kedua' || f.sec === 'tahu') && f.src === 'master' && adaPilih(f.sec === 'kedua' ? 'kedua' : 'tahu');
+            var kunci = !dapatUbah(f.id) || pilihSec;
             var s = terkunci(f) ? SRC_LABEL.db : SRC_LABEL[f.src === 'db' ? 'manual' : f.src];
+            var lencana = terkunci(f) ? 'tetap' : f.src, lencanaTeks = s[1], lencanaIkon = s[0];
+            if (!terkunci(f) && !BOLEH[f.id] && WHO[f.id]) { lencana = 'tetap'; lencanaTeks = 'Diisi ' + WHO[f.id]; lencanaIkon = 'bi-lock'; }
+            else if (!terkunci(f) && !BOLEH[f.id]) { lencana = 'tetap'; lencanaTeks = 'Terkunci'; lencanaIkon = 'bi-lock'; }
+            else if (!terkunci(f) && f.src === 'master' && !pilihSec) { lencana = 'manual'; lencanaTeks = SRC_LABEL.manual[1]; lencanaIkon = SRC_LABEL.manual[0]; }   // diketik sendiri (mis. jabatan Ketua Tim)
             var idn = 'dbt_' + f.id, kontrol;
             if (f.type === 'textarea') {
                 kontrol = '<textarea class="form-control form-control-sm dpk-input' + (kunci ? ' ro' : '') + '" id="' + idn + '" data-fid="' + f.id + '" rows="' + (f.rows || 2) + '"' + (kunci ? ' readonly' : '') + '>' + esc(vals[f.id]) + '</textarea>';
@@ -462,14 +497,18 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                     (f.type === 'urut' ? ' inputmode="numeric" maxlength="9"' : '') + ' value="' + esc(vals[f.id]) + '"' + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '') + (kunci ? ' readonly' : '') + '>';
             }
             var lebar = (f.type === 'textarea' || f.id === 'perusahaan') ? 'col-12' : 'col-12 col-md-6';
-            return '<div class="' + lebar + '"><div class="dpk-f" data-ff="' + f.id + '"><div class="dpk-fl"><label class="form-label" for="' + idn + '">' + esc(f.label) + (f.req ? wjHtml(f.id) : '') + '</label>' +
-                '<span class="dpk-src ' + (terkunci(f) ? 'tetap' : f.src) + '"><i class="bi ' + s[0] + '"></i>' + s[1] + '</span></div>' + kontrol +
-                (f.id === 'nomorUrut' ? '<div class="dpk-cek" id="dbtCekUrut" hidden></div>' : '') + (f.hint ? '<div class="dpk-hint">' + esc(f.hint) + '</div>' : '') + '</div></div>' +
+            return '<div class="' + lebar + '"><div class="dpk-f" data-ff="' + f.id + '"><div class="dpk-fl"><label class="form-label" for="' + idn + '">' + esc(f.label) + (REQ_SET[f.id] ? wjHtml(f.id) : '') + '</label>' +
+                '<span class="dpk-src ' + lencana + '"><i class="bi ' + lencanaIkon + '"></i>' + esc(lencanaTeks) + '</span></div>' + kontrol +
+                (f.id === 'nomorUrut' ? '<div class="dpk-cek" id="dbtCekUrut" hidden></div>' : '') + hintHtml(f) + '</div></div>' +
                 (f.derived ? '<div class="col-12"><div class="dbt-fixed" id="dbtDer_tanggal"></div></div>' : '');
         }
 
         function berkasHtml() {
-            return '<div class="col-12"><div class="dpk-f"><div class="dpk-fl"><label class="form-label" for="dbt_file">Berkas BAST yang sudah ditandatangani</label><span class="dpk-src manual"><i class="bi bi-pencil"></i>Opsional</span></div>' +
+            if (!BOLEH.berkas) {
+                return '<div class="col-12"><div class="dpk-f"><div class="dpk-fl"><label class="form-label">Berkas BAST yang sudah ditandatangani</label><span class="dpk-src tetap"><i class="bi bi-lock"></i>Diisi Humas</span></div>' +
+                    '<div class="dpk-hint dbt-file" id="dbtFileInfo"></div></div></div>';
+            }
+            return '<div class="col-12"><div class="dpk-f"><div class="dpk-fl"><label class="form-label" for="dbt_file">Berkas BAST yang sudah ditandatangani</label><span class="dpk-src manual"><i class="bi bi-pencil"></i>Manual</span></div>' +
                 '<input class="form-control form-control-sm" type="file" id="dbt_file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">' +
                 '<div class="dpk-hint dbt-file" id="dbtFileInfo"></div></div></div>';
         }
@@ -479,16 +518,28 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         }
 
         function renderForm() {
-            var h = '';
-            if (!PKS_ADA) {
-                h += '<div class="dbt-fixed" style="margin-bottom:1rem"><i class="bi bi-info-circle"></i> Order ini belum punya PKS di sistem, jadi data Pihak Pertama dan dasar PKS diketik manual.</div>';
-            } else {
-                h += '<div class="dbt-fixed" style="margin-bottom:1rem"><i class="bi bi-lock"></i> Data Pihak Pertama, judul, nomor dan tanggal PKS diambil dari PKS yang sudah selesai dan tidak bisa diubah di sini.</div>';
+            var h = '', info = DATA.info || {};
+            function catatan(ikon, teks) { return '<div class="dbt-fixed" style="margin-bottom:1rem"><i class="bi ' + ikon + '"></i> ' + teks + '</div>'; }
+            if (status === 'selesai') {
+                h += catatan('bi-patch-check', 'BAST ini sudah selesai' + (DATA.nomorTerbit ? ' dengan nomor <b>' + esc(DATA.nomorTerbit) + '</b>' : '') + (DATA.terkunci ? ' dan dikunci. Hubungi Superadmin kalau perlu membuka izin edit.' : '.'));
+            } else if (MODE === 'katim' && status === 'draft') {
+                h += catatan('bi-magic', 'BAST ini disiapkan otomatis dari PKS. Lengkapi <b>jabatan</b> dan <b>NIP</b> Anda sebagai Pihak Kedua, lalu klik <b>Kirim ke Humas</b>. Nomor, tanggal, dan pejabat yang mengetahui diisi Humas.');
+            } else if (status === 'dikirim' && MODE !== 'humas') {
+                h += catatan('bi-hourglass-split', 'Sudah dikirim ke Humas' + (info.dikirimAt ? ' pada ' + esc(info.dikirimAt) : '') + (info.dikirimOleh ? ' oleh ' + esc(info.dikirimOleh) : '') + '. Menunggu Humas memberi nomor' + (info.dibukaHumas ? ' (sudah dibuka Humas ' + esc(info.dibukaHumas) + ')' : ' (belum dibuka Humas)') + '.');
+            } else if (MODE === 'humas' && status === 'dikirim') {
+                h += catatan('bi-pencil-square', 'Dikirim' + (info.dikirimOleh ? ' oleh <b>' + esc(info.dikirimOleh) + '</b>' : '') + (info.dikirimAt ? ' pada ' + esc(info.dikirimAt) : '') + '. Isi <b>nomor urut</b> dan pilih <b>pejabat yang mengetahui</b>, lalu klik <b>Selesai</b>. Tanggal BAST otomatis hari ini.');
+            } else if (status === 'draft' && MODE === 'lihat') {
+                h += catatan('bi-eye', 'BAST ini sedang dilengkapi Ketua Tim, belum dikirim ke Humas. Anda hanya bisa melihatnya.');
+            }
+            if (MODE === 'penuh' || MODE === 'lihat') {
+                h += !PKS_ADA
+                    ? catatan('bi-info-circle', 'Order ini belum punya PKS di sistem, jadi data Pihak Pertama dan dasar PKS diketik manual.')
+                    : catatan('bi-lock', 'Data Pihak Pertama, judul, nomor dan tanggal PKS diambil dari PKS yang sudah selesai dan tidak bisa diubah di sini.');
             }
             SECTIONS.forEach(function (s) {
                 var isi = '';
-                if (s.id === 'kedua') { isi += pilihPejabatHtml('kedua', 'pejabat Pihak Kedua', 'keduaNama', 'keduaJabatan'); }
-                if (s.id === 'tahu') { isi += pilihPejabatHtml('tahu', 'pejabat yang mengetahui', 'mengetahuiNama', 'mengetahuiJabatan'); }
+                if (s.id === 'kedua' && adaPilih('kedua')) { isi += pilihPejabatHtml('kedua', 'pejabat Pihak Kedua', 'keduaNama', 'keduaJabatan'); }
+                if (s.id === 'tahu' && adaPilih('tahu')) { isi += pilihPejabatHtml('tahu', 'pejabat yang mengetahui', 'mengetahuiNama', 'mengetahuiJabatan'); }
                 isi += FIELDS.filter(function (f) { return f.sec === s.id; }).map(fieldHtml).join('');
                 if (s.id === 'berkas') { isi = berkasHtml(); }
                 h += '<section class="pp-card" data-sec="' + s.id + '"><h3>' + judulKartu(s) + '</h3><div class="pp-body"><div class="row g-2">' + isi + '</div></div></section>';
@@ -503,12 +554,13 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             if (!e) { return; }
             if (fileBaru) { e.innerHTML = 'Akan diunggah: <b>' + esc(fileBaru.name) + '</b>'; }
             else if (fileUrl) { e.innerHTML = 'Berkas tersimpan: <a href="' + esc(fileUrl) + '" target="_blank" rel="noopener">buka berkas</a>. Pilih file baru untuk menggantinya.'; }
-            else { e.textContent = 'PDF, DOC, DOCX, JPG, atau PNG. Maksimal 10 MB.'; }
+            else { e.textContent = BOLEH.berkas ? 'PDF, DOC, DOCX, JPG, atau PNG. Maksimal 10 MB. Boleh dikosongkan.' : 'Belum ada berkas.'; }
         }
 
         function updDerived() {
             var ti = infoTanggal(vals.tanggal), e = $('dbtDer_tanggal');
             if (!e) { return; }
+            if (!ti && !BOLEH.tanggal) { e.innerHTML = 'Nomor dan tanggal BAST diisi Humas saat memberi nomor.'; return; }
             e.innerHTML = ti ? 'Nomor BAST: <b>' + esc(nomorDari(vals)) + '</b><br>Hari: <b>' + ti.hari + '</b>, tanggal <b>' + esc(ti.tglKata) + '</b>, tahun <b>' + esc(ti.tahunKata) + '</b>' : 'Isi tanggal yang valid.';
         }
 
@@ -524,7 +576,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         function cekUrut() {
             var u = String(vals.nomorUrut || '');
             urutBentrok = '';
-            if (u === '') { tulisCek('', ''); return; }
+            if (u === '' || !BOLEH.nomorUrut) { tulisCek('', ''); return; }
             var n = ++cekSeq;
             tulisCek('wait', 'Memeriksa nomor...');
             fetch(BASE + '/order/' + DATA.order.id + '/bast/cek-nomor?urut=' + encodeURIComponent(u) + '&tanggal=' + encodeURIComponent(vals.tanggal || ''), { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
@@ -601,6 +653,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             });
             var h = $('dpkHint');
             if (status === 'selesai') { h.className = 'dpk-ft muted'; h.textContent = 'BAST ini sudah selesai (order sudah ditutup).'; }
+            else if (!(AKSI.draft || AKSI.kirim || AKSI.selesai)) { h.className = 'dpk-ft muted'; h.textContent = status === 'dikirim' ? 'Menunggu nomor dari Humas.' : 'Hanya bisa dilihat.'; }
             else { h.className = 'dpk-ft' + (ks.length ? ' muted' : ''); h.textContent = ks.length ? ks.length + ' isian wajib belum terisi' : 'Semua isian wajib sudah terisi'; }
         }
         function sorotKosong(ks) {
@@ -610,7 +663,14 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 if (el) { el.classList.remove('dpk-err'); void el.offsetWidth; el.classList.add('dpk-err'); }
             });
         }
-        function updUnduh() { $('dbtUnduh').hidden = status === 'baru'; }
+        function updUnduh() { $('dbtUnduh').hidden = status !== 'selesai'; }
+        function updTombol() {
+            $('dpkSimpan').hidden = !AKSI.draft;
+            $('dpkKirim').hidden = !AKSI.kirim || status !== 'draft';
+            $('dpkSelesai').hidden = !AKSI.selesai;
+            $('dpkSimpanT').textContent = MODE === 'penuh' ? 'Simpan sebagai Draft' : 'Simpan';
+            $('dpkSelesai').lastChild.nodeValue = MODE === 'humas' && status !== 'selesai' ? ' Selesai (beri nomor)' : ' Selesai';
+        }
 
         function kilas(fid) {
             var box = $('dpkPages');
@@ -644,12 +704,14 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 });
             });
         }
-        function kunciTombol(v) { sedangProses = v; $('dpkSimpan').disabled = v; $('dpkSelesai').disabled = v; }
+        function kunciTombol(v) { sedangProses = v; $('dpkSimpan').disabled = v; $('dpkKirim').disabled = v; $('dpkSelesai').disabled = v; }
+        var TAG = { baru: 'Baru', draft: 'Draft', dikirim: 'Menunggu Humas', selesai: 'Selesai' };
+        function updTag() { $('dpkTag').textContent = TAG[status] || 'Draft'; }
         function hasilSimpan(j) {
             dirty = false; status = j.status; fileBaru = null;
             if (typeof j.fileUrl === 'string') { fileUrl = j.fileUrl; }
             var fi = $('dbt_file'); if (fi) { fi.value = ''; }
-            updFile(); updUnduh(); updWajib();
+            updFile(); updUnduh(); updTombol(); updTag(); updWajib();
         }
         function simpanDraft() {
             if (sedangProses) { return Promise.resolve(false); }
@@ -659,6 +721,28 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
                 toast('Draft BAST tersimpan.');
                 return true;
             }).catch(function (e) { toast(e.message, true); return false; }).then(function (ok) { kunciTombol(false); return ok; });
+        }
+        function kirimKeHumas() {
+            if (sedangProses) { return; }
+            var k = daftarKosongDi(vals);
+            if (k.length) {
+                toast('Masih ada ' + k.length + ' isian bertanda ● yang kosong: ' + k.map(function (f) { return f.label; }).slice(0, 3).join(', ') + (k.length > 3 ? ', dan lainnya' : '') + '.', true);
+                sorotKosong(k); keField(k[0].id);
+                return;
+            }
+            dialog({ judul: 'Kirim BAST ke Humas?', pesan: 'Setelah dikirim, jabatan dan NIP tidak bisa diubah lagi. Humas akan memberi nomor dan memilih pejabat yang mengetahui. Pastikan isian Anda sudah benar.', ya: 'Ya, kirim', tidak: 'Periksa lagi', ikon: 'bi-send', warna: 'ok' }).then(function (h) {
+                if (h !== 'ya') { return; }
+                kunciTombol(true);
+                kirim('kirim').then(function (j) {
+                    hasilSimpan(j);
+                    toast('BAST terkirim ke Humas. Menunggu nomor dari Humas.');
+                    setTimeout(function () { pergiHalaman(tujuanSelesai(j)); }, 900);
+                }).catch(function (e) {
+                    kunciTombol(false);
+                    toast(e.message, true);
+                    if (e.kosong && e.kosong.length) { sorotKosong(e.kosong.map(function (id) { return F[id]; })); keField(e.kosong[0]); }
+                });
+            });
         }
         function selesai() {
             if (sedangProses) { return; }
@@ -671,14 +755,14 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             if (urutBentrok !== '' && urutBentrok === String(vals.nomorUrut)) { toast('Nomor urut ' + vals.nomorUrut + ' sudah dipakai di bulan dan tahun yang sama. Ganti angkanya dulu.', true); sorotKosong([F.nomorUrut]); keField('nomorUrut'); return; }
             var pesan = status === 'selesai'
                 ? 'Perubahan pada BAST ' + nomorDari(vals) + ' akan disimpan.'
-                : 'BAST ' + nomorDari(vals) + ' akan diterbitkan dan Order #' + DATA.order.nomor + ' otomatis ditutup (Selesai). Pastikan semua isian sudah benar.';
+                : 'BAST ' + nomorDari(vals) + ' akan diterbitkan dengan tanggal ' + tglIndo(vals.tanggal) + ' dan Order #' + DATA.order.nomor + ' otomatis ditutup (Selesai). Pastikan semua isian sudah benar.';
             dialog({ judul: status === 'selesai' ? 'Simpan perubahan BAST?' : 'Selesaikan BAST?', pesan: pesan, ya: status === 'selesai' ? 'Ya, simpan' : 'Ya, selesai', tidak: 'Periksa lagi', ikon: 'bi-check2-circle', warna: 'ok' }).then(function (h) {
                 if (h !== 'ya') { return; }
                 kunciTombol(true);
                 kirim('selesai').then(function (j) {
                     hasilSimpan(j);
                     toast('BAST ' + (j.nomor_bast || '') + ' selesai. Order ditutup.');
-                    setTimeout(function () { window.location.href = j.redirect || (BASE + '/order/' + DATA.order.id); }, 900);
+                    setTimeout(function () { pergiHalaman(tujuanSelesai(j)); }, 900);
                 }).catch(function (e) {
                     kunciTombol(false);
                     toast(e.message, true);
@@ -687,7 +771,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
             });
         }
 
-        function keDetail() { window.location.href = BASE + '/order/' + DATA.order.id; }
+        function keDetail() { pergiHalaman(DALAM_DETAIL ? BASE + '/order/' + DATA.order.id + '?tahap=9' : (DATA.kembaliUrl || (BASE + '/order/' + DATA.order.id))); }
         function kembali() {
             if (!dirty) { keDetail(); return; }
             dialog({ judul: 'Simpan perubahan?', pesan: 'Ada perubahan yang belum disimpan pada BAST Order #' + DATA.order.nomor + '.', ya: 'Simpan draft', tidak: 'Buang perubahan', ikon: 'bi-exclamation-triangle', warna: 'warn' }).then(function (h) {
@@ -780,7 +864,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
 
         /* ---------- Mode tampilan, zoom, indikator sinkron ---------- */
         var modeLihat = 'split', zoomMode = 'fit', zoomNilai = 1, zoomSkala = 1, syncTimer = null;
-        var LEBAR_KERTAS = 794, BATAS_SPLIT = 1200;
+        var LEBAR_KERTAS = 794, BATAS_SPLIT = DALAM_DETAIL ? 992 : 1200;   // di Detail Order bingkai lebih sempit: berdampingan mulai 992px
         function terapkanZoom() {
             var box = $('dpkPages');
             if (!box || box.offsetParent === null) { return; }
@@ -792,8 +876,9 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         function setMode(m) {
             if (m !== 'form' && m !== 'preview') { m = 'split'; }
             modeLihat = m;
-            $('dpkFormCol').className = m === 'form' ? 'col-12' : (m === 'preview' ? 'd-none' : 'col-12 col-xl-7');
-            $('dpkPvCol').className = m === 'form' ? 'd-none' : (m === 'preview' ? 'col-12' : 'col-12 col-xl-5');
+            var bp = DALAM_DETAIL ? 'lg' : 'xl';
+            $('dpkFormCol').className = m === 'form' ? 'col-12' : (m === 'preview' ? 'd-none' : 'col-12 col-' + bp + '-7');
+            $('dpkPvCol').className = m === 'form' ? 'd-none' : (m === 'preview' ? 'col-12' : 'col-12 col-' + bp + '-5');
             document.querySelectorAll('#dpkVm .po-mode-btn').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-dpk-mode') === m); });
             try { localStorage.setItem('po_view_mode', m); } catch (x) {}
             setTimeout(terapkanZoom, 120);
@@ -820,6 +905,7 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         });
         $('dpkSorot').addEventListener('change', function () { $('dpkPages').classList.toggle('dpk-hl', this.checked); });
         $('dpkSimpan').addEventListener('click', simpanDraft);
+        $('dpkKirim').addEventListener('click', kirimKeHumas);
         $('dpkSelesai').addEventListener('click', selesai);
         $('dpkDlgYes').addEventListener('click', function () { tutupDialog('ya'); });
         $('dpkDlgNo').addEventListener('click', function () { tutupDialog('tidak'); });
@@ -840,9 +926,9 @@ html.dpk-dlm .pp-head { justify-content: flex-end; margin-bottom: 1rem; }
         var modeAwal = window.innerWidth < BATAS_SPLIT ? 'form' : 'split';
         try { modeAwal = localStorage.getItem('po_view_mode') || modeAwal; } catch (x) {}
 
-        $('dpkTag').textContent = status === 'selesai' ? 'Selesai' : (status === 'draft' ? 'Draft' : 'Baru');
+        updTag();
         $('dpkSub').textContent = 'Order #' + DATA.order.nomor + ' • ' + DATA.order.perusahaan;
-        renderForm(); renderDoc(); updWajib(); updUnduh();
+        renderForm(); renderDoc(); updWajib(); updUnduh(); updTombol();
         setMode(modeAwal); terapkanZoom();
     })();
 

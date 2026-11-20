@@ -211,6 +211,7 @@ class Controller {
         // indikator "Tugas Saya" dan badge di setiap tab Daftar Order.
         $notifOrderCount = 0;
         $notifPoHumas = 0;
+        $humasSertAda = false;
         try {
             if ($role === 'superadmin') {
                 // Superadmin mengawasi seluruh order aktif yang sedang berjalan maupun order masuk
@@ -231,20 +232,18 @@ class Controller {
             }
 
             if ($role === 'humas') {
-                // Humas: PO OPTI yang sudah diverifikasi Tim Mitra dan belum dibuka Humas. PO Sertifikasi masih diverifikasi Humas setelah disetujui Ketua Tim. (badge PO Humas)
-                $bukanSert = class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('p') : '';
+                // Daftar PO Humas tidak lagi tampil untuk PO OPTI (Humas membaca PO lewat menu PKS, tombol Lihat PO). Menunya hanya muncul
+                // bila ada PO Sertifikasi, karena PO Sertifikasi masih diverifikasi Humas di sana. Badge = PO Sertifikasi yang belum diverifikasi / dibuka Humas.
                 $resHumas = $this->db->exec(
                     "SELECT COUNT(DISTINCT p.order_id) AS c FROM po_kegiatan p
                       WHERE p.status IN ('terkirim','disetujui_mitra','disetujui') AND p.status_review = 'disetujui'
-                        AND (
-                          (p.tervalidasi_mitra_at IS NOT NULL" . $bukanSert . "
-                             AND (p.humas_dibaca_at IS NULL OR p.humas_dibaca_at < p.tervalidasi_mitra_at))
-                          " . ($bukanSert !== '' ? "OR ((p.layanan IS NOT NULL AND p.layanan IN ('" . \PoSchema::SERTIFIKASI . "', 'kalibrasi'))
-                             AND (p.verifikasi_humas_at IS NULL OR p.humas_dibaca_at IS NULL
-                                  OR (p.disposisi_humas_at IS NOT NULL AND p.humas_dibaca_at < p.disposisi_humas_at)))" : "") . "
-                        )"
+                        AND p.layanan IN ('" . \PoSchema::SERTIFIKASI . "', 'kalibrasi')
+                        AND (p.verifikasi_humas_at IS NULL OR p.humas_dibaca_at IS NULL
+                             OR (p.disposisi_humas_at IS NOT NULL AND p.humas_dibaca_at < p.disposisi_humas_at))"
                 );
                 $notifPoHumas = (int)($resHumas[0]['c'] ?? 0);
+                $resAdaSert = $this->db->exec("SELECT 1 AS c FROM po_kegiatan p WHERE p.status_review = 'disetujui' AND p.layanan = '" . \PoSchema::SERTIFIKASI . "' LIMIT 1");
+                $humasSertAda = !empty($resAdaSert);
             }
         } catch (\Exception $eOrder) {
             $notifOrderCount = 0;
@@ -253,7 +252,10 @@ class Controller {
         $this->f3->set('jumlah_notif_katim', $notifOrderCount);
         // Badge menu Daftar PO (Humas) = PO yang menunggu verifikasi; badge menu Kontrak = kontrak yang menunggu dibuat
         $this->f3->set('jumlah_notif_po_humas', $notifPoHumas);
+        $this->f3->set('humas_po_sert_ada', $humasSertAda);
         $this->f3->set('jumlah_notif_kontrak', ($role === 'humas' || $role === 'admin_kontrak' || $role === 'superadmin') ? $this->hitungKontrakMenunggu() : 0);
+        // Badge menu BAST (Humas) = BAST yang sudah dikirim Ketua Tim dan menunggu nomor
+        $this->f3->set('jumlah_notif_bast_humas', ($role === 'humas' || $role === 'admin_kontrak' || $role === 'superadmin') ? \OptiBast::hitungMenungguHumas($this->db) : 0);
         // Badge menu PKS Tim Mitra = PKS dari Humas yang belum dibuka dan belum ada PKS bertanda tangan
         $this->f3->set('jumlah_notif_pks_mitra', $isTimMitra ? \PksMitraController::hitungBelumDibuka($this->db) : 0);
 
@@ -1340,7 +1342,8 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         $orderId = (int) $orderId;
         try {
             $r = $this->db->exec(
-                "SELECT o.status_keuangan, o.estimasi_biaya, o.tanggal_spm_mulai, o.tanggal_terima_sampel,
+                "SELECT o.status_keuangan, o.estimasi_biaya, o.tanggal_spm_mulai, o.tanggal_terima_sampel, o.status AS status_order,
+                        (SELECT COUNT(*) FROM tb_surat_penawaran dl WHERE dl.order_id = o.id AND dl.status_respon_klien = 'deal') AS jumlah_deal,
                         COALESCE(sp.nominal_penawaran, 0) AS nominal_penawaran,
                         COALESCE(sp.surat_kesanggupan_bayar, '') AS surat_kesanggupan_bayar,
                         (SELECT COALESCE(SUM(jumlah), 0) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi') AS total_terbayar,
@@ -1357,9 +1360,10 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                 [1 => $orderId]
             );
         } catch (\Exception $e) {
-            return ['ok' => true, 'bayar' => true, 'spm' => true];   // gagal baca: jangan sampai menutup alur
+            // gagal baca data: tolak (fail-closed), jangan meloloskan PO yang syaratnya tidak bisa diperiksa
+            return ['ok' => false, 'bayar' => false, 'lunas' => false, 'spm' => false, 'deal' => false, 'pesan' => 'Data order tidak bisa diperiksa sekarang. Coba lagi beberapa saat.'];
         }
-        if (empty($r)) { return ['ok' => false, 'bayar' => false, 'lunas' => false, 'spm' => false]; }
+        if (empty($r)) { return ['ok' => false, 'bayar' => false, 'lunas' => false, 'spm' => false, 'deal' => false, 'pesan' => 'Order tidak ditemukan.']; }
 
         $biayaAcuan = (float)($r[0]['nominal_penawaran'] ?: $r[0]['estimasi_biaya']);
         $totalTerbayar = (float)($r[0]['total_terbayar'] ?? 0);
@@ -1383,7 +1387,16 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
               || in_array($statusKeu, ['terbayar_sebagian', 'sebagian'], true)
               || ((int) ($r[0]['jumlah_bayar'] ?? 0) > 0);
         $spm   = !empty($r[0]['tanggal_spm_mulai']) || !empty($r[0]['tanggal_terima_sampel']);
-        return ['ok' => ($bayar && $spm), 'bayar' => $bayar, 'lunas' => $lunas, 'spm' => $spm];
+        // Surat Penawaran wajib sudah DEAL (disetujui klien). Tanpa itu PO tidak boleh dibuat, dikirim, atau disetujui.
+        $deal  = ((int) ($r[0]['jumlah_deal'] ?? 0)) > 0;
+        $aktif = !in_array(strtolower(trim((string) ($r[0]['status_order'] ?? ''))), ['batal', 'ditolak'], true);
+        if (!$deal) { $pesan = 'Surat Penawaran order ini belum berstatus DEAL (disetujui klien).'; }
+        elseif (!$aktif) { $pesan = 'Order ini sudah dibatalkan atau ditolak.'; }
+        elseif (!$bayar && !$spm) { $pesan = 'Belum ada pembayaran tercatat dan SPM belum diaktifkan.'; }
+        elseif (!$bayar) { $pesan = 'Belum ada pembayaran yang tercatat pada order ini.'; }
+        elseif (!$spm) { $pesan = 'SPM (Tahap 7) belum diaktifkan.'; }
+        else { $pesan = ''; }
+        return ['ok' => ($deal && $aktif && $bayar && $spm), 'bayar' => $bayar, 'lunas' => $lunas, 'spm' => $spm, 'deal' => $deal, 'pesan' => $pesan];
     }
 
     /**

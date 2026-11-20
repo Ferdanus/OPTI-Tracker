@@ -640,6 +640,12 @@ class OrderController extends Controller {
         // [BARU] Tahap 8 terpadu: Ketua Pelaksana PO + posisi PO di rantai review/verifikasi
         $bastModel = new OptiBast($this->db);
         $bast = $bastModel->getByOrderId($id);
+        if (empty($bast) && !empty($order['laporan_akhir_selesai_at'])) {
+            // BAST dibuat otomatis begitu PO bertanda tangan + PKS + Laporan Akhir selesai (hook di Laporan Akhir / PKS; ini jaring pengaman untuk order lama)
+            try {
+                if (\OptiBast::siapkanDraf($this->db, (int) $id, (int) $this->getUserId(), (string) ($_SESSION['nama_lengkap'] ?? 'Sistem'))) { $bast = $bastModel->getByOrderId($id); }
+            } catch (\Throwable $e) {}
+        }
         $f3->set('po_alur', $this->alurPoTahap8($order, $poKegiatan, !empty($bast)));
 
         $customerModel = new Customer($this->db);
@@ -697,7 +703,8 @@ class OrderController extends Controller {
             (int)($order['pic_proposal_id'] ?? 0) === $userId ||
             (int)($order['pic_proposal_cadangan_id'] ?? 0) === $userId
         ));
-        $isOrderSelesai = (($order['status'] ?? '') === 'selesai') || !empty($bast);
+        // Draf BAST otomatis (belum bernomor dari Humas) belum berarti order selesai: hanya BAST berstatus selesai yang menutup order.
+        $isOrderSelesai = (($order['status'] ?? '') === 'selesai') || (!empty($bast) && ($bast['status_bast'] ?? '') === 'selesai');
         $isUnlockedOrder = $orderModel->isOrderUnlocked((int)$id);
         $order['is_unlocked_edit'] = $isUnlockedOrder ? 1 : 0;
         $canKoreksi = ($isSuperadmin || $isUnlockedOrder);
@@ -977,6 +984,14 @@ class OrderController extends Controller {
         $f3->set('kontrak_pks', $kontrakPks);
         $f3->set('jadwal_kerja', $jadwalKerja);
         $f3->set('bast', $bast);
+        // Peran untuk kartu BAST (Tahap 11): penuh = Superadmin, humas = Humas / Admin PKS, katim = Ketua Tim layanan ini, lihat = lainnya (termasuk Tim Mitra)
+        $bastRole = (string) $this->getUserRole();
+        $bastSt = (string) ($bast['status_bast'] ?? '');
+        $bastMd = $isSuperadmin ? 'penuh' : (($bastRole === 'humas' || $bastRole === 'admin_kontrak') ? 'humas' : (($this->isKetuaTim() && $this->isKetuaTimForOrder($order)) ? 'katim' : 'lihat'));
+        // Form BAST tampil langsung di kartu Tahap 11 (iframe ?embed=1, seperti PO dan PKS) kalau peran ini memang bisa mengisinya pada status sekarang
+        $f3->set('bast_embed', !empty($bast) && (($bastMd === 'penuh' && $bastSt !== 'selesai') || ($bastMd === 'katim' && $bastSt === 'draft') || ($bastMd === 'humas' && $bastSt === 'proses_ttd')));
+        $f3->set('bast_embed_url', $f3->get('BASE') . '/order/' . (int) $id . '/bast/buat?embed=1');
+        $f3->set('bast_mode', $isSuperadmin ? 'penuh' : (($bastRole === 'humas' || $bastRole === 'admin_kontrak') ? 'humas' : (($this->isKetuaTim() && $this->isKetuaTimForOrder($order)) ? 'katim' : 'lihat')));
         $f3->set('daftar_customer', $daftarCustomer);
         $f3->set('daftar_pic', $daftarPic);
 
@@ -1341,7 +1356,7 @@ class OrderController extends Controller {
         // Tidak dikunci: order yang sudah punya BAST, order berstatus selesai, dan order dengan PO versi lama (tanpa baris po_kegiatan).
         $poTtdAda = (!empty($poKegiatan) && !empty($poKegiatan['po_ttd_file']));
         $poTtdWajib = (!empty($poKegiatan) && empty($bast) && ($order['status'] ?? '') !== 'selesai');
-        // Setelah PO bertanda tangan di-upload, PO diteruskan ke Humas; BAST baru terbuka setelah Humas menandai kontrak dibuat.
+        // Setelah PO bertanda tangan diunggah, Laporan Akhir terbuka; BAST baru terbuka setelah PKS dibuat Humas dan Laporan Akhir selesai.
         $poKontrakAda = (!empty($poKegiatan) && !empty($poKegiatan['kontrak_dibuat_at']));
         $isPoDone = $poTerbuka && (!empty($order['po_id']) || $poKegiatanAktif) && (
             $poTtdAda ||
@@ -1352,9 +1367,13 @@ class OrderController extends Controller {
             ))
         );
 
+        // ===== LAPORAN AKHIR (ditambahkan Kaa): Tahap 10 di antara PKS dan BAST =====
+        // Selesai = tombol Selesai sudah ditekan (dengan / tanpa file laporan). Order lama (sudah punya BAST / berstatus selesai) dianggap sudah melewati tahap ini.
+        $laSelesai = !empty($order['laporan_akhir_selesai_at']) || !empty($bast) || ($order['status'] ?? '') === 'selesai' || ($order['status_pelaksanaan'] ?? '') === 'laporan_selesai';
+
         // Tahap 9 (BAST) terbuka kalau PO sudah aktif (PO lama via po_id, atau PO Kegiatan yang sudah divalidasi PPK BLU)
         // DAN (PO bertanda tangan sudah diunggah, atau order ini tidak kena kunci PO bertanda tangan).
-        $bastTerbuka = (!empty($order['po_id']) || $poKegiatanAktif) && (($poTtdAda && $poKontrakAda) || !$poTtdWajib);
+        $bastTerbuka = (!empty($order['po_id']) || $poKegiatanAktif) && (($poTtdAda && $poKontrakAda && $laSelesai) || !$poTtdWajib);   // + Laporan Akhir selesai (ditambahkan Kaa)
         $f3->set('po_bast_terbuka', $bastTerbuka);
 
         // Kontrak (PKS) merupakan langkah Tahap 9 (sebelum BAST di Tahap 10)
@@ -1364,6 +1383,42 @@ class OrderController extends Controller {
         $kontrakAlur = true;                                                // Selalu aktifkan 10 tahapan alur layanan
         $kontrakAkses = ($poTtdAda && $poKegiatanAktif);                   // kartu Kontrak terbuka setelah PO bertanda tangan di-upload
         $kontrakMenunggu = ($kontrakAkses && !$poKontrakAda && empty($bast) && ($order['status'] ?? '') !== 'selesai');
+
+        // ===== LAPORAN AKHIR (ditambahkan Kaa): panel Tahap 10 =====
+        $laAkses = $kontrakAkses;                                   // terbuka sejak PO Aktif penuh (PO bertanda tangan sudah di-upload): pengujian berjalan
+        $laMenunggu = ($laAkses && !$laSelesai);
+        $laBoleh = $this->isSuperadmin() || $this->isKetuaTimForOrder($order)
+            || ($this->isTimKerja() && (int) ($order['ketua_pelaksana_id'] ?? 0) === (int) $this->getUserId());
+        $laFile = trim((string) ($order['laporan_akhir_file'] ?? ''));
+        $laPathFile = dirname(__DIR__, 2) . '/storage/laporan_akhir/' . $laFile;
+        $laAda = ($laFile !== '' && basename($laFile) === $laFile && is_file($laPathFile));
+        $laBase = $f3->get('BASE') . '/order/' . (int) $id . '/laporan-akhir';
+        $laTgl = function ($v) { $v = trim((string) $v); return ($v !== '' && strtotime($v)) ? date('d M Y, H:i', strtotime($v)) : ''; };
+        $laData = array(
+            'id'          => (int) $id,
+            'akses'       => (bool) $laAkses,
+            'selesai'     => (bool) $laSelesai,
+            'boleh'       => (bool) $laBoleh,
+            'bast'        => !empty($bast),
+            'pks'         => (bool) $poKontrakAda,
+            'ada'         => (bool) $laAda,
+            'nama'        => $laAda ? (string) ($order['laporan_akhir_nama'] ?? '') : '',
+            'ukuran'      => $laAda ? (int) @filesize($laPathFile) : 0,
+            'selesai_oleh' => !empty($order['laporan_akhir_selesai_at']) ? (string) ($order['laporan_akhir_selesai_oleh'] ?? '') : '',
+            'selesai_at'  => $laTgl($order['laporan_akhir_selesai_at'] ?? ''),
+            'ringkas'     => array(
+                'order'     => (string) ($order['nomor_order'] ?? '-'),
+                'klien'     => (string) ($order['nama_perusahaan'] ?? '-'),
+                'layanan'   => 'OPTI ' . ucfirst((string) ($order['jenis_layanan_opti'] ?? '')),
+                'judul'     => (string) ($order['judul_kegiatan'] ?? '-'),
+                'penawaran' => (string) (!empty($penawaran['nomor_surat']) ? $penawaran['nomor_surat'] : '-'),
+                'po'        => (string) (!empty($poKegiatan['nomor_po']) ? $poKegiatan['nomor_po'] : (string) ($order['nomor_po'] ?? '-')),
+                'pks'       => ($poKontrakAda && !empty($poKegiatan['kontrak_nomor'])) ? (string) $poKegiatan['kontrak_nomor'] : '',
+            ),
+            'url'         => array('lihat' => $laBase, 'unggah' => $laBase . '/unggah', 'hapus' => $laBase . '/hapus', 'selesai' => $laBase . '/selesai'),
+        );
+        $laData['json'] = json_encode($laData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $f3->set('laporan_akhir', $laData);
         $kontrakProg = array('persen' => 0, 'terisi' => 0, 'total' => 0, 'draft' => false);
         if ($kontrakMenunggu && !$this->isSuperadmin() && !in_array((string) $this->getUserRole(), array('humas', 'admin_kontrak'), true) && $kontrakPoId > 0) {
             $kontrakProg = \PksKontrakController::progresPengisian($this->db, $kontrakPoId);
@@ -1449,6 +1504,9 @@ class OrderController extends Controller {
         // Langkah Kontrak (nomor internal 10, tampil sebagai Tahap 9 di antara PO dan BAST). BAST tetap nomor internal 9 supaya data audit lama aman.
         $stepper[10] = array('state' => $poKontrakAda ? 'done' : ($kontrakAkses ? 'current' : 'waiting'));
         if ($kontrakMenunggu) { $stepper[9] = array('state' => 'waiting'); }
+        // Laporan Akhir (nomor internal 11, tampil sebagai Tahap 10 di antara PKS dan BAST). BAST baru jalan kalau PKS dibuat DAN Laporan Akhir selesai.
+        $stepper[11] = array('state' => $laSelesai ? 'done' : ($laAkses ? 'current' : 'waiting'));
+        if ($poTtdWajib && $poTtdAda && $poKontrakAda && !$laSelesai) { $stepper[9] = array('state' => 'waiting'); }
         $f3->set('stepper', $stepper);
         $f3->set('current_step', $currentStep);
 
@@ -1486,10 +1544,12 @@ class OrderController extends Controller {
         $requestedStep = (int)($f3->get('GET.tahap') ?: ($f3->get('GET.tab') ?: ($f3->get('GET.stage') ?: 0)));
         if ($requestedStep === 10 && $kontrakAkses) {
             $activeStep = 10;
+        } elseif ($requestedStep === 11 && $laAkses) {
+            $activeStep = 11;
         } elseif ($requestedStep >= 1 && $requestedStep <= $maxAccessibleStep) {
             $activeStep = $requestedStep;
         } else {
-            $activeStep = $kontrakMenunggu ? 10 : $currentStep;
+            $activeStep = $kontrakMenunggu ? 10 : ($laMenunggu ? 11 : $currentStep);
         }
         $f3->set('active_step', $activeStep);
         $f3->set('is_form_pelayanan_done', $isFormPelayananDone);
@@ -1795,11 +1855,11 @@ class OrderController extends Controller {
                 $langkahBerikutnya['penanggung_jawab'] = 'Tim Pelaksana Teknis';
                 if (!$poTtdAda && $poTtdWajib) {
                     $langkahBerikutnya['judul'] = 'Menunggu Penandatanganan PO';
-                    $langkahBerikutnya['deskripsi'] = 'Cetak PO, tanda tangani, lalu upload PO yang sudah ditandatangani di Tahap 8. PKS sudah bisa dibuat Humas sejak PO diverifikasi Tim Mitra; Tahap 9 (BAST) terbuka setelah PO bertanda tangan di-upload dan PKS selesai.';
+                    $langkahBerikutnya['deskripsi'] = 'Cetak PO, tanda tangani, lalu upload PO yang sudah ditandatangani di Tahap 8. Setelah itu Laporan Akhir (Tahap 10) terbuka. PKS dibuat Humas di Tahap 9, dan BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir selesai.';
                     $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI';
                 } elseif ($poTtdAda && $poTtdWajib && empty($poKegiatan['kontrak_dibuat_at'])) {
                     $langkahBerikutnya['judul'] = 'PO Aktif, Menunggu PKS';
-                    $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah di-upload dan diteruskan ke Humas. Humas membuat PKS di Tahap 9; BAST (Tahap 10) terbuka setelah PKS selesai.';
+                    $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah diunggah. Humas membuat PKS di Tahap 9, dan Laporan Akhir (Tahap 10) sudah terbuka. BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir selesai.';
                     $langkahBerikutnya['penanggung_jawab'] = 'Humas';
                 }
                 $langkahBerikutnya['role_icon'] = 'bi-gear-wide-connected';
@@ -1823,7 +1883,7 @@ class OrderController extends Controller {
             $langkahBerikutnya['target_card'] = '#cardBast';
             if ($kontrakMenunggu) {
                 $langkahBerikutnya['judul'] = 'Menunggu PKS dari Humas';
-                $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah di-upload. Humas membuat PKS di Tahap 9; BAST (Tahap 10) terbuka setelah PKS selesai.';
+                $langkahBerikutnya['deskripsi'] = 'PO bertanda tangan sudah diunggah. Humas membuat PKS di Tahap 9; BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir (Tahap 10) selesai.';
                 $langkahBerikutnya['penanggung_jawab'] = 'Humas';
                 $langkahBerikutnya['role_icon'] = 'bi-file-earmark-text-fill';
                 $langkahBerikutnya['tombol_teks'] = 'Buka PKS';
@@ -1842,6 +1902,37 @@ class OrderController extends Controller {
                     'dibaca'      => $kaBaca !== '' ? date('d M Y, H:i', strtotime($kaBaca)) : '',
                     'dibaca_oleh' => (string) (!empty($poKegiatan['kontrak_dibaca_oleh_nama']) ? $poKegiatan['kontrak_dibaca_oleh_nama'] : 'Humas'),
                 ));
+            } elseif (!empty($bast) && ($bast['status_bast'] ?? '') !== 'selesai') {
+                // BAST otomatis dari PKS: Ketua Tim melengkapi lalu kirim ke Humas; Humas memberi nomor
+                $bMode = (string) $f3->get('bast_mode');
+                $langkahBerikutnya['role_icon'] = 'bi-file-earmark-text-fill';
+                $langkahBerikutnya['tombol_url'] = '#cardBast';
+                $langkahBerikutnya['tombol_class'] = 'btn-dark';
+                if (($bast['status_bast'] ?? '') === 'proses_ttd') {
+                    $langkahBerikutnya['judul'] = 'Menunggu Nomor BAST dari Humas';
+                    $langkahBerikutnya['deskripsi'] = 'Ketua Tim sudah mengirim BAST. Humas mengisi nomor urut dan memilih pejabat yang mengetahui; tanggal BAST otomatis hari nomor diberikan.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Humas';
+                    $langkahBerikutnya['tombol_teks'] = ($bMode === 'humas' || $bMode === 'penuh') ? 'Isi Nomor BAST' : 'Lihat BAST';
+                    $langkahBerikutnya['tombol_icon'] = ($bMode === 'humas' || $bMode === 'penuh') ? 'bi-pencil-square' : 'bi-eye';
+                } else {
+                    $langkahBerikutnya['judul'] = 'Lengkapi BAST dan Kirim ke Humas';
+                    $langkahBerikutnya['deskripsi'] = 'BAST sudah disiapkan otomatis dari PKS. Ketua Tim melengkapi jabatan dan NIP Pihak Kedua, lalu mengirimnya ke Humas untuk diberi nomor.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim';
+                    $langkahBerikutnya['tombol_teks'] = ($bMode === 'katim' || $bMode === 'penuh') ? 'Lengkapi BAST' : 'Lihat BAST';
+                    $langkahBerikutnya['tombol_icon'] = ($bMode === 'katim' || $bMode === 'penuh') ? 'bi-pencil-square' : 'bi-eye';
+                }
+            } elseif ($laMenunggu) {
+                // Laporan Akhir (ditambahkan Kaa): PKS sudah dibuat, tinggal menyelesaikan Laporan Akhir sebelum BAST
+                $langkahBerikutnya['step'] = 10;
+                $langkahBerikutnya['judul'] = 'Selesaikan Order (Laporan Akhir)';
+                $langkahBerikutnya['deskripsi'] = 'Upload laporan akhir (opsional, boleh dikosongkan kalau bersifat rahasia) lalu tekan Selesai. BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir selesai.';
+                $langkahBerikutnya['penanggung_jawab'] = 'Ketua Pelaksana / Ketua Tim';
+                $langkahBerikutnya['role_icon'] = 'bi-journal-check';
+                $langkahBerikutnya['tombol_teks'] = 'Buka Laporan Akhir';
+                $langkahBerikutnya['tombol_url'] = '#cardLaporanAkhir';
+                $langkahBerikutnya['tombol_icon'] = 'bi-journal-check';
+                $langkahBerikutnya['tombol_class'] = 'btn-dark';
+                $langkahBerikutnya['target_card'] = '#cardLaporanAkhir';
             }
         }
 
@@ -3428,7 +3519,7 @@ class OrderController extends Controller {
             'asal' => $ttdAda ? (preg_match('/^[A-Z]{3,4}$/', (string) ($po['po_ttd_asal'] ?? '')) ? 'Foto ' . $po['po_ttd_asal'] : (string) ($po['po_ttd_asal'] ?? '')) : '',
             'at' => $ttdAda ? $fmt($po['po_ttd_at'] ?? null) : '',
             'oleh' => $ttdAda ? (string) ($po['po_ttd_oleh_nama'] ?? '') : '',
-            // PO bertanda tangan hanya bisa di-upload sekali (tidak bisa diganti); setelah di-upload PO diteruskan ke Humas untuk dibuatkan kontrak
+            // PO bertanda tangan hanya bisa di-upload sekali (tidak bisa diganti); setelah diunggah PO Aktif penuh dan Laporan Akhir (Tahap 10) terbuka
             'boleh_unggah' => ($state === 'aktif' && $isKatim && $poId > 0 && !$bastAda && !$ttdAda && (($order['status'] ?? '') !== 'selesai' || $this->canEditSubmittedData(true, $orderId))),
             'boleh_ganti' => false,
             'persen' => ($state === 'aktif' ? ($ttdAda ? 100 : 50) : 0),
@@ -3716,7 +3807,7 @@ class OrderController extends Controller {
                 if ($ttdAda && $kontrakAda) {
                     $info = $bidang('info', '');   // kontrak sudah dibuat: tidak perlu banner, statusnya tampil di kartu Kontrak
                 } elseif ($ttdAda) {
-                    $info = $bidang('info', 'PO bertanda tangan telah diunggah dan diteruskan kepada Humas untuk pembuatan PKS. Tahap 9 (BAST) terbuka setelah PKS dibuat.');
+                    $info = $bidang('info', 'PO bertanda tangan telah diunggah. Laporan Akhir (Tahap 10) sudah terbuka, dan BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir selesai.');
                 } elseif ($isKatim) {
                     $info = $bidang('warning', 'Silakan cetak PO, tandatangani, kemudian unggah PO yang telah ditandatangani.');
                 } else {
@@ -3766,7 +3857,7 @@ class OrderController extends Controller {
         elseif (in_array($state, array('verif_mitra', 'verif_ppk'), true)) { $info['scene'] = $adaGiliran ? 'giliran' : 'periksa'; }
         elseif (in_array($state, array('perlu_revisi', 'ppk_katim_kerja', 'ppk_ketupel_kerja'), true)) { $info['scene'] = 'revisi'; }
         else { $info['scene'] = $adaGiliran ? 'giliran' : 'tunggu'; }
-        if ($state === 'aktif') { $info['pihak'] = $ttdAda ? 'Berikutnya: Humas (pembuatan PKS)' : 'Menunggu: Ketua Tim OPTI'; }
+        if ($state === 'aktif') { $info['pihak'] = $ttdAda ? 'Berikutnya: PKS (Humas) dan Laporan Akhir' : 'Menunggu: Ketua Tim OPTI'; }
         else { $info['pihak'] = $adaGiliran ? 'Tindakan oleh: Anda' : 'Menunggu: ' . $pj; }
         $info['langkah'] = 'Langkah ' . ($state === 'aktif' ? ($ttdAda ? 6 : 5) : ($cur + 1)) . ' dari 6';
         $info['menunggu'] = in_array($info['scene'], array('tunggu', 'periksa'), true);
@@ -3864,7 +3955,7 @@ class OrderController extends Controller {
             return $this->poTtdBalas($f3, false, 'BAST sudah dibuat, PO bertanda tangan tidak bisa diganti lagi.', $back);
         }
         if (!empty($po['po_ttd_file'])) {
-            return $this->poTtdBalas($f3, false, 'PO bertanda tangan sudah di-upload dan sudah diteruskan ke Humas. File tidak bisa diganti.', $back);
+            return $this->poTtdBalas($f3, false, 'PO bertanda tangan sudah diunggah. File tidak bisa diganti.', $back);
         }
 
         // Satu PDF, atau satu/beberapa foto (JPG/PNG, maks. 10) yang otomatis digabung menjadi satu PDF.
@@ -3915,7 +4006,7 @@ class OrderController extends Controller {
         $disimpan = '';
         $namaTampil = '';
         $asal = '';
-        $pesan = 'PO berhasil di-upload. PO kini Aktif penuh dan diteruskan ke Humas.';
+        $pesan = 'PO berhasil diunggah.';
 
         if ($adaFoto) {
             // Foto (satu atau banyak) -> satu PDF; nama baku "PO <nomor>_<judul>.pdf"
@@ -3963,14 +4054,14 @@ class OrderController extends Controller {
         );
         if ($lama !== '' && $lama !== $disimpan && basename($lama) === $lama) { @unlink($dir . $lama); }
 
-        $this->logActivity($id, 'po', 'upload_po_ttd', 'Upload PO bertanda tangan. PO Aktif penuh dan diteruskan ke Humas untuk dibuatkan PKS');
+        $this->logActivity($id, 'po', 'upload_po_ttd', 'Upload PO bertanda tangan. PO Aktif penuh, Laporan Akhir (Tahap 10) terbuka');
         $this->kabariHumasKontrak($order, $po, $unama);
         return $this->poTtdBalas($f3, true, $pesan, $back);
     }
 
     /**
-     * PO bertanda tangan sudah di-upload -> beri tahu Humas (lonceng) bahwa ada PO yang menunggu dibuatkan kontrak.
-     * Humas melihat daftarnya di tab "Menunggu Kontrak" pada Daftar PO Humas (/po-humas). Notifikasi bersifat pelengkap.
+     * PO bertanda tangan sudah diunggah -> beri tahu Humas (lonceng) sebagai informasi saja. Humas sudah bisa membuat PKS sejak PO diverifikasi Tim Mitra,
+     * jadi ini bukan permintaan kerja baru. Daftar PKS ada di menu PKS (/pks). Notifikasi bersifat pelengkap.
      */
     protected function kabariHumasKontrak($order, $po, $pengunggah) {
         try {
@@ -3979,12 +4070,12 @@ class OrderController extends Controller {
                 'po_id'           => (int) ($po['id'] ?? 0),
                 'target_role'     => 'humas',
                 'target_layanan'  => 'semua',
-                'judul'           => 'PO Menunggu Dibuatkan PKS',
+                'judul'           => 'PO Bertanda Tangan Sudah Diunggah',
                 'pesan'           => 'PO ' . (string) ($po['nomor_po'] ?? '') . ' untuk Order #' . (string) ($order['nomor_order'] ?? '-')
-                                   . ' sudah Aktif penuh (PO bertanda tangan di-upload ' . $pengunggah . '). Silakan buatkan PKS-nya.',
+                                   . ' sudah Aktif penuh (PO bertanda tangan diunggah oleh ' . $pengunggah . ').',
                 'tipe'            => 'primary',
                 'icon'            => 'bi-file-earmark-check',
-                'link_url'        => '/po-humas?tab=kontrak',
+                'link_url'        => '/pks',
                 'created_by'      => $this->getUserId(),
                 'created_by_name' => $pengunggah,
             ));

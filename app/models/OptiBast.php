@@ -194,7 +194,14 @@ class OptiBast extends \DB\SQL\Mapper {
         'mengetahui_jabatan'       => "VARCHAR(150) NOT NULL DEFAULT ''",
         'pks_nomor'                => "VARCHAR(120) NOT NULL DEFAULT ''",
         'pks_tanggal'              => 'DATE NULL',
+        'dikirim_at'               => 'DATETIME NULL',          // Katim mengirim BAST ke Humas
+        'dikirim_oleh'             => 'INT UNSIGNED NULL',
+        'dibuka_humas_at'          => 'DATETIME NULL',          // Humas pertama kali membuka BAST yang dikirim
     ];
+    /** Alur status_bast: draft (disiapkan sistem, Katim melengkapi) -> proses_ttd (sudah dikirim ke Humas, menunggu nomor) -> selesai (Humas memberi nomor). */
+    const ST_DRAF   = 'draft';
+    const ST_KIRIM  = 'proses_ttd';
+    const ST_SELESAI = 'selesai';
     const ROMAWI = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
     const BULAN  = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
@@ -235,6 +242,10 @@ class OptiBast extends \DB\SQL\Mapper {
                     try { $db->exec('ALTER TABLE opti_bast MODIFY `' . $nama . '` ' . $cfg[1]); } catch (\Throwable $e) { error_log('[BAST] MODIFY ' . $nama . ': ' . $e->getMessage()); }
                 }
             }
+            // status_bast harus bisa menampung 'proses_ttd' (dipakai sebagai "dikirim ke Humas"); kolom ENUM lama dilebarkan jadi VARCHAR
+            if (isset($ada['status_bast']) && strpos($ada['status_bast'], 'enum') === 0 && strpos($ada['status_bast'], 'proses_ttd') === false) {
+                try { $db->exec("ALTER TABLE opti_bast MODIFY `status_bast` VARCHAR(20) NOT NULL DEFAULT 'draft'"); } catch (\Throwable $e) { error_log('[BAST] MODIFY status_bast: ' . $e->getMessage()); }
+            }
             $ada = array();
             foreach ((array) $db->exec('SHOW COLUMNS FROM opti_bast') as $c) { $ada[$c['Field']] = true; }
             self::$skemaSiap = true;
@@ -244,6 +255,150 @@ class OptiBast extends \DB\SQL\Mapper {
             self::$skemaSiap = false;
         }
         return self::$skemaSiap;
+    }
+
+    /* ============================================================
+     * Draf BAST otomatis (dari PKS) dan antrean Humas
+     * ============================================================ */
+
+    /** PKS selesai milik order ini (via PO kegiatan), atau null. */
+    public static function ambilPks($db, $orderId) {
+        try {
+            \PoSchema::pastikan($db);
+            $r = $db->exec(
+                "SELECT k.* FROM pks_kontrak k JOIN po_kegiatan p ON p.id = k.po_id WHERE p.order_id = ?" . \PoSchema::bukanSertifikasi('p') . " AND k.status = 'selesai' ORDER BY k.id DESC LIMIT 1",
+                array(1 => (int) $orderId)
+            );
+            return !empty($r) ? $r[0] : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /** Teks berformat PKS (b/i/u) -> teks polos, satu poin per baris. */
+    public static function teksPolos($v) {
+        try {
+            $baris = array();
+            foreach (\PksDocx::barisDariTeks((string) $v) as $b) {
+                $t = \PksDocx::teksBaris($b);
+                if (trim($t) !== '') { $baris[] = $t; }
+            }
+            return implode("\n", $baris);
+        } catch (\Throwable $e) {
+            return trim(strip_tags((string) $v));
+        }
+    }
+
+    /** Syarat draf otomatis: PO bertanda tangan sudah diunggah, PKS dibuat Humas, dan Laporan Akhir (order diselesaikan) sudah selesai. */
+    public static function syaratDrafTerpenuhi($db, $orderId) {
+        try {
+            \PoSchema::pastikan($db);
+            \OrderLayanan::ensureColumns($db);
+            $r = $db->exec('SELECT po_ttd_file, kontrak_dibuat_at FROM po_kegiatan WHERE order_id = ?' . \PoSchema::bukanSertifikasi('') . ' ORDER BY id DESC LIMIT 1', array(1 => (int) $orderId));
+            if (empty($r) || empty($r[0]['po_ttd_file']) || empty($r[0]['kontrak_dibuat_at'])) { return false; }
+            $o = $db->exec('SELECT laporan_akhir_selesai_at FROM order_layanan WHERE id = ? LIMIT 1', array(1 => (int) $orderId));
+            return !empty($o[0]['laporan_akhir_selesai_at']);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Buat draf BAST otomatis (terisi dari PKS) begitu syaratnya terpenuhi dan order belum punya BAST. Pihak Kedua = Ketua Tim layanan order ini.
+     * Aman dipanggil berulang (dari hook Laporan Akhir / PKS dan secara lazy saat halaman dibuka). Mengembalikan id BAST baru, atau null kalau tidak membuat apa pun.
+     * Katim diberi notifikasi sekali, saat draf dibuat.
+     */
+    public static function siapkanDraf($db, $orderId, $oleh = 0, $namaOleh = 'Sistem') {
+        $orderId = (int) $orderId;
+        if ($orderId <= 0) { return null; }
+        $kunci = 'bast_draf_' . $orderId; $kunciDapat = false;
+        try {
+            if (!self::pastikanSkema($db)) { return null; }
+            $ada = $db->exec('SELECT id FROM opti_bast WHERE order_id = ? LIMIT 1', array(1 => $orderId));
+            if (!empty($ada) || !self::syaratDrafTerpenuhi($db, $orderId)) { return null; }
+            $pks = self::ambilPks($db, $orderId);
+            if (!$pks) { return null; }
+            try {
+                $r = $db->exec('SELECT GET_LOCK(?, 3) AS k', array(1 => $kunci));
+                $kunciDapat = !empty($r) && (int) (isset($r[0]['k']) ? $r[0]['k'] : 0) === 1;
+            } catch (\Throwable $e) {}
+            $ada = $db->exec('SELECT id FROM opti_bast WHERE order_id = ? LIMIT 1', array(1 => $orderId));
+            if (!empty($ada)) { return null; }
+
+            $order = (new \OrderLayanan($db))->getDetail($orderId);
+            if (!$order) { return null; }
+            $layanan = strtolower(trim((string) ($order['jenis_layanan_opti'] ?? '')));
+            $katim = null;
+            try { $katim = (new \ArsipUser($db))->getKetuaTim($layanan); } catch (\Throwable $e) {}
+            $perusahaan = trim((string) $pks['perusahaan']);
+            if ($perusahaan === '') { $perusahaan = trim((string) ($order['nama_perusahaan'] ?? '')); }
+
+            $id = (new self($db))->simpanFormulir(array(
+                'order_id' => $orderId, 'po_id' => !empty($order['po_id']) ? (int) $order['po_id'] : null,
+                'nomor_bast' => 'DRAFT-' . $orderId, 'nomor_urut' => '', 'id_nomor_urut' => null, 'tanggal_bast' => date('Y-m-d'),
+                'pihak_pertama_nama' => (string) $pks['ttd_nama'], 'pihak_pertama_jabatan' => (string) $pks['ttd_jabatan'],
+                'pihak_pertama_perusahaan' => $perusahaan, 'pihak_pertama_alamat' => self::teksPolos($pks['alamat_perusahaan']),
+                'pihak_kedua_nama' => $katim ? trim((string) $katim['nama_user']) : '', 'pihak_kedua_jabatan' => '', 'pihak_kedua_nip' => '',
+                'judul_pekerjaan' => self::teksPolos($pks['judul']), 'mengetahui_nama' => '', 'mengetahui_jabatan' => '',
+                'pks_nomor' => (string) $pks['nomor_pks'], 'pks_tanggal' => !empty($pks['tanggal_perjanjian']) ? substr((string) $pks['tanggal_perjanjian'], 0, 10) : null,
+                'file_dokumen_bast' => null, 'status_bast' => self::ST_DRAF,
+            ), null);
+
+            try {
+                \NotificationService::send($db, array(
+                    'order_id' => $orderId, 'target_role' => 'ketua_tim', 'target_layanan' => $layanan !== '' ? $layanan : 'semua',
+                    'judul' => 'BAST Siap Dilengkapi',
+                    'pesan' => 'BAST untuk Order #' . (string) ($order['nomor_order'] ?? $orderId) . ' ' . $perusahaan . ' sudah disiapkan otomatis dari PKS. Lengkapi jabatan dan NIP Pihak Kedua, lalu kirim ke Humas.',
+                    'tipe' => 'primary', 'icon' => 'bi-file-earmark-text', 'link_url' => '/order/' . $orderId . '/bast',
+                    'created_by' => $oleh > 0 ? (int) $oleh : null, 'created_by_name' => $namaOleh,
+                ));
+            } catch (\Throwable $e) {}
+            return $id;
+        } catch (\Throwable $e) {
+            error_log('[BAST] siapkanDraf order ' . $orderId . ': ' . $e->getMessage());
+            return null;
+        } finally {
+            if ($kunciDapat) { try { $db->exec('SELECT RELEASE_LOCK(?)', array(1 => $kunci)); } catch (\Throwable $e) {} }
+        }
+    }
+
+    /** Katim mengirim BAST ke Humas: catat waktu + pengirim, buka-tanda Humas direset. */
+    public function tandaiDikirim($id, $oleh) {
+        $this->db->exec('UPDATE opti_bast SET dikirim_at = NOW(), dikirim_oleh = ?, dibuka_humas_at = NULL WHERE id = ?', array(1 => (int) $oleh, 2 => (int) $id));
+    }
+
+    /** Humas membuka BAST yang dikirim (hanya mencatat pembukaan pertama). */
+    public function tandaiDibuka($id) {
+        $this->db->exec('UPDATE opti_bast SET dibuka_humas_at = NOW() WHERE id = ? AND dibuka_humas_at IS NULL', array(1 => (int) $id));
+    }
+
+    /** Daftar BAST untuk halaman Humas. $status: ST_KIRIM (perlu nomor) atau ST_SELESAI. Urut terbaru dikirim / selesai dulu. */
+    public static function daftarHumas($db, $status) {
+        try {
+            self::pastikanSkema($db);
+            $urut = ($status === self::ST_SELESAI) ? 'b.updated_at DESC, b.id DESC' : 'b.dikirim_at DESC, b.id DESC';
+            return (array) $db->exec(
+                "SELECT b.id, b.order_id, b.nomor_bast, b.nomor_urut, b.tanggal_bast, b.status_bast, b.pihak_pertama_perusahaan, b.judul_pekerjaan, b.pks_nomor,
+                        b.pihak_kedua_nama, b.dikirim_at, b.dibuka_humas_at, b.updated_at, o.nomor_order, o.jenis_layanan_opti, u.nama_user AS pengirim
+                 FROM opti_bast b JOIN order_layanan o ON o.id = b.order_id LEFT JOIN tb_arsipuser u ON u.id_user = b.dikirim_oleh
+                 WHERE b.status_bast = ? ORDER BY " . $urut,
+                array(1 => $status)
+            );
+        } catch (\Throwable $e) {
+            error_log('[BAST] daftarHumas: ' . $e->getMessage());
+            return array();
+        }
+    }
+
+    /** Jumlah BAST yang sudah dikirim Katim dan menunggu nomor dari Humas (badge menu Humas). */
+    public static function hitungMenungguHumas($db) {
+        try {
+            self::pastikanSkema($db);
+            $r = $db->exec("SELECT COUNT(*) AS c FROM opti_bast WHERE status_bast = ?", array(1 => self::ST_KIRIM));
+            return (int) (isset($r[0]['c']) ? $r[0]['c'] : 0);
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     public static function detailNomor($urut, $bulan, $tahun) {
