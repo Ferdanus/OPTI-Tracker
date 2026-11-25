@@ -1,0 +1,26 @@
+[globals]
+; Set 0 untuk produksi agar detail error & stack trace tidak tampil ke pengguna
+DEBUG=0
+UI=app/views/
+AUTOLOAD=app/controllers/|app/models/
+
+; Konfigurasi Database MySQL Utama (OPTI Tracker)
+db_dns=mysql:host=localhost;port=3306;dbname=silopti2026;charset=utf8mb4
+db_user=root
+db_pass=
+
+; Konfigurasi Database Sekretariat (Master SIL 2020: tb_arsipsurat, tb_arsipuser, tb_customer, tb_hari_libur, tb_surat_keluar)
+db_sekretariat_dns=mysql:host=localhost;port=3306;dbname=sil2020;charset=utf8mb4
+db_sekretariat_user=root
+db_sekretariat_pass=
+db_sekretariat_table=tb_arsipsurat
+db_sekretariat_table_keluar=tb_surat_keluar
+
+; Konfigurasi WhatsApp API Gateway (WANotif)
+wa_gateway_url=https://api.wanotif.id/v1/send
+wa_api_key=ISI_API_KEY_WANOTIF_ANDA
+
+; Konfigurasi Web Push Notification (VAPID, RFC 8292)
+vapid_public_key=ISI_VAPID_PUBLIC_KEY
+vapid_private_key_b64=ISI_VAPID_PRIVATE_KEY_BASE64
+vapid_subject=mailto:admin@bbspjis.go.id

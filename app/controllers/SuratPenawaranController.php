@@ -125,6 +125,8 @@ class SuratPenawaranController extends Controller
      */
     public function index($f3)
     {
+        $this->requireAuth();
+        $this->requirePermission('penawaran:view');
         $currentYear   = date('Y');
         $filterTahun   = $f3->exists('GET.tahun') ? trim((string)$f3->get('GET.tahun')) : $currentYear;
         $filterBulan   = $f3->exists('GET.bulan') ? trim((string)$f3->get('GET.bulan')) : 'all';
@@ -144,9 +146,11 @@ class SuratPenawaranController extends Controller
             '12' => 'Desember'
         ];
 
-        $search        = trim((string) $f3->get('GET.q'));
-        $filterLayanan = (string) $f3->get('GET.jenis_layanan');
-        $activeTab     = $f3->exists('GET.tab') ? trim((string)$f3->get('GET.tab')) : 'aktif';
+        $search         = trim((string) $f3->get('GET.q'));
+        $filterLayanan  = (string) $f3->get('GET.jenis_layanan');
+        $filterStatus   = trim((string) $f3->get('GET.status'));
+        $tampilkanSemua = $f3->exists('GET.semua') ? ($f3->get('GET.semua') === '1') : ($filterTahun === 'all' && $filterBulan === 'all');
+        $activeTab      = $f3->exists('GET.tab') ? trim((string)$f3->get('GET.tab')) : 'aktif';
         if (!in_array($activeTab, ['aktif', 'nego', 'deal', 'batal', 'semua'])) {
             $activeTab = 'aktif';
         }
@@ -300,7 +304,11 @@ class SuratPenawaranController extends Controller
             $isOldReplaced = ($ordKey > 0 && isset($latestIdsPerOrder[$ordKey]) && (int)$r['id'] !== $latestIdsPerOrder[$ordKey]);
             $r['is_old_replaced'] = $isOldReplaced;
 
-            if ($isBatal || $isOldReplaced) {
+            if ($r['status'] === 'draft' && !$isOldReplaced && $r['status'] !== 'batal' && $r['status'] !== 'nonaktif') {
+                // Draf yang belum diterbitkan tetap berada di daftar Aktif/Draft meskipun menyimpan progres pilihan status_respon_klien
+                $r['status_badge_type'] = 'draft';
+                $daftarAktif[] = $r;
+            } elseif ($isBatal || $isOldReplaced) {
                 $r['status_badge_type'] = 'batal';
                 $daftarBatal[] = $r;
             } elseif ($r['status_respon_klien'] === 'deal' || $r['status'] === 'disetujui') {
@@ -929,8 +937,8 @@ $daftarPegawai = $arsipUser->find(
         $f3->set('default_ruang_lingkup', $defaultRuangLingkup);
 
         if ($order['jenis_layanan_opti'] === 'lingkungan') {
-            $f3->set('default_pejabat_nama', 'Joko Pratomo');
-            $f3->set('default_jabatan_pejabat', 'Kepala Bagian Tata Usaha');
+            $f3->set('default_pejabat_nama', 'Dodiet Prasetyo');
+            $f3->set('default_jabatan_pejabat', 'Kepala');
             $f3->set('default_hal', 'Biaya Pengujian Lingkungan');
             $f3->set('default_lampiran_teks', '1 (satu) lembar');
         } else {
@@ -1012,15 +1020,13 @@ $daftarPegawai = $arsipUser->find(
         $f3->set('proposal_file', $proposalFile);
         $f3->set('proposal_file_exists', $proposalFileExists);
 
-        $sumberLampiranDefault = '';
+        $sumberLampiranDefault = 'tanpa';
         if (!empty($lampiranUserExisting)) {
             if ($proposalFileExists && ($lampiranUserExisting === $proposalFile || basename($lampiranUserExisting) === basename($proposalFile))) {
                 $sumberLampiranDefault = 'proposal';
             } else {
                 $sumberLampiranDefault = 'upload';
             }
-        } elseif (!empty($spExisting) && !empty($spExisting['id']) && !$isRevisiBaru) {
-            $sumberLampiranDefault = 'tanpa';
         }
         $f3->set('sumber_lampiran_default', $sumberLampiranDefault);
         $f3->set('kalkulasi', $kalkulasi);
@@ -1048,18 +1054,14 @@ $daftarPegawai = $arsipUser->find(
         $f3->set('pembuat_nama', $pembuatNama);
         $f3->set('can_edit', $canEdit);
 
-        // State Guard: Cek apakah penawaran sudah DEAL dan order telah masuk ke pembayaran / pelaksanaan
+        // State Guard: Buka Status Respon Klien saat membuat surat baru (mode=baru/revisi atau belum ada SP),
+        // dan kunci hanya saat koreksi surat yang sudah DEAL.
         $isLockedDeal = false;
-        $orderHasDeal = (($order['status_penawaran'] ?? '') === 'deal') || (!empty($spExisting) && ($spExisting['status_respon_klien'] ?? '') === 'deal');
-        if ($orderHasDeal) {
-            $isLunas = ($order['status_keuangan'] ?? '') === 'lunas';
-            $hasBayar = !empty($this->db->exec("SELECT id FROM opti_pembayaran WHERE order_id = ? LIMIT 1", [1 => $orderId]));
-            $hasPo = !empty($this->db->exec("SELECT id FROM po_kegiatan WHERE order_id = ? LIMIT 1", [1 => $orderId]));
-            $isPelaksanaan = in_array($order['status_pelaksanaan'] ?? '', ['sedang_berjalan', 'evaluasi_laporan', 'revisi_laporan', 'laporan_selesai']);
-            if ($isLunas || $hasBayar || $hasPo || $isPelaksanaan || ($order['status_penawaran'] ?? '') === 'deal') {
-                $isLockedDeal = true;
-                $isRevisiBaru = false;
-            }
+        $orderHasDeal = (($order['status_penawaran'] ?? '') === 'deal') || (!empty($spExisting) && ($spExisting['status'] ?? '') !== 'draft' && ($spExisting['status_respon_klien'] ?? '') === 'deal');
+        $isMembuatBaru = ($mode === 'baru' || $isRevisiBaru || empty($spExisting));
+        if ($orderHasDeal && !$isMembuatBaru) {
+            $isLockedDeal = true;
+            $isRevisiBaru = false;
         }
         $f3->set('is_locked_deal', $isLockedDeal);
         $f3->set('is_revisi_baru', $isRevisiBaru);
@@ -1190,15 +1192,10 @@ $daftarPegawai = $arsipUser->find(
         // Jika dokumen ini sebelumnya sudah berstatus DEAL, atau order sudah lanjut ke pembayaran/pelaksanaan:
         // Jangan izinkan downgrade status menjadi 'draft' dan jangan izinkan membuat revisi baru yang merusak alur.
         $isLockedDeal = false;
-        $orderHasDeal = (($order['status_penawaran'] ?? '') === 'deal') || (!empty($spExisting) && ($spExisting['status_respon_klien'] ?? '') === 'deal');
-        if ($orderHasDeal) {
-            $isLunas = ($order['status_keuangan'] ?? '') === 'lunas';
-            $hasBayar = !empty($this->db->exec("SELECT id FROM opti_pembayaran WHERE order_id = ? LIMIT 1", [1 => $orderId]));
-            $hasPo = !empty($this->db->exec("SELECT id FROM po_kegiatan WHERE order_id = ? LIMIT 1", [1 => $orderId]));
-            $isPelaksanaan = in_array($order['status_pelaksanaan'] ?? '', ['sedang_berjalan', 'evaluasi_laporan', 'revisi_laporan', 'laporan_selesai']);
-            if ($isLunas || $hasBayar || $hasPo || $isPelaksanaan || ($order['status_penawaran'] ?? '') === 'deal') {
-                $isLockedDeal = true;
-            }
+        $orderHasDeal = (($order['status_penawaran'] ?? '') === 'deal') || (!empty($spExisting) && ($spExisting['status'] ?? '') !== 'draft' && ($spExisting['status_respon_klien'] ?? '') === 'deal');
+        $isMembuatBaruSimpan = ($isRevisiBaru || empty($spExisting) || ($post['mode'] ?? '') === 'baru');
+        if ($orderHasDeal && !$isMembuatBaruSimpan) {
+            $isLockedDeal = true;
         }
 
         $isSpDeal = $isLockedDeal || $orderHasDeal;
@@ -1220,16 +1217,16 @@ $daftarPegawai = $arsipUser->find(
             }
         }
 
-        // Simpan Draf murni: jika mengedit penawaran yang sudah berstatus 'nego'/'terkirim' (Koreksi Formulir), pertahankan statusnya agar tidak turun jadi draft
+        // Simpan Draf murni: simpan progres status_respon_klien yang dipilih user di form tanpa mengirim notif atau memajukan tahap
         if ($actionStatus === 'draft' && !$isLockedDeal) {
-            $existingStatus = strtolower(trim((string)($spExisting['status_respon_klien'] ?? '')));
-            if (!$isRevisiBaru && !empty($spExisting) && in_array($existingStatus, ['nego', 'terkirim'], true)) {
-                $post['status_respon_klien'] = $existingStatus;
-                $post['action_status'] = $existingStatus;
-            } else {
-                $post['status_respon_klien'] = 'draft';
-                $post['action_status'] = 'draft';
+            $selectedRespon = strtolower(trim((string)($post['status_respon_klien'] ?? '')));
+            if (!in_array($selectedRespon, ['draft', 'terkirim', 'nego', 'deal', 'batal'], true)) {
+                $existingStatus = strtolower(trim((string)($spExisting['status_respon_klien'] ?? '')));
+                $selectedRespon = in_array($existingStatus, ['nego', 'terkirim', 'deal', 'batal'], true) ? $existingStatus : 'draft';
             }
+            $post['status_respon_klien'] = $selectedRespon;
+            $post['action_status'] = 'draft';
+            $post['is_draft_save'] = 1;
             $isDeal = false;
         } else {
             $isDeal = $orderHasDeal || (($post['status_respon_klien'] ?? '') === 'deal');
@@ -1328,6 +1325,17 @@ $daftarPegawai = $arsipUser->find(
                 }
             }
 
+            if ($actionStatus !== 'draft' && $opsiLampiran === 'proposal' && empty($post['file_lampiran_user'])) {
+                $this->setFlashError("Gagal: Berkas Proposal Teknis belum tersedia di Tahap 4. Silakan pilih 'Upload File Baru' atau 'Tanpa Lampiran'.");
+                $f3->reroute("/order/{$orderId}/penawaran/buat");
+                return;
+            }
+            if ($actionStatus !== 'draft' && $opsiLampiran === 'upload' && empty($post['file_lampiran_user'])) {
+                $this->setFlashError("Gagal: Anda memilih opsi Upload File Baru, tetapi belum ada berkas lampiran yang diunggah.");
+                $f3->reroute("/order/{$orderId}/penawaran/buat");
+                return;
+            }
+
 
             // Otomatis generate dan simpan berkas PDF resmi (termasuk lampiran hal 3+) ke folder uploads/penawaran
             $uploadDir = 'uploads/penawaran/';
@@ -1347,7 +1355,7 @@ $daftarPegawai = $arsipUser->find(
             $spModel = new SuratPenawaran($this->db);
             $hasil = $spModel->buatDariOrder($orderId, $userId, $post);
 
-            $isDraft = ($post['status_respon_klien'] === 'draft');
+            $isDraft = !empty($post['is_draft_save']) || ($post['status_respon_klien'] === 'draft');
 
             // Catat audit pengiriman Tahap 5 (Surat Penawaran Resmi)
             if (!$isDraft) {
@@ -1362,26 +1370,6 @@ $daftarPegawai = $arsipUser->find(
                     date('Y-m-d H:i:s'),
                     'Surat Penawaran Resmi Diterbitkan (No: ' . $hasil['nomor_surat'] . ')'
                 );
-
-                try {
-                    $orderModel = new \OrderLayanan($this->db);
-                    $order = $orderModel->getDetail($orderId);
-                    $ordLblSp = \NotificationService::formatOrderLabel($order, $orderId);
-                    $ptSp = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
-                    $actorSp = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Mitra');
-                    \NotificationService::send($this->db, [
-                        'order_id'       => $orderId,
-                        'target_role'    => 'ketua_tim',
-                        'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
-                        'judul'          => 'Surat Penawaran Resmi Diterbitkan',
-                        'pesan'          => "Surat Penawaran No. {$hasil['nomor_surat']} order {$ordLblSp} {$ptSp} diterbitkan oleh {$actorSp}.",
-                        'tipe'           => 'info',
-                        'icon'           => 'bi-send-check-fill',
-                        'link_url'       => "/order/{$orderId}",
-                        'created_by'     => $userId,
-                        'created_by_name'=> $actorSp
-                    ]);
-                } catch (\Exception $eNotif) {}
 
                 $isDeal = (($post['status_respon_klien'] ?? '') === 'deal');
                 if ($isDeal) {
@@ -1513,59 +1501,10 @@ $daftarPegawai = $arsipUser->find(
                         "UPDATE order_layanan SET status_penawaran = 'deal' WHERE id = ?",
                         [1 => $orderId]
                     );
-
-                    $ordLblStat = \NotificationService::formatOrderLabel($order, $orderId);
-                    $ptStat = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
-                    $actorStat = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Tim Mitra');
-
-                    // Notif ke Ka Tim OPTI
-                    \NotificationService::send($this->db, [
-                        'order_id'       => $orderId,
-                        'target_role'    => 'ketua_tim',
-                        'target_layanan' => $order['jenis_layanan_opti'] ?? 'semua',
-                        'judul'          => 'Penawaran Order DEAL',
-                        'pesan'          => "Penawaran order {$ordLblStat} {$ptStat} disepakati DEAL oleh {$actorStat}.",
-                        'tipe'           => 'success',
-                        'icon'           => 'bi-check-circle-fill',
-                        'link_url'       => "/order/{$orderId}",
-                        'created_by'     => $this->getUserId() ?? 1,
-                        'created_by_name'=> $actorStat
-                    ]);
-
-                    // Notif ke Tim Mitra
-                    \NotificationService::send($this->db, [
-                        'order_id'       => $orderId,
-                        'target_role'    => 'tim_mitra',
-                        'target_layanan' => 'semua',
-                        'judul'          => 'Penawaran Order DEAL Disetujui',
-                        'pesan'          => "Penawaran order {$ordLblStat} {$ptStat} disepakati DEAL oleh {$actorStat}.",
-                        'tipe'           => 'success',
-                        'icon'           => 'bi-check-circle-fill',
-                        'link_url'       => "/order/{$orderId}",
-                        'created_by'     => $this->getUserId() ?? 1,
-                        'created_by_name'=> $actorStat
-                    ]);
                 } catch (\Exception $eNotif) {}
 
                 $this->setFlashSuccess("Penawaran telah disetujui klien (<strong>DEAL</strong>). Lengkapi berkas, lalu disposisikan ke <strong>Tim Keuangan</strong> agar order masuk ke antrean pembayaran.");
             } else {
-                try {
-                    $judulStatus = ($statusRespon === 'nego') ? 'Negosiasi Penawaran Klien' : 'Penawaran Ditolak / Batal';
-                    $tipeNotif = ($statusRespon === 'nego') ? 'warning' : 'danger';
-                    $iconNotif = ($statusRespon === 'nego') ? 'bi-chat-dots-fill' : 'bi-x-circle-fill';
-                    \NotificationService::send($this->db, [
-                        'order_id'       => $orderId,
-                        'target_role'    => 'tim_mitra',
-                        'target_layanan' => 'semua',
-                        'judul'          => $judulStatus,
-                        'pesan'          => "Respon klien {$order['nama_perusahaan']} untuk Order #{$order['nomor_order']}: " . strtoupper($statusRespon) . ".",
-                        'tipe'           => $tipeNotif,
-                        'icon'           => $iconNotif,
-                        'link_url'       => "/order/{$orderId}",
-                        'created_by'     => $this->getUserId() ?? 1,
-                        'created_by_name'=> $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
-                    ]);
-                } catch (\Exception $eNotif) {}
                 $this->setFlashSuccess("Status respon penawaran berhasil diperbarui menjadi: <strong>" . strtoupper($statusRespon) . "</strong>.");
             }
         } catch (\Exception $e) {
@@ -1630,22 +1569,6 @@ $daftarPegawai = $arsipUser->find(
                             "UPDATE order_layanan SET status_penawaran = 'deal' WHERE id = ?",
                             [1 => $orderId]
                         );
-
-                        try {
-                            // Tim Keuangan baru dinotif saat tombol Disposisi ke Keuangan diklik (disposisiKeuangan)
-                            \NotificationService::send($this->db, [
-                                'order_id'        => $orderId,
-                                'target_role'     => 'tim_mitra',
-                                'target_layanan'  => 'semua',
-                                'judul'           => 'Penawaran Order DEAL Disetujui',
-                                'pesan'           => "Penawaran {$order['nama_perusahaan']} telah disepakati (DEAL senilai Rp " . number_format($nominalBaru, 0, ',', '.') . "). Segera lengkapi berkas & lakukan disposisi ke Tim Keuangan.",
-                                'tipe'            => 'success',
-                                'icon'            => 'bi-check-circle-fill',
-                                'link_url'        => "/order/{$orderId}",
-                                'created_by'      => $this->getUserId() ?? 1,
-                                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
-                            ]);
-                        } catch (\Exception $eNotif) {}
                     }
                 }
                 $this->setFlashSuccess("Penawaran disetujui (<strong>DEAL</strong>). Lengkapi berkas, lalu disposisikan ke <strong>Tim Keuangan</strong> agar order masuk ke antrean pembayaran.");
@@ -1727,9 +1650,9 @@ $daftarPegawai = $arsipUser->find(
             $nominal = (float)($sp['nominal_penawaran'] ?? ($order['estimasi_biaya'] ?? 0));
             $spModel->updateResponKlien((int)$sp['id'], 'deal', $sp['catatan_nego'] ?? '', $nominal);
 
-            // Update status keuangan order ke 'menunggu_pembayaran'
+            // Update status keuangan order ke 'menunggu_pembayaran' tanpa merusak ENUM order_layanan.status
             $this->db->exec(
-                "UPDATE order_layanan SET status_keuangan = 'menunggu_pembayaran', status = 'penawaran' WHERE id = ?",
+                "UPDATE order_layanan SET status_keuangan = 'menunggu_pembayaran', status = IF(status IN ('', 'permintaan_masuk', 'draft', 'draft_disimpan'), 'baru', status) WHERE id = ?",
                 [1 => $orderId]
             );
 
@@ -1742,44 +1665,16 @@ $daftarPegawai = $arsipUser->find(
             $ordLblDispK = \NotificationService::formatOrderLabel($order, $orderId);
             $ptDispK = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
 
-            // 1. Kirim Notifikasi ke Ketua Tim Keuangan
+            // Kirim Notifikasi ke Ketua Tim Keuangan (action: proses pembayaran Tahap 6)
             \NotificationService::send($this->db, [
                 'order_id'        => $orderId,
                 'target_role'     => 'ketua_tim_keuangan',
                 'target_layanan'  => 'semua',
-                'judul'           => 'Disposisi Pembayaran: Order ' . $ordLblDispK,
-                'pesan'           => "Penawaran {$ptDispK} (No: {$sp['nomor_surat']}, Rp " . number_format($nominal, 0, ',', '.') . ") didisposisikan ke Tim Keuangan oleh {$userNama}.",
+                'judul'           => 'Tagihan Baru (DEAL)',
+                'pesan'           => "Order {$ordLblDispK} ({$ptDispK}, Rp " . number_format($nominal, 0, ',', '.') . ") siap diproses pembayarannya.",
                 'tipe'            => 'success',
                 'icon'            => 'bi-wallet2',
                 'link_url'        => "/pembayaran/tambah?order_id={$orderId}",
-                'created_by'      => $userId,
-                'created_by_name' => $userNama
-            ]);
-
-            // 2. Kirim Notifikasi ke Ketua Tim OPTI
-            \NotificationService::send($this->db, [
-                'order_id'        => $orderId,
-                'target_role'     => 'ketua_tim',
-                'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
-                'judul'           => 'Penawaran Order DEAL - Didisposisikan ke Keuangan',
-                'pesan'           => "Penawaran order {$ordLblDispK} {$ptDispK} didisposisikan ke Tim Keuangan oleh {$userNama}.",
-                'tipe'            => 'info',
-                'icon'            => 'bi-send-check-fill',
-                'link_url'        => "/order/{$orderId}",
-                'created_by'      => $userId,
-                'created_by_name' => $userNama
-            ]);
-
-            // 3. Kirim Notifikasi ke Tim Mitra
-            \NotificationService::send($this->db, [
-                'order_id'        => $orderId,
-                'target_role'     => 'tim_mitra',
-                'target_layanan'  => 'semua',
-                'judul'           => 'Disposisi ke Tim Keuangan Berhasil',
-                'pesan'           => "Penawaran order {$ordLblDispK} {$ptDispK} didisposisikan ke Tim Keuangan oleh {$userNama}.",
-                'tipe'            => 'success',
-                'icon'            => 'bi-send-check-fill',
-                'link_url'        => "/order/{$orderId}",
                 'created_by'      => $userId,
                 'created_by_name' => $userNama
             ]);
@@ -2203,8 +2098,8 @@ $daftarPegawai = $arsipUser->find(
         $terbilangStr  = strtolower(self::terbilang($nominal));
         $ythTitle      = 'Pimpinan ' . $perusahaan;
 
-        $jabatanPejabat = trim((string)($f3->get('POST.jabatan_pejabat') ?? $f3->get('GET.jabatan_pejabat') ?? ($sp['jabatan_pejabat'] ?? (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Kepala Bagian Tata Usaha' : 'Kepala'))));
-        $pejabatNama    = trim((string)($f3->get('POST.pejabat_nama') ?? $f3->get('GET.pejabat_nama') ?? ($sp['pejabat_nama'] ?? (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Joko Pratomo' : 'Dodiet Prasetyo'))));
+        $jabatanPejabat = trim((string)($f3->get('POST.jabatan_pejabat') ?? $f3->get('GET.jabatan_pejabat') ?? ($sp['jabatan_pejabat'] ?? 'Kepala')));
+        $pejabatNama    = trim((string)($f3->get('POST.pejabat_nama') ?? $f3->get('GET.pejabat_nama') ?? ($sp['pejabat_nama'] ?? 'Dodiet Prasetyo')));
 
         $rawNaskah = $f3->get('POST.ruang_lingkup') ?? $f3->get('GET.ruang_lingkup') ?? ($sp['ruang_lingkup'] ?? null);
         if (empty($rawNaskah)) {
@@ -2470,8 +2365,8 @@ $daftarPegawai = $arsipUser->find(
             'ruang_lingkup'      => $f3->get('POST.ruang_lingkup') ?? $f3->get('GET.ruang_lingkup') ?? ($existingSp['ruang_lingkup'] ?? null),
             'jadwal_pelaksanaan' => $f3->get('POST.jadwal_pelaksanaan') ?? $f3->get('GET.jadwal_pelaksanaan') ?? ($existingSp['jadwal_pelaksanaan'] ?? null),
             'catatan_sampel'     => $f3->get('POST.catatan_sampel') ?? $f3->get('GET.catatan_sampel') ?? ($existingSp['catatan_sampel'] ?? null),
-            'jabatan_pejabat'    => $f3->get('POST.jabatan_pejabat') ?? $f3->get('GET.jabatan_pejabat') ?? ($existingSp['jabatan_pejabat'] ?? (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Kepala Bagian Tata Usaha' : 'Kepala')),
-            'pejabat_nama'       => $f3->get('POST.pejabat_nama') ?? $f3->get('GET.pejabat_nama') ?? ($existingSp['pejabat_nama'] ?? (($order['jenis_layanan_opti'] ?? '') === 'lingkungan' ? 'Joko Pratomo' : 'Dodiet Prasetyo')),
+            'jabatan_pejabat'    => $f3->get('POST.jabatan_pejabat') ?? $f3->get('GET.jabatan_pejabat') ?? ($existingSp['jabatan_pejabat'] ?? 'Kepala'),
+            'pejabat_nama'       => $f3->get('POST.pejabat_nama') ?? $f3->get('GET.pejabat_nama') ?? ($existingSp['pejabat_nama'] ?? 'Dodiet Prasetyo'),
             'pembuat_nama'       => $_SESSION['user']['nama'] ?? ($_SESSION['nama_lengkap'] ?? ($existingSp['pembuat_nama'] ?? 'Tim Mitra BBSPJIS')),
             'file_lampiran_user' => $existingSp['file_lampiran_user'] ?? ($_SESSION['pending_lampiran_sp_' . $orderId] ?? '')
         ];
@@ -3119,8 +3014,8 @@ $daftarPegawai = $arsipUser->find(
         $lampTeks = !empty($sp['lampiran_teks']) && $sp['lampiran_teks'] !== '-' ? $sp['lampiran_teks'] : '1 (satu) lembar';
         $halLing = !empty($sp['hal']) ? trim($sp['hal']) : (!empty($sp['perihal']) && stripos($sp['perihal'], $order['judul_kegiatan'] ?? '~~~') === false && stripos($sp['perihal'], 'Penawaran Layanan') === false ? trim($sp['perihal']) : 'Biaya Pengujian Lingkungan');
 
-        $signerRoleLing = !empty($sp['jabatan_pejabat']) ? trim($sp['jabatan_pejabat']) : 'Kepala Bagian Tata Usaha';
-        $signerNameLing = !empty($sp['pejabat_nama']) ? trim($sp['pejabat_nama']) : (!empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra BBSPJIS' && $sp['pembuat_nama'] !== 'Tim Mitra Kerjasama BBSPJIS' ? trim($sp['pembuat_nama']) : 'Joko Pratomo');
+        $signerRoleLing = !empty($sp['jabatan_pejabat']) ? trim($sp['jabatan_pejabat']) : 'Kepala';
+        $signerNameLing = !empty($sp['pejabat_nama']) ? trim($sp['pejabat_nama']) : (!empty($sp['pembuat_nama']) && $sp['pembuat_nama'] !== 'Tim Mitra BBSPJIS' && $sp['pembuat_nama'] !== 'Tim Mitra Kerjasama BBSPJIS' ? trim($sp['pembuat_nama']) : 'Dodiet Prasetyo');
 
         // 2. Blok Identitas
         $pdf->SetFont('Arial', '', 11);

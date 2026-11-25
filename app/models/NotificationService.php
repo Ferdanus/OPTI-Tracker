@@ -87,6 +87,36 @@ class NotificationService
         }
 
 
+        // Cegah notifikasi ganda: jika notifikasi belum dibaca dengan target, judul, dan pesan identik sudah ada, perbarui waktunya saja
+        try {
+            $dup = $db->exec(
+                "SELECT id FROM `opti_notifikasi`
+                 WHERE COALESCE(`order_id`, 0) = ?
+                   AND COALESCE(`po_id`, 0) = ?
+                   AND `target_role` = ?
+                   AND COALESCE(`target_user_id`, 0) = ?
+                   AND `target_layanan` = ?
+                   AND `judul` = ?
+                   AND `pesan` = ?
+                   AND `is_read` = 0
+                 ORDER BY `id` DESC LIMIT 1",
+                [
+                    1 => (int)($orderId ?? 0),
+                    2 => (int)($poId ?? 0),
+                    3 => $targetRole,
+                    4 => (int)($targetUserId ?? 0),
+                    5 => $targetLayanan,
+                    6 => $judul,
+                    7 => $pesan
+                ]
+            );
+            if (!empty($dup[0]['id'])) {
+                $existingId = (int)$dup[0]['id'];
+                $db->exec("UPDATE `opti_notifikasi` SET `created_at` = NOW() WHERE `id` = ?", [1 => $existingId]);
+                return $existingId;
+            }
+        } catch (\Throwable $eDup) {}
+
         $sql = "INSERT INTO `opti_notifikasi` 
                 (`order_id`, `po_id`, `target_role`, `target_user_id`, `target_layanan`, `judul`, `pesan`, `tipe`, `icon`, `link_url`, `created_by`, `created_by_name`, `created_at`)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";

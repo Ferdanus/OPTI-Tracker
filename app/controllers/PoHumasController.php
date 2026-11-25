@@ -39,9 +39,9 @@ class PoHumasController extends Controller {
     /** Status PO yang sudah dikirim ke Mitra (dan ke Humas). */
     const STATUS_TERKIRIM = "('terkirim','disetujui_mitra','disetujui')";
 
-    /** Superadmin dan role 'humas' (Sub Tim Humas). */
+    /** Superadmin, role 'humas' (Sub Tim Humas), dan 'admin_kontrak'. */
     protected function izinAkses() {
-        return $this->isSuperadmin() || $this->getUserRole() === 'humas';
+        return $this->isSuperadmin() || in_array($this->getUserRole(), ['humas', 'admin_kontrak'], true);
     }
 
     protected function izinkan($json = false) {
@@ -194,9 +194,9 @@ class PoHumasController extends Controller {
                 'po_id'           => (int) $po['id'],
                 'target_role'     => 'ketua_tim_mitra',
                 'target_layanan'  => 'semua',
-                'judul'           => 'PO Menunggu Verifikasi',
-                'pesan'           => 'PO #' . $po['nomor_po'] . ' untuk Order #' . (isset($o['nomor_order']) ? $o['nomor_order'] : '-')
-                                   . ' (' . (isset($o['judul_kegiatan']) ? $o['judul_kegiatan'] : '') . ') sudah diverifikasi Humas, menunggu verifikasi Tim Mitra.',
+                'judul'           => 'Verifikasi PO Diperlukan',
+                'pesan'           => 'PO #' . $po['nomor_po'] . ' (Order #' . (isset($o['nomor_order']) ? $o['nomor_order'] : '-')
+                                   . ') sudah diverifikasi Humas. Silakan verifikasi.',
 
                 'tipe'            => 'primary',
                 'icon'            => 'bi-clipboard-check',
@@ -656,10 +656,12 @@ class PoHumasController extends Controller {
             if ($n > 0) { $bersih[$n] = true; }
         }
         if (empty($bersih)) { return []; }
-        $in = implode(',', array_keys($bersih));
+        $ids = array_keys($bersih);
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $params = array_combine(range(1, count($ids)), $ids);
         $peta = [];
         try {
-            $rows = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ($in)");
+            $rows = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ({$ph})", $params);
             foreach ($rows as $r) { $peta[(int) $r['id_user']] = $r['nama_user']; }
         } catch (\Throwable $e) {
             // nama dikosongkan kalau database Sekretariat tidak terjangkau

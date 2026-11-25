@@ -909,7 +909,7 @@ class PenggunaController extends Controller {
         $f3->set('unassigned_users', $unassignedUsers);
         $f3->set('role_options', self::getRoleOptions());
         $f3->set('occupied_ketua', $occupiedKetua);
-        $f3->set('occupied_ketua_json', json_encode($occupiedKetua, JSON_UNESCAPED_UNICODE));
+        $f3->set('occupied_ketua_json', json_encode($occupiedKetua, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
         $f3->set('count_total', $countTotal);
         $f3->set('count_db_total', $countDbTotal);
         $f3->set('count_unassigned', count($unassignedUsers));

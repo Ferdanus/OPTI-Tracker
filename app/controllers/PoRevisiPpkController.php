@@ -740,15 +740,15 @@ class PoRevisiPpkController extends Controller {
             // [BARU] Ketua Tim sedang mereview hasil revisi PPK BLU dari Ketua Pelaksana: boleh langsung memperbaiki isi PO (status revisi tidak berubah)
             if ($ps === 'katim_review') {
                 if ($superadmin) { return [true, '', 'katim']; }
-                if ($role === 'ketua_tim') {
-                    $div = isset($_SESSION['jenis_layanan_opti']) ? (string) $_SESSION['jenis_layanan_opti'] : '';
+                if ($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') {
+                    $div = ($role === 'kepala_lab_lingkungan') ? 'lingkungan' : (isset($_SESSION['jenis_layanan_opti']) ? (string) $_SESSION['jenis_layanan_opti'] : '');
                     if (!in_array($div, ['selulosa', 'lingkungan'], true) || $div === (string) $r['jenis_layanan_opti']) { return [true, '', 'katim']; }
                     return [false, 'PO ini bukan dari divisi Anda.', ''];
                 }
                 return [false, 'Hasil revisi PPK BLU sedang direview Ketua Tim.', ''];
             }
             if ($ps === 'katim_kerja') {
-                if ($superadmin || $role === 'ketua_tim') { return [true, '', 'ppk']; }
+                if ($superadmin || $role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') { return [true, '', 'ppk']; }
                 return [false, 'Revisi PPK BLU sedang dikerjakan Ketua Tim.', ''];
             }
             if ($ps === 'ketupel_kerja') {
@@ -760,8 +760,8 @@ class PoRevisiPpkController extends Controller {
         if ($sr === 'menunggu_review' || $sr === 'direvisi') {
             // [BARU] Ketua Tim boleh mengedit sendiri PO yang sedang direview (status review tidak berubah)
             if ($superadmin) { return [true, '', 'katim']; }
-            if ($role === 'ketua_tim') {
-                $div = isset($_SESSION['jenis_layanan_opti']) ? (string) $_SESSION['jenis_layanan_opti'] : '';
+            if ($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') {
+                $div = ($role === 'kepala_lab_lingkungan') ? 'lingkungan' : (isset($_SESSION['jenis_layanan_opti']) ? (string) $_SESSION['jenis_layanan_opti'] : '');
                 if (!in_array($div, ['selulosa', 'lingkungan'], true) || $div === (string) $r['jenis_layanan_opti']) { return [true, '', 'katim']; }
                 return [false, 'PO ini bukan dari divisi Anda.', ''];
             }
@@ -878,11 +878,12 @@ class PoRevisiPpkController extends Controller {
                       WHERE p.status IN ('terkirim', 'disetujui_mitra', 'disetujui') AND p.status_review = 'disetujui' AND p.ppk_status = 'ketupel_kerja' AND o.ketua_pelaksana_id = ?",
                     [1 => (int) $userId]
                 );
-            } elseif ($role === 'ketua_tim' || $role === 'superadmin') {
+            } elseif ($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan' || $role === 'superadmin') {
                 $sql = "SELECT COUNT(*) AS c FROM po_kegiatan p JOIN order_layanan o ON o.id = p.order_id
                          WHERE p.status IN ('terkirim', 'disetujui_mitra', 'disetujui') AND p.status_review = 'disetujui' AND p.ppk_status IN ('minta', 'katim_kerja', 'katim_review')";
                 $prm = [];
-                if ($role === 'ketua_tim' && in_array($divisi, self::DIVISI_VALID, true)) { $sql .= " AND o.jenis_layanan_opti = ?"; $prm[1] = $divisi; }
+                $effDiv = ($role === 'kepala_lab_lingkungan') ? 'lingkungan' : $divisi;
+                if (($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') && in_array($effDiv, self::DIVISI_VALID, true)) { $sql .= " AND o.jenis_layanan_opti = ?"; $prm[1] = $effDiv; }
                 $r = $db->exec($sql, $prm);
             } elseif (in_array($role, self::ROLE_PPK, true)) {
                 $sql = "SELECT COUNT(*) AS c FROM po_kegiatan p
@@ -935,7 +936,7 @@ class PoRevisiPpkController extends Controller {
     protected function modeRevisi() {
         if ($this->isSuperadmin()) { return 'katim'; }
         $role = $this->getUserRole();
-        if ($role === 'ketua_tim') { return 'katim'; }
+        if ($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') { return 'katim'; }
         if ($role === 'tim_kerja') { return 'pembuat'; }
         return null;
     }
@@ -1390,10 +1391,12 @@ class PoRevisiPpkController extends Controller {
             if ($n > 0) { $bersih[$n] = true; }
         }
         if (empty($bersih)) { return []; }
-        $in = implode(',', array_keys($bersih));
+        $ids = array_keys($bersih);
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $params = array_combine(range(1, count($ids)), $ids);
         $peta = [];
         try {
-            $rows = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ($in)");
+            $rows = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ({$ph})", $params);
             foreach ($rows as $r) { $peta[(int) $r['id_user']] = $r['nama_user']; }
         } catch (\Exception $e) {
             // nama tampil generik kalau database Sekretariat tidak terjangkau

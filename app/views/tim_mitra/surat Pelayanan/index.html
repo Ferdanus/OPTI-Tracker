@@ -116,9 +116,11 @@
     <div>
         <h2 class="h4 fw-bold mb-0 text-dark d-flex align-items-center gap-2"><i class="bi bi-file-earmark-text text-primary"></i> Surat Penawaran Resmi</h2>
     </div>
-    <button type="button" class="btn btn-primary btn-sm px-3 py-2 shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalPilihOrder">
-        <i class="bi bi-plus-lg"></i> Tambah Surat Penawaran
-    </button>
+    <check if="{{ @is_tim_mitra || @is_admin_order || @is_superadmin }}">
+        <button type="button" class="btn btn-primary btn-sm px-3 py-2 shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalPilihOrder">
+            <i class="bi bi-plus-lg"></i> Tambah Surat Penawaran
+        </button>
+    </check>
 </div>
 
 <!-- 5 KARTU METRIK KPI RINGKASAN -->
@@ -128,7 +130,6 @@
             <div>
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total Surat</span>
                 <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_surat ?: 0 }}</h3>
-                <span class="small text-muted" style="font-size: 0.75rem;">Semua riwayat</span>
             </div>
             <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
                 <i class="bi bi-file-earmark-text"></i>
@@ -140,7 +141,6 @@
             <div>
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Penawaran Aktif</span>
                 <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_aktif ?: 0 }}</h3>
-                <span class="small text-muted" style="font-size: 0.75rem;">Penawaran masuk</span>
             </div>
             <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
                 <i class="bi bi-file-earmark-check-fill"></i>
@@ -152,7 +152,6 @@
             <div>
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Negosiasi</span>
                 <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_nego ?: 0 }}</h3>
-                <span class="small text-muted" style="font-size: 0.75rem;">Proses kesepakatan</span>
             </div>
             <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
                 <i class="bi bi-chat-dots-fill"></i>
@@ -164,7 +163,6 @@
             <div>
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Disepakati (DEAL)</span>
                 <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_deal ?: 0 }}</h3>
-                <span class="small text-muted" style="font-size: 0.75rem;">Siap pembayaran</span>
             </div>
             <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
                 <i class="bi bi-check-circle-fill"></i>
@@ -176,7 +174,6 @@
             <div>
                 <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Arsip Batal</span>
                 <h3 class="fw-bold text-dark mb-0 mt-1">{{ @total_batal ?: 0 }}</h3>
-                <span class="small text-muted" style="font-size: 0.75rem;">Gagal / Direvisi</span>
             </div>
             <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
                 <i class="bi bi-x-octagon-fill"></i>
@@ -389,26 +386,30 @@
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1" style="font-size: 0.84rem;">
                                                             <check if="{{ @sp.order_id }}">
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=edit&sp_id={{ @sp.id }}">
-                                                                        <i class="bi bi-pencil-square text-warning"></i>
-                                                                        <span>Edit Surat Penawaran</span>
-                                                                    </a>
-                                                                </li>
+                                                                <check if="{{ @is_tim_mitra || @is_admin_order || @is_superadmin }}">
+                                                                    <li>
+                                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=edit&sp_id={{ @sp.id }}">
+                                                                            <i class="bi bi-pencil-square text-warning"></i>
+                                                                            <span>Edit Surat Penawaran</span>
+                                                                        </a>
+                                                                    </li>
+                                                                </check>
                                                                 <li>
                                                                     <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}">
                                                                         <i class="bi bi-folder2-open text-primary"></i>
                                                                         <span>Buka Detail Order</span>
                                                                     </a>
                                                                 </li>
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=baru">
-                                                                        <i class="bi bi-arrow-repeat text-info"></i>
-                                                                        <span>Buat Revisi Baru</span>
-                                                                    </a>
-                                                                </li>
+                                                                <check if="{{ (@is_tim_mitra || @is_admin_order || @is_superadmin) && @sp.status_respon_klien != 'deal' }}">
+                                                                    <li>
+                                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=baru">
+                                                                            <i class="bi bi-arrow-repeat text-info"></i>
+                                                                            <span>Buat Revisi Baru</span>
+                                                                        </a>
+                                                                    </li>
+                                                                </check>
                                                             </check>
-                                                            <check if="{{ !@sp.order_id }}">
+                                                            <check if="{{ !@sp.order_id && (@is_tim_mitra || @is_admin_order || @is_superadmin) }}">
                                                                 <li>
                                                                     <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/edit">
                                                                         <i class="bi bi-pencil-square text-warning"></i>
@@ -416,19 +417,21 @@
                                                                     </a>
                                                                 </li>
                                                             </check>
-                                                            <li>
-                                                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-1.5" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}">
-                                                                    <i class="bi bi-cloud-arrow-up text-success"></i>
-                                                                    <span>{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan</span>
-                                                                </button>
-                                                            </li>
-                                                            <li><hr class="dropdown-divider my-1"></li>
-                                                            <li>
-                                                                <a class="dropdown-item d-flex align-items-center gap-2 py-1.5 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}">
-                                                                    <i class="bi bi-trash3"></i>
-                                                                    <span>Hapus Surat</span>
-                                                                </a>
-                                                            </li>
+                                                            <check if="{{ (@is_tim_mitra || @is_admin_order || @is_superadmin) && @sp.status_respon_klien != 'deal' }}">
+                                                                <li>
+                                                                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-1.5" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}">
+                                                                        <i class="bi bi-cloud-arrow-up text-success"></i>
+                                                                        <span>{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan</span>
+                                                                    </button>
+                                                                </li>
+                                                                <li><hr class="dropdown-divider my-1"></li>
+                                                                <li>
+                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}">
+                                                                        <i class="bi bi-trash3"></i>
+                                                                        <span>Hapus Surat</span>
+                                                                    </a>
+                                                                </li>
+                                                            </check>
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -510,26 +513,30 @@
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1" style="font-size: 0.84rem;">
                                                             <check if="{{ @sp.order_id }}">
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=edit&sp_id={{ @sp.id }}">
-                                                                        <i class="bi bi-pencil-square text-warning"></i>
-                                                                        <span>Edit Surat Penawaran</span>
-                                                                    </a>
-                                                                </li>
+                                                                <check if="{{ @is_tim_mitra || @is_admin_order || @is_superadmin }}">
+                                                                    <li>
+                                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=edit&sp_id={{ @sp.id }}">
+                                                                            <i class="bi bi-pencil-square text-warning"></i>
+                                                                            <span>Edit Surat Penawaran</span>
+                                                                        </a>
+                                                                    </li>
+                                                                </check>
                                                                 <li>
                                                                     <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}">
                                                                         <i class="bi bi-folder2-open text-primary"></i>
                                                                         <span>Buka Detail Order</span>
                                                                     </a>
                                                                 </li>
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=baru">
-                                                                        <i class="bi bi-arrow-repeat text-info"></i>
-                                                                        <span>Buat Revisi Baru</span>
-                                                                    </a>
-                                                                </li>
+                                                                <check if="{{ (@is_tim_mitra || @is_admin_order || @is_superadmin) && @sp.status_respon_klien != 'deal' }}">
+                                                                    <li>
+                                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=baru">
+                                                                            <i class="bi bi-arrow-repeat text-info"></i>
+                                                                            <span>Buat Revisi Baru</span>
+                                                                        </a>
+                                                                    </li>
+                                                                </check>
                                                             </check>
-                                                            <check if="{{ !@sp.order_id }}">
+                                                            <check if="{{ !@sp.order_id && (@is_tim_mitra || @is_admin_order || @is_superadmin) }}">
                                                                 <li>
                                                                     <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/edit">
                                                                         <i class="bi bi-pencil-square text-warning"></i>
@@ -537,19 +544,21 @@
                                                                     </a>
                                                                 </li>
                                                             </check>
-                                                            <li>
-                                                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-1.5" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}">
-                                                                    <i class="bi bi-cloud-arrow-up text-success"></i>
-                                                                    <span>{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan</span>
-                                                                </button>
-                                                            </li>
-                                                            <li><hr class="dropdown-divider my-1"></li>
-                                                            <li>
-                                                                <a class="dropdown-item d-flex align-items-center gap-2 py-1.5 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}">
-                                                                    <i class="bi bi-trash3"></i>
-                                                                    <span>Hapus Surat</span>
-                                                                </a>
-                                                            </li>
+                                                            <check if="{{ (@is_tim_mitra || @is_admin_order || @is_superadmin) && @sp.status_respon_klien != 'deal' }}">
+                                                                <li>
+                                                                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-1.5" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}">
+                                                                        <i class="bi bi-cloud-arrow-up text-success"></i>
+                                                                        <span>{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan</span>
+                                                                    </button>
+                                                                </li>
+                                                                <li><hr class="dropdown-divider my-1"></li>
+                                                                <li>
+                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}">
+                                                                        <i class="bi bi-trash3"></i>
+                                                                        <span>Hapus Surat</span>
+                                                                    </a>
+                                                                </li>
+                                                            </check>
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -635,26 +644,30 @@
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1" style="font-size: 0.84rem;">
                                                             <check if="{{ @sp.order_id }}">
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=edit&sp_id={{ @sp.id }}">
-                                                                        <i class="bi bi-pencil-square text-warning"></i>
-                                                                        <span>Edit Surat Penawaran</span>
-                                                                    </a>
-                                                                </li>
+                                                                <check if="{{ @is_tim_mitra || @is_admin_order || @is_superadmin }}">
+                                                                    <li>
+                                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=edit&sp_id={{ @sp.id }}">
+                                                                            <i class="bi bi-pencil-square text-warning"></i>
+                                                                            <span>Edit Surat Penawaran</span>
+                                                                        </a>
+                                                                    </li>
+                                                                </check>
                                                                 <li>
                                                                     <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}">
                                                                         <i class="bi bi-folder2-open text-primary"></i>
                                                                         <span>Buka Detail Order</span>
                                                                     </a>
                                                                 </li>
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=baru">
-                                                                        <i class="bi bi-arrow-repeat text-info"></i>
-                                                                        <span>Buat Revisi Baru</span>
-                                                                    </a>
-                                                                </li>
+                                                                <check if="{{ (@is_tim_mitra || @is_admin_order || @is_superadmin) && @sp.status_respon_klien != 'deal' }}">
+                                                                    <li>
+                                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=baru">
+                                                                            <i class="bi bi-arrow-repeat text-info"></i>
+                                                                            <span>Buat Revisi Baru</span>
+                                                                        </a>
+                                                                    </li>
+                                                                </check>
                                                             </check>
-                                                            <check if="{{ !@sp.order_id }}">
+                                                            <check if="{{ !@sp.order_id && (@is_tim_mitra || @is_admin_order || @is_superadmin) }}">
                                                                 <li>
                                                                     <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/edit">
                                                                         <i class="bi bi-pencil-square text-warning"></i>
@@ -662,19 +675,21 @@
                                                                     </a>
                                                                 </li>
                                                             </check>
-                                                            <li>
-                                                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-1.5" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}">
-                                                                    <i class="bi bi-cloud-arrow-up text-success"></i>
-                                                                    <span>{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan</span>
-                                                                </button>
-                                                            </li>
-                                                            <li><hr class="dropdown-divider my-1"></li>
-                                                            <li>
-                                                                <a class="dropdown-item d-flex align-items-center gap-2 py-1.5 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}">
-                                                                    <i class="bi bi-trash3"></i>
-                                                                    <span>Hapus Surat</span>
-                                                                </a>
-                                                            </li>
+                                                            <check if="{{ (@is_tim_mitra || @is_admin_order || @is_superadmin) && @sp.status_respon_klien != 'deal' }}">
+                                                                <li>
+                                                                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-1.5" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}">
+                                                                        <i class="bi bi-cloud-arrow-up text-success"></i>
+                                                                        <span>{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan</span>
+                                                                    </button>
+                                                                </li>
+                                                                <li><hr class="dropdown-divider my-1"></li>
+                                                                <li>
+                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}">
+                                                                        <i class="bi bi-trash3"></i>
+                                                                        <span>Hapus Surat</span>
+                                                                    </a>
+                                                                </li>
+                                                            </check>
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -878,26 +893,30 @@
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1" style="font-size: 0.84rem;">
                                                             <check if="{{ @sp.order_id }}">
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=edit&sp_id={{ @sp.id }}">
-                                                                        <i class="bi bi-pencil-square text-warning"></i>
-                                                                        <span>Edit Surat Penawaran</span>
-                                                                    </a>
-                                                                </li>
+                                                                <check if="{{ @is_tim_mitra || @is_admin_order || @is_superadmin }}">
+                                                                    <li>
+                                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=edit&sp_id={{ @sp.id }}">
+                                                                            <i class="bi bi-pencil-square text-warning"></i>
+                                                                            <span>Edit Surat Penawaran</span>
+                                                                        </a>
+                                                                    </li>
+                                                                </check>
                                                                 <li>
                                                                     <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}">
                                                                         <i class="bi bi-folder2-open text-primary"></i>
                                                                         <span>Buka Detail Order</span>
                                                                     </a>
                                                                 </li>
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=baru">
-                                                                        <i class="bi bi-arrow-repeat text-info"></i>
-                                                                        <span>Buat Revisi Baru</span>
-                                                                    </a>
-                                                                </li>
+                                                                <check if="{{ (@is_tim_mitra || @is_admin_order || @is_superadmin) && @sp.status_respon_klien != 'deal' }}">
+                                                                    <li>
+                                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/order/{{ @sp.order_id }}/penawaran/buat?mode=baru">
+                                                                            <i class="bi bi-arrow-repeat text-info"></i>
+                                                                            <span>Buat Revisi Baru</span>
+                                                                        </a>
+                                                                    </li>
+                                                                </check>
                                                             </check>
-                                                            <check if="{{ !@sp.order_id }}">
+                                                            <check if="{{ !@sp.order_id && (@is_tim_mitra || @is_admin_order || @is_superadmin) }}">
                                                                 <li>
                                                                     <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/edit">
                                                                         <i class="bi bi-pencil-square text-warning"></i>
@@ -905,19 +924,21 @@
                                                                     </a>
                                                                 </li>
                                                             </check>
-                                                            <li>
-                                                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-1.5" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}">
-                                                                    <i class="bi bi-cloud-arrow-up text-success"></i>
-                                                                    <span>{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan</span>
-                                                                </button>
-                                                            </li>
-                                                            <li><hr class="dropdown-divider my-1"></li>
-                                                            <li>
-                                                                <a class="dropdown-item d-flex align-items-center gap-2 py-1.5 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}">
-                                                                    <i class="bi bi-trash3"></i>
-                                                                    <span>Hapus Surat</span>
-                                                                </a>
-                                                            </li>
+                                                            <check if="{{ (@is_tim_mitra || @is_admin_order || @is_superadmin) && @sp.status_respon_klien != 'deal' }}">
+                                                                <li>
+                                                                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-1.5" data-bs-toggle="modal" data-bs-target="#modalUploadSKB{{ @sp.id }}">
+                                                                        <i class="bi bi-cloud-arrow-up text-success"></i>
+                                                                        <span>{{ !empty(@sp.surat_kesanggupan_bayar) ? 'Ganti' : 'Upload' }} Surat Kesanggupan</span>
+                                                                    </button>
+                                                                </li>
+                                                                <li><hr class="dropdown-divider my-1"></li>
+                                                                <li>
+                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#modalHapusSP{{ @sp.id }}">
+                                                                        <i class="bi bi-trash3"></i>
+                                                                        <span>Hapus Surat</span>
+                                                                    </a>
+                                                                </li>
+                                                            </check>
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -959,7 +980,7 @@
                                 <div>
                                     <i class="bi bi-check-circle-fill text-success me-1"></i> Berkas kesanggupan bayar saat ini sudah ada.
                                 </div>
-                                <a href="{{ @BASE }}/{{ @sp.surat_kesanggupan_bayar }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
+                                <a href="{{ @BASE }}/surat-penawaran/{{ @sp.id }}/surat-kesanggupan/preview" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
                                     <i class="bi bi-eye me-1"></i> Pratinjau
                                 </a>
                             </div>

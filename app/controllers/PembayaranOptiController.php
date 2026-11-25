@@ -18,6 +18,10 @@ class PembayaranOptiController extends Controller {
     protected $allowedMime = ['application/pdf', 'image/jpeg', 'image/png'];
     protected $maxSize     = 5242880; // 5MB
 
+    /**
+     * @param \Base $f3
+     * @return void
+     */
     public function beforeRoute($f3) {
         parent::beforeRoute($f3);
         $this->requireAuth();
@@ -48,7 +52,11 @@ class PembayaranOptiController extends Controller {
         } catch (\Exception $e) {}
     }
 
-    /** GET /pembayaran */
+    /**
+     * GET /pembayaran
+     * @param \Base $f3
+     * @return void
+     */
     public function index($f3) {
         $this->requirePermission('pembayaran:view', '/dashboard');
         $this->ensureSchema();
@@ -175,18 +183,22 @@ class PembayaranOptiController extends Controller {
         $daftarTahun = [];
         for ($i = 0; $i < 5; $i++) { $daftarTahun[] = $tahunSekarang - $i; }
 
-        $f3->set('daftar_baru_json', json_encode($daftarBaru, JSON_UNESCAPED_UNICODE));
-        $f3->set('daftar_berjalan_json', json_encode($daftarBerjalan, JSON_UNESCAPED_UNICODE));
-        $f3->set('daftar_lunas_json', json_encode($daftarLunas, JSON_UNESCAPED_UNICODE));
-        $f3->set('daftar_histori_json', json_encode($daftarHistori, JSON_UNESCAPED_UNICODE));
+        $f3->set('daftar_baru_json', json_encode($daftarBaru, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
+        $f3->set('daftar_berjalan_json', json_encode($daftarBerjalan, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
+        $f3->set('daftar_lunas_json', json_encode($daftarLunas, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
+        $f3->set('daftar_histori_json', json_encode($daftarHistori, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
         $f3->set('daftar_tahun', $daftarTahun);
         $f3->set('bulan_sekarang', (int) date('n'));
         $f3->set('tahun_sekarang', $tahunSekarang);
         $this->render('keuangan/pembayaran/index.html', 'Rekapitulasi Keuangan & Pembayaran', 'pembayaran');
     }
 
-    /** GET /pembayaran/tambah */
-    /** GET /pembayaran/tambah?order_id=X */
+    /**
+     * GET /pembayaran/tambah
+     * GET /pembayaran/tambah?order_id=X
+     * @param \Base $f3
+     * @return void
+     */
     public function tambah($f3) {
         $this->requirePermission('pembayaran:create', '/pembayaran');
         $this->ensureSchema();
@@ -266,7 +278,11 @@ $order['sudah_ada_pembayaran'] = ((int)$order['jumlah_baris_total']) > 0;
     $this->render('keuangan/pembayaran/form.html', 'Catat Pembayaran', 'pembayaran');
 }
 
-    /** POST /pembayaran/simpan */
+    /**
+     * POST /pembayaran/simpan
+     * @param \Base $f3
+     * @return void
+     */
     public function simpan($f3) {
         $this->requirePermission('pembayaran:create', '/pembayaran');
         if (!$this->isKeuangan() && !$this->isSuperadmin()) {
@@ -368,30 +384,10 @@ if ($isKesanggupan) {
 
         if ($isDisposisi) {
             $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Pencatatan Surat Kesanggupan Bayar (Diverifikasi & Disposisi ke Ketua Tim)");
-            $this->db->exec("UPDATE order_layanan SET status_keuangan = 'lunas' WHERE id = ?", [$orderId]);
+            $this->db->exec("UPDATE order_layanan SET status_keuangan = IF(status_keuangan = 'lunas', 'lunas', 'terbayar_sebagian') WHERE id = ?", [$orderId]);
             $this->disposisiKatimOtomatis($orderId);
 
-            try {
-                $rowsO = $this->safeQuery("SELECT o.nomor_order, o.nomor_permintaan, c.nmcustomer AS nama_perusahaan FROM order_layanan o JOIN tb_customer c ON o.id_customer = c.id_customer WHERE o.id = ?", [$orderId]);
-                $oInfo = !empty($rowsO) ? $rowsO[0] : ['nomor_order' => $orderId, 'nama_perusahaan' => 'Klien'];
-                $ordLblPayKb = \NotificationService::formatOrderLabel($oInfo, $orderId);
-                $ptPayKb = !empty($oInfo['nama_perusahaan']) ? $oInfo['nama_perusahaan'] : 'Klien';
-                $actorPayKb = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Bagian Keuangan');
-
-                \NotificationService::send($this->db, [
-                    'order_id'        => $orderId,
-                    'target_role'     => 'tim_mitra',
-                    'target_layanan'  => 'semua',
-                    'judul'           => 'Surat Kesanggupan Bayar Dicatat',
-                    'pesan'           => "Pencatatan kesanggupan bayar order {$ordLblPayKb} {$ptPayKb} dikonfirmasi oleh {$actorPayKb}.",
-                    'tipe'            => 'info',
-                    'icon'            => 'bi-file-earmark-check-fill',
-                    'link_url'        => "/order/{$orderId}",
-                    'created_by'      => $this->getUserId() ?? null,
-                    'created_by_name' => $actorPayKb
-                ]);
-            } catch (\Exception $eNotif) {}
-
+            // Order dicatat sebagai Kesanggupan Bayar & diteruskan ke Ketua Tim (tanpa spam notif ke Tim Mitra).
             $this->setFlashSuccess('Order dicatat sebagai Kesanggupan Bayar & diteruskan ke Ketua Tim. Order masuk ke tab "Sedang Berjalan".');
         } else {
             $this->logActivity($orderId, 'pembayaran', 'simpan_draf_kesanggupan', "Simpan Draf Surat Kesanggupan Bayar");
@@ -483,53 +479,36 @@ if ($sisaSebelumBayar !== null && $jumlah > $sisaSebelumBayar) {
             // [PENTING] ini yang nge-update order_layanan.status_keuangan otomatis
             $statusBaru = $this->recalcStatusKeuangan($orderId);
 
-            $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Verifikasi pembayaran Termin #{$terminKe} Rp " . number_format($jumlah, 0, ',', '.') . " (" . strtoupper(str_replace('_', ' ', $metode)) . ") - " . ucfirst($statusBaru));
+            $this->logActivity($orderId, 'pembayaran', 'verifikasi_pembayaran', "Verifikasi pembayaran Termin #{$terminKe} Rp " . number_format($jumlah, 0, ',', '.') . " (" . strtoupper(str_replace('_', ' ', $metode)) . ") - " . ucfirst((string)$statusBaru));
 
-            // Kirim notifikasi ke Tim Mitra & Ketua Tim OPTI layanan tersebut
-            try {
-                $rowsO = $this->safeQuery("SELECT o.nomor_order, o.jenis_layanan_opti, c.nmcustomer AS nama_perusahaan FROM order_layanan o JOIN tb_customer c ON o.id_customer = c.id_customer WHERE o.id = ?", [$orderId]);
-                $oInfo = !empty($rowsO) ? $rowsO[0] : ['nomor_order' => $orderId, 'nama_perusahaan' => 'Klien', 'jenis_layanan_opti' => 'semua'];
-                $namaPetugas = $_SESSION['nama_lengkap'] ?? 'Bagian Keuangan';
-                $layananOpti = $oInfo['jenis_layanan_opti'] ?? 'semua';
-                $nomorOrderStr = !empty($oInfo['nomor_order']) ? "#{$oInfo['nomor_order']}" : "#{$orderId}";
-                $namaPt = $oInfo['nama_perusahaan'] ?? 'Pelanggan';
+            // Kirim notifikasi ke Ketua Tim OPTI HANYA jika pembayaran sudah lunas (siap proses SPM / penunjukan pelaksana)
+            if ($statusBaru === 'lunas') {
+                try {
+                    $rowsO = $this->safeQuery("SELECT o.nomor_order, o.nomor_permintaan, o.jenis_layanan_opti, c.nmcustomer AS nama_perusahaan FROM order_layanan o JOIN tb_customer c ON o.id_customer = c.id_customer WHERE o.id = ?", [$orderId]);
+                    $oInfo = !empty($rowsO) ? $rowsO[0] : [];
+                    $layananOpti = $oInfo['jenis_layanan_opti'] ?? 'semua';
+                    $nomorOrderStr = \NotificationService::formatOrderLabel($oInfo, $orderId);
+                    $namaPt = !empty($oInfo['nama_perusahaan']) ? $oInfo['nama_perusahaan'] : 'Klien';
+                    $actorPaySimp = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Bagian Keuangan');
 
-                $actorPaySimp = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Bagian Keuangan');
-                $judulPayNotif = ($statusBaru === 'lunas') ? 'Konfirmasi Pembayaran Lunas' : "Konfirmasi Pembayaran Termin #{$terminKe}";
-                $pesanPay = ($statusBaru === 'lunas')
-                    ? "Pembayaran order {$nomorOrderStr} {$namaPt} diverifikasi lunas oleh {$actorPaySimp}."
-                    : "Pembayaran Termin #{$terminKe} order {$nomorOrderStr} {$namaPt} sebesar Rp " . number_format($jumlah, 0, ',', '.') . " dikonfirmasi oleh {$actorPaySimp}.";
-
-                \NotificationService::send($this->db, [
-                    'order_id'        => $orderId,
-                    'target_role'     => 'tim_mitra',
-                    'target_layanan'  => 'semua',
-                    'judul'           => $judulPayNotif,
-                    'pesan'           => $pesanPay,
-                    'tipe'            => 'success',
-                    'icon'            => 'bi-cash-coin',
-                    'link_url'        => "/order/{$orderId}",
-                    'created_by'      => $this->getUserId() ?? null,
-                    'created_by_name' => $actorPaySimp
-                ]);
-
-                \NotificationService::send($this->db, [
-                    'order_id'        => $orderId,
-                    'target_role'     => 'ketua_tim',
-                    'target_layanan'  => $layananOpti,
-                    'judul'           => $judulPayNotif,
-                    'pesan'           => $pesanPay,
-                    'tipe'            => 'success',
-                    'icon'            => 'bi-cash-coin',
-                    'link_url'        => "/order/{$orderId}",
-                    'created_by'      => $this->getUserId() ?? null,
-                    'created_by_name' => $actorPaySimp
-                ]);
-            } catch (\Exception $eNotif) {}
+                    \NotificationService::send($this->db, [
+                        'order_id'        => $orderId,
+                        'target_role'     => 'ketua_tim',
+                        'target_layanan'  => $layananOpti,
+                        'judul'           => 'Pembayaran Lunas',
+                        'pesan'           => "Order {$nomorOrderStr} ({$namaPt}) sudah lunas. Silakan lanjutkan proses SPM / penunjukan pelaksana.",
+                        'tipe'            => 'success',
+                        'icon'            => 'bi-cash-coin',
+                        'link_url'        => "/order/{$orderId}",
+                        'created_by'      => $this->getUserId() ?? null,
+                        'created_by_name' => $actorPaySimp
+                    ]);
+                } catch (\Exception $eNotif) {}
+            }
 
 if ($statusBaru === 'lunas') {
-    // Tanpa popup disposisi lagi: begitu lunas, order otomatis diteruskan ke Ketua Tim (sekali saja)
-    $this->disposisiKatimOtomatis($orderId);
+    // Tanpa popup disposisi lagi: begitu lunas, order otomatis diteruskan ke Ketua Tim (sekali saja, tanpa notif ganda karena notif lunas baru dikirim di atas)
+    $this->disposisiKatimOtomatis($orderId, false);
     $pesanSukses = 'Pembayaran tercatat. Order dinyatakan LUNAS & diteruskan ke Ketua Tim.';
 } else {
     $pesanSukses = 'Pembayaran termin tercatat.';
@@ -551,7 +530,12 @@ $this->setFlashSuccess($pesanSukses);
         }
     }
 
-    /** POST /pembayaran/@id/hapus */
+    /**
+     * POST /pembayaran/@id/hapus
+     * @param \Base $f3
+     * @param array $params
+     * @return void
+     */
     public function hapus($f3, $params) {
         $this->requirePermission('pembayaran:edit', '/pembayaran');
         if (!$this->isKeuangan() && !$this->isSuperadmin()) {
@@ -586,7 +570,12 @@ $this->setFlashSuccess($pesanSukses);
         $f3->reroute('/pembayaran');
     }
 
-    /** GET /pembayaran/bukti/@id */
+    /**
+     * GET /pembayaran/bukti/@id
+     * @param \Base $f3
+     * @param array $params
+     * @return void
+     */
     public function unduhBukti($f3, $params) {
         $this->requireAuth();
 
@@ -643,6 +632,8 @@ $this->setFlashSuccess($pesanSukses);
      * Hitung ulang status_keuangan order berdasarkan total pembayaran
      * (status_verifikasi='terverifikasi') vs nilai acuan (nominal_penawaran
      * yang deal, fallback estimasi_biaya).
+     * @param int $orderId
+     * @return string|null
      */
     protected function recalcStatusKeuangan($orderId) {
         $totalRows = $this->safeQuery(
@@ -705,6 +696,8 @@ $this->setFlashSuccess($pesanSukses);
      * yang sedang diproses ikut dihitung), pakai acuan yang sama persis dengan
      * recalcStatusKeuangan()/index() -- nominal_penawaran yang deal, fallback
      * estimasi_biaya. Dipakai buat deteksi input nominal yang kebablasan.
+     * @param int $orderId
+     * @return float
      */
     protected function getSisaTagihan($orderId) {
         $rows = $this->safeQuery(
@@ -730,6 +723,10 @@ $this->setFlashSuccess($pesanSukses);
         return max(0, $biayaAcuan - $totalTerbayar);
     }
 
+    /**
+     * @param array|null $file
+     * @return string|null
+     */
     protected function validateAndStoreBuktiBayar($file) {
         if (!$file || !isset($file['error']) || is_array($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
             throw new \Exception('Bukti pembayaran wajib diunggah.');
@@ -782,6 +779,11 @@ $this->setFlashSuccess($pesanSukses);
         return false;
     }
 
+    /**
+     * @param string $sql
+     * @param array $params
+     * @return array
+     */
     protected function safeQuery($sql, $params = []) {
         try {
             return $this->db->exec($sql, $params);
@@ -791,14 +793,14 @@ $this->setFlashSuccess($pesanSukses);
     }
 
     /** Disposisi ke Ketua Tim otomatis, hanya kalau belum pernah didisposisikan sebelumnya. */
-    protected function disposisiKatimOtomatis(int $orderId): void {
+    protected function disposisiKatimOtomatis(int $orderId, bool $sendNotif = true): void {
         $rowD = $this->safeQuery('SELECT disposisi_katim_at FROM order_layanan WHERE id = ? LIMIT 1', [$orderId]);
         if (!empty($rowD) && empty($rowD[0]['disposisi_katim_at'])) {
-            $this->lakukanDisposisiKatim($orderId, $this->getUserId());
+            $this->lakukanDisposisiKatim($orderId, $this->getUserId(), $sendNotif);
         }
     }
 
-    protected function lakukanDisposisiKatim(int $orderId, ?int $userId): void {
+    protected function lakukanDisposisiKatim(int $orderId, ?int $userId, bool $sendNotif = true): void {
         $rows = $this->safeQuery(
             "SELECT o.nomor_order, o.jenis_layanan_opti, c.nmcustomer AS nama_perusahaan
              FROM order_layanan o
@@ -816,37 +818,26 @@ $this->setFlashSuccess($pesanSukses);
 
         $this->logActivity($orderId, 'pembayaran', 'disposisi_katim', "Disposisi status lunas ke Ka. Tim OPTI");
 
-        try {
-            $ordLblDispK = \NotificationService::formatOrderLabel($order, $orderId);
-            $ptDispK = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
-            $actorDispK = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Bagian Keuangan');
+        if ($sendNotif) {
+            try {
+                $ordLblDispK = \NotificationService::formatOrderLabel($order, $orderId);
+                $ptDispK = !empty($order['nama_perusahaan']) ? $order['nama_perusahaan'] : 'Klien';
+                $actorDispK = $_SESSION['nama_lengkap'] ?? ($_SESSION['nama_user'] ?? 'Bagian Keuangan');
 
-            \NotificationService::send($this->db, [
-                'order_id'        => $orderId,
-                'target_role'     => 'ketua_tim',
-                'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
-                'judul'           => 'Pembayaran Order Sudah Deal',
-                'pesan'           => "Pembayaran order {$ordLblDispK} {$ptDispK} disetujui DEAL oleh {$actorDispK}.",
-                'tipe'            => 'success',
-                'icon'            => 'bi-cash-coin',
-                'link_url'        => "/pembayaran",
-                'created_by'      => $userId,
-                'created_by_name' => $actorDispK,
-            ]);
-
-            \NotificationService::send($this->db, [
-                'order_id'        => $orderId,
-                'target_role'     => 'tim_mitra',
-                'target_layanan'  => 'semua',
-                'judul'           => 'Pembayaran Order Didisposisikan ke Ka. Tim',
-                'pesan'           => "Pembayaran order {$ordLblDispK} {$ptDispK} didisposisikan ke Ka. Tim OPTI oleh {$actorDispK}.",
-                'tipe'            => 'success',
-                'icon'            => 'bi-send-check-fill',
-                'link_url'        => "/order/{$orderId}",
-                'created_by'      => $userId,
-                'created_by_name' => $actorDispK,
-            ]);
-        } catch (\Exception $eNotif) {}
+                \NotificationService::send($this->db, [
+                    'order_id'        => $orderId,
+                    'target_role'     => 'ketua_tim',
+                    'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                    'judul'           => 'Order Siap Tahap SPM / PO',
+                    'pesan'           => "Pembayaran {$ordLblDispK} ({$ptDispK}) didisposisikan ke Anda. Silakan proses aktivasi SPM / pelaksana.",
+                    'tipe'            => 'success',
+                    'icon'            => 'bi-cash-coin',
+                    'link_url'        => "/order/{$orderId}",
+                    'created_by'      => $userId,
+                    'created_by_name' => $actorDispK,
+                ]);
+            } catch (\Exception $eNotif) {}
+        }
 
         // [BARU] Sekalian cek apakah order ini udah lengkap TIGA syaratnya (disposisi +
         // lunas + sampel diterima) -- kalau iya, Ketua Tim dapet notifikasi terpisah
@@ -855,7 +846,12 @@ $this->setFlashSuccess($pesanSukses);
             \KetuaTimController::notifikasiJikaSiapPenunjukan($this->db, $orderId, $userId);
         }
     }
-    /** POST /pembayaran/@id/disposisi-katim */
+    /**
+     * POST /pembayaran/@id/disposisi-katim
+     * @param \Base $f3
+     * @param array $params
+     * @return void
+     */
     public function disposisiKatim($f3, $params) {
         $this->requirePermission('pembayaran:edit', '/dashboard');
         header('Content-Type: application/json');

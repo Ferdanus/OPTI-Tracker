@@ -142,9 +142,8 @@
 
 <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
     <a href="{{ @BASE }}/pembayaran" class="btn btn-outline-secondary px-4 order-3 order-sm-1">Batal</a>
-    <button type="button" id="btnSimpanSaja" class="btn btn-outline-secondary px-4 order-2 order-sm-2 d-none">Simpan</button>
-    <button type="button" id="btnSimpanDisposisi" class="btn btn-dark px-4 order-1 order-sm-3 d-none" style="background:#1e293b; border-color:#1e293b;"><i class="bi bi-check2-circle me-1"></i> Konfirmasi Pembayaran</button>
-    <button type="button" id="btnSimpanPembayaran" class="btn btn-dark px-4 order-1 order-sm-3" style="background:#1e293b; border-color:#1e293b;"><i class="bi bi-save me-1"></i> Simpan Pembayaran</button>
+    <button type="button" id="btnSimpanDisposisi" class="btn btn-submit-theme btn-sm px-4 order-1 order-sm-2 d-none"><i class="bi bi-send-fill me-1"></i> Kirim ke Ketua Tim</button>
+    <button type="button" id="btnSimpanPembayaran" class="btn btn-submit-theme btn-sm px-4 order-1 order-sm-3"><i class="bi bi-send-fill me-1"></i> Simpan Pembayaran</button>
 </div>
         </form>
         </check>
@@ -153,6 +152,54 @@
 </div>
 
 <style>
+    .btn-submit-theme {
+        background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+        border: 1px solid #334155;
+        color: #ffffff !important;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 2px 5px rgba(51, 65, 85, 0.25);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        cursor: pointer;
+    }
+    .btn-submit-theme:hover {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        box-shadow: 0 4px 12px rgba(51, 65, 85, 0.35);
+        transform: translateY(-1px);
+    }
+    .btn-draft-theme {
+        background-color: #ffffff;
+        border: 1.5px solid #334155;
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.45rem 1.05rem;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .btn-draft-theme:hover {
+        background-color: #f8fafc;
+        border-color: #0f172a;
+        color: #0f172a;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14);
+        transform: translateY(-1px);
+    }
+    .btn-draft-theme .bi {
+        color: #334155;
+        font-size: 0.95rem;
+    }
     .order-locked-card {
         border: 1px solid var(--color-border); border-radius: 12px; padding: 18px;
         background: var(--color-bg); margin-bottom: 24px;
@@ -215,14 +262,10 @@ function labelDivisi() {
         var detailText   = document.getElementById('overpayDetailText');
         var form         = document.getElementById('formPembayaran');
         var btnSimpan = document.getElementById('btnSimpanPembayaran');
-var btnSimpanSaja = document.getElementById('btnSimpanSaja');
 var btnSimpanDisposisi = document.getElementById('btnSimpanDisposisi');
 var inputDisposisi = document.getElementById('inputDisposisiLangsung');
 
-btnSimpanSaja.addEventListener('click', function () {
-    inputDisposisi.value = '0';
-    btnSimpan.click(); // pinjem logic validasi & submit yang udah ada di listener btnSimpan
-});
+var skipConfirmPembayaran = false;
 
 btnSimpanDisposisi.addEventListener('click', function () {
     var pesan = 'Bukti pembayaran akan diverifikasi dan disimpan. Informasi pembayaran akan diteruskan ke <strong>Tim Mitra</strong> dan <strong>Ketua Tim ' + labelDivisi() + '</strong>.';
@@ -230,10 +273,10 @@ btnSimpanDisposisi.addEventListener('click', function () {
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             icon: 'question',
-            title: 'Konfirmasi Bukti Pembayaran?',
+            title: 'Konfirmasi &amp; Kirim ke Ketua Tim?',
             html: '<div class="text-start small text-secondary">' + pesan + '</div>',
             showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-check2-circle me-1"></i> Ya, Konfirmasi Pembayaran',
+            confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Ya, Kirim &amp; Konfirmasi',
             cancelButtonText: 'Batal',
             confirmButtonColor: '#881337',
             reverseButtons: true,
@@ -246,12 +289,14 @@ btnSimpanDisposisi.addEventListener('click', function () {
         }).then(function (result) {
             if (result.isConfirmed) {
                 inputDisposisi.value = '1';
+                skipConfirmPembayaran = true;
                 btnSimpan.click();
             }
         });
     } else {
         if (confirm('Bukti pembayaran akan diverifikasi dan disimpan. Informasi pembayaran akan diteruskan ke Tim Mitra dan Ketua Tim ' + labelDivisi() + '. Lanjutkan?')) {
             inputDisposisi.value = '1';
+            skipConfirmPembayaran = true;
             btnSimpan.click();
         }
     }
@@ -407,8 +452,36 @@ btnSimpanDisposisi.addEventListener('click', function () {
                 // File bukti kegedean: tahan di sini (halaman nggak reload, nominal & isian lain tetap)
                 if (!cekUkuranBukti()) { return; }
 
-                // Validasi lolos -- baru sekarang beneran kirim form-nya
-                form.submit();
+                // Validasi lolos -- tampilkan pop up konfirmasi jika belum dikonfirmasi oleh tombol lain
+                if (skipConfirmPembayaran) {
+                    skipConfirmPembayaran = false;
+                    form.submit();
+                    return;
+                }
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'question',
+                        title: 'Simpan Pembayaran?',
+                        html: '<div class="text-start small text-secondary">Pembayaran akan disimpan ke riwayat transaksi order ini. Lanjutkan?</div>',
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Ya, Simpan Pembayaran',
+                        cancelButtonText: 'Batal',
+                        confirmButtonColor: '#1e293b',
+                        reverseButtons: true,
+                        customClass: {
+                            popup: 'rounded-4 shadow-lg p-2',
+                            confirmButton: 'btn btn-dark px-3 py-2 fw-semibold rounded-3 mx-1',
+                            cancelButton: 'btn btn-outline-secondary px-3 py-2 fw-semibold rounded-3 mx-1'
+                        },
+                        buttonsStyling: false
+                    }).then(function (result) {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                } else if (confirm('Simpan pembayaran ini?')) {
+                    form.submit();
+                }
             });
         }
         // ===== Popup peringatan (satu gaya untuk semua notif validasi di form ini; gaya sama dengan dialog Disposisi) =====
@@ -471,16 +544,22 @@ if (toggleKb) {
     });
 }
 function perbaruiTombolSimpan() {
-    // Satu tombol saja: Simpan Pembayaran (order lunas otomatis diteruskan ke Ketua Tim oleh server)
     var btnNormal = document.getElementById('btnSimpanPembayaran');
-    if (btnNormal) {
-        btnNormal.classList.remove('d-none');
-        // nominal masih kosong -> tombol nonaktif (mode Surat Kesanggupan Bayar tidak butuh nominal)
-        var inpFlag = document.getElementById('inputIsKesanggupan');
-        var modeKb = !!(inpFlag && inpFlag.value === '1');
-        var hid = document.getElementById('inputNominal');
-        var nom = parseInt(hid ? hid.value : 0, 10) || 0;
-        btnNormal.disabled = (!modeKb && nom <= 0);
+    var btnDisp = document.getElementById('btnSimpanDisposisi');
+    var inpFlag = document.getElementById('inputIsKesanggupan');
+    var modeKb = !!(inpFlag && inpFlag.value === '1');
+    var hid = document.getElementById('inputNominal');
+    var nom = parseInt(hid ? hid.value : 0, 10) || 0;
+
+    if (modeKb) {
+        if (btnNormal) btnNormal.classList.add('d-none');
+        if (btnDisp) btnDisp.classList.remove('d-none');
+    } else {
+        if (btnDisp) btnDisp.classList.add('d-none');
+        if (btnNormal) {
+            btnNormal.classList.remove('d-none');
+            btnNormal.disabled = (nom <= 0);
+        }
     }
 }
 perbaruiTombolSimpan();

@@ -1,6 +1,10 @@
 <?php
 class KetuaTimController extends Controller {
 
+    /**
+     * @param \Base $f3
+     * @return void
+     */
     public function beforeRoute($f3) {
         parent::beforeRoute($f3);
         $this->requireAuth();
@@ -12,7 +16,11 @@ class KetuaTimController extends Controller {
         }
     }
 
-    /** GET /ketua-tim/siap-po */
+    /**
+     * GET /ketua-tim/siap-po
+     * @param \Base $f3
+     * @return void
+     */
     public function index($f3) {
     $this->requireAuth();
     $this->requirePermission('order:tinjau');
@@ -46,8 +54,7 @@ class KetuaTimController extends Controller {
                 LIMIT 1
             )
             WHERE o.disposisi_katim_at IS NOT NULL
-              AND o.status_keuangan = 'lunas'
-              AND (o.tanggal_terima_sampel IS NOT NULL OR o.tanggal_spm_mulai IS NOT NULL)";
+              AND (o.status_keuangan = 'lunas' OR EXISTS (SELECT 1 FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.is_kesanggupan_bayar = 1 AND pb.status_verifikasi = 'terverifikasi'))";
 
     $params = [];
     if ($filterDivisi) {
@@ -123,7 +130,9 @@ $mapNamaPelaksana = [];
 if (!empty($idNamaUnik)) {
     $placeholder = implode(',', array_fill(0, count($idNamaUnik), '?'));
     try {
-        $rowsNama = $this->dbSekretariat->exec(
+        /** @var \DB\SQL $dbSek */
+        $dbSek = $f3->get('DB_SEKRETARIAT') ?: $this->db;
+        $rowsNama = $dbSek->exec(
             "SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ($placeholder)",
             array_values(array_keys($idNamaUnik))
         );
@@ -149,9 +158,9 @@ unset($o);
     $daftarTahun = [];
     for ($i = 0; $i < 4; $i++) { $daftarTahun[] = $tahunSekarang - $i; }
 
-    $f3->set('daftar_belum_json', json_encode($daftarBelum, JSON_UNESCAPED_UNICODE));
-    $f3->set('daftar_sudah_json', json_encode($daftarSudah, JSON_UNESCAPED_UNICODE));
-    $f3->set('daftar_pelaksana_json', json_encode($daftarPelaksana, JSON_UNESCAPED_UNICODE));
+    $f3->set('daftar_belum_json', json_encode($daftarBelum, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
+    $f3->set('daftar_sudah_json', json_encode($daftarSudah, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
+    $f3->set('daftar_pelaksana_json', json_encode($daftarPelaksana, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
     $f3->set('daftar_tahun', $daftarTahun);
     $f3->set('bulan_sekarang', (int) date('n'));
     $f3->set('tahun_sekarang', $tahunSekarang);
@@ -159,7 +168,12 @@ unset($o);
     $this->render('ketua-tim/index.html', 'Order Siap Ditindaklanjuti', 'ketua-tim-po');
 }
 
-    /** POST /ketua-tim/@id/pilih-pelaksana */
+    /**
+     * POST /ketua-tim/@id/pilih-pelaksana
+     * @param \Base $f3
+     * @param array $params
+     * @return void
+     */
     public function simpanPelaksana($f3, $params) {
         $this->requireAuth();
         $this->requirePermission('order:tinjau');
@@ -208,7 +222,7 @@ unset($o);
         // Cek izin edit jika mengganti pelaksana yang sudah ditunjuk sebelumnya:
         if (!empty($curr['ketua_pelaksana_id']) && (int)$curr['ketua_pelaksana_id'] !== $pelaksanaId) {
             $isSuperadmin = $this->isSuperadmin();
-            $isUnlocked = \OrderLayanan::isOrderUnlocked($orderId);
+            $isUnlocked = $orderModel->isOrderUnlocked($orderId);
             $poSudahKirim = false;
             try {
                 $cekPo = $this->db->exec('SELECT id, status FROM po_kegiatan WHERE order_id = ?' . (class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('') : '') . ' LIMIT 1', [1 => $orderId]);
@@ -251,8 +265,8 @@ unset($o);
                         'target_role'     => 'tim_kerja',
                         'target_user_id'  => $pelaksanaId,
                         'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
-                        'judul'           => 'Penugasan Ketua Pelaksana PO Kegiatan',
-                        'pesan'           => "Anda ({$pelaksanaNama}) ditunjuk jadi Ketua Pelaksana PO order {$orderLabel} {$ptNama} oleh {$userNama}.",
+                        'judul'           => 'Tugas Susun PO Kegiatan',
+                        'pesan'           => "Anda ditunjuk jadi Ketua Pelaksana PO order {$orderLabel} ({$ptNama}). Segera susun PO.",
                         'tipe'            => 'primary',
                         'icon'            => 'bi-person-check-fill',
                         'link_url'        => "/po-kegiatan/buat?order_id={$orderId}",
@@ -260,19 +274,21 @@ unset($o);
                         'created_by_name' => $userNama
                     ]);
 
-                    // Notifikasi ke Tim Mitra
-                    \NotificationService::send($this->db, [
-                        'order_id'        => $orderId,
-                        'target_role'     => 'tim_mitra',
-                        'target_layanan'  => 'semua',
-                        'judul'           => 'Ketua Pelaksana PO Ditunjuk',
-                        'pesan'           => "{$pelaksanaNama} ditunjuk jadi Ketua Pelaksana PO order {$orderLabel} {$ptNama} oleh {$userNama}.",
-                        'tipe'            => 'info',
-                        'icon'            => 'bi-person-check-fill',
-                        'link_url'        => "/order/{$orderId}",
-                        'created_by'      => (int)$this->getUserId(),
-                        'created_by_name' => $userNama
-                    ]);
+                    // Notifikasi ke PJT Lingkungan untuk order Lingkungan
+                    if (($order['jenis_layanan_opti'] ?? '') === 'lingkungan') {
+                        \NotificationService::send($this->db, [
+                            'order_id'        => $orderId,
+                            'target_role'     => 'pjt_lingkungan',
+                            'target_layanan'  => 'lingkungan',
+                            'judul'           => 'PO Lingkungan Siap Diproses',
+                            'pesan'           => "Ketua Pelaksana ({$pelaksanaNama}) ditunjuk untuk order {$orderLabel} ({$ptNama}).",
+                            'tipe'            => 'primary',
+                            'icon'            => 'bi-clipboard-check',
+                            'link_url'        => "/order/{$orderId}#pane-stage-8",
+                            'created_by'      => (int)$this->getUserId(),
+                            'created_by_name' => $userNama
+                        ]);
+                    }
                 }
             } catch (\Exception $eNotif) {}
 
@@ -297,6 +313,10 @@ unset($o);
      * simpan(), dan OrderController::simpanTerimaSampel(). Aman dipanggil berkali-kali --
      * query ini sendiri yang ngecek apa syaratnya udah lengkap, dan ada pengecekan biar
      * gak ngirim notifikasi dobel buat order yang sama.
+     * @param \DB\SQL $db
+     * @param int $orderId
+     * @param int|null $userId
+     * @return void
      */
     public static function notifikasiJikaSiapPenunjukan($db, $orderId, $userId = null) {
         try {
@@ -306,8 +326,7 @@ unset($o);
                  JOIN tb_customer c ON c.id_customer = o.id_customer
                  WHERE o.id = ?
                    AND o.disposisi_katim_at IS NOT NULL
-                   AND o.status_keuangan = 'lunas'
-                   AND (o.tanggal_terima_sampel IS NOT NULL OR o.tanggal_spm_mulai IS NOT NULL)
+                   AND (o.status_keuangan = 'lunas' OR EXISTS (SELECT 1 FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.is_kesanggupan_bayar = 1 AND pb.status_verifikasi = 'terverifikasi'))
                    AND o.ketua_pelaksana_id IS NULL",
                 [1 => (int) $orderId]
             );
@@ -316,36 +335,22 @@ unset($o);
 
             // Jangan kirim dobel buat order yang sama.
             $sudah = $db->exec(
-                "SELECT id FROM opti_notifikasi WHERE order_id = ? AND judul = ? LIMIT 1",
-                [1 => (int) $orderId, 2 => 'Order Siap Ditunjuk Pelaksana']
+                "SELECT id FROM opti_notifikasi WHERE order_id = ? AND judul IN (?, ?) LIMIT 1",
+                [1 => (int) $orderId, 2 => 'Order Siap Ditunjuk Pelaksana', 3 => 'Tunjuk Ketua Pelaksana']
             );
             if (!empty($sudah)) { return; }
 
             $namaPerusahaan = trim((string) (($o['pt_cv'] ?? '') . ' ' . $o['nama_perusahaan']));
-            // 1. Notif ke Ketua Tim OPTI
+            // Notif ke Ketua Tim OPTI (action: tunjuk Ketua Pelaksana)
             \NotificationService::send($db, [
                 'order_id'        => $orderId,
                 'target_role'     => 'ketua_tim',
                 'target_layanan'  => $o['jenis_layanan_opti'] ?? 'semua',
-                'judul'           => 'Order Siap Ditunjuk Pelaksana',
-                'pesan'           => "Order #{$o['nomor_order']} {$namaPerusahaan} sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana.",
+                'judul'           => 'Tunjuk Ketua Pelaksana',
+                'pesan'           => "Order #{$o['nomor_order']} ({$namaPerusahaan}) lunas & siap ditunjuk Ketua Pelaksana.",
                 'tipe'            => 'success',
                 'icon'            => 'bi-person-check-fill',
                 'link_url'        => '/ketua-tim/siap-po',
-                'created_by'      => $userId,
-                'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Sistem OPTI',
-            ]);
-
-            // 2. Notif ke Tim Mitra
-            \NotificationService::send($db, [
-                'order_id'        => $orderId,
-                'target_role'     => 'tim_mitra',
-                'target_layanan'  => 'semua',
-                'judul'           => 'Order Siap Ditunjuk Pelaksana',
-                'pesan'           => "Order #{$o['nomor_order']} {$namaPerusahaan} sudah lunas & sampel diterima -- siap ditunjuk Ketua Pelaksana oleh Ka. Tim OPTI.",
-                'tipe'            => 'info',
-                'icon'            => 'bi-person-check-fill',
-                'link_url'        => "/order/{$orderId}",
                 'created_by'      => $userId,
                 'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Sistem OPTI',
             ]);

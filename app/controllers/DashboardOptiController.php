@@ -94,7 +94,7 @@ class DashboardOptiController extends Controller {
                 WHERE o.jenis_layanan_opti = ?
                   AND o.status != 'ditolak'
                   AND (
-                      (o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan IN ('dapat_dilaksanakan', 'tidak_dapat_dilaksanakan')))
+                      (o.id NOT IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE is_draft = 0 AND keputusan IN ('dapat_dilaksanakan', 'tidak_dapat_dilaksanakan')))
                       OR o.status_proposal_biaya = 'menunggu_approval'
                   )";
         return $this->safeCount($sql, [1 => $divisi]);
@@ -106,8 +106,9 @@ class DashboardOptiController extends Controller {
                 FROM order_layanan o
                 INNER JOIN opti_tinjauan_kelayakan t ON t.order_id = o.id
                 WHERE o.jenis_layanan_opti = ?
+                  AND t.is_draft = 0
                   AND t.keputusan = 'dapat_dilaksanakan'
-                  AND o.status != 'ditolak'";
+                  AND o.status NOT IN ('ditolak', 'batal', 'draft_disimpan', 'permintaan_masuk', 'draft')";
         return $this->safeCount($sql, [1 => $divisi]);
     }
 
@@ -117,7 +118,7 @@ class DashboardOptiController extends Controller {
                 FROM order_layanan o
                 LEFT JOIN opti_tinjauan_kelayakan t ON t.order_id = o.id
                 WHERE o.jenis_layanan_opti = ?
-                  AND (t.keputusan = 'tidak_dapat_dilaksanakan' OR o.status = 'ditolak' OR o.status_tinjauan = 'tidak_layak')";
+                  AND ((t.is_draft = 0 AND t.keputusan = 'tidak_dapat_dilaksanakan') OR o.status = 'ditolak' OR o.status_tinjauan = 'tidak_layak')";
         return $this->safeCount($sql, [1 => $divisi]);
     }
 
@@ -127,8 +128,9 @@ class DashboardOptiController extends Controller {
                 FROM order_layanan o
                 INNER JOIN opti_tinjauan_kelayakan t ON t.order_id = o.id
                 WHERE o.jenis_layanan_opti = ?
+                  AND t.is_draft = 0
                   AND t.keputusan = 'dapat_dilaksanakan'
-                  AND o.status NOT IN ('selesai', 'ditolak')
+                  AND o.status NOT IN ('selesai', 'ditolak', 'batal', 'draft_disimpan', 'permintaan_masuk', 'draft')
                   AND (o.status_pelaksanaan IS NULL OR o.status_pelaksanaan != 'laporan_selesai')";
         return $this->safeCount($sql, [1 => $divisi]);
     }

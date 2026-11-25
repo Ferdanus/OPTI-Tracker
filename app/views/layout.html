@@ -214,7 +214,6 @@
         .status-pill-amber,
         .status-pill-indigo,
         .status-pill-emerald,
-        .status-pill-rose,
         .status-pill-slate {
             background-color: #f8fafc !important;
             color: #334155 !important;
@@ -225,9 +224,23 @@
         .status-pill-amber i,
         .status-pill-indigo i,
         .status-pill-emerald i,
-        .status-pill-rose i,
         .status-pill-slate i {
             color: #64748b !important;
+        }
+
+        /* Khusus Status Alur Revisi / Perbaikan / Ditolak = Berwarna Merah */
+        .status-pill-rose,
+        .status-pill-danger,
+        .status-pill-red {
+            background-color: #fef2f2 !important;
+            color: #b91c1c !important;
+            border-color: #fca5a5 !important;
+            font-weight: 700 !important;
+        }
+        .status-pill-rose i,
+        .status-pill-danger i,
+        .status-pill-red i {
+            color: #dc2626 !important;
         }
 
         .status-pill-slate {
@@ -2071,7 +2084,7 @@
                 </check>
 
                 <!-- 3b. Daftar Tarif & Parameter (Tahap 4 OPTI Lingkungan) -->
-                <check if="{{ @is_superadmin || @is_pjt_lingkungan || ((@is_tim_kerja || @is_ketua_tim) && (@user_layanan == 'lingkungan' || @divisi_tim_kerja == 'lingkungan')) }}">
+                <check if="{{ @is_superadmin || @is_pjt_lingkungan || @is_kepala_lab_lingkungan || ((@is_tim_kerja || @is_ketua_tim) && (@user_layanan == 'lingkungan' || @divisi_tim_kerja == 'lingkungan')) }}">
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'tarif-parameter' ? 'active' : '' }}" href="{{ @BASE }}/tarif-parameter" title="Daftar Tarif & Parameter (Tahap 4 Lingkungan)">
                             <i class="bi bi-calculator"></i> <span>Daftar Tarif Parameter</span>
@@ -2082,14 +2095,7 @@
                     </li>
                 </check>
 
-                <!-- 4. PKS / Kontrak -->
-                <check if="{{ @is_superadmin || @is_admin_kontrak }}">
-                    <li>
-                        <a class="sidebar-link {{ @active_menu == 'kontrak' ? 'active' : '' }}" href="{{ @BASE }}/kontrak" title="Perjanjian Kerja Sama (PKS)">
-                            <i class="bi bi-file-earmark-ruled"></i> <span>PKS</span>
-                        </a>
-                    </li>
-                </check>
+                <!-- 4. PKS / Kontrak (dihilangkan karena duplikat dengan menu PKS di bagian Perjanjian Kerja Sama; /kontrak juga reroute ke /pks) -->
 
                 <!-- Superadmin cukup satu menu "Daftar PO" (Pelaksanaan Teknis, mencakup semua tahap dan layanan); menu per tahap ini untuk role masing-masing -->
                 <check if="{{ @is_tim_mitra }}">
@@ -2101,7 +2107,7 @@
                             </check>
                         </a>
                     </li>
-                    <!-- PKS dari Humas: dicetak, diserahkan ke klien, lalu PKS bertanda tangan di-upload -->
+                    <!-- Menu PKS Tim Mitra disembunyikan dari sidebar
                     <li>
                         <a class="sidebar-link {{ @active_menu == 'pks_mitra' ? 'active' : '' }}" href="{{ @BASE }}/pks-mitra" title="Perjanjian Kerja Sama (PKS)">
                             <i class="bi bi-journal-code"></i> <span>PKS</span>
@@ -2110,6 +2116,7 @@
                             </check>
                         </a>
                     </li>
+                    -->
                 </check>
 
                 <!-- Daftar PO Humas (verifikasi PO + Map Kendali) -- Sub Tim Humas (superadmin lewat menu Daftar PO di Pelaksanaan Teknis) -->
@@ -2129,7 +2136,7 @@
               
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
-                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_keuangan || @is_tim_pengujian || @is_role_sertifikasi || @is_pjt_lingkungan || @is_kepala_lab_lingkungan }}">
+                <check if="{{ @is_superadmin || @is_ketua_tim || @is_tim_kerja || @is_tim_pengujian || @is_role_sertifikasi || @is_pjt_lingkungan || @is_kepala_lab_lingkungan }}">
                     <li class="sidebar-section-label">Pelaksanaan Teknis</li>
                     
 
@@ -2250,7 +2257,7 @@
                 </check>
 
                 <!-- 2. PELAKSANAAN TEKNIS -->
-                <check if="{{ @is_superadmin  || @is_admin_kontrak || @is_user_readonly || @is_humas}}">
+                <check if="{{ @is_superadmin || @is_admin_kontrak || @is_humas }}">
                     <li class="sidebar-section-label">Perjanjian Kerja Sama</li>
                     
                     <!-- Tugas Proposal Teknis (Tim Kerja / PIC Peneliti, Ketua Tim, Superadmin) -->
@@ -2291,7 +2298,8 @@
                     <!-- Menu Data Klien dan PIC Peneliti disembunyikan dari sidebar -->
                 </check>
 
-                <!-- 5. PENGATURAN SISTEM (Khusus Superadmin) -->
+                <!-- 5. PENGATURAN SISTEM (Disembunyikan dari sidebar) -->
+                <!--
                 <check if="{{ @is_superadmin }}">
                     <li class="sidebar-section-label">Pengaturan</li>
                     <li>
@@ -2300,6 +2308,7 @@
                         </a>
                     </li>
                 </check>
+                -->
 
                 <!-- 6. AKUN & PROFIL -->
                 <li class="sidebar-section-label">Akun</li>
@@ -3526,7 +3535,7 @@
                     </div>
 
                     <!-- PDF Pages Canvas Container -->
-                    <div id="universalPdfPagesContainer" class="d-flex flex-column align-items-center w-100 p-3 gap-3" style="display: none;"></div>
+                    <div id="universalPdfPagesContainer" class="d-none flex-column align-items-center w-100 p-3 gap-3"></div>
 
                     <!-- Image Viewer (for JPG/PNG receipts) -->
                     <div id="universalImageViewer" class="d-none w-100 h-100 align-items-center justify-content-center p-3">
@@ -3925,7 +3934,8 @@
             if (!container) return;
 
             container.innerHTML = '';
-            container.style.display = 'flex';
+            container.classList.remove('d-none');
+            container.classList.add('d-flex');
             if (spinner) spinner.style.display = 'none';
             if (totalPagesBadge) {
                 totalPagesBadge.textContent = pdf.numPages + ' Halaman';
@@ -4044,7 +4054,8 @@
             if (spinnerMsg) spinnerMsg.textContent = 'Memuat dokumen resmi dari server...';
             if (pagesContainer) {
                 pagesContainer.innerHTML = '';
-                pagesContainer.style.display = 'none';
+                pagesContainer.classList.add('d-none');
+                pagesContainer.classList.remove('d-flex');
             }
             if (imgViewer) {
                 imgViewer.classList.add('d-none');
@@ -4127,7 +4138,7 @@
                     if (iconEl) iconEl.className = 'bi bi-file-earmark-word-fill fs-5 text-primary';
                     if (spinnerMsg) spinnerMsg.textContent = 'Merender dokumen Word...';
                     const bytesDoc = base64ToUint8ArrayUniversal(json.base64);
-                    if (pagesContainer) { pagesContainer.style.display = 'flex'; }
+                    if (pagesContainer) { pagesContainer.classList.remove('d-none'); pagesContainer.classList.add('d-flex'); }
                     await window.optiRenderDocx(bytesDoc.buffer, pagesContainer);
                     window.optiSesuaikanDocx(pagesContainer);
                     if (spinner) spinner.style.display = 'none';
@@ -4145,7 +4156,8 @@
                     if (iconEl) iconEl.className = 'bi bi-file-earmark-word-fill fs-5 text-primary';
                     if (spinner) spinner.style.display = 'none';
                     if (pagesContainer) {
-                        pagesContainer.style.display = 'block';
+                        pagesContainer.classList.remove('d-none');
+                        pagesContainer.classList.add('d-flex');
                         pagesContainer.innerHTML = `
                             <div class="card border border-primary-subtle shadow-sm rounded-3 p-4 my-5 text-center mx-auto" style="max-width: 500px; background: #ffffff;">
                                 <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle rounded-circle mx-auto mb-3" style="width: 80px; height: 80px;">

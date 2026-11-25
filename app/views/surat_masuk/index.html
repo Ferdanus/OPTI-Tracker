@@ -270,16 +270,23 @@
                                                     </check>
                                                 </td>
                                                 <td class="text-center" style="white-space: nowrap;">
-                                                    <div class="d-inline-flex align-items-center gap-1">
-                                                        <!-- Tombol Buka Pop-up Konfirmasi Interaktif -->
-                                                        <button type="button" class="btn btn-primary btn-sm px-3 py-1 fw-semibold text-nowrap shadow-sm" data-bs-toggle="modal" data-bs-target="#modalKlaim_{{ @surat.id }}" title="Ambil dan Proses Surat Ini">
-                                                            <i class="bi bi-box-arrow-in-down me-1"></i> Ambil Surat
-                                                        </button>
-                                                        <!-- Tombol Buka Pop-up Alasan Penolakan -->
-                                                        <button type="button" class="btn btn-outline-danger btn-sm px-2 py-1 fw-semibold text-nowrap shadow-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modalTolak_{{ @surat.id }}" title="Tolak Permohonan Order">
-                                                            <i class="bi bi-x-circle"></i> <span>Tolak Order</span>
-                                                        </button>
-                                                    </div>
+                                                    <check if="{{ @is_tim_mitra || @is_superadmin }}">
+                                                        <true>
+                                                            <div class="d-inline-flex align-items-center gap-1">
+                                                                <!-- Tombol Buka Pop-up Konfirmasi Interaktif -->
+                                                                <button type="button" class="btn btn-primary btn-sm px-3 py-1 fw-semibold text-nowrap shadow-sm" data-bs-toggle="modal" data-bs-target="#modalKlaim_{{ @surat.id }}" title="Ambil dan Proses Surat Ini">
+                                                                    <i class="bi bi-box-arrow-in-down me-1"></i> Ambil Surat
+                                                                </button>
+                                                                <!-- Tombol Buka Pop-up Alasan Penolakan -->
+                                                                <button type="button" class="btn btn-outline-danger btn-sm px-2 py-1 fw-semibold text-nowrap shadow-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modalTolak_{{ @surat.id }}" title="Tolak Permohonan Order">
+                                                                    <i class="bi bi-x-circle"></i> <span>Tolak Order</span>
+                                                                </button>
+                                                            </div>
+                                                        </true>
+                                                        <false>
+                                                            <span class="badge bg-light text-muted border fw-normal">Hanya Tim Mitra</span>
+                                                        </false>
+                                                    </check>
                                                 </td>
                                             </tr>
                                         </repeat>

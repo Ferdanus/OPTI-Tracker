@@ -11,6 +11,8 @@ class PembayaranController extends Controller {
     /**
      * Menampilkan daftar riwayat pembayaran dan status pelunasan
      * Route: GET /pembayaran
+     * @param \Base $f3
+     * @return void
      */
     public function index($f3) {
         $this->requirePermission('pembayaran:view', '/po');
@@ -103,7 +105,7 @@ class PembayaranController extends Controller {
         $f3->set('daftar_pembayaran', $daftarPembayaran);
         // [BARU] versi JSON dari data yang sama, dipakai buat difilter di sisi JS
         // (modal "Detail" riwayat pembayaran per order/PO, tanpa request baru ke server)
-        $f3->set('daftar_pembayaran_json', json_encode($daftarPembayaran, JSON_UNESCAPED_UNICODE));
+        $f3->set('daftar_pembayaran_json', json_encode($daftarPembayaran, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
  
         $f3->set('rekap_po', $rekapPo);
         $f3->set('total_terbayar', $totalTerbayar);
@@ -227,6 +229,8 @@ class PembayaranController extends Controller {
     /**
      * Menampilkan form input pembayaran baru untuk suatu order
      * Route: GET /pembayaran/tambah
+     * @param \Base $f3
+     * @return void
      */
     public function tambah($f3) {
         $this->requirePermission('pembayaran:create', '/pembayaran');
@@ -300,6 +304,8 @@ class PembayaranController extends Controller {
     /**
      * Memproses penyimpanan data pembayaran
      * Route: POST /pembayaran/simpan
+     * @param \Base $f3
+     * @return void
      */
     public function simpan($f3) {
         $this->requirePermission('pembayaran:create', '/pembayaran');
@@ -399,6 +405,9 @@ class PembayaranController extends Controller {
     /**
      * Menghapus transaksi pembayaran
      * Route: POST /pembayaran/@id/hapus
+     * @param \Base $f3
+     * @param array $params
+     * @return void
      */
     public function hapus($f3, $params) {
         $this->requirePermission('pembayaran:edit', '/pembayaran');
@@ -429,6 +438,8 @@ class PembayaranController extends Controller {
      * dengan nama acak di luar folder publik. Return null kalau memang gak
      * ada file yang diupload (dianggap opsional -- lempar Exception di baris
      * pertama kalau kamu mau bukti bayar WAJIB diisi).
+     * @param array|null $file
+     * @return string|null
      */
     protected function validateAndStoreBuktiBayar($file) {
         if (!$file || !isset($file['error']) || is_array($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
@@ -507,6 +518,9 @@ class PembayaranController extends Controller {
     /**
      * Form penerbitan Invoice Tagihan baru dari Order
      * Route: GET /order/@id/invoice/buat
+     * @param \Base $f3
+     * @param array $params
+     * @return void
      */
     public function invoiceForm($f3, $params) {
         $this->requirePermission('pembayaran:create', '/order');
@@ -539,6 +553,9 @@ class PembayaranController extends Controller {
     /**
      * Simpan Invoice Tagihan baru dari Order
      * Route: POST /order/@id/invoice/simpan
+     * @param \Base $f3
+     * @param array $params
+     * @return void
      */
     public function invoiceSimpan($f3, $params) {
         $this->requirePermission('pembayaran:create', '/order');
@@ -562,6 +579,9 @@ class PembayaranController extends Controller {
     /**
      * Form pencatatan pembayaran masuk langsung dari halaman Order
      * Route: GET /order/@id/pembayaran/tambah
+     * @param \Base $f3
+     * @param array $params
+     * @return void
      */
     public function tambahDariOrder($f3, $params) {
         $this->requirePermission('pembayaran:create', '/order');
@@ -595,6 +615,9 @@ class PembayaranController extends Controller {
     /**
      * Simpan transaksi pembayaran masuk langsung dari Order
      * Route: POST /order/@id/pembayaran/simpan
+     * @param \Base $f3
+     * @param array $params
+     * @return void
      */
     public function simpanDariOrder($f3, $params) {
         $this->requirePermission('pembayaran:create', '/order');
@@ -649,6 +672,12 @@ class PembayaranController extends Controller {
             $f3->reroute("/order/{$orderId}/pembayaran/tambah");
         }
     }
+    /**
+     * Unduh / tampilkan bukti pembayaran
+     * @param \Base $f3
+     * @param array $params
+     * @return void
+     */
     public function unduhBukti($f3, $params) {
         $this->requireAuth();
  

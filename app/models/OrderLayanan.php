@@ -46,7 +46,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 $ada = !empty($r) && (int) $r[0]['c'] > 0;
             } catch (\Throwable $e) { $ada = false; }
         }
-        return $ada ? "COALESCE((SELECT MAX(is_kesanggupan_bayar) FROM opti_pembayaran WHERE order_id = o.id), 0)" : "0";
+        return $ada ? "COALESCE((SELECT MAX(CASE WHEN is_kesanggupan_bayar = 1 AND status_verifikasi = 'terverifikasi' THEN 1 ELSE 0 END) FROM opti_pembayaran WHERE order_id = o.id), 0)" : "0";
     }
 
     public function __construct(\DB\SQL $db) {
@@ -558,7 +558,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        p.id AS po_id, p.nomor_po, p.status AS status_po, p.biaya AS biaya_po,
                        p.target_mulai AS po_target_mulai, p.target_selesai AS po_target_selesai,
                        pk.id AS pk_id," . $pkKolom . "
-                       sp.id AS surat_penawaran_id, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
+                       sp.id AS surat_penawaran_id, sp.status AS sp_status, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
                        sp.tanggal_surat AS penawaran_tanggal_surat, sp.updated_at AS penawaran_updated_at,
                        sp.file_penawaran_ttd, sp.file_bukti_persetujuan, sp.surat_kesanggupan_bayar,
                        pr.judul_proposal, pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
@@ -583,7 +583,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                 JOIN tb_customer c ON o.id_customer = c.id_customer
                 LEFT JOIN po p ON o.id = p.order_id
                 LEFT JOIN po_kegiatan pk ON pk.id = (SELECT id FROM po_kegiatan WHERE order_id = o.id" . (class_exists('PoSchema') ? \PoSchema::bukanSertifikasi('') : '') . " ORDER BY id ASC LIMIT 1)
-                LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
+                LEFT JOIN tb_surat_penawaran sp ON sp.id = (SELECT id FROM tb_surat_penawaran WHERE order_id = o.id ORDER BY (status != 'draft' AND status_respon_klien = 'deal') DESC, id DESC LIMIT 1)
                 LEFT JOIN opti_proposal_riset pr ON pr.id = (SELECT id FROM opti_proposal_riset WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
                 LEFT JOIN opti_bast b ON b.id = (SELECT id FROM opti_bast WHERE order_id = o.id ORDER BY id DESC LIMIT 1)
                 LEFT JOIN tb_arsipuser u_tolak ON o.ditolak_oleh = u_tolak.id_user
@@ -606,10 +606,10 @@ class OrderLayanan extends \DB\SQL\Mapper {
         // Filter tab: masuk (tahap REQ / permohonan baru s.d. sebelum deal & pembayaran), berlangsung (sudah deal / di tahap pembayaran / ORD & pengerjaan berjalan), selesai (tuntas BAST / laporan selesai), ditolak, atau aktif
         if ($filterTab === 'masuk') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
-                      AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
+                      AND (sp.status = 'draft' OR sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
                       AND (o.nomor_order IS NULL OR o.nomor_order = '')
                       AND (o.status_penawaran IS NULL OR o.status_penawaran != 'deal')
-                      AND (sp.status_respon_klien IS NULL OR sp.status_respon_klien != 'deal')
+                      AND (sp.status = 'draft' OR sp.status_respon_klien IS NULL OR sp.status_respon_klien != 'deal')
                       AND (o.status_keuangan IS NULL OR o.status_keuangan NOT IN ('menunggu_pembayaran', 'terbayar_sebagian', 'lunas'))
                       AND p.id IS NULL
                       AND o.status NOT IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'lapor_selesai')
@@ -618,11 +618,11 @@ class OrderLayanan extends \DB\SQL\Mapper {
                       AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
         } elseif ($filterTab === 'berlangsung') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
-                      AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
+                      AND (sp.status = 'draft' OR sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
                       AND (
                           (o.nomor_order IS NOT NULL AND o.nomor_order != '')
                           OR o.status_penawaran = 'deal'
-                          OR sp.status_respon_klien = 'deal'
+                          OR (sp.status != 'draft' AND sp.status_respon_klien = 'deal')
                           OR o.status_keuangan IN ('menunggu_pembayaran', 'terbayar_sebagian', 'lunas')
                           OR p.id IS NOT NULL
                           OR o.status IN ('penawaran_deal', 'disetujui', 'po_dibuat', 'proses', 'lapor_selesai')
@@ -632,14 +632,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
                       AND (b.id IS NULL OR b.status_bast NOT IN ('disetujui', 'selesai', 'terbit'))";
         } elseif ($filterTab === 'selesai') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
-                      AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
+                      AND (sp.status = 'draft' OR sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)
                       AND (
                           o.status = 'selesai' 
                           OR o.status_pelaksanaan = 'laporan_selesai' 
                           OR (b.id IS NOT NULL AND b.status_bast IN ('disetujui', 'selesai', 'terbit'))
                       )";
         } elseif ($filterTab === 'ditolak') {
-            $sql .= " AND (o.status = 'ditolak' OR o.status_tinjauan = 'tidak_layak' OR sp.status_respon_klien IN ('ditolak', 'batal'))";
+            $sql .= " AND (o.status = 'ditolak' OR o.status_tinjauan = 'tidak_layak' OR (sp.status != 'draft' AND sp.status_respon_klien IN ('ditolak', 'batal')))";
         } elseif ($filterTab === 'aktif') {
             $sql .= " AND o.status != 'ditolak' AND (o.status_tinjauan != 'tidak_layak' OR o.status_tinjauan IS NULL)
                       AND (sp.status_respon_klien NOT IN ('ditolak', 'batal') OR sp.status_respon_klien IS NULL)";
@@ -1012,14 +1012,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
             ];
         }
 
-        // Cek Pembayaran Lunas & Penawaran DEAL
-        $isDeal = (($o['status'] ?? '') === 'penawaran_deal' || ($o['status_respon_klien'] ?? '') === 'deal' || ($o['status_penawaran'] ?? '') === 'deal');
+        // Cek Pembayaran Lunas & Penawaran DEAL (abaikan penawaran yang masih berstatus 'draft')
+        $spNotDraft = (($o['sp_status'] ?? '') !== 'draft');
+        $isDeal = (($o['status'] ?? '') === 'penawaran_deal' || ($o['status_penawaran'] ?? '') === 'deal' || ($spNotDraft && ($o['status_respon_klien'] ?? '') === 'deal'));
         // Pembayaran dianggap beres bila lunas ATAU dicatat via Surat Kesanggupan Bayar (sama dengan Tahap 6 di detail order) ATAU total terbayar >= biaya acuan
         $biayaAcuanLunas = !empty($o['nominal_penawaran']) ? (float)$o['nominal_penawaran'] : (float)($o['estimasi_biaya'] ?? 0);
         $totalTerbayarLunas = (float)($o['total_terbayar'] ?? 0);
         $isLunas = (($o['status_keuangan'] ?? '') === 'lunas') 
             || !empty($o['punya_kesanggupan']) 
-            || !empty($o['surat_kesanggupan_bayar'])
             || ($biayaAcuanLunas > 0 && $totalTerbayarLunas >= $biayaAcuanLunas);
 
         // Jika sudah DEAL & LUNAS, namun PO belum dibuat -> Alur masuk ke Tahap 7 (Sampel / Titik Awal SPM & PO)
@@ -1040,14 +1040,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     ];
                 } elseif ($triggerTipe === 'tanda_tangan_pks') {
                     return [
-                        'label' => 'Menunggu PKS',
+                        'label' => 'Aktivasi SPM',
                         'class' => 'status-pill status-pill-amber',
-                        'icon'  => 'bi-pen-fill',
-                        'user'  => 'Ketua Tim & Humas',
-                        'keterangan_aksi'   => 'Menunggu TTD PKS',
-                        'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
-                        'keterangan_detail' => 'Menunggu penandatanganan perjanjian kerjasama (PKS)',
-                        'keterangan_icon'   => 'bi-pen text-warning',
+                        'icon'  => 'bi-play-circle-fill',
+                        'user'  => $katimLabel,
+                        'keterangan_aksi'   => 'Menunggu Aktivasi SPM',
+                        'keterangan_sub'    => 'Pelaksana: ' . $katimLabel,
+                        'keterangan_detail' => 'Pembayaran lunas, silakan aktivasi titik awal pengerjaan (SPM)',
+                        'keterangan_icon'   => 'bi-clock-history text-warning',
                         'aksi_badge' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
                     ];
                 } else {
@@ -1068,7 +1068,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
             } elseif (empty($o['ketua_pelaksana_id'])) {
                 return [
                     'label' => 'Penunjukan Pelaksana',
-                    'class' => 'status-pill status-pill-rose',
+                    'class' => 'status-pill status-pill-amber',
                     'icon'  => 'bi-person-plus-fill',
                     'user'  => $katimLabel,
                     'keterangan_aksi'   => 'Penunjukan Ketua Pelaksana',
@@ -1183,9 +1183,22 @@ class OrderLayanan extends \DB\SQL\Mapper {
         }
 
         // 8. Tahap 5: Penawaran Terbit (Surat Penawaran resmi sudah memiliki nomor surat dan diterbitkan ke pelanggan)
+        if (($o['status_respon_klien'] ?? '') === 'revisi' || ($o['status_penawaran'] ?? '') === 'revisi') {
+            return [
+                'label' => 'Revisi Penawaran',
+                'class' => 'status-pill status-pill-rose',
+                'icon'  => 'bi-arrow-repeat',
+                'user'  => 'Tim Mitra Industri',
+                'keterangan_aksi'   => 'Revisi Surat Penawaran',
+                'keterangan_sub'    => 'Klien: ' . (!empty($o['nama_perusahaan']) ? $o['nama_perusahaan'] : 'Pelanggan'),
+                'keterangan_detail' => 'Klien meminta revisi / negosiasi penawaran',
+                'keterangan_icon'   => 'bi-arrow-repeat text-danger',
+                'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'
+            ];
+        }
         $hasOfferLetter = !empty($o['nomor_penawaran'])
             || in_array($o['status_penawaran'] ?? '', ['terkirim', 'nego', 'terbit'])
-            || in_array($o['status_respon_klien'] ?? '', ['terkirim', 'nego', 'revisi']);
+            || in_array($o['status_respon_klien'] ?? '', ['terkirim', 'nego']);
         if ($hasOfferLetter) {
             return [
                 'label' => 'Penawaran Terbit',
@@ -1286,6 +1299,24 @@ class OrderLayanan extends \DB\SQL\Mapper {
             $rawPicNama = !empty($o['pic_proposal_nama']) ? trim($o['pic_proposal_nama']) : '';
             $rawPicNama = preg_replace('/^pic\s*:\s*/i', '', $rawPicNama);
             $picPelaksana = !empty($rawPicNama) ? $rawPicNama : 'Tim Kerja Selulosa';
+
+            $isRevisiSelulosa = ($o['status_proposal_biaya'] ?? '') === 'perlu_revisi'
+                || in_array($o['status_proposal'] ?? '', ['ditolak', 'revisi', 'minta_revisi'])
+                || (!empty($o['catatan_revisi']) && !in_array($o['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan']));
+            if ($isRevisiSelulosa) {
+                return [
+                    'label' => 'Perlu Revisi',
+                    'class' => 'status-pill status-pill-rose',
+                    'icon'  => 'bi-exclamation-triangle-fill',
+                    'user'  => 'Tim Kerja Selulosa',
+                    'keterangan_aksi'   => 'Perlu Revisi Proposal',
+                    'keterangan_sub'    => 'Pelaksana: ' . $picPelaksana,
+                    'keterangan_detail' => 'Ketua Tim meminta revisi proposal teknis',
+                    'keterangan_icon'   => 'bi-exclamation-triangle text-danger',
+                    'aksi_badge' => 'bg-danger-subtle text-danger border border-danger-subtle'
+                ];
+            }
+
             if (($o['status_proposal'] ?? '') === 'draft_disimpan' || ($o['status_proposal_biaya'] ?? '') === 'draft_disimpan') {
                 return [
                     'label' => 'Draft Disimpan',
@@ -1352,7 +1383,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     COALESCE(NULLIF(c.alamatcustomer_baru, ''), c.alamatcustomer, '-') AS alamat,
                     p.id AS po_id, p.nomor_po, p.status AS status_po, p.biaya AS biaya_po,
                     p.target_mulai AS po_target_mulai, p.target_selesai AS target_po, p.target_selesai AS po_target_selesai,
-                    sp.id AS surat_penawaran_id, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
+                    sp.id AS surat_penawaran_id, sp.status AS sp_status, sp.status_respon_klien, sp.nomor_surat AS nomor_penawaran,
                     sp.tanggal_surat AS penawaran_tanggal_surat, sp.updated_at AS penawaran_updated_at,
                     sp.file_penawaran_ttd, sp.file_bukti_persetujuan, sp.surat_kesanggupan_bayar,
                     pr.judul_proposal, pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
@@ -1890,19 +1921,21 @@ class OrderLayanan extends \DB\SQL\Mapper {
 
         if ($picProposalId > 0) {
             $this->pic_proposal_id = $picProposalId;
-            
-            // Pastikan ada draft proposal riset untuk PIC ini jika belum ada
-            $chkProp = $this->db->exec("SELECT id FROM opti_proposal_riset WHERE order_id = ?", array(1 => $orderId));
-            if (empty($chkProp)) {
-                $this->db->exec(
-                    "INSERT INTO opti_proposal_riset (order_id, pic_penyusun_id, status_proposal, created_at) VALUES (?, ?, 'draft', NOW())",
-                    array(1 => $orderId, 2 => $picProposalId)
-                );
-            } else {
-                $this->db->exec(
-                    "UPDATE opti_proposal_riset SET pic_penyusun_id = ? WHERE order_id = ?",
-                    array(1 => $picProposalId, 2 => $orderId)
-                );
+
+            // Buat/perbarui baris opti_proposal_riset HANYA jika keputusan resmi ditetapkan (bukan simpan draf)
+            if (!$isDraft && $keputusan === 'dapat_dilaksanakan') {
+                $chkProp = $this->db->exec("SELECT id FROM opti_proposal_riset WHERE order_id = ?", array(1 => $orderId));
+                if (empty($chkProp)) {
+                    $this->db->exec(
+                        "INSERT INTO opti_proposal_riset (order_id, pic_penyusun_id, status_proposal, created_at) VALUES (?, ?, 'draft', NOW())",
+                        array(1 => $orderId, 2 => $picProposalId)
+                    );
+                } else {
+                    $this->db->exec(
+                        "UPDATE opti_proposal_riset SET pic_penyusun_id = ? WHERE order_id = ?",
+                        array(1 => $picProposalId, 2 => $orderId)
+                    );
+                }
             }
         } elseif (isset($data['pic_proposal_id'])) {
             $this->pic_proposal_id = null;
@@ -2362,9 +2395,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
             $badge = '';
 
             if ($userRole === 'tim_kerja') {
-                if (!empty($userId) && (int)($r['ketua_pelaksana_id'] ?? 0) === (int)$userId) {
+                $orderStatusTk = (string)($r['status'] ?? '');
+                $isOrderAktifTk = !in_array($orderStatusTk, ['permintaan_masuk', 'draft', 'draft_disimpan', 'batal', 'ditolak', 'selesai'], true);
+                $isLayakTk = (($r['status_tinjauan'] ?? '') === 'layak');
+                if ($isOrderAktifTk && $isLayakTk && !empty($userId) && (int)($r['ketua_pelaksana_id'] ?? 0) === (int)$userId) {
                     $pmPo = (string) ($r['po_pemegang'] ?? '');
-                    if (($pmPo === '' || $pmPo === 'pic') && (string) ($r['keterangan_aksi'] ?? '') !== 'PO Aktif' && ($r['status'] ?? '') !== 'selesai' && ($r['status'] ?? '') !== 'ditolak') {
+                    if (($pmPo === '' || $pmPo === 'pic') && (string) ($r['keterangan_aksi'] ?? '') !== 'PO Aktif') {
                         $isTask = true;
                         if (empty($r['tanggal_spm_mulai']) && empty($r['tanggal_terima_sampel'])) {
                             $isMenungguSampel = (($r['stage_label'] ?? '') === 'Menunggu Sampel');
@@ -2377,12 +2413,12 @@ class OrderLayanan extends \DB\SQL\Mapper {
                             $badge = 'Ketua Pelaksana';
                         }
                     }
-                } elseif (!empty($userId) && ((int)($r['pic_proposal_id'] ?? 0) === (int)$userId || (int)($r['pic_proposal_cadangan_id'] ?? 0) === (int)$userId)) {
-                    $proposalSelesai = in_array($r['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui'])
-                        || in_array($r['status_proposal'] ?? '', ['disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])
+                } elseif ($isOrderAktifTk && $isLayakTk && !empty($userId) && ((int)($r['pic_proposal_id'] ?? 0) === (int)$userId || (int)($r['pic_proposal_cadangan_id'] ?? 0) === (int)$userId)) {
+                    $proposalSelesai = in_array($r['status_proposal_biaya'] ?? '', ['siap_penawaran', 'disetujui', 'menunggu_approval'])
+                        || in_array($r['status_proposal'] ?? '', ['diajukan', 'disetujui', 'disetujui_ketua', 'disetujui_pimpinan'])
                         || in_array($r['status'] ?? '', ['penawaran_deal', 'disetujui'])
                         || ($r['status_penawaran'] ?? '') === 'deal';
-                    if (!$proposalSelesai && ($r['status'] ?? '') !== 'selesai' && ($r['status'] ?? '') !== 'ditolak') {
+                    if (!$proposalSelesai) {
                         $isTask = true;
                         $isCadanganOnly = ((int)($r['pic_proposal_cadangan_id'] ?? 0) === (int)$userId && (int)($r['pic_proposal_id'] ?? 0) !== (int)$userId);
                         if (($r['status_proposal_biaya'] ?? '') === 'perlu_revisi' || ($r['status_proposal'] ?? '') === 'ditolak') {

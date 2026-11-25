@@ -293,8 +293,8 @@
                                         <check if="{{ @p.status_revisi }}"><span class="status-pill status-pill-rose"><i class="bi bi-arrow-repeat"></i> Revisi</span></check>
                                         <check if="{{ !@p.status_revisi && @p.po_status == 'terkirim' }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
                                         <check if="{{ !@p.status_revisi && @p.po_status == 'disetujui_mitra' }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
-                                        <check if="{{ @p.po_status == 'disetujui' && @p.aktif_ket == 'ttd' }}"><span class="status-pill status-pill-rose"><i class="bi bi-pen"></i> Menunggu Tanda Tangan</span></check>
-                                        <check if="{{ @p.po_status == 'disetujui' && @p.aktif_ket == 'kontrak' }}"><span class="status-pill status-pill-rose"><i class="bi bi-hourglass-split"></i> PO Aktif &middot; Menunggu Kontrak</span></check>
+                                        <check if="{{ @p.po_status == 'disetujui' && @p.aktif_ket == 'ttd' }}"><span class="status-pill status-pill-amber"><i class="bi bi-pen"></i> Menunggu Tanda Tangan</span></check>
+                                        <check if="{{ @p.po_status == 'disetujui' && @p.aktif_ket == 'kontrak' }}"><span class="status-pill status-pill-amber"><i class="bi bi-hourglass-split"></i> PO Aktif &middot; Menunggu Kontrak</span></check>
                                         <check if="{{ @p.po_status == 'disetujui' && @p.aktif_ket != 'ttd' && @p.aktif_ket != 'kontrak' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> PO Aktif</span></check>
                                     </td>
                                     <check if="{{ @tampil_posisi }}">
@@ -381,8 +381,8 @@
                                         <check if="{{ @p.po_id && @p.po_status == 'draft' }}"><span class="status-pill status-pill-slate"><i class="bi bi-pencil-square"></i> Draft PO</span></check>
                                         <check if="{{ @p.po_id && @p.status_revisi }}"><span class="status-pill status-pill-rose"><i class="bi bi-arrow-repeat"></i> Revisi</span></check>
                                         <check if="{{ @p.po_id && !@p.status_revisi && (@p.po_status == 'terkirim' || @p.po_status == 'disetujui_mitra') }}"><span class="status-pill status-pill-blue"><i class="bi bi-hourglass-split"></i> Sedang Berjalan</span></check>
-                                        <check if="{{ @p.po_id && !@p.status_revisi && @p.po_status == 'disetujui' && @p.aktif_ket == 'ttd' }}"><span class="status-pill status-pill-rose"><i class="bi bi-pen"></i> Menunggu Tanda Tangan</span></check>
-                                        <check if="{{ @p.po_id && !@p.status_revisi && @p.po_status == 'disetujui' && @p.aktif_ket == 'kontrak' }}"><span class="status-pill status-pill-rose"><i class="bi bi-hourglass-split"></i> PO Aktif &middot; Menunggu Kontrak</span></check>
+                                        <check if="{{ @p.po_id && !@p.status_revisi && @p.po_status == 'disetujui' && @p.aktif_ket == 'ttd' }}"><span class="status-pill status-pill-amber"><i class="bi bi-pen"></i> Menunggu Tanda Tangan</span></check>
+                                        <check if="{{ @p.po_id && !@p.status_revisi && @p.po_status == 'disetujui' && @p.aktif_ket == 'kontrak' }}"><span class="status-pill status-pill-amber"><i class="bi bi-hourglass-split"></i> PO Aktif &middot; Menunggu Kontrak</span></check>
                                         <check if="{{ @p.po_id && !@p.status_revisi && @p.po_status == 'disetujui' && @p.aktif_ket != 'ttd' && @p.aktif_ket != 'kontrak' }}"><span class="status-pill status-pill-emerald"><i class="bi bi-check-circle-fill"></i> PO Aktif</span></check>
                                     </td>
                                     <check if="{{ @tampil_posisi }}">

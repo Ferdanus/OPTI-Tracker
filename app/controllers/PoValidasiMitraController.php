@@ -737,10 +737,12 @@ class PoValidasiMitraController extends Controller {
             if ($n > 0) { $bersih[$n] = true; }
         }
         if (empty($bersih)) { return []; }
-        $in = implode(',', array_keys($bersih));
+        $ids = array_keys($bersih);
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $params = array_combine(range(1, count($ids)), $ids);
         $peta = [];
         try {
-            $rows = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ($in)");
+            $rows = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ({$ph})", $params);
             foreach ($rows as $r) { $peta[(int) $r['id_user']] = $r['nama_user']; }
         } catch (\Throwable $e) {
             // nama dikosongkan kalau database Sekretariat tidak terjangkau

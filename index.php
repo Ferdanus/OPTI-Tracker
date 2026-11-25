@@ -7,17 +7,20 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
 
 // Inisialisasi Session Native PHP dengan cookie path global '/' kompatibel PHP 7.2+
 if (session_status() === PHP_SESSION_NONE) {
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443)
+        || (strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
     if (version_compare(PHP_VERSION, '7.3.0') >= 0) {
         session_set_cookie_params([
             'lifetime' => 0,
             'path'     => '/',
             'domain'   => '',
-            'secure'   => false,
+            'secure'   => $isHttps,
             'httponly' => true,
             'samesite' => 'Lax'
         ]);
     } else {
-        session_set_cookie_params(0, '/', '', false, true);
+        session_set_cookie_params(0, '/', '', $isHttps, true);
     }
     session_start();
 }
@@ -78,31 +81,44 @@ try {
     }
 } catch (\Exception $e) {
     // Tangani jika koneksi database gagal
+    error_log('[SILOPTI DB Error] ' . $e->getMessage());
     echo '<div style="font-family: sans-serif; padding: 20px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; margin: 20px;">';
     echo '<h3 style="color: #991b1b; margin-top: 0;">Gagal Terhubung ke Database MySQL</h3>';
-    echo '<p style="color: #7f1d1d;">Pastikan service MySQL di XAMPP sudah berjalan dan konfigurasi database di <code>config.ini</code> sudah benar.</p>';
-    echo '<p style="color: #7f1d1d; font-size: 0.85rem;"><strong>Error:</strong> ' . htmlspecialchars($e->getMessage()) . '</p>';
+    echo '<p style="color: #7f1d1d;">Pastikan service MySQL sudah berjalan dan konfigurasi database di <code>config.ini</code> sudah benar.</p>';
+    if ((int)$f3->get('DEBUG') > 0) {
+        echo '<p style="color: #7f1d1d; font-size: 0.85rem;"><strong>Error:</strong> ' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
+    }
     echo '</div>';
     exit;
 }
 
 // Handle global error page
 $f3->set('ONERROR', function($f3) {
-    $errorCode = $f3->get('ERROR.code');
-    $errorText = $f3->get('ERROR.text');
+    $errorCode = (int)$f3->get('ERROR.code');
+    $errorText = (string)$f3->get('ERROR.text');
+    $isDebug   = ((int)$f3->get('DEBUG') > 0);
+    if (!$isDebug && $errorCode >= 500) {
+        error_log('[SILOPTI Error ' . $errorCode . '] ' . $errorText);
+    }
 
     echo '<div style="font-family: sans-serif; padding: 30px; background: #fff1f2; border-left: 5px solid #e11d48; margin: 20px; border-radius: 8px;">';
     echo '<h2 style="color: #9f1239; margin-top: 0;">Terjadi Kesalahan Aplikasi (' . $errorCode . ')</h2>';
-    echo '<p style="color: #4c0519; font-size: 1.1rem;">' . htmlspecialchars($errorText) . '</p>';
-    if ($f3->get('DEBUG') > 0) {
-        echo '<pre style="background: #ffffff; padding: 15px; border-radius: 4px; overflow-x: auto; border: 1px solid #e2e8f0;">' . htmlspecialchars($f3->get('ERROR.trace')) . '</pre>';
+    $displayMsg = ($isDebug || $errorCode < 500) ? $errorText : 'Terjadi kesalahan internal pada server. Silakan hubungi administrator.';
+    echo '<p style="color: #4c0519; font-size: 1.1rem;">' . htmlspecialchars($displayMsg, ENT_QUOTES, 'UTF-8') . '</p>';
+    if ($isDebug) {
+        echo '<pre style="background: #ffffff; padding: 15px; border-radius: 4px; overflow-x: auto; border: 1px solid #e2e8f0;">' . htmlspecialchars((string)$f3->get('ERROR.trace'), ENT_QUOTES, 'UTF-8') . '</pre>';
     }
-    echo '<a href="' . $f3->get('BASE') . '/order" style="display: inline-block; padding: 8px 16px; background: #9f1239; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 10px;">Kembali ke Beranda</a>';
+    echo '<a href="' . htmlspecialchars((string)$f3->get('BASE'), ENT_QUOTES, 'UTF-8') . '/order" style="display: inline-block; padding: 8px 16px; background: #9f1239; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 10px;">Kembali ke Beranda</a>';
     echo '</div>';
 });
 
-// Route Beranda -> langsung ke dashboard
+// Route Beranda -> langsung ke halaman default sesuai role
 $f3->route('GET /', function($f3) {
+    $role = strtolower(trim((string)($_SESSION['role'] ?? $f3->get('SESSION.role') ?? '')));
+    if (in_array($role, ['keuangan', 'ketua_tim_keuangan'], true)) {
+        $f3->reroute('/pembayaran');
+        return;
+    }
     $f3->reroute('/dashboard');
 });
 

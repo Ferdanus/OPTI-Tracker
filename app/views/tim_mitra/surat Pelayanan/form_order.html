@@ -2164,9 +2164,7 @@
                             <label class="form-label small fw-semibold text-dark mb-1">Status Respon Klien</label>
                             <check if="{{ @is_locked_deal }}">
                                 <input type="hidden" name="status_respon_klien" value="deal">
-                                <select id="select_status_respon_klien" class="form-select form-select-sm fw-semibold bg-light" disabled>
-                                    <option value="deal" selected>Disetujui (DEAL) &bull; Terkunci Permanen</option>
-                                </select>
+                                <input type="text" id="select_status_respon_klien" class="form-control form-control-sm fw-semibold bg-light text-dark" style="color: #1e293b !important;" value="Disetujui (DEAL) &bull; Terkunci Permanen" readonly>
                             </check>
                             <check if="{{ !@is_locked_deal }}">
                                 <select name="status_respon_klien" id="select_status_respon_klien" class="form-select form-select-sm fw-semibold" {{ !@can_edit ? 'disabled' : '' }}>
@@ -2216,8 +2214,8 @@
                             <button type="submit" name="action_status" value="draft" formnovalidate class="btn-draft-theme" onclick="document.getElementById('inputActionStatus').value='draft';">
                                 <i class="bi bi-bookmark-fill"></i> <span>Simpan Draf</span>
                             </button>
-                            <button type="submit" name="action_status" value="deal" id="btnSimpanPerubahanDokumen" class="btn btn-primary fw-semibold px-4 py-2 d-inline-flex align-items-center gap-1.5 shadow-xs" {{ (empty(@sumber_lampiran_default) || empty(@is_nomor_surat_lengkap)) ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Lengkapi nomor surat penawaran dan tentukan opsi lampiran"' : '' }}>
-                                <i class="bi bi-save2-fill"></i> Simpan Perubahan Dokumen
+                            <button type="button" id="btnSimpanPerubahanDokumen" class="btn-submit-theme" onclick="confirmKirimPenawaran();" {{ (empty(@sumber_lampiran_default) || empty(@is_nomor_surat_lengkap)) ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Lengkapi nomor surat penawaran dan tentukan opsi lampiran"' : '' }}>
+                                <i class="bi bi-send-fill"></i> Kirim
                             </button>
                         </check>
                         <check if="{{ !@is_locked_deal && (!@sp_existing || @sp_existing.status_respon_klien != 'deal') && (@order.status_penawaran != 'deal') }}">
@@ -2634,9 +2632,9 @@
                             <div style="display: flex; justify-content: flex-end; font-size: 10.5px; margin-top: 14px; margin-bottom: 18px;">
                                 <div style="text-align: center; width: 40%;">
                                     <div style="display: inline-block; text-align: left;">
-                                        <div style="margin-top: 12px; margin-bottom: 6px;" id="d_jabatan_pejabat_l">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala Bagian Tata Usaha') }},</div>
+                                        <div style="margin-top: 12px; margin-bottom: 6px;" id="d_jabatan_pejabat_l">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala') }},</div>
                                         <div style="height: 68px;"></div>
-                                        <div style="margin-top: 6px; margin-bottom: 12px;" id="d_pembuat_l">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Joko Pratomo')) }}</div>
+                                        <div style="margin-top: 6px; margin-bottom: 12px;" id="d_pembuat_l">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -2711,9 +2709,9 @@
                             <div style="display: flex; justify-content: flex-end; font-size: 9.5px; margin-top: 14px; margin-bottom: 18px;">
                                 <div style="text-align: center; width: 40%;">
                                     <div style="display: inline-block; text-align: left;">
-                                        <div style="margin-top: 12px; margin-bottom: 6px;" id="d_ling_p2_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala Bagian Tata Usaha') }},</div>
+                                        <div style="margin-top: 12px; margin-bottom: 6px;" id="d_ling_p2_jabatan_pejabat">{{ @sp_existing.jabatan_pejabat ?: (@default_jabatan_pejabat ?: 'Kepala') }},</div>
                                         <div style="height: 68px;"></div>
-                                        <div style="margin-top: 6px; margin-bottom: 12px;" class="fw-bold" id="d_ling_p2_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Joko Pratomo')) }}</div>
+                                        <div style="margin-top: 6px; margin-bottom: 12px;" class="fw-bold" id="d_ling_p2_pejabat">{{ @sp_existing.pejabat_nama ?: (@sp_existing.pembuat_nama ?: (@default_pejabat_nama ?: 'Dodiet Prasetyo')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -3636,8 +3634,8 @@ function syncLivePreview() {
     }
 
     // 10. Penandatangan Pejabat BBSPJIS
-    var valJabatan = (elJabatan && elJabatan.value.trim()) ? elJabatan.value.trim() : (isLingkungan ? 'Kepala Bagian Tata Usaha' : 'Kepala');
-    var valPembuat = (elPejabatNama && elPejabatNama.value.trim()) ? elPejabatNama.value.trim() : (isLingkungan ? 'Joko Pratomo' : 'Dodiet Prasetyo');
+    var valJabatan = (elJabatan && elJabatan.value.trim()) ? elJabatan.value.trim() : 'Kepala';
+    var valPembuat = (elPejabatNama && elPejabatNama.value.trim()) ? elPejabatNama.value.trim() : 'Dodiet Prasetyo';
     
     ['d_jabatan_pejabat', 'd_jabatan_pejabat_l', 'd_rab_jabatan_pejabat', 'd_sel_jabatan_pejabat', 'd_sel_p2_jabatan_pejabat', 'd_ling_p2_jabatan_pejabat'].forEach(function(id) {
         var el = document.getElementById(id);
@@ -4063,15 +4061,21 @@ function confirmKirimPenawaran() {
 
     var inpSumber = document.getElementById('opsiLampiranSumber');
     var valSumber = inpSumber ? (inpSumber.value || '').trim() : '';
-    if (!valSumber || ['proposal', 'upload', 'tanpa'].indexOf(valSumber) === -1) {
+    if (!valSumber || ['proposal', 'upload', 'tanpa'].indexOf(valSumber) === -1 || !isLampiranTersedia()) {
+        var pesanLamp = 'Silakan pilih salah satu opsi Dokumen Lampiran Penawaran (Proposal Teknis, Upload File Baru, atau Tanpa Lampiran).';
+        if (valSumber === 'proposal' && !isLampiranTersedia()) {
+            pesanLamp = 'Berkas Proposal Teknis di Tahap 4 belum tersedia. Silakan pilih opsi "Upload File Baru" atau "Tanpa Lampiran" terlebih dahulu.';
+        } else if (valSumber === 'upload' && !isLampiranTersedia()) {
+            pesanLamp = 'Anda memilih opsi "Upload File Baru", tetapi belum ada berkas lampiran yang diunggah.';
+        }
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'warning',
-                title: 'Opsi Lampiran Wajib Dipilih',
-                text: 'Silakan pilih salah satu opsi Dokumen Lampiran Penawaran (Proposal Teknis, Upload File Baru, atau Tanpa Lampiran).'
+                title: 'Lampiran Penawaran Belum Lengkap',
+                text: pesanLamp
             });
         } else {
-            alert('Silakan pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu.');
+            alert(pesanLamp);
         }
         var cardLamp = document.getElementById('cardDokumenLampiran');
         if (cardLamp) {
@@ -4278,10 +4282,28 @@ function isNomorSuratValid() {
     return true;
 }
 
+function isLampiranTersedia() {
+    var inp = document.getElementById('opsiLampiranSumber');
+    var val = inp ? (inp.value || '').trim() : '';
+    if (val === 'tanpa') return true;
+    if (val === 'proposal') return {{ @proposal_file_exists ? 'true' : 'false' }};
+    if (val === 'upload') {
+        var cardCustom = document.getElementById('cardCustomLampiranUploaded');
+        var inpFile = document.getElementById('inputFileLampiranUser');
+        var curPath = document.getElementById('currentCustomLampiranPath');
+        var hasCard = !!(cardCustom && !cardCustom.classList.contains('d-none'));
+        var hasInputFile = !!(inpFile && inpFile.files && inpFile.files.length > 0);
+        var hasPath = !!(curPath && (curPath.value || '').trim() !== '');
+        return hasCard || hasInputFile || hasPath;
+    }
+    return false;
+}
+
 function updateSubmitButtonState() {
     var inp = document.getElementById('opsiLampiranSumber');
     var val = inp ? (inp.value || '').trim() : '';
-    var isLampiranValid = ['proposal', 'upload', 'tanpa'].indexOf(val) !== -1;
+    var isOpsiDipilih = ['proposal', 'upload', 'tanpa'].indexOf(val) !== -1;
+    var isLampiranValid = isOpsiDipilih && isLampiranTersedia();
     var isNomorValid = isNomorSuratValid();
     var isValid = isLampiranValid && isNomorValid;
 
@@ -4291,8 +4313,12 @@ function updateSubmitButtonState() {
     var reason = '';
     if (!isNomorValid) {
         reason = "Nomor surat penawaran wajib diisi nomor agenda lengkap dari sekretariat (tidak boleh masih mengandung '...')";
-    } else if (!isLampiranValid) {
+    } else if (!isOpsiDipilih) {
         reason = "Pilih salah satu opsi Dokumen Lampiran Penawaran terlebih dahulu";
+    } else if (!isLampiranValid) {
+        reason = (val === 'proposal')
+            ? "Berkas Proposal Teknis di Tahap 4 belum tersedia. Pilih 'Upload File Baru' atau 'Tanpa Lampiran'."
+            : "Unggah berkas lampiran terlebih dahulu atau pilih 'Tanpa Lampiran'.";
     }
 
     var infoNomor = document.getElementById('infoWajibNomorSurat');

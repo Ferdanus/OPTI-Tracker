@@ -15,8 +15,12 @@
  * - Superadmin: Akses penuh
  */
 class Controller {
+    /** @var \Base */
     protected $f3;
+    /** @var \OptiDatabase|\DB\SQL */
     protected $db;
+    /** @var \DB\SQL */
+    protected $dbSekretariat;
 
     /**
      * Matriks Hak Akses / Permission per Role (Logika Murni OPTI BBSPJIS Sesuai Arahan Mentor)
@@ -268,18 +272,18 @@ class Controller {
                     $sqlAktifSp = "SELECT COUNT(DISTINCT sp.id) as c FROM tb_surat_penawaran sp
                                    LEFT JOIN order_layanan o ON o.id = sp.order_id
                                    WHERE (sp.status_respon_klien IN ('draft', 'terkirim', 'menunggu', 'nego') OR sp.status_respon_klien IS NULL OR sp.status_respon_klien = '')
-                                     AND sp.status NOT IN ('batal', 'nonaktif')
+                                     AND sp.status NOT IN ('batal', 'nonaktif', 'deal', 'disetujui')
                                      AND (sp.status_respon_klien NOT IN ('deal', 'batal', 'tolak') OR sp.status_respon_klien IS NULL)
-                                     AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak', 'selesai'))";
+                                     AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak', 'selesai', 'penawaran_deal', 'disetujui'))";
                     $resAktifSp = $this->db->exec($sqlAktifSp);
                     $notifPenawaranCount = (int)($resAktifSp[0]['c'] ?? 0);
                 } else {
                     $sqlAktifSp = "SELECT COUNT(DISTINCT sp.id) as c FROM tb_surat_penawaran sp
                                    LEFT JOIN order_layanan o ON o.id = sp.order_id
                                    WHERE (sp.status_respon_klien IN ('draft', 'terkirim', 'menunggu', 'nego') OR sp.status_respon_klien IS NULL OR sp.status_respon_klien = '')
-                                     AND sp.status NOT IN ('batal', 'nonaktif')
+                                     AND sp.status NOT IN ('batal', 'nonaktif', 'deal', 'disetujui')
                                      AND (sp.status_respon_klien NOT IN ('deal', 'batal', 'tolak') OR sp.status_respon_klien IS NULL)
-                                     AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak', 'selesai'))
+                                     AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak', 'selesai', 'penawaran_deal', 'disetujui'))
                                      AND sp.dibuat_oleh = ?";
                     $resAktifSp = $this->db->exec($sqlAktifSp, [1 => (int)$userId]);
                     $notifPenawaranCount = (int)($resAktifSp[0]['c'] ?? 0);
@@ -306,14 +310,20 @@ class Controller {
         $notifProposalCount = 0;
         $notifTarifCount = 0;
         try {
-            $baseTahap4Where = "(o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE keputusan = 'dapat_dilaksanakan'))
-                                AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
+            $baseTahap4Where = "(o.status_tinjauan = 'layak' OR o.id IN (SELECT order_id FROM opti_tinjauan_kelayakan WHERE is_draft = 0 AND keputusan = 'dapat_dilaksanakan'))
+                                AND o.status NOT IN ('batal', 'ditolak', 'selesai', 'draft_disimpan', 'permintaan_masuk', 'draft', 'penawaran_deal', 'disetujui')
+                                AND COALESCE(o.status_proposal_biaya, '') NOT IN ('siap_penawaran', 'disetujui')
+                                AND NOT EXISTS (SELECT 1 FROM opti_proposal_riset pr WHERE pr.order_id = o.id AND pr.status_proposal IN ('disetujui', 'disetujui_ketua', 'disetujui_pimpinan'))
+                                AND NOT EXISTS (SELECT 1 FROM tb_surat_penawaran sp WHERE sp.order_id = o.id AND sp.status_respon_klien = 'deal')";
+            $belumDiajukanWhere = "AND COALESCE(o.status_proposal_biaya, '') <> 'menunggu_approval'
+                                    AND NOT EXISTS (SELECT 1 FROM opti_proposal_riset pr2 WHERE pr2.order_id = o.id AND pr2.status_proposal = 'diajukan')";
             if ($role === 'tim_kerja') {
                 $resProp = $this->db->exec(
                     "SELECT o.jenis_layanan_opti, COUNT(*) as c
                      FROM order_layanan o
                      WHERE (o.pic_proposal_id = ? OR o.pic_proposal_cadangan_id = ?)
                        AND {$baseTahap4Where}
+                       {$belumDiajukanWhere}
                        AND o.jenis_layanan_opti IN ('selulosa', 'lingkungan')
                      GROUP BY o.jenis_layanan_opti",
                     array(1 => (int)$userId, 2 => (int)$userId)
@@ -324,22 +334,26 @@ class Controller {
                 }
             } elseif ($role === 'pjt_lingkungan') {
                 $resTarif = $this->db->exec(
-                    "SELECT COUNT(*) as c FROM order_layanan o WHERE o.jenis_layanan_opti = 'lingkungan' AND {$baseTahap4Where}"
+                    "SELECT COUNT(*) as c FROM order_layanan o WHERE o.jenis_layanan_opti = 'lingkungan' AND {$baseTahap4Where} {$belumDiajukanWhere}"
                 );
                 $notifTarifCount = (int)($resTarif[0]['c'] ?? 0);
-            } elseif ($role === 'ketua_tim') {
+            } elseif ($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') {
                 if ($layanan === 'selulosa' || $layanan === 'semua' || $layanan === '') {
                     $resProp = $this->db->exec(
                         "SELECT COUNT(*) as c FROM order_layanan o
                          WHERE o.jenis_layanan_opti = 'selulosa' AND {$baseTahap4Where}
-                           AND (o.pic_proposal_id IS NOT NULL OR o.pic_proposal_cadangan_id IS NOT NULL)"
+                           AND (o.status_proposal_biaya = 'menunggu_approval'
+                                OR EXISTS (SELECT 1 FROM opti_proposal_riset pr2 WHERE pr2.order_id = o.id AND pr2.status_proposal = 'diajukan')
+                                OR (o.pic_proposal_id IS NULL AND o.pic_proposal_cadangan_id IS NULL))"
                     );
                     $notifProposalCount = (int)($resProp[0]['c'] ?? 0);
                 }
-                if ($layanan === 'lingkungan' || $layanan === 'semua' || $layanan === '') {
+                if ($layanan === 'lingkungan' || $layanan === 'semua' || $layanan === '' || $role === 'kepala_lab_lingkungan') {
                     $resTarif = $this->db->exec(
                         "SELECT COUNT(*) as c FROM order_layanan o
-                         WHERE o.jenis_layanan_opti = 'lingkungan' AND {$baseTahap4Where}"
+                         WHERE o.jenis_layanan_opti = 'lingkungan' AND {$baseTahap4Where}
+                           AND (o.status_proposal_biaya = 'menunggu_approval'
+                                OR (o.pic_proposal_id IS NULL AND o.pic_proposal_cadangan_id IS NULL))"
                     );
                     $notifTarifCount = (int)($resTarif[0]['c'] ?? 0);
                 }
@@ -365,7 +379,7 @@ class Controller {
 
         $notifPo = array('lingkungan' => 0, 'selulosa' => 0);
 try {
-    if (in_array($role, array('tim_kerja', 'ketua_tim', 'kepala_lab_lingkungan', 'superadmin'))) {
+    if (in_array($role, array('tim_kerja', 'ketua_tim', 'kepala_lab_lingkungan', 'pjt_lingkungan', 'superadmin'))) {
         $sqlPo = "SELECT o.jenis_layanan_opti AS divisi, COUNT(*) AS c
                   FROM order_layanan o
                   WHERE o.ketua_pelaksana_id IS NOT NULL
@@ -377,6 +391,8 @@ try {
         if ($role === 'tim_kerja') {
             $sqlPo .= " AND o.ketua_pelaksana_id = ?";
             $paramsPo[1] = (int)$userId;
+        } elseif ($role === 'pjt_lingkungan') {
+            $sqlPo .= " AND o.jenis_layanan_opti = 'lingkungan'";
         } elseif (($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') && in_array($layanan, array('selulosa', 'lingkungan'))) {
             $sqlPo .= " AND o.jenis_layanan_opti = ?";
             $paramsPo[1] = $layanan;
@@ -459,7 +475,8 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                                   WHERE {$whereDivPenunjukan} o.disposisi_katim_at IS NOT NULL
                                     AND o.status_keuangan = 'lunas'
                                     AND (o.tanggal_terima_sampel IS NOT NULL OR o.tanggal_spm_mulai IS NOT NULL)
-                                    AND o.ketua_pelaksana_id IS NULL";
+                                    AND o.ketua_pelaksana_id IS NULL
+                                    AND COALESCE(o.status, '') NOT IN ('batal', 'ditolak', 'selesai')";
                 $resPenunjukan = $this->db->exec($sqlPenunjukan);
                 $notifPenunjukanPelaksana = (int)($resPenunjukan[0]['c'] ?? 0);
             } catch (\Exception $ePenunjukan) {
@@ -941,7 +958,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
      * Cek apakah role aktif adalah Ketua Tim
      */
     public function isKetuaTim(): bool {
-        return $this->getUserRole() === 'ketua_tim';
+        return in_array($this->getUserRole(), ['ketua_tim', 'kepala_lab_lingkungan'], true);
     }
 
     /** Tim Kerja Sertifikasi (si_opti: tim_kerja_sertifikasi / tk_sertifikasi). */
@@ -1074,7 +1091,9 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         }
         $layananOrder = strtolower(trim((string)($order['jenis_layanan_opti'] ?? '')));
         $userLayanan = strtolower(trim((string)$this->getUserLayanan()));
-        if (in_array($userLayanan, ['selulosa', 'lingkungan', 'sertifikasi'], true)) {
+        if ($this->isKepalaLabLingkungan()) {
+            $efektifLayanan = 'lingkungan';
+        } elseif (in_array($userLayanan, ['selulosa', 'lingkungan', 'sertifikasi'], true)) {
             $efektifLayanan = $userLayanan;
         } else {
             $userDivisi = strtolower(trim((string)$this->getDivisiTimKerja()));
@@ -1097,14 +1116,14 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         if (strtolower(trim((string)($order['status_penawaran'] ?? ''))) === 'deal') {
             return true;
         }
-        if (!empty($penawaran) && strtolower(trim((string)($penawaran['status_respon_klien'] ?? ''))) === 'deal') {
+        if (!empty($penawaran) && strtolower(trim((string)($penawaran['status'] ?? ''))) !== 'draft' && strtolower(trim((string)($penawaran['status_respon_klien'] ?? ''))) === 'deal') {
             return true;
         }
         $orderId = (int)($order['id'] ?? 0);
         if ($orderId > 0) {
             try {
                 $spDeal = $this->db->exec(
-                    "SELECT id FROM tb_surat_penawaran WHERE order_id = ? AND status_respon_klien = 'deal' LIMIT 1",
+                    "SELECT id FROM tb_surat_penawaran WHERE order_id = ? AND status != 'draft' AND status_respon_klien = 'deal' LIMIT 1",
                     [1 => $orderId]
                 );
                 if (!empty($spDeal)) {
@@ -1233,9 +1252,9 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         $f3->set('SESSION.bidang', $_SESSION['bidang'] ?? 'all');
         $f3->set('SESSION.mask_client_name', $_SESSION['mask_client_name'] ?? false);
 
-        // Jika rute adalah login/otp, langsung arahkan ke /dashboard
+        // Jika rute adalah login/otp, langsung arahkan ke halaman utama sesuai role
         if (in_array($path, ['/login', '/login/otp', '/login/otp/verify', '/login/otp/resend'])) {
-            $f3->reroute('/dashboard');
+            $f3->reroute($this->isKeuangan() ? '/pembayaran' : '/dashboard');
             return;
         }
 
@@ -1403,7 +1422,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             $r = $this->db->exec(
                 "SELECT o.status_penawaran, o.status_keuangan, o.disposisi_katim_at,
                         sp.status_respon_klien,
-                        (SELECT COUNT(*) FROM opti_pembayaran p WHERE p.order_id = o.id AND (p.status_verifikasi = 'terverifikasi' OR p.is_kesanggupan_bayar = 1)) AS jml_bayar
+                        (SELECT COUNT(*) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi') AS jml_bayar
                  FROM order_layanan o
                  LEFT JOIN tb_surat_penawaran sp ON sp.id = (
                      SELECT id FROM tb_surat_penawaran

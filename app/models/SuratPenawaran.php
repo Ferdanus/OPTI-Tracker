@@ -173,13 +173,14 @@ class SuratPenawaran extends \DB\SQL\Mapper
         $opsiLampiranSumber = $data['opsi_lampiran_sumber'] ?? '';
         $fileLampiranUser = isset($data['file_lampiran_user']) ? trim((string)$data['file_lampiran_user']) : '';
         $statusRespon = in_array($data['status_respon_klien'] ?? '', ['draft', 'terkirim', 'nego', 'deal', 'batal']) ? $data['status_respon_klien'] : 'draft';
+        $isDraftSave  = !empty($data['is_draft_save']) || (($data['action_status'] ?? '') === 'draft');
         $catatanNego  = trim($data['catatan_nego'] ?? '');
 
         $ruangLingkup      = isset($data['ruang_lingkup']) ? trim($data['ruang_lingkup']) : null;
         $jadwalPelaksanaan = isset($data['jadwal_pelaksanaan']) ? trim($data['jadwal_pelaksanaan']) : null;
         $catatanSampel     = isset($data['catatan_sampel']) ? trim($data['catatan_sampel']) : null;
-        $jabatanPejabat    = !empty($data['jabatan_pejabat']) ? trim($data['jabatan_pejabat']) : ($isLingkungan ? 'Kepala Bagian Tata Usaha' : 'Kepala');
-        $pejabatNama       = !empty($data['pejabat_nama']) ? trim($data['pejabat_nama']) : (!empty($data['pembuat_nama']) && $data['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? trim($data['pembuat_nama']) : ($isLingkungan ? 'Joko Pratomo' : 'Dodiet Prasetyo'));
+        $jabatanPejabat    = !empty($data['jabatan_pejabat']) ? trim($data['jabatan_pejabat']) : 'Kepala';
+        $pejabatNama       = !empty($data['pejabat_nama']) ? trim($data['pejabat_nama']) : (!empty($data['pembuat_nama']) && $data['pembuat_nama'] !== 'Tim Mitra BBSPJIS' ? trim($data['pembuat_nama']) : 'Dodiet Prasetyo');
         $defaultHalMdl     = $isLingkungan ? 'Biaya Pengujian Lingkungan' : 'Biaya OPTI';
         $hal               = (!empty($data['hal']) && trim($data['hal']) !== '') ? trim($data['hal']) : $defaultHalMdl;
         if (!empty($order['judul_kegiatan']) && ($hal === trim($order['judul_kegiatan']) || stripos($hal, 'Penawaran Layanan Jasa OPTI') !== false)) {
@@ -280,7 +281,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
                     permintaan_melalui = ?, penjelasan = ?, file_lampiran = ?, file_lampiran_user = ?,
                     ruang_lingkup = ?, jadwal_pelaksanaan = ?, catatan_sampel = ?, 
                     jabatan_pejabat = ?, pejabat_nama = ?, hal = ?, lampiran_teks = ?,
-                    status_respon_klien = ?, catatan_nego = ?, updated_at = NOW()
+                    status = ?, status_respon_klien = ?, catatan_nego = ?, updated_at = NOW()
                  WHERE id = ?",
                 array(
                     1 => $nomorSuratFinal,
@@ -302,16 +303,17 @@ class SuratPenawaran extends \DB\SQL\Mapper
                     17 => $pejabatNama,
                     18 => $hal,
                     19 => $lampiranTeks,
-                    20 => $statusRespon,
-                    21 => $catatanNego,
-                    22 => $targetId
+                    20 => $isDraftSave ? 'draft' : 'aktif',
+                    21 => $statusRespon,
+                    22 => $catatanNego,
+                    23 => $targetId
                 )
             );
             $penawaranId = $targetId;
             $nomorSurat = $nomorSuratFinal;
 
-            // Jika status berubah menjadi DEAL, pastikan seluruh penawaran revisi sebelumnya dibatalkan
-            if ($statusRespon === 'deal') {
+            // Jika status berubah menjadi DEAL (bukan simpan draf), pastikan seluruh penawaran revisi sebelumnya dibatalkan
+            if ($statusRespon === 'deal' && !$isDraftSave) {
                 $this->db->exec(
                     "UPDATE tb_surat_penawaran 
                      SET status_respon_klien = 'batal', updated_at = NOW() 
@@ -324,7 +326,7 @@ class SuratPenawaran extends \DB\SQL\Mapper
             $this->db->exec(
                 "INSERT INTO tb_surat_penawaran 
                 (customer_id, order_id, nomor_surat, perihal, nominal_penawaran, tanggal_surat, jenis_layanan, nama, perusahaan, alamat, permintaan_melalui, penjelasan, file_lampiran, file_lampiran_user, ruang_lingkup, jadwal_pelaksanaan, catatan_sampel, jabatan_pejabat, pejabat_nama, hal, lampiran_teks, status, status_respon_klien, catatan_nego, dibuat_oleh, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?, ?, ?, NOW())",
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
                 array(
                     1 => $order['id_customer'],
                     2 => $orderId,
@@ -347,15 +349,16 @@ class SuratPenawaran extends \DB\SQL\Mapper
                     19 => $pejabatNama,
                     20 => $hal,
                     21 => $lampiranTeks,
-                    22 => $statusRespon,
-                    23 => $catatanNego,
-                    24 => $userId
+                    22 => $isDraftSave ? 'draft' : 'aktif',
+                    23 => $statusRespon,
+                    24 => $catatanNego,
+                    25 => $userId
                 )
             );
             $penawaranId = (int)$this->db->exec("SELECT LAST_INSERT_ID() AS id")[0]['id'];
 
             // Otomatis ubah status penawaran lama menjadi 'batal' (Kecuali yang sudah DEAL, atau jika dokumen baru masih berupa draf)
-            if ($statusRespon !== 'draft') {
+            if ($statusRespon !== 'draft' && !$isDraftSave) {
                 $this->db->exec(
                     "UPDATE tb_surat_penawaran 
                      SET status_respon_klien = 'batal', updated_at = NOW() 
@@ -367,8 +370,10 @@ class SuratPenawaran extends \DB\SQL\Mapper
 
         // Sinkronisasi status, ID surat penawaran, nominal biaya, durasi (SPM), dan status proposal ke order_layanan
         // PROTEKSI: Jangan perbarui status_penawaran di order_layanan menjadi 'draft' jika sebelumnya sudah DEAL
-        $statusPenawaranOrder = $statusRespon;
+        $statusPenawaranOrder = $isDraftSave ? 'draft' : $statusRespon;
         if (in_array($statusRespon, ['draft', 'nego']) && in_array($order['status_penawaran'] ?? '', ['deal'])) {
+            $statusPenawaranOrder = 'deal';
+        } elseif ($isDraftSave && in_array($order['status_penawaran'] ?? '', ['deal'])) {
             $statusPenawaranOrder = 'deal';
         }
 

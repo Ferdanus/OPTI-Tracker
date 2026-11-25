@@ -1,4 +1,4 @@
-<style>
+﻿<style>
 /* Baris order yang giliran akun ini dan belum dibaca: latar abu + penanda gelap di kiri (barisnya juga dinaikkan ke paling atas oleh controller) */
 tr.order-belum-baca > td { background-color: #e5e7eb !important; }
 tr.order-belum-baca:hover > td { background-color: #dde1e6 !important; }
@@ -207,12 +207,18 @@ tr.order-belum-baca .fw-semibold.text-dark.mb-1 { font-weight: 800 !important; }
 }
 .status-pill-emerald i { color: #64748b !important; }
 
-.status-pill-rose {
-    background-color: #f8fafc !important;
-    color: #334155 !important;
-    border-color: #cbd5e1 !important;
+/* Khusus Status Alur Revisi / Perbaikan / Ditolak = Berwarna Merah */
+.status-pill-rose,
+.status-pill-danger,
+.status-pill-red {
+    background-color: #fef2f2 !important;
+    color: #b91c1c !important;
+    border-color: #fca5a5 !important;
+    font-weight: 700 !important;
 }
-.status-pill-rose i { color: #64748b !important; }
+.status-pill-rose i,
+.status-pill-danger i,
+.status-pill-red i { color: #dc2626 !important; }
 
 .status-pill-slate {
     background-color: #f8fafc !important;
@@ -423,7 +429,7 @@ tr.row-user-task:hover > td {
     <div class="card border-0 shadow-sm overflow-hidden mb-4">
         <div class="filter-tabs-wrapper d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div class="d-flex align-items-center gap-2 flex-wrap">
-                <a class="filter-tab-pill {{ @filter_tab == 'masuk' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=masuk{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
+                <a class="filter-tab-pill {{ @filter_tab == 'masuk' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=masuk{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}&jenis_layanan={{ @filter_jenis }}{{ @search_q ? '&q='.@search_q : '' }}">
                     <i class="bi bi-inbox-fill"></i>
                     <span>Order Masuk</span>
                     <span class="count-chip">{{ @count_masuk }}</span>
@@ -431,7 +437,7 @@ tr.row-user-task:hover > td {
                         <span class="task-chip-indicator" title="{{ @user_tasks_masuk }} order tugas Anda di tab Order Masuk">{{ @user_tasks_masuk }} tugas</span>
                     </check>
                 </a>
-                <a class="filter-tab-pill {{ @filter_tab == 'berlangsung' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=berlangsung{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
+                <a class="filter-tab-pill {{ @filter_tab == 'berlangsung' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=berlangsung{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}&jenis_layanan={{ @filter_jenis }}{{ @search_q ? '&q='.@search_q : '' }}">
                     <i class="bi bi-gear-wide-connected"></i>
                     <span>Order Berjalan</span>
                     <span class="count-chip">{{ @count_berlangsung }}</span>
@@ -439,12 +445,12 @@ tr.row-user-task:hover > td {
                         <span class="task-chip-indicator" title="{{ @user_tasks_berlangsung }} order tugas Anda di tab Order Berjalan">{{ @user_tasks_berlangsung }} tugas</span>
                     </check>
                 </a>
-                <a class="filter-tab-pill tab-selesai {{ @filter_tab == 'selesai' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=selesai{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
+                <a class="filter-tab-pill tab-selesai {{ @filter_tab == 'selesai' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=selesai{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}&jenis_layanan={{ @filter_jenis }}{{ @search_q ? '&q='.@search_q : '' }}">
                     <i class="bi bi-check2-all"></i>
                     <span>Order Selesai</span>
                     <span class="count-chip chip-success">{{ @count_selesai }}</span>
                 </a>
-                <a class="filter-tab-pill tab-ditolak {{ @filter_tab == 'ditolak' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=ditolak{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}{{ @filter_jenis ? '&jenis_layanan='.@filter_jenis : '' }}{{ @search_q ? '&q='.@search_q : '' }}">
+                <a class="filter-tab-pill tab-ditolak {{ @filter_tab == 'ditolak' ? 'active' : '' }}" href="{{ @BASE }}/order?tab=ditolak{{ @filter_bulan ? '&bulan='.@filter_bulan : '' }}{{ @filter_tahun ? '&tahun='.@filter_tahun : '' }}&jenis_layanan={{ @filter_jenis }}{{ @search_q ? '&q='.@search_q : '' }}">
                     <i class="bi bi-x-octagon-fill"></i>
                     <span>Order Ditolak</span>
                     <span class="count-chip chip-danger">{{ @count_ditolak }}</span>
@@ -824,7 +830,7 @@ tr.row-user-task:hover > td {
                                             </td>
                                             <td class="text-center">
                                                 <div class="d-inline-flex align-items-center gap-1">
-                                                     <check if="{{ @ord.status == 'permintaan_masuk' }}">
+                                                     <check if="{{ @ord.status == 'permintaan_masuk' && (@is_tim_mitra || @is_superadmin) }}">
                                                          <true>
                                                              <a href="{{ @BASE }}/order/{{ @ord.id }}" style="background-color: #1e293b; border-color: #1e293b; font-size: 0.78rem;" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm fw-medium" title="Tentukan OPTI &amp; Disposisikan ke Ketua Tim">
                                                                  <i class="bi bi-send-check"></i> <span>Disposisi</span>
@@ -876,6 +882,55 @@ tr.row-user-task:hover > td {
                                     </repeat>
                                 </tbody>
                             </table>
+                        </false>
+                    </check>
+                </div>
+            </true>
+            <false>
+                <check if="{{ @filter_tab == 'ditolak' }}">
+                    <true>
+                        <div class="text-center py-5">
+                            <i class="bi bi-archive text-muted display-4 d-block mb-3 opacity-50"></i>
+                            <h5 class="fw-bold text-dark">Tidak Ada Order Ditolak</h5>
+                            <p class="text-muted small mb-0">Semua order permohonan berjalan aktif dan tidak ada yang diarsipkan dalam status ditolak.</p>
+                        </div>
+                    </true>
+                    <false>
+                        <check if="{{ @filter_tab == 'selesai' }}">
+                            <true>
+                                <div class="text-center py-5">
+                                    <i class="bi bi-check2-all text-success display-4 d-block mb-3 opacity-50"></i>
+                                    <h5 class="fw-bold text-dark">Belum Ada Order Selesai</h5>
+                                    <p class="text-muted small mb-0">Belum ada order layanan yang telah menyelesaikan BAST atau penerbitan laporan akhir.</p>
+                                </div>
+                            </true>
+                            <false>
+                                <check if="{{ @filter_tab == 'berlangsung' }}">
+                                    <true>
+                                        <div class="text-center py-5">
+                                            <i class="bi bi-gear-wide-connected text-muted display-4 d-block mb-3 opacity-50"></i>
+                                            <h5 class="fw-bold text-dark">Belum Ada Order Berlangsung</h5>
+                                            <p class="text-muted small mb-0">Belum ada order resmi (ORD) yang sedang dalam tahap pelaksanaan atau pengerjaan.</p>
+                                        </div>
+                                    </true>
+                                    <false>
+                                        <div class="text-center py-5">
+                                            <i class="bi bi-inbox text-muted display-4 d-block mb-3 opacity-50"></i>
+                                            <h5 class="fw-bold text-dark">Belum Ada Order Masuk</h5>
+                                            <p class="text-muted small mb-0">Tidak ditemukan permohonan order masuk (tahap REQ / pra-order resmi) yang sesuai dengan kriteria filter.</p>
+                                        </div>
+                                    </false>
+                                </check>
+                            </false>
+                        </check>
+                    </false>
+                </check>
+            </false>
+        </check>
+    </div>
+</div>
+</div>
+
                             <!-- ===== MODAL INPUT PERMOHONAN BARU (NON-SURAT) ===== -->
                             <div class="modal fade" id="modalTambahPermohonanManual" tabindex="-1" aria-labelledby="modalTambahPermohonanManualLabel" aria-hidden="true" style="z-index: 1055;">
                                 <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
@@ -1062,54 +1117,6 @@ tr.row-user-task:hover > td {
             </div>
         </div>
     </div>
-</div>
-                        </false>
-                    </check>
-                </div>
-            </true>
-            <false>
-                <check if="{{ @filter_tab == 'ditolak' }}">
-                    <true>
-                        <div class="text-center py-5">
-                            <i class="bi bi-archive text-muted display-4 d-block mb-3 opacity-50"></i>
-                            <h5 class="fw-bold text-dark">Tidak Ada Order Ditolak</h5>
-                            <p class="text-muted small mb-0">Semua order permohonan berjalan aktif dan tidak ada yang diarsipkan dalam status ditolak.</p>
-                        </div>
-                    </true>
-                    <false>
-                        <check if="{{ @filter_tab == 'selesai' }}">
-                            <true>
-                                <div class="text-center py-5">
-                                    <i class="bi bi-check2-all text-success display-4 d-block mb-3 opacity-50"></i>
-                                    <h5 class="fw-bold text-dark">Belum Ada Order Selesai</h5>
-                                    <p class="text-muted small mb-0">Belum ada order layanan yang telah menyelesaikan BAST atau penerbitan laporan akhir.</p>
-                                </div>
-                            </true>
-                            <false>
-                                <check if="{{ @filter_tab == 'berlangsung' }}">
-                                    <true>
-                                        <div class="text-center py-5">
-                                            <i class="bi bi-gear-wide-connected text-muted display-4 d-block mb-3 opacity-50"></i>
-                                            <h5 class="fw-bold text-dark">Belum Ada Order Berlangsung</h5>
-                                            <p class="text-muted small mb-0">Belum ada order resmi (ORD) yang sedang dalam tahap pelaksanaan atau pengerjaan.</p>
-                                        </div>
-                                    </true>
-                                    <false>
-                                        <div class="text-center py-5">
-                                            <i class="bi bi-inbox text-muted display-4 d-block mb-3 opacity-50"></i>
-                                            <h5 class="fw-bold text-dark">Belum Ada Order Masuk</h5>
-                                            <p class="text-muted small mb-0">Tidak ditemukan permohonan order masuk (tahap REQ / pra-order resmi) yang sesuai dengan kriteria filter.</p>
-                                        </div>
-                                    </false>
-                                </check>
-                            </false>
-                        </check>
-                    </false>
-                </check>
-            </false>
-        </check>
-    </div>
-</div>
 </div>
 
 <!-- ======================================================== -->
@@ -1485,7 +1492,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .then(function(data) {
                     if (!data.ok) {
-                        modalLampiranBody.innerHTML = '<div class="alert alert-warning py-3 text-center mb-0">' + (data.pesan || 'Tidak ada data lampiran.') + '</div>';
+                        var warnDiv = document.createElement('div');
+                        warnDiv.className = 'alert alert-warning py-3 text-center mb-0';
+                        warnDiv.textContent = data.pesan || 'Tidak ada data lampiran.';
+                        modalLampiranBody.innerHTML = '';
+                        modalLampiranBody.appendChild(warnDiv);
                         return;
                     }
 
@@ -1636,9 +1647,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .catch(function(err) {
                     if (modalLampiranBody) {
-                        modalLampiranBody.innerHTML = '<div class="alert alert-danger py-3 text-center mb-0">' +
-                            '<i class="bi bi-exclamation-triangle-fill me-2"></i>' + err.message +
-                            '</div>';
+                        var errDiv = document.createElement('div');
+                        errDiv.className = 'alert alert-danger py-3 text-center mb-0';
+                        var errIcon = document.createElement('i');
+                        errIcon.className = 'bi bi-exclamation-triangle-fill me-2';
+                        errDiv.appendChild(errIcon);
+                        errDiv.appendChild(document.createTextNode(err && err.message ? err.message : 'Terjadi kesalahan saat memuat lampiran.'));
+                        modalLampiranBody.innerHTML = '';
+                        modalLampiranBody.appendChild(errDiv);
                     }
                 });
         });

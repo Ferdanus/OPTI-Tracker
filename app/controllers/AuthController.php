@@ -21,7 +21,7 @@ class AuthController extends Controller {
      */
     public function loginGet($f3) {
         if (self::$bypassLogin || $this->isLoggedIn()) {
-            $f3->reroute('/dashboard');
+            $f3->reroute($this->isKeuangan() ? '/pembayaran' : '/dashboard');
             return;
         }
 
@@ -115,7 +115,7 @@ class AuthController extends Controller {
         $f3->set('SESSION.mask_client_name', $maskEnabled);
 
         $this->setFlashSuccess("Berhasil beralih peran sebagai <strong>{$userData['nama_user']}</strong> (" . strtoupper(str_replace('_', ' ', $roleOpti)) . ").");
-        $f3->reroute('/dashboard');
+        $f3->reroute(in_array($roleOpti, ['keuangan', 'ketua_tim_keuangan'], true) ? '/pembayaran' : '/dashboard');
     }
 
     /**
@@ -381,7 +381,7 @@ class AuthController extends Controller {
         $f3->clear('SESSION.otp_pending');
 
         $this->setFlashSuccess("Selamat datang kembali, <strong>{$userData['nama_user']}</strong>! Login berhasil diverifikasi.");
-        $f3->reroute('/dashboard');
+        $f3->reroute(in_array($pending['roleOpti'] ?? '', ['keuangan', 'ketua_tim_keuangan'], true) ? '/pembayaran' : '/dashboard');
     }
 
     /**

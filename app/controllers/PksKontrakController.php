@@ -355,6 +355,14 @@ class PksKontrakController extends Controller {
         if ($final) {
             $this->catatAlur($po, ($lama && $lama['status'] === 'selesai') ? 'perbarui_kontrak' : 'selesai_kontrak', $nomorPks);
             $this->tandaiKontrakDiPo($po, $poId, $nomorPks);
+        } elseif ($lama && $lama['status'] === 'selesai') {
+            // Jika kontrak sebelumnya sudah selesai lalu dikembalikan menjadi draft, reset penanda kontrak di po_kegiatan
+            try {
+                $this->db->exec(
+                    "UPDATE po_kegiatan SET kontrak_dibuat_at = NULL, kontrak_dibuat_oleh = NULL, kontrak_dibuat_oleh_nama = NULL, kontrak_nomor = NULL WHERE id = ?",
+                    [1 => $poId]
+                );
+            } catch (\Throwable $eResetK) {}
         }
 
         $this->keluarkanJson([

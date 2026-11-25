@@ -1429,6 +1429,11 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
         // HANYA Ketua Pelaksana tersebut yang berhak menyusun PO Kegiatan!
         $roleUser = (string) $this->getUserRole();
         $userIdAktif = (int) $this->getUserId();
+        if (!$this->isSuperadmin() && !in_array($roleUser, ['tim_kerja', 'ketua_tim', 'kepala_lab_lingkungan', 'tim_kerja_sertifikasi', 'tk_sertifikasi'], true)) {
+            $this->setFlashError('Akses Ditolak: Anda tidak memiliki hak akses untuk menyusun PO Kegiatan.');
+            $f3->reroute('/order/' . $orderId);
+            return;
+        }
         $ketupelId = (int) ($orderData['ketua_pelaksana_id'] ?? 0);
         if ($roleUser === 'tim_kerja' && !$this->isSuperadmin() && $ketupelId > 0 && $userIdAktif !== $ketupelId) {
             $this->setFlashError('Akses Ditolak: Anda bukan Ketua Pelaksana yang ditugaskan untuk menyusun PO Kegiatan order ini.');
@@ -1472,8 +1477,8 @@ $this->render('katim_kerja/po-kegiatan/pilih_jenis.html', 'Buat Petunjuk Operasi
     $f3->set('daftar_tahun', $daftarTahun);
 
     $infoPembayaran = $this->getInfoPembayaranOtomatis($orderId, $orderData['status_keuangan'] ?? '');
-$f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNICODE));
-$f3->set('info_kesanggupan_json', json_encode($this->getTanggalKesanggupanBayar((int) $orderId), JSON_UNESCAPED_UNICODE));
+$f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
+$f3->set('info_kesanggupan_json', json_encode($this->getTanggalKesanggupanBayar((int) $orderId), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
 
         $suratDasar = $this->suratDasarDariOrder($orderId);
         $jadwalAuto = $this->jadwalOtomatisDariOrder($orderData);
@@ -1599,8 +1604,8 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
     $f3->set('daftar_tahun', $daftarTahun);
 
     $infoPembayaran = $this->getInfoPembayaranOtomatis((int) $po->order_id, $orderData['status_keuangan'] ?? '');
-    $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNICODE));
-    $f3->set('info_kesanggupan_json', json_encode($this->getTanggalKesanggupanBayar((int) $po->order_id), JSON_UNESCAPED_UNICODE));
+    $f3->set('info_pembayaran_json', json_encode($infoPembayaran, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
+    $f3->set('info_kesanggupan_json', json_encode($this->getTanggalKesanggupanBayar((int) $po->order_id), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
 
         $suratDasar = $this->suratDasarDariOrder((int) $po->order_id);
         $jadwalAuto = $this->jadwalOtomatisDariOrder($orderData);
@@ -1611,7 +1616,7 @@ $f3->set('jadwal_auto_json', json_encode($jadwalAuto, JSON_UNESCAPED_UNICODE | J
 
         $f3->set('order', $orderData ?: null);
         $f3->set('po', $poData);
-        $f3->set('po_json', json_encode($poData, JSON_UNESCAPED_UNICODE));
+        $f3->set('po_json', json_encode($poData, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
         $f3->set('tahun_po_wajib', $this->tahunPoWajib((string) ($poData['nomor_po'] ?? '')));
         $f3->set('surat_masuk_terkait', ($orderData && ($orderData['jenis_layanan_opti'] ?? '') !== 'selulosa') ? $this->getSuratMasukTerkait($orderData) : null);
         $proposalTerkait = $orderData ? $this->getProposalTerkait($orderData) : null;

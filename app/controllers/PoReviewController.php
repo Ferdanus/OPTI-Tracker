@@ -161,7 +161,7 @@ class PoReviewController extends Controller {
 
         if ($po['status'] === 'terkirim') {
             try {
-                if ($sisi === 'katim' && $role === 'ketua_tim') {
+                if ($sisi === 'katim' && ($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan')) {
                     if ($po['status_review'] === 'menunggu_review') {
                         $this->db->exec(
                             "UPDATE po_kegiatan SET reviewed_at = NOW(), reviewed_by = ?
@@ -349,7 +349,7 @@ class PoReviewController extends Controller {
 
         $nama = $this->namaPengguna($uid, 'Ketua Tim');
         self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', $nama . ' meminta revisi (' . $jumlah . ' catatan).');
-        self::kabari($this->db, [(int) $po['ketua_pelaksana_id']], 'Permintaan revisi PO', 'PO ' . $po['nomor_po'] . ': ' . $jumlah . ' catatan revisi dari Ketua Tim.');
+        self::kabari($this->db, $this->penerimaPoDenganPjt($po), 'Permintaan revisi PO', 'PO ' . $po['nomor_po'] . ': ' . $jumlah . ' catatan revisi dari Ketua Tim.');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
 
@@ -417,7 +417,7 @@ class PoReviewController extends Controller {
 
         $nama = $this->namaPengguna($uid, 'Ketua Tim');
         self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', $nama . ' menyetujui PO. PO terkunci dan diteruskan ke Humas untuk diverifikasi.');
-        self::kabari($this->db, [(int) $po['ketua_pelaksana_id']], 'PO disetujui', 'PO ' . $po['nomor_po'] . ' disetujui Ketua Tim.');
+        self::kabari($this->db, $this->penerimaPoDenganPjt($po), 'PO disetujui', 'PO ' . $po['nomor_po'] . ' disetujui Ketua Tim.');
         // [BARU] giliran Humas: PO yang disetujui Ketua Tim masuk ke Daftar PO Humas untuk diverifikasi
         try {
             if (class_exists('NotificationService')) {
@@ -426,8 +426,8 @@ class PoReviewController extends Controller {
                     'po_id'           => (int) $po['id'],
                     'target_role'     => 'humas',
                     'target_layanan'  => 'semua',
-                    'judul'           => 'PO Menunggu Verifikasi Humas',
-                    'pesan'           => 'PO ' . $po['nomor_po'] . ' sudah disetujui Ketua Tim, menunggu verifikasi Humas.',
+                    'judul'           => 'Verifikasi PO Diperlukan',
+                    'pesan'           => 'PO ' . $po['nomor_po'] . ' disetujui Ka. Tim. Silakan verifikasi.',
                     'tipe'            => 'primary',
                     'icon'            => 'bi-clipboard-check',
                     'link_url'        => '/po-humas',
@@ -507,7 +507,7 @@ class PoReviewController extends Controller {
 
         $nama = $this->namaPengguna($uid, 'Ketua Tim');
         self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', $nama . ' membuka kembali PO untuk direview. Persetujuan dan verifikasi dibatalkan.');
-        self::kabari($this->db, [(int) $po['ketua_pelaksana_id']], 'PO dibuka kembali', 'PO ' . $po['nomor_po'] . ' dibuka kembali oleh Ketua Tim.');
+        self::kabari($this->db, $this->penerimaPoDenganPjt($po), 'PO dibuka kembali', 'PO ' . $po['nomor_po'] . ' dibuka kembali oleh Ketua Tim.');
         $this->keluarkanJson($this->paketDetail((int) $po['id'], $sisi));
     }
 
@@ -1106,6 +1106,31 @@ class PoReviewController extends Controller {
         return 'alur_lain';
     }
 
+    /** id_user semua PJT Lingkungan aktif (opti_user_map). */
+    public static function idPjtLingkungan($db) {
+        $hasil = [];
+        try {
+            $rows = $db->exec(
+                "SELECT id_user FROM opti_user_map
+                  WHERE is_active = 1 AND status_tampil = 'show'
+                    AND (role = 'pjt_lingkungan' OR (role = 'pjt' AND LOWER(COALESCE(jenis_layanan, '')) = 'lingkungan'))"
+            );
+            foreach ($rows as $r) { $hasil[] = (int) $r['id_user']; }
+        } catch (\Exception $e) {
+            // tanpa daftar PJT Lingkungan, notifikasi dilewati
+        }
+        return $hasil;
+    }
+
+    /** Gabungkan penerima pelaksana PO dengan PJT Lingkungan jika divisinya Lingkungan. */
+    protected function penerimaPoDenganPjt(array $po) {
+        $penerima = [(int) ($po['ketua_pelaksana_id'] ?? 0)];
+        if (strtolower((string) ($po['jenis_layanan_opti'] ?? '')) === 'lingkungan') {
+            $penerima = array_merge($penerima, self::idPjtLingkungan($this->db));
+        }
+        return $penerima;
+    }
+
     /** id_user semua Ketua Tim aktif untuk satu divisi (opti_user_map). */
     public static function idKatim($db, $divisi) {
         $hasil = [];
@@ -1586,10 +1611,12 @@ class PoReviewController extends Controller {
         }
         if (empty($bersih)) { return []; }
 
-        $in = implode(',', array_keys($bersih));
+        $ids = array_keys($bersih);
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $params = array_combine(range(1, count($ids)), $ids);
         $peta = [];
         try {
-            $rows = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ($in)");
+            $rows = $this->dbSekretariat->exec("SELECT id_user, nama_user FROM tb_arsipuser WHERE id_user IN ({$ph})", $params);
             foreach ($rows as $r) { $peta[(int) $r['id_user']] = $r['nama_user']; }
         } catch (\Exception $e) {
             // nama tampil generik kalau database Sekretariat tidak terjangkau

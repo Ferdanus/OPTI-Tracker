@@ -109,7 +109,7 @@ class BastController extends Controller {
                 throw new \Exception('Dokumen BAST / Order sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.');
             }
 
-            if (!$this->poTtdSudahDiunggah($orderId) && !$this->canEditSubmittedData(true, $orderId)) {
+            if (!$this->poTtdSudahDiunggah($orderId)) {
                 throw new \Exception('BAST belum bisa dibuat: upload dulu PO yang sudah ditandatangani, lalu tunggu Humas membuat kontrak (Tahap 8).');
             }
 
@@ -147,62 +147,46 @@ class BastController extends Controller {
                 'status_bast'           => $post['status_bast'] ?? 'draft'
             );
 
+            $isFinalBast = in_array($data['status_bast'], ['terbit', 'disetujui', 'selesai'], true);
+
             if ($existing) {
                 $bastModel->updateData((int)$existing['id'], $data);
-                $this->logActivity($orderId, 'bast', 'terbitkan_bast', "Perbarui BAST No. {$data['nomor_bast']} (" . ucfirst($data['status_bast']) . ")");
-                $this->setFlashSuccess("Dokumen BAST #{$order['nomor_order']} berhasil diperbarui.");
+                $this->logActivity($orderId, 'bast', $isFinalBast ? 'terbitkan_bast' : 'simpan_draft_bast', ($isFinalBast ? 'Perbarui BAST No. ' : 'Simpan draf BAST No. ') . $data['nomor_bast'] . ' (' . ucfirst($data['status_bast']) . ')');
+                $this->setFlashSuccess($isFinalBast ? "Dokumen BAST #{$order['nomor_order']} berhasil diperbarui." : "Draf BAST #{$order['nomor_order']} berhasil disimpan.");
             } else {
                 $bastModel->simpanBaru($data);
-                $this->logActivity($orderId, 'bast', 'terbitkan_bast', "Terbitkan BAST No. {$data['nomor_bast']} (" . ucfirst($data['status_bast']) . ")");
-                $this->setFlashSuccess("Dokumen BAST resmi berhasil diterbitkan untuk Order #{$order['nomor_order']}.");
+                $this->logActivity($orderId, 'bast', $isFinalBast ? 'terbitkan_bast' : 'simpan_draft_bast', ($isFinalBast ? 'Terbitkan BAST No. ' : 'Simpan draf BAST No. ') . $data['nomor_bast'] . ' (' . ucfirst($data['status_bast']) . ')');
+                $this->setFlashSuccess($isFinalBast ? "Dokumen BAST resmi berhasil diterbitkan untuk Order #{$order['nomor_order']}." : "Draf BAST berhasil disimpan untuk Order #{$order['nomor_order']}.");
             }
 
-            // Kirim notifikasi BAST ke Tim Mitra & Ka Tim OPTI
-            try {
-                \NotificationService::send($this->db, [
-                    'order_id'        => $orderId,
-                    'target_role'     => 'tim_mitra',
-                    'target_layanan'  => 'semua',
-                    'judul'           => 'BAST Resmi Diterbitkan',
-                    'pesan'           => "Dokumen BAST No. {$data['nomor_bast']} untuk Order #{$order['nomor_order']} {$order['nama_perusahaan']} telah diterbitkan.",
-                    'tipe'            => 'success',
-                    'icon'            => 'bi-file-earmark-check-fill',
-                    'link_url'        => "/order/{$orderId}",
-                    'created_by'      => (int)$this->getUserId(),
-                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
-                ]);
+            if ($data['status_bast'] === 'selesai') {
+                $this->db->exec(
+                    "UPDATE order_layanan SET status = 'selesai', status_pelaksanaan = 'laporan_selesai' WHERE id = ?",
+                    [1 => $orderId]
+                );
+            }
 
-                \NotificationService::send($this->db, [
-                    'order_id'        => $orderId,
-                    'target_role'     => 'ketua_tim',
-                    'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
-                    'judul'           => 'BAST Resmi Diterbitkan',
-                    'pesan'           => "Dokumen BAST No. {$data['nomor_bast']} untuk Order #{$order['nomor_order']} {$order['nama_perusahaan']} telah diterbitkan.",
-                    'tipe'            => 'success',
-                    'icon'            => 'bi-file-earmark-check-fill',
-                    'link_url'        => "/order/{$orderId}",
-                    'created_by'      => (int)$this->getUserId(),
-                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
-                ]);
-
-                // Kirim notifikasi konfirmasi juga ke Ketua Pelaksana PO
-                $ketupelId = (int)($order['ketua_pelaksana_id'] ?? 0);
-                if ($ketupelId > 0 && $ketupelId !== (int)$this->getUserId()) {
-                    \NotificationService::send($this->db, [
-                        'order_id'        => $orderId,
-                        'target_user_id'  => $ketupelId,
-                        'target_role'     => 'tim_kerja',
-                        'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
-                        'judul'           => 'BAST Resmi Diterbitkan',
-                        'pesan'           => "Dokumen BAST No. {$data['nomor_bast']} untuk Order #{$order['nomor_order']} {$order['nama_perusahaan']} telah berhasil diterbitkan.",
-                        'tipe'            => 'success',
-                        'icon'            => 'bi-file-earmark-check-fill',
-                        'link_url'        => "/order/{$orderId}",
-                        'created_by'      => (int)$this->getUserId(),
-                        'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Pelaksana'
-                    ]);
-                }
-            } catch (\Exception $eNotif) {}
+            // Kirim notifikasi BAST ke Ketua Pelaksana PO HANYA jika BAST sudah diterbitkan/selesai (bukan draft)
+            if ($isFinalBast) {
+                try {
+                    $ketupelId = (int)($order['ketua_pelaksana_id'] ?? 0);
+                    if ($ketupelId > 0 && $ketupelId !== (int)$this->getUserId()) {
+                        \NotificationService::send($this->db, [
+                            'order_id'        => $orderId,
+                            'target_user_id'  => $ketupelId,
+                            'target_role'     => 'tim_kerja',
+                            'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
+                            'judul'           => 'BAST Diterbitkan',
+                            'pesan'           => "BAST No. {$data['nomor_bast']} (Order #{$order['nomor_order']} - {$order['nama_perusahaan']}) telah diterbitkan.",
+                            'tipe'            => 'success',
+                            'icon'            => 'bi-file-earmark-check-fill',
+                            'link_url'        => "/order/{$orderId}",
+                            'created_by'      => (int)$this->getUserId(),
+                            'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
+                        ]);
+                    }
+                } catch (\Exception $eNotif) {}
+            }
 
             $f3->reroute("/order/{$orderId}");
         } catch (\Exception $e) {
@@ -240,7 +224,7 @@ class BastController extends Controller {
                 throw new \Exception('Order / BAST sudah selesai dan dikunci. Hubungi Superadmin untuk membuka izin edit.');
             }
 
-            if (!$this->poTtdSudahDiunggah($orderId) && !$this->canEditSubmittedData(true, $orderId)) {
+            if (!$this->poTtdSudahDiunggah($orderId)) {
                 throw new \Exception('Order belum bisa ditutup: upload dulu PO yang sudah ditandatangani, lalu tunggu Humas membuat kontrak (Tahap 8).');
             }
 
@@ -267,29 +251,16 @@ class BastController extends Controller {
 
             $this->logActivity($orderId, 'bast', 'tutup_order', "Selesaikan order (Closing Order)" . (!empty($catatan) ? " - {$catatan}" : ""));
 
-            // Kirim notifikasi Closing ke Tim Mitra & Ka Tim OPTI
+            // Kirim notifikasi Closing ke Ka Tim OPTI & Ketua Pelaksana
             try {
                 $nomorOrderStr = $order['nomor_order'] ?? $orderId;
                 $perusahaanStr = $order['nama_perusahaan'] ?? 'Klien';
                 \NotificationService::send($this->db, [
                     'order_id'        => $orderId,
-                    'target_role'     => 'tim_mitra',
-                    'target_layanan'  => 'semua',
-                    'judul'           => 'Order Selesai & Ditutup (Closing)',
-                    'pesan'           => "Order #{$nomorOrderStr} {$perusahaanStr} berhasil ditutup dan diarsipkan secara resmi. Seluruh siklus layanan tuntas.",
-                    'tipe'            => 'success',
-                    'icon'            => 'bi-check-all',
-                    'link_url'        => "/order/{$orderId}",
-                    'created_by'      => $userId,
-                    'created_by_name' => $_SESSION['nama_lengkap'] ?? 'Tim Mitra'
-                ]);
-
-                \NotificationService::send($this->db, [
-                    'order_id'        => $orderId,
                     'target_role'     => 'ketua_tim',
                     'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
-                    'judul'           => 'Order Selesai & Ditutup (Closing)',
-                    'pesan'           => "Order #{$nomorOrderStr} {$perusahaanStr} telah ditutup dan diarsipkan secara resmi.",
+                    'judul'           => 'Order Selesai (Ditutup)',
+                    'pesan'           => "Order #{$nomorOrderStr} ({$perusahaanStr}) telah ditutup dan selesai.",
                     'tipe'            => 'success',
                     'icon'            => 'bi-check-all',
                     'link_url'        => "/order/{$orderId}",
@@ -305,8 +276,8 @@ class BastController extends Controller {
                         'target_user_id'  => $ketupelId,
                         'target_role'     => 'tim_kerja',
                         'target_layanan'  => $order['jenis_layanan_opti'] ?? 'semua',
-                        'judul'           => 'Order Selesai & Ditutup (Closing)',
-                        'pesan'           => "Order #{$nomorOrderStr} {$perusahaanStr} telah selesai secara keseluruhan, ditutup dan diarsipkan secara resmi. Terima kasih atas kinerjanya!",
+                        'judul'           => 'Order Selesai (Ditutup)',
+                        'pesan'           => "Order #{$nomorOrderStr} ({$perusahaanStr}) telah ditutup dan selesai.",
                         'tipe'            => 'success',
                         'icon'            => 'bi-check-all',
                         'link_url'        => "/order/{$orderId}",

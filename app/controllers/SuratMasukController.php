@@ -147,7 +147,11 @@ class SuratMasukController extends Controller {
 
             // Permohonan diklaim oleh Tim Mitra (Notifikasi resmi ke Ketua Tim dikirim saat Tahap 2 Form Pelayanan disubmit)
 
-            $this->setFlashSuccess('Surat berhasil diterima.');
+            $this->setFlashSuccess('Surat berhasil diterima. Order layanan siap diproses.');
+            if ($orderId > 0 && ($this->isTimMitra() || $this->isSuperadmin())) {
+                $this->f3->reroute("/order/{$orderId}");
+                return;
+            }
             $this->f3->reroute('/surat-masuk');
             return;
         } catch (\Exception $e) {
@@ -762,8 +766,8 @@ class SuratMasukController extends Controller {
                 \NotificationService::send($this->db, [
                     'target_role'    => 'ketua_tim_mitra',
                     'target_layanan' => 'semua',
-                    'judul'          => 'Surat Permohonan Baru Masuk',
-                    'pesan'          => "Surat dari {$pengirim} (No: {$nomorSurat} - {$namaLayanan}) telah diagendakan. Siap ditinjau & diklaim di Kotak Masuk Tim Mitra.",
+                    'judul'          => 'Surat Masuk Baru',
+                    'pesan'          => "Surat {$pengirim} ({$namaLayanan}) masuk. Silakan tinjau & klaim.",
                     'tipe'           => 'info',
                     'icon'           => 'bi-envelope-plus-fill',
                     'link_url'       => '/surat-masuk',

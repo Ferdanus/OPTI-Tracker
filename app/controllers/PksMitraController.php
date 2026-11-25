@@ -236,14 +236,14 @@ class PksMitraController extends Controller {
     public static function kabariMitraPksBaru($db, array $po, $nomorPks, $oleh = 'Humas') {
         try {
             $orderId = (int) (isset($po['order_id']) ? $po['order_id'] : 0);
-            $pesan = 'Humas sudah membuat PKS No. ' . $nomorPks . ' untuk PO ' . (isset($po['nomor_po']) ? $po['nomor_po'] : '-')
-                   . '. Silakan cetak, serahkan ke klien untuk ditandatangani, lalu upload PKS bertanda tangan.';
+            $pesan = 'PKS ' . $nomorPks . ' (PO ' . (isset($po['nomor_po']) ? $po['nomor_po'] : '-')
+                   . ') siap. Silakan proses TTD klien & upload.';
             \NotificationService::send($db, [
                 'order_id'        => $orderId,
                 'po_id'           => (int) (isset($po['po_id']) ? $po['po_id'] : (isset($po['id']) ? $po['id'] : 0)),
                 'target_role'     => 'tim_mitra',
                 'target_layanan'  => 'semua',
-                'judul'           => 'PKS Baru dari Humas',
+                'judul'           => 'Upload PKS Bertanda Tangan',
                 'pesan'           => $pesan,
                 'tipe'            => 'primary',
                 'icon'            => 'bi-file-earmark-text',
@@ -252,7 +252,7 @@ class PksMitraController extends Controller {
                 'created_by_name' => $oleh,
             ]);
             // push ke HP / browser (lonceng sudah ditangani NotificationService di atas)
-            \PoReviewController::kabari($db, self::idPeran($db, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra']), 'PKS Baru dari Humas', $pesan, '/pks-mitra', false);
+            \PoReviewController::kabari($db, self::idPeran($db, ['tim_mitra_industri', 'admin_order', 'tim_mitra', 'ketua_tim_mitra']), 'Upload PKS Bertanda Tangan', $pesan, '/pks-mitra', false);
         } catch (\Throwable $e) {
             error_log('[PKS-MITRA] notifikasi PKS baru gagal: ' . $e->getMessage());
         }

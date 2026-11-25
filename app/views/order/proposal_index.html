@@ -111,12 +111,18 @@
 }
 .status-pill-emerald i { color: #64748b !important; }
 
-.status-pill-rose {
-    background-color: #f8fafc !important;
-    color: #334155 !important;
-    border-color: #cbd5e1 !important;
+/* Khusus Status Alur Revisi / Perbaikan / Ditolak = Berwarna Merah */
+.status-pill-rose,
+.status-pill-danger,
+.status-pill-red {
+    background-color: #fef2f2 !important;
+    color: #b91c1c !important;
+    border-color: #fca5a5 !important;
+    font-weight: 700 !important;
 }
-.status-pill-rose i { color: #64748b !important; }
+.status-pill-rose i,
+.status-pill-danger i,
+.status-pill-red i { color: #dc2626 !important; }
 
 .status-pill-slate {
     background-color: #f8fafc !important;
@@ -165,7 +171,6 @@
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Draf PIC</span>
                     <h3 class="fw-bold text-dark mb-0 mt-1">{{ @stat_draft }}</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Perlu disusun / diunggah</span>
                 </div>
                 <div class="metric-icon-box" style="background-color: #f1f5f9; color: #334155; border: 1px solid #e2e8f0;">
                     <i class="bi bi-pencil-square"></i>
@@ -179,7 +184,6 @@
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Menunggu Ka. Tim</span>
                     <h3 class="fw-bold text-dark mb-0 mt-1">{{ @stat_diajukan }}</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Diajukan untuk review</span>
                 </div>
                 <div class="metric-icon-box" style="background-color: #f1f5f9; color: #334155; border: 1px solid #e2e8f0;">
                     <i class="bi bi-clock-history"></i>
@@ -193,7 +197,6 @@
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Disetujui Ka. Tim</span>
                     <h3 class="fw-bold text-dark mb-0 mt-1">{{ @stat_disetujui }}</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Siap Surat Penawaran</span>
                 </div>
                 <div class="metric-icon-box" style="background-color: #f1f5f9; color: #334155; border: 1px solid #e2e8f0;">
                     <i class="bi bi-check-circle-fill"></i>
@@ -207,7 +210,6 @@
                 <div>
                     <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Perlu Revisi</span>
                     <h3 class="fw-bold text-dark mb-0 mt-1">{{ @stat_ditolak }}</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Catatan koreksi Ka. Tim</span>
                 </div>
                 <div class="metric-icon-box" style="background-color: #f1f5f9; color: #334155; border: 1px solid #e2e8f0;">
                     <i class="bi bi-exclamation-diamond-fill"></i>
@@ -324,9 +326,7 @@
                                     <th style="width: 155px;">No. &amp; Tgl Order</th>
                                     <th style="min-width: 290px;">Perusahaan &amp; Judul Kegiatan</th>
                                     <th class="text-center" style="width: 110px;">Divisi OPTI</th>
-                                    <check if="{{ !@is_tim_kerja }}">
-                                        <th style="width: 150px;">PIC Peneliti</th>
-                                    </check>
+                                    <th style="width: 150px;">PIC Peneliti</th>
                                     <th class="text-end text-nowrap" style="width: 155px;">Estimasi Biaya</th>
                                     <th class="text-center" style="width: 140px;">Status Proposal</th>
                                     <th class="text-center" style="width: 70px;">Berkas</th>
@@ -395,16 +395,14 @@
                                             </check>
                                         </td>
 
-                                        <!-- PIC Peneliti (jika Ka Tim / Admin) -->
-                                        <check if="{{ !@is_tim_kerja }}">
-                                            <td>
-                                                <div class="fw-semibold text-dark small">{{ @row.pic_nama ?: 'Belum Ditunjuk' }}</div>
-                                                <check if="{{ @row.pic_cadangan_nama }}">
-                                                    <div class="text-muted small" style="font-size: 0.72rem;">Cadangan: {{ @row.pic_cadangan_nama }}</div>
-                                                </check>
-                                                <div class="text-muted small" style="font-size: 0.72rem;">Tim Pelaksana</div>
-                                            </td>
-                                        </check>
+                                        <!-- PIC Peneliti -->
+                                        <td>
+                                            <div class="fw-semibold text-dark small">{{ @row.pic_nama ?: 'Belum Ditunjuk' }}</div>
+                                            <check if="{{ @row.pic_cadangan_nama }}">
+                                                <div style="border-top: 1.5px solid #94a3b8; margin: 4px 0;"></div>
+                                                <div class="text-muted small" style="font-size: 0.75rem;">{{ @row.pic_cadangan_nama }}</div>
+                                            </check>
+                                        </td>
 
                                         <!-- Estimasi Biaya -->
                                         <td class="text-end">
@@ -477,10 +475,20 @@
 
                                         <!-- Aksi (Kolom Terpisah) -->
                                         <td class="text-center">
-                                            <a href="{{ @BASE }}/order/{{ @row.id }}#cardParameterBiaya" style="background-color: #1e293b; border-color: #1e293b; font-size: 0.78rem;" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm fw-medium" title="{{ @row.jenis_layanan_opti == 'lingkungan' ? 'Buka Tahap 4 Tarif &amp; Parameter di Detail Order' : 'Buka Tahap 4 Proposal di Detail Order' }}">
-                                                <i class="bi {{ @is_tim_kerja ? 'bi-pencil-fill' : (@row.jenis_layanan_opti == 'lingkungan' ? 'bi-sliders' : 'bi-journal-check') }}"></i>
-                                                <span>{{ @is_tim_kerja ? 'Kerjakan' : 'Kelola' }}</span>
-                                            </a>
+                                            <check if="{{ @row.status_proposal == 'disetujui_ketua' || @row.status_proposal == 'disetujui_pimpinan' || @row.status_proposal == 'disetujui' || @row.status_proposal_biaya == 'siap_penawaran' || @row.status_proposal_biaya == 'disetujui' }}">
+                                                <true>
+                                                    <a href="{{ @BASE }}/order/{{ @row.id }}#cardParameterBiaya" style="background-color: #1e293b; border-color: #1e293b; font-size: 0.78rem;" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm fw-medium" title="{{ @row.jenis_layanan_opti == 'lingkungan' ? 'Lihat Detail Tarif &amp; Parameter' : 'Lihat Detail Proposal' }}">
+                                                        <i class="bi bi-eye"></i>
+                                                        <span>Detail</span>
+                                                    </a>
+                                                </true>
+                                                <false>
+                                                    <a href="{{ @BASE }}/order/{{ @row.id }}#cardParameterBiaya" style="background-color: #1e293b; border-color: #1e293b; font-size: 0.78rem;" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm fw-medium" title="{{ @row.jenis_layanan_opti == 'lingkungan' ? 'Buka Tahap 4 Tarif &amp; Parameter di Detail Order' : 'Buka Tahap 4 Proposal di Detail Order' }}">
+                                                        <i class="bi {{ @is_tim_kerja ? 'bi-pencil-fill' : (@row.jenis_layanan_opti == 'lingkungan' ? 'bi-sliders' : 'bi-journal-check') }}"></i>
+                                                        <span>{{ @is_tim_kerja ? 'Kerjakan' : 'Kelola' }}</span>
+                                                    </a>
+                                                </false>
+                                            </check>
                                         </td>
                                     </tr>
                                 </repeat>

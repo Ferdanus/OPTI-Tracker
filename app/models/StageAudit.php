@@ -11,7 +11,7 @@ class StageAudit {
         return [
             1 => 'Surat Masuk & Profil Pelanggan',
             2 => 'Formulir Permintaan Pelayanan Jasa (F.PJT-08-01/02)',
-            3 => 'Kaji Kelayakan Teknis Layanan (ISO 17025)',
+            3 => 'Kaji Kelayakan Teknis Layanan',
             4 => 'Proposal Teknis / Parameter Tarif',
             5 => 'Surat Penawaran Biaya Resmi',
             6 => 'Konfirmasi Pembayaran & Verifikasi Keuangan',
@@ -553,11 +553,12 @@ class StageAudit {
 
             case 3:
                 // Tahap 3: Kaji Kelayakan didisposisikan ke Ketua Tim (saat Tahap 2 Form Pelayanan selesai)
-                if (!empty($order['disposisi_katim_at'])) {
-                    return $order['disposisi_katim_at'];
-                }
+                // Catatan: order_layanan.disposisi_katim_at adalah disposisi dari Keuangan (Tahap 6), BUKAN Tahap 2->3.
                 if (!empty($auditStages[2]['waktu_kirim'])) {
                     return $auditStages[2]['waktu_kirim'];
+                }
+                if (!empty($auditStages[3]['waktu_dibaca'])) {
+                    return $auditStages[3]['waktu_dibaca'];
                 }
                 return null;
 
@@ -600,14 +601,14 @@ class StageAudit {
 
             case 8:
                 // Tahap 8: Petunjuk Operasional (PO) didisposisikan ke Ketua Pelaksana (saat titik awal SPM diaktifkan)
-                if (!empty($order['ketua_pelaksana_at'])) {
-                    return $order['ketua_pelaksana_at'];
-                }
                 if (!empty($auditStages[7]['waktu_kirim'])) {
                     return $auditStages[7]['waktu_kirim'];
                 }
                 if (!empty($order['tanggal_spm_mulai'])) {
                     return $order['tanggal_spm_mulai'];
+                }
+                if (!empty($order['ketua_pelaksana_at'])) {
+                    return $order['ketua_pelaksana_at'];
                 }
                 return null;
 
@@ -726,7 +727,7 @@ class StageAudit {
         $stageNames = [
             1 => 'Surat Masuk & Profil Pemohon',
             2 => 'Formulir Permintaan Pelayanan Jasa',
-            3 => 'Kaji Kelayakan Teknis (ISO 17025)',
+            3 => 'Kaji Kelayakan Teknis',
             4 => $isLingkungan ? 'Parameter Uji & Rincian Tarif' : 'Proposal Teknis & RAB Selulosa',
             5 => 'Surat Penawaran Biaya Resmi',
             6 => 'Konfirmasi Pembayaran & Verifikasi Keuangan',
@@ -773,47 +774,49 @@ class StageAudit {
             // Waktu disposisi hanya valid jika tahap tersebut sudah dimulai (tidak waiting)
             $waktuDisposisi = ($state !== 'waiting') ? self::getWaktuDisposisiTahap($s, $auditStages, $order, $suratMasuk) : null;
 
-            // Waktu selesai diproses
+            // Waktu selesai diproses (hanya diisi jika tahap sudah selesai / ditolak; saat sedang berjalan tetap null)
             $waktuProses = null;
-            if ($s === 1) {
-                $waktuProses = !empty($order['tanggal_klaim']) 
-                    ? $order['tanggal_klaim'] 
-                    : (!empty($order['created_at']) 
-                        ? $order['created_at'] 
-                        : ($auditStages[1]['waktu_kirim'] ?? null));
-            } elseif ($s === 2) {
-                $waktuProses = $auditStages[2]['waktu_kirim'] ?? null;
-            } elseif ($s === 3) {
-                $waktuProses = $auditStages[3]['waktu_kirim'] ?? null;
-            } elseif ($s === 4) {
-                $waktuProses = !empty($auditStages[4]['waktu_disetujui']) ? $auditStages[4]['waktu_disetujui'] : ($auditStages[4]['waktu_kirim'] ?? null);
-            } elseif ($s === 5) {
-                $waktuProses = !empty($auditStages[5]['waktu_disetujui']) ? $auditStages[5]['waktu_disetujui'] : ($auditStages[5]['waktu_kirim'] ?? null);
-            } elseif ($s === 6) {
-                $waktuProses = $auditStages[6]['waktu_kirim'] ?? null;
-            } elseif ($s === 7) {
-                $waktuProses = $auditStages[7]['waktu_kirim'] ?? null;
-                // Jika waktu proses tidak ada, atau berakhiran 00:00:00, atau mendahului waktu disposisi
-                if (empty($waktuProses) || strpos($waktuProses, '00:00:00') !== false || (!empty($waktuDisposisi) && strtotime($waktuProses) < strtotime($waktuDisposisi))) {
-                    if (!empty($auditStages[7]['updated_at']) && strpos($auditStages[7]['updated_at'], '00:00:00') === false) {
-                        $waktuProses = $auditStages[7]['updated_at'];
-                    } elseif (!empty($auditStages[7]['created_at']) && strpos($auditStages[7]['created_at'], '00:00:00') === false) {
-                        $waktuProses = $auditStages[7]['created_at'];
+            if ($state === 'done' || $state === 'rejected') {
+                if ($s === 1) {
+                    $waktuProses = !empty($order['tanggal_klaim']) 
+                        ? $order['tanggal_klaim'] 
+                        : (!empty($order['created_at']) 
+                            ? $order['created_at'] 
+                            : ($auditStages[1]['waktu_kirim'] ?? null));
+                } elseif ($s === 2) {
+                    $waktuProses = $auditStages[2]['waktu_kirim'] ?? null;
+                } elseif ($s === 3) {
+                    $waktuProses = $auditStages[3]['waktu_kirim'] ?? null;
+                } elseif ($s === 4) {
+                    $waktuProses = !empty($auditStages[4]['waktu_disetujui']) ? $auditStages[4]['waktu_disetujui'] : ($auditStages[4]['waktu_kirim'] ?? null);
+                } elseif ($s === 5) {
+                    $waktuProses = !empty($auditStages[5]['waktu_disetujui']) ? $auditStages[5]['waktu_disetujui'] : ($auditStages[5]['waktu_kirim'] ?? null);
+                } elseif ($s === 6) {
+                    $waktuProses = $auditStages[6]['waktu_kirim'] ?? null;
+                } elseif ($s === 7) {
+                    $waktuProses = $auditStages[7]['waktu_kirim'] ?? null;
+                    // Jika waktu proses tidak ada, atau berakhiran 00:00:00, atau mendahului waktu disposisi
+                    if (empty($waktuProses) || strpos($waktuProses, '00:00:00') !== false || (!empty($waktuDisposisi) && strtotime($waktuProses) < strtotime($waktuDisposisi))) {
+                        if (!empty($auditStages[7]['updated_at']) && strpos($auditStages[7]['updated_at'], '00:00:00') === false) {
+                            $waktuProses = $auditStages[7]['updated_at'];
+                        } elseif (!empty($auditStages[7]['created_at']) && strpos($auditStages[7]['created_at'], '00:00:00') === false) {
+                            $waktuProses = $auditStages[7]['created_at'];
+                        }
                     }
+                } elseif ($s === 8) {
+                    $waktuProses = $auditStages[8]['waktu_kirim'] ?? null;
+                } elseif ($s === 9) {
+                    $waktuProses = !empty($extra['po_kegiatan']['kontrak_dibuat_at']) ? $extra['po_kegiatan']['kontrak_dibuat_at'] : (!empty($order['kontrak_dibuat_at']) ? $order['kontrak_dibuat_at'] : null);
+                } elseif ($s === 10) {
+                    $waktuProses = !empty($extra['bast']['created_at']) ? $extra['bast']['created_at'] : (!empty($extra['bast']['tanggal_bast']) ? ($extra['bast']['tanggal_bast'] . ' ' . date('H:i:s')) : ($auditStages[9]['waktu_kirim'] ?? null));
                 }
-            } elseif ($s === 8) {
-                $waktuProses = $auditStages[8]['waktu_kirim'] ?? null;
-            } elseif ($s === 9) {
-                $waktuProses = !empty($extra['po_kegiatan']['kontrak_dibuat_at']) ? $extra['po_kegiatan']['kontrak_dibuat_at'] : (!empty($order['kontrak_dibuat_at']) ? $order['kontrak_dibuat_at'] : null);
-            } elseif ($s === 10) {
-                $waktuProses = !empty($extra['bast']['created_at']) ? $extra['bast']['created_at'] : (!empty($extra['bast']['tanggal_bast']) ? ($extra['bast']['tanggal_bast'] . ' ' . date('H:i:s')) : ($auditStages[9]['waktu_kirim'] ?? null));
             }
 
             // Tentukan durasi pengerjaan
             $durasiPengerjaan = null;
             $durasiBerjalan = null;
 
-            if ($state === 'done' || (!empty($waktuProses) && $state !== 'waiting')) {
+            if ($state === 'done') {
                 $durasiPengerjaan = self::formatDurasiPengerjaan($waktuDisposisi, $waktuProses);
                 if (empty($durasiPengerjaan)) {
                     $durasiPengerjaan = '< 1 menit';
@@ -947,7 +950,7 @@ class StageAudit {
                 $milestones[] = [
                     'urutan'     => 2,
                     'judul'      => 'Evaluasi 4 Pilar Kesiapan Teknis',
-                    'deskripsi'  => 'Pemeriksaan kesiapan Personil (SDM), Peralatan, Bahan Uji, dan Metode Standar ISO 17025',
+                    'deskripsi'  => 'Pemeriksaan kesiapan Personil (SDM), Peralatan, Bahan Uji, dan Metode Standar',
                     'pelaku'     => $auditStages[3]['pengirim_nama'] ?: 'Ketua Tim OPTI',
                     'role'       => 'Ketua Tim OPTI',
                     'waktu'      => $isDone ? $waktuProses : null,
