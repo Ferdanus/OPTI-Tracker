@@ -953,37 +953,9 @@ class OrderController extends Controller {
             ");
             $daftarLabEksternal = $this->db->exec("SELECT * FROM pengujian_eksternal WHERE status = 'aktif' ORDER BY nama_lembaga ASC");
 
-            $isPicLingkungan = ($userId > 0 && ($userId === (int)($order['pic_proposal_id'] ?? 0) || $userId === (int)($order['pic_proposal_cadangan_id'] ?? 0)));
-            $hasPicLingkungan = (!empty($order['pic_proposal_id']) || !empty($order['pic_proposal_cadangan_id']));
-            $isPjtLingkungan = $this->isPjtForOrder($order);
-            $isTimKerjaNonPicLingk = ($this->isTimKerja() && $hasPicLingkungan && !$isPicLingkungan && !$isSuperadmin);
-            $isSubmittedLingkungan = $isOrderDealOrSelesai || $isOrderSelesai || (!empty($kalkulasiLingkungan) && (in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai']))));
-            
-            if ($hasPicLingkungan) {
-                $canEditRoleLingkungan = ($isPicLingkungan || $isSuperadmin || $isKetuaTimDivisi || $isPjtLingkungan);
-            } else {
-                $canEditRoleLingkungan = ($isSuperadmin || $isKetuaTimDivisi || $isPjtLingkungan);
-            }
-
-            if ($isTimKerjaNonPicLingk) {
-                $canEditLingkungan = false;
-                $namaPicLingk = !empty($order['pic_proposal_nama']) ? $order['pic_proposal_nama'] : 'PIC Teknis yang ditunjuk';
-                $lingkunganLockMessage = "Kalkulasi tarif dan parameter ini ditugaskan khusus kepada {$namaPicLingk}. Akun Anda bukan PIC yang ditugaskan untuk order ini (Mode Lihat Saja).";
-            } elseif ($this->isTimMitra() && !$isSuperadmin) {
-                $canEditLingkungan = false;
-                $lingkunganLockMessage = "Mode Pratinjau (Read-Only): Tim Mitra hanya dapat memantau rincian tarif dan parameter pengujian yang disusun oleh PIC / Ketua Tim.";
-            } elseif (!$canEditRoleLingkungan) {
-                $canEditLingkungan = false;
-                $lingkunganLockMessage = "Anda tidak memiliki hak akses untuk mengubah kalkulasi tarif pengujian ini.";
-            } elseif (($isOrderDealOrSelesai || $isOrderSelesai) && !$canKoreksi) {
-                $canEditLingkungan = false;
-                $lingkunganLockMessage = "Order telah memasuki tahap Penawaran DEAL / Selesai. Pengeditan kalkulasi tarif dikunci dan hanya dapat dibuka oleh Superadmin.";
-            } elseif ($isSubmittedLingkungan && !$canKoreksi) {
-                $canEditLingkungan = false;
-                $lingkunganLockMessage = "Rincian tarif dan parameter telah diajukan atau disetujui. Pengeditan dikunci, silakan hubungi superadmin.";
-            } else {
-                $canEditLingkungan = true;
-            }
+            $lingAccess = $this->resolveLingkunganAccess($order, $kalkulasiLingkungan, $isOrderDealOrSelesai || $isOrderSelesai, $canKoreksi);
+            $canEditLingkungan = $lingAccess['can_edit'];
+            $lingkunganLockMessage = $lingAccess['lock_message'];
         }
 
         $f3->set('can_koreksi', $canKoreksi);
@@ -1721,21 +1693,11 @@ class OrderController extends Controller {
             $langkahBerikutnya['target_card'] = '#cardKajiKelayakan';
         } elseif ($currentStep === 4) {
             if ($isLingkungan) {
-                $hasBiaya = !empty($kalkulasiLingkungan) || (float)($order['estimasi_biaya'] ?? 0) > 0;
-                if (!$hasBiaya) {
-                    $langkahBerikutnya['judul'] = 'Pilih Parameter Uji & Hitung Tarif Resmi PNBP';
-                    $langkahBerikutnya['deskripsi'] = 'Kaji kelayakan disetujui. Silakan tentukan parameter pengujian air/udara/emisi dan jumlah sampel untuk menghasilkan rincian biaya sesuai katalog PP 54/2021.';
-                    $langkahBerikutnya['penanggung_jawab'] = 'Tim Teknis Lingkungan';
-                    $langkahBerikutnya['role_icon'] = 'bi-calculator-fill';
-                    $langkahBerikutnya['tipe_badge'] = 'primary';
-                    $langkahBerikutnya['tombol_teks'] = 'Kelola Parameter & Tarif';
-                    $langkahBerikutnya['tombol_url'] = '#cardParameterBiaya';
-                    $langkahBerikutnya['tombol_icon'] = 'bi-calculator-fill';
-                    $langkahBerikutnya['tombol_class'] = 'btn-primary';
-                    $langkahBerikutnya['target_card'] = '#cardParameterBiaya';
-                } else {
+                $stBiayaStep4 = strtolower(trim((string)($order['status_proposal_biaya'] ?? '')));
+                $isApprovedLing = in_array($stBiayaStep4, ['siap_penawaran', 'disetujui'], true);
+                if ($isApprovedLing) {
                     $langkahBerikutnya['judul'] = 'Terbitkan Surat Penawaran Harga Resmi';
-                    $langkahBerikutnya['deskripsi'] = 'Kalkulasi tarif pengujian sebesar Rp ' . number_format($order['estimasi_biaya'] ?? 0, 0, ',', '.') . ' telah siap. Terbitkan surat penawaran resmi untuk dikirimkan ke pelanggan.';
+                    $langkahBerikutnya['deskripsi'] = 'Kalkulasi tarif pengujian sebesar Rp ' . number_format($order['estimasi_biaya'] ?? 0, 0, ',', '.') . ' telah disetujui Ketua Tim. Terbitkan surat penawaran resmi untuk dikirimkan ke pelanggan.';
                     $langkahBerikutnya['penanggung_jawab'] = 'Tim Mitra Industri';
                     $langkahBerikutnya['role_icon'] = 'bi-send-check-fill';
                     $langkahBerikutnya['tipe_badge'] = 'primary';
@@ -1744,6 +1706,39 @@ class OrderController extends Controller {
                     $langkahBerikutnya['tombol_icon'] = 'bi-file-earmark-plus-fill';
                     $langkahBerikutnya['tombol_class'] = 'btn-primary';
                     $langkahBerikutnya['target_card'] = '#cardPenawaran';
+                } elseif ($stBiayaStep4 === 'menunggu_approval') {
+                    $langkahBerikutnya['judul'] = 'Review Persetujuan Tarif Parameter Lingkungan';
+                    $langkahBerikutnya['deskripsi'] = 'Rincian tarif dan parameter pengujian telah diajukan. Ketua Tim OPTI Lingkungan perlu memeriksa dan menyetujui rincian sebelum surat penawaran dapat diterbitkan.';
+                    $langkahBerikutnya['penanggung_jawab'] = 'Ketua Tim OPTI Lingkungan';
+                    $langkahBerikutnya['role_icon'] = 'bi-shield-check';
+                    $langkahBerikutnya['tipe_badge'] = 'warning';
+                    $langkahBerikutnya['tombol_teks'] = 'Periksa Tarif Parameter';
+                    $langkahBerikutnya['tombol_url'] = '#cardParameterBiaya';
+                    $langkahBerikutnya['tombol_icon'] = 'bi-calculator-fill';
+                    $langkahBerikutnya['tombol_class'] = 'btn-primary';
+                    $langkahBerikutnya['target_card'] = '#cardParameterBiaya';
+                } elseif ($stBiayaStep4 === 'perlu_revisi') {
+                    $langkahBerikutnya['judul'] = 'Revisi Rincian Tarif Parameter Lingkungan';
+                    $langkahBerikutnya['deskripsi'] = 'Ketua Tim OPTI Lingkungan meminta revisi pada rincian tarif dan parameter pengujian. Silakan perbaiki dan ajukan kembali.';
+                    $langkahBerikutnya['penanggung_jawab'] = !empty($order['pic_proposal_nama']) ? ('PIC (' . $order['pic_proposal_nama'] . ') / PJT') : 'PJT / Ketua Tim Lingkungan';
+                    $langkahBerikutnya['role_icon'] = 'bi-arrow-repeat';
+                    $langkahBerikutnya['tipe_badge'] = 'danger';
+                    $langkahBerikutnya['tombol_teks'] = 'Perbaiki Tarif Parameter';
+                    $langkahBerikutnya['tombol_url'] = '#cardParameterBiaya';
+                    $langkahBerikutnya['tombol_icon'] = 'bi-pencil-square';
+                    $langkahBerikutnya['tombol_class'] = 'btn-danger';
+                    $langkahBerikutnya['target_card'] = '#cardParameterBiaya';
+                } else {
+                    $langkahBerikutnya['judul'] = 'Pilih Parameter Uji & Hitung Tarif Resmi PNBP';
+                    $langkahBerikutnya['deskripsi'] = 'Kaji kelayakan disetujui. Silakan tentukan parameter pengujian air/udara/emisi dan jumlah sampel untuk menghasilkan rincian biaya sesuai katalog PP 54/2021.';
+                    $langkahBerikutnya['penanggung_jawab'] = !empty($order['pic_proposal_nama']) ? ('PIC (' . $order['pic_proposal_nama'] . ') / PJT') : 'Ketua Tim / PJT Lingkungan';
+                    $langkahBerikutnya['role_icon'] = 'bi-calculator-fill';
+                    $langkahBerikutnya['tipe_badge'] = 'primary';
+                    $langkahBerikutnya['tombol_teks'] = 'Kelola Parameter & Tarif';
+                    $langkahBerikutnya['tombol_url'] = '#cardParameterBiaya';
+                    $langkahBerikutnya['tombol_icon'] = 'bi-calculator-fill';
+                    $langkahBerikutnya['tombol_class'] = 'btn-primary';
+                    $langkahBerikutnya['target_card'] = '#cardParameterBiaya';
                 }
             } else {
                 if (empty($order['pic_proposal_id'])) {
@@ -2785,6 +2780,176 @@ class OrderController extends Controller {
     }
 
     /**
+     * Resolusi hak akses & status kunci Tarif & Parameter Lingkungan (single source of truth untuk detail, form, dan simpan).
+     */
+    private function resolveLingkunganAccess(array $order, array $kalkulasiItems, ?bool $orderDealOrSelesai = null, ?bool $canKoreksi = null): array {
+        $id = (int)($order['id'] ?? 0);
+        $userId = (int)$this->getUserId();
+        $isSuperadmin = $this->isSuperadmin();
+        $isPic = ($userId > 0 && ($userId === (int)($order['pic_proposal_id'] ?? 0) || $userId === (int)($order['pic_proposal_cadangan_id'] ?? 0)));
+        $hasPic = (!empty($order['pic_proposal_id']) || !empty($order['pic_proposal_cadangan_id']));
+        $isKetuaTimDivisi = $this->isKetuaTimForOrder($order);
+        $isPjtLingkungan = $this->isPjtForOrder($order);
+        $isTimKerjaNonPic = ($this->isTimKerja() && $hasPic && !$isPic && !$isSuperadmin);
+
+        $stBiaya = strtolower(trim((string)($order['status_proposal_biaya'] ?? '')));
+        $isDealLocked = ($orderDealOrSelesai !== null) ? $orderDealOrSelesai : $this->isOrderDealOrSelesai($order);
+        $isMenungguKatim = ($stBiaya === 'menunggu_approval');
+        $isApprovedOrPenawaran = in_array($stBiaya, ['siap_penawaran', 'disetujui'], true)
+            || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai'], true));
+        $isSubmitted = $isDealLocked || (!empty($kalkulasiItems) && ($isApprovedOrPenawaran || ($isMenungguKatim && !$isKetuaTimDivisi && !$isSuperadmin)));
+        $canBypassLock = ($canKoreksi !== null) ? $canKoreksi : $this->canEditSubmittedData(true, $id);
+
+        $hasRoleAccess = $hasPic
+            ? ($isPic || $isKetuaTimDivisi || $isPjtLingkungan || $isSuperadmin)
+            : ($isKetuaTimDivisi || $isPjtLingkungan || $isSuperadmin);
+
+        $canEdit = false;
+        $lockMessage = '';
+        if ($isTimKerjaNonPic) {
+            $namaPic = !empty($order['pic_proposal_nama']) ? $order['pic_proposal_nama'] : 'PIC Teknis yang ditunjuk';
+            $lockMessage = "Kalkulasi tarif dan parameter ini ditugaskan khusus kepada {$namaPic}. Akun Anda bukan PIC yang ditugaskan untuk order ini (Mode Lihat Saja).";
+        } elseif ($this->isTimMitra() && !$isSuperadmin) {
+            $lockMessage = "Mode Pratinjau (Read-Only): Tim Mitra hanya dapat memantau rincian tarif dan parameter pengujian yang disusun oleh PIC / Ketua Tim.";
+        } elseif (!$hasRoleAccess) {
+            $lockMessage = "Anda tidak memiliki hak akses untuk mengubah kalkulasi tarif pengujian ini.";
+        } elseif ($isDealLocked && !$canBypassLock) {
+            $lockMessage = "Order telah memasuki tahap Penawaran DEAL / Selesai. Pengeditan kalkulasi tarif dikunci dan hanya dapat dibuka oleh Superadmin.";
+        } elseif ($isSubmitted && !$canBypassLock) {
+            if ($isMenungguKatim && !$isApprovedOrPenawaran) {
+                $lockMessage = "Rincian tarif dan parameter telah diajukan dan sedang menunggu persetujuan Ketua Tim OPTI Lingkungan.";
+            } else {
+                $lockMessage = "Rincian tarif dan parameter telah disetujui Ketua Tim OPTI Lingkungan (Siap Penawaran). Pengeditan dikunci, silakan hubungi superadmin.";
+            }
+        } else {
+            $canEdit = true;
+        }
+
+        return [
+            'can_edit'              => $canEdit,
+            'lock_message'          => $lockMessage,
+            'has_role_access'       => $hasRoleAccess,
+            'is_submitted'          => $isSubmitted,
+            'is_tim_kerja_non_pic'  => $isTimKerjaNonPic,
+            'is_pic'                => $isPic,
+            'has_pic'               => $hasPic,
+            'is_ketua_tim_divisi'   => $isKetuaTimDivisi,
+            'is_pjt_lingkungan'     => $isPjtLingkungan,
+        ];
+    }
+
+    /**
+     * Review & Persetujuan / Permintaan Revisi Tarif & Parameter Lingkungan oleh Ketua Tim OPTI
+     * Route: POST /order/@id/biaya-lingkungan/review
+     */
+    public function reviewBiayaLingkunganPost($f3, $params) {
+        $this->requireAuth();
+        $id = (int)($params['id'] ?? 0);
+        $orderModel = new OrderLayanan($this->db);
+        $order = $orderModel->getDetail($id);
+        if (!$order) {
+            $this->setFlashError("Order Layanan #{$id} tidak ditemukan.");
+            $f3->reroute('/order');
+            return;
+        }
+        if (!$this->isKetuaTimForOrder($order) && !$this->isSuperadmin()) {
+            $this->setFlashError("Akses Ditolak: Review & persetujuan tarif & parameter hanya dapat dilakukan oleh Ketua Tim OPTI Lingkungan.");
+            $f3->reroute("/order/{$id}");
+            return;
+        }
+
+        $aksi = strtolower(trim((string)($f3->get('POST.aksi') ?? '')));
+        $catatan = trim((string)($f3->get('POST.catatan_revisi') ?? ''));
+        $userId = (int)$this->getUserId();
+        $userNama = $_SESSION['nama_lengkap'] ?? 'Ketua Tim OPTI';
+        $ordLabel = \NotificationService::formatOrderLabel($order, $id);
+
+        try {
+            $colCheck = $this->db->exec("SHOW COLUMNS FROM order_layanan LIKE 'catatan_revisi_biaya'");
+            if (empty($colCheck)) {
+                $this->db->exec("ALTER TABLE order_layanan ADD COLUMN catatan_revisi_biaya TEXT NULL AFTER status_proposal_biaya");
+            }
+            $stCol = $this->db->exec("SHOW COLUMNS FROM order_layanan LIKE 'status_proposal_biaya'");
+            if (!empty($stCol[0]['Type']) && stripos($stCol[0]['Type'], 'enum(') === 0 && stripos($stCol[0]['Type'], 'perlu_revisi') === false) {
+                $this->db->exec("ALTER TABLE order_layanan MODIFY COLUMN status_proposal_biaya VARCHAR(50) NULL DEFAULT 'draft'");
+            }
+        } catch (\Throwable $eCol) {}
+
+        if ($aksi === 'setujui') {
+            $this->db->exec(
+                "UPDATE order_layanan SET status_proposal_biaya = 'siap_penawaran', catatan_revisi_biaya = NULL WHERE id = ?",
+                [1 => $id]
+            );
+            StageAudit::recordDisetujui($this->db, $id, 4, $userId, $userNama, 'Ketua Tim OPTI');
+            $this->logActivity($id, 'kalkulasi_lingkungan', 'setujui_kalkulasi', "Menyetujui tarif & parameter pengujian (Siap Penawaran)");
+
+            try {
+                \NotificationService::send($this->db, [
+                    'order_id'       => $id,
+                    'target_role'    => 'ketua_tim_mitra',
+                    'target_layanan' => 'semua',
+                    'judul'          => 'Tarif & Parameter Disetujui (Siap Penawaran)',
+                    'pesan'          => "Rincian tarif & parameter {$ordLabel} telah disetujui Ketua Tim OPTI Lingkungan. Siap diterbitkan Surat Penawaran.",
+                    'tipe'           => 'success',
+                    'icon'           => 'bi-check-circle-fill',
+                    'link_url'       => "/order/{$id}",
+                    'created_by'     => $userId,
+                    'created_by_name'=> $userNama,
+                ]);
+            } catch (\Throwable $eNotif) {}
+
+            $this->setFlashSuccess("Tarif & parameter disetujui! Status berubah menjadi <strong>Siap Penawaran</strong>.");
+        } elseif ($aksi === 'revisi') {
+            if ($catatan === '') {
+                $catatan = 'Mohon periksa dan sesuaikan kembali rincian tarif & parameter pengujian.';
+            }
+            $this->db->exec(
+                "UPDATE order_layanan SET status_proposal_biaya = 'perlu_revisi', catatan_revisi_biaya = ? WHERE id = ?",
+                [1 => $catatan, 2 => $id]
+            );
+            $this->logActivity($id, 'kalkulasi_lingkungan', 'revisi_kalkulasi', "Meminta revisi tarif & parameter: {$catatan}");
+
+            try {
+                $picId = (int)($order['pic_proposal_id'] ?? 0);
+                if ($picId > 0) {
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $id,
+                        'target_role'    => 'tim_kerja',
+                        'target_user_id' => $picId,
+                        'target_layanan' => 'lingkungan',
+                        'judul'          => 'Revisi Tarif & Parameter Lingkungan',
+                        'pesan'          => "Ketua Tim meminta revisi tarif & parameter untuk {$ordLabel}: {$catatan}",
+                        'tipe'           => 'warning',
+                        'icon'           => 'bi-exclamation-triangle-fill',
+                        'link_url'       => "/order/{$id}",
+                        'created_by'     => $userId,
+                        'created_by_name'=> $userNama,
+                    ]);
+                } else {
+                    \NotificationService::send($this->db, [
+                        'order_id'       => $id,
+                        'target_role'    => 'pjt_lingkungan',
+                        'target_layanan' => 'lingkungan',
+                        'judul'          => 'Revisi Tarif & Parameter Lingkungan',
+                        'pesan'          => "Ketua Tim meminta revisi tarif & parameter untuk {$ordLabel}: {$catatan}",
+                        'tipe'           => 'warning',
+                        'icon'           => 'bi-exclamation-triangle-fill',
+                        'link_url'       => "/order/{$id}",
+                        'created_by'     => $userId,
+                        'created_by_name'=> $userNama,
+                    ]);
+                }
+            } catch (\Throwable $eNotif) {}
+
+            $this->setFlashSuccess("Permintaan revisi tarif & parameter telah dikirim ke PIC / PJT Lingkungan.");
+        } else {
+            $this->setFlashError("Aksi review tidak valid.");
+        }
+
+        $f3->reroute("/order/{$id}");
+    }
+
+    /**
      * Menampilkan form Kalkulator Pengujian Multi-Metode (Divisi Lingkungan)
      * Route: GET /order/@id/biaya-lingkungan
      */
@@ -2825,39 +2990,9 @@ class OrderController extends Controller {
         ");
         $daftarLabEksternal = $this->db->exec("SELECT * FROM pengujian_eksternal WHERE status = 'aktif' ORDER BY nama_lembaga ASC");
 
-        $userId = (int)$this->getUserId();
-        $isPic = ($userId > 0 && ($userId === (int)($order['pic_proposal_id'] ?? 0) || $userId === (int)($order['pic_proposal_cadangan_id'] ?? 0)));
-        $hasPicLingkungan = (!empty($order['pic_proposal_id']) || !empty($order['pic_proposal_cadangan_id']));
-        $isTimKerjaNonPic = ($this->isTimKerja() && $hasPicLingkungan && !$isPic && !$this->isSuperadmin());
-        $isKetuaTimDivisi = $this->isKetuaTimForOrder($order);
-        $isPjtLingkungan = $this->isPjtForOrder($order);
-        $userDivisi = $this->getDivisiTimKerja();
-        $efektifLayananTimKerja = ($userDivisi !== '') ? $userDivisi : strtolower(trim((string)$this->getUserLayanan()));
-        $isTimKerjaLayanan = ($this->isTimKerja() && ($efektifLayananTimKerja === strtolower((string)($order['jenis_layanan_opti'] ?? '')) || $efektifLayananTimKerja === 'semua'));
-        $isSubmitted = $this->isOrderDealOrSelesai($order) || (!empty($kalkulasiItems) && (in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai']))));
-        
-        if ($hasPicLingkungan) {
-            $canEditRole = ($isPic || $isKetuaTimDivisi || $isPjtLingkungan || $this->isSuperadmin());
-        } else {
-            $canEditRole = ($isKetuaTimDivisi || $isPjtLingkungan || $this->isSuperadmin());
-        }
-        $canEdit = $canEditRole && $this->canEditSubmittedData($isSubmitted, $id);
-
-        $lockMessage = '';
-        if ($isTimKerjaNonPic) {
-            $canEdit = false;
-            $namaPic = !empty($order['pic_proposal_nama']) ? $order['pic_proposal_nama'] : 'PIC Teknis yang ditunjuk';
-            $lockMessage = "Kalkulasi tarif dan parameter ini ditugaskan khusus kepada {$namaPic}. Akun Anda bukan PIC yang ditugaskan untuk order ini (Mode Lihat Saja).";
-        } elseif ($this->isTimMitra() && !$this->isSuperadmin()) {
-            $canEdit = false;
-            $lockMessage = "Mode Pratinjau (Read-Only): Tim Mitra hanya dapat memantau rincian tarif dan parameter pengujian yang disusun oleh PIC / Ketua Tim.";
-        } elseif (!$canEditRole) {
-            $canEdit = false;
-            $lockMessage = "Anda tidak memiliki hak akses untuk mengubah kalkulasi tarif pengujian ini.";
-        } elseif ($isSubmitted && !$this->canEditSubmittedData(true, $id)) {
-            $canEdit = false;
-            $lockMessage = "Rincian tarif dan parameter / order telah diajukan, DEAL, atau selesai. Pengeditan dikunci, silakan hubungi superadmin.";
-        }
+        $lingAccess = $this->resolveLingkunganAccess($order, $kalkulasiItems);
+        $canEdit = $lingAccess['can_edit'];
+        $lockMessage = $lingAccess['lock_message'];
 
         $daftarPic = OrderLayanan::getPICSpesialisasiList($this->db, 'lingkungan');
         $f3->set('daftar_pic', $daftarPic);
@@ -2906,33 +3041,19 @@ class OrderController extends Controller {
             return;
         }
 
-        $userIdCur = (int)$this->getUserId();
-        $isPic = ($userIdCur > 0 && ($userIdCur === (int)($order['pic_proposal_id'] ?? 0) || $userIdCur === (int)($order['pic_proposal_cadangan_id'] ?? 0)));
-        $hasPicLingkungan = (!empty($order['pic_proposal_id']) || !empty($order['pic_proposal_cadangan_id']));
-        if ($this->isTimKerja() && $hasPicLingkungan && !$isPic && !$this->isSuperadmin()) {
+        $existingKalkulasi = $orderModel->getKalkulasiLingkungan($id);
+        $lingAccess = $this->resolveLingkunganAccess($order, $existingKalkulasi);
+        if ($lingAccess['is_tim_kerja_non_pic']) {
             $this->setFlashError("Akses Ditolak: Anda bukan PIC yang ditugaskan untuk menyusun kalkulasi tarif order ini.");
             $f3->reroute("/order/{$id}");
             return;
         }
-        $isKetuaTimDivisi = $this->isKetuaTimForOrder($order);
-        $isPjtLingkungan = $this->isPjtForOrder($order);
-        $userDivisi = $this->getDivisiTimKerja();
-        $efektifLayananTimKerja = ($userDivisi !== '') ? $userDivisi : strtolower(trim((string)$this->getUserLayanan()));
-        $isTimKerjaLayanan = ($this->isTimKerja() && ($efektifLayananTimKerja === strtolower((string)($order['jenis_layanan_opti'] ?? '')) || $efektifLayananTimKerja === 'semua'));
-        if ($hasPicLingkungan) {
-            $hasRoleAccess = ($isKetuaTimDivisi || $isPic || $isPjtLingkungan || $this->isSuperadmin());
-        } else {
-            $hasRoleAccess = ($isKetuaTimDivisi || $isPjtLingkungan || $this->isSuperadmin());
-        }
-        if (!$hasRoleAccess) {
+        if (!$lingAccess['has_role_access']) {
             $this->setFlashError("Akses Ditolak: Perhitungan rincian pengujian merupakan wewenang PIC yang ditunjuk, Ketua Tim OPTI Lingkungan, atau PJT Lingkungan.");
             $f3->reroute("/order/{$id}");
             return;
         }
-
-        $existingKalkulasi = $orderModel->getKalkulasiLingkungan($id);
-        $isSubmitted = $this->isOrderDealOrSelesai($order) || (!empty($existingKalkulasi) && (in_array($order['status_proposal_biaya'] ?? '', ['siap_penawaran', 'menunggu_approval', 'disetujui']) || (!empty($order['penawaran_id']) && in_array($order['status'] ?? '', ['penawaran', 'negosiasi', 'po_terbit', 'selesai']))));
-        if ($isSubmitted && !$this->canEditSubmittedData(true, $id)) {
+        if ($lingAccess['is_submitted'] && !$this->canEditSubmittedData(true, $id)) {
             $this->setFlashError("Gagal: Fitur edit data dikunci. Perubahan pada data yang sudah diajukan, disetujui, DEAL, atau selesai tidak diperbolehkan tanpa izin Super Admin.");
             $f3->reroute("/order/{$id}");
             return;

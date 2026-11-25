@@ -3767,14 +3767,17 @@
                         </span>
                     </check>
                     <check if="{{ @is_tinjauan_done }}">
-                        <check if="{{ @order.status_proposal_biaya == 'siap_penawaran' && (@order.jenis_layanan_opti != 'selulosa' || @is_proposal_approved) }}">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-check-circle-fill me-1"></i> {{ @order.jenis_layanan_opti == 'lingkungan' ? 'Tarif & Parameter Disetujui' : 'Proposal Disetujui' }}</span>
+                        <check if="{{ (@order.status_proposal_biaya == 'siap_penawaran' || @order.status_proposal_biaya == 'disetujui') && (@order.jenis_layanan_opti != 'selulosa' || @is_proposal_approved) }}">
+                            <span class="badge bg-dark text-white px-2.5 py-1 fw-semibold"><i class="bi bi-check-circle-fill me-1"></i> {{ @order.jenis_layanan_opti == 'lingkungan' ? 'Tarif & Parameter Disetujui' : 'Proposal Disetujui' }}</span>
                         </check>
                         <check if="{{ @order.status_proposal_biaya == 'menunggu_approval' }}">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Ketua Tim</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Ketua Tim</span>
+                        </check>
+                        <check if="{{ @order.status_proposal_biaya == 'perlu_revisi' }}">
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Perlu Revisi</span>
                         </check>
                         <check if="{{ @order.status_proposal_biaya == 'draft_disimpan' }}">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-semibold"><i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan</span>
+                            <span class="badge bg-light text-secondary border px-2.5 py-1 fw-semibold"><i class="bi bi-bookmark-check-fill me-1"></i> Draft Disimpan</span>
                         </check>
                         <check if="{{ @order.status_proposal_biaya == 'draft' || !@order.status_proposal_biaya || (@order.jenis_layanan_opti == 'selulosa' && !@is_proposal_approved && @order.status_proposal_biaya == 'siap_penawaran') }}">
                             <check if="{{ @penawaran }}">
@@ -3829,8 +3832,8 @@
                                             Rp {{ number_format((@order.jenis_layanan_opti == 'lingkungan' && !empty(@default_nominal)) ? @default_nominal : (@order.estimasi_biaya ?: (@proposal.estimasi_total_biaya ?: 0)), 0, ',', '.') }}
                                         </h3>
                                         <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && @order.diskon_penawaran > 0 }}">
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle small fw-medium">
-                                                Hemat Rp {{ number_format(@order.diskon_penawaran, 0, ',', '.') }}
+                                            <span class="badge bg-light text-secondary border small fw-medium">
+                                                Diskon: Rp {{ number_format(@order.diskon_penawaran, 0, ',', '.') }}
                                             </span>
                                         </check>
                                     </div>
@@ -3846,15 +3849,15 @@
                                             </span>
                                         </check>
                                         <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
-                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-medium px-2.5 py-1 text-nowrap d-inline-flex align-items-center">
-                                                <i class="bi bi-check2-circle me-1.5"></i>{{ count(@kalkulasi_lingkungan) }} Layanan Jasa Terpilih
+                                            <span class="badge bg-light text-dark border fw-medium px-2.5 py-1 text-nowrap d-inline-flex align-items-center">
+                                                <i class="bi bi-list-check text-secondary me-1.5"></i>{{ count(@kalkulasi_lingkungan) }} Layanan Jasa Terpilih
                                             </span>
                                         </check>
                                     </div>
                                 </div>
                                 <check if="{{ @order.jenis_layanan_opti == 'lingkungan' && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
                                     <div class="flex-shrink-0">
-                                        <check if="{{ @can_edit_lingkungan && @can_koreksi }}">
+                                        <check if="{{ @can_edit_lingkungan && (@can_koreksi || !@order.status_proposal_biaya || in_array(@order.status_proposal_biaya, ['draft', 'draft_disimpan', 'menunggu_approval', 'perlu_revisi'])) }}">
                                             <true>
                                                 <button type="button" class="btn btn-white btn-sm border fw-semibold shadow-sm text-secondary d-inline-flex align-items-center gap-1.5" data-bs-toggle="collapse" data-bs-target="#collapseEditBiayaLingkungan" aria-expanded="false" aria-controls="collapseEditBiayaLingkungan">
                                                     <i class="bi bi-pencil-square"></i>
@@ -3876,20 +3879,160 @@
                         <!-- FORM & WORKSPACE KALKULASI TARIF LAYANAN (KHUSUS LINGKUNGAN) -->
                         <check if="{{ @order.jenis_layanan_opti == 'lingkungan' }}">
                             
+                            <!-- Catatan Revisi Ketua Tim (jika perlu_revisi) -->
+                            <check if="{{ @order.status_proposal_biaya == 'perlu_revisi' }}">
+                                <div class="alert alert-danger border border-danger-subtle d-flex align-items-start gap-2.5 p-3 mb-3 rounded-3 shadow-xs">
+                                    <i class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 mt-0.5 fs-5"></i>
+                                    <div class="w-100">
+                                        <div class="fw-bold text-danger mb-1">Catatan Revisi</div>
+                                        <div class="small text-dark">{{ !empty(@order.catatan_revisi_biaya) ? nl2br(htmlspecialchars(@order.catatan_revisi_biaya)) : 'Mohon periksa dan perbaiki rincian tarif &amp; parameter, lalu klik Koreksi Tarif &amp; Layanan untuk mengajukan kembali.' }}</div>
+                                    </div>
+                                </div>
+                            </check>
+
+                            <!-- Panel Review Ketua Tim OPTI Lingkungan (Setujui / Minta Revisi) -->
+                            <check if="{{ @order.status_proposal_biaya == 'menunggu_approval' && (@is_ketua_tim_divisi || @is_superadmin) && !empty(@kalkulasi_lingkungan) && count(@kalkulasi_lingkungan) > 0 }}">
+                                <div class="card border border-primary-subtle bg-light-subtle rounded-3 mb-3 shadow-xs">
+                                    <div class="card-body p-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                                        <div class="d-flex align-items-start gap-2.5">
+                                            <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                                <i class="bi bi-shield-check fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark small">Menunggu Review &amp; Persetujuan Ketua Tim OPTI Lingkungan</div>
+                                                <div class="text-muted" style="font-size: 0.78rem;">Periksa rincian tarif dan parameter di bawah. Anda dapat langsung menyetujui, meminta revisi, atau klik <strong>Koreksi Tarif &amp; Layanan</strong> untuk menyesuaikan.</div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0 flex-wrap">
+                                            <form id="formReviewLingkungan" method="POST" action="{{ @BASE }}/order/{{ @order.id }}/biaya-lingkungan/review" class="d-inline-flex align-items-center gap-2 flex-wrap m-0">
+                                                <input type="hidden" name="aksi" id="inputReviewLingkunganAksi" value="">
+                                                <input type="hidden" name="catatan_revisi" id="inputReviewLingkunganCatatan" value="">
+                                                <button type="button" class="btn btn-outline-danger btn-sm fw-semibold px-3 py-1.5 d-inline-flex align-items-center gap-1.5" onclick="submitReviewLingkungan('revisi')">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                    <span>Minta Revisi</span>
+                                                </button>
+                                                <button type="button" class="btn btn-submit-theme btn-sm fw-semibold px-3.5 py-1.5 d-inline-flex align-items-center gap-1.5" onclick="submitReviewLingkungan('setujui')">
+                                                    <i class="bi bi-check2-all"></i>
+                                                    <span>Setujui (Siap Penawaran)</span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                <script>
+                                function submitReviewLingkungan(aksi) {
+                                    var form = document.getElementById('formReviewLingkungan');
+                                    var inpAksi = document.getElementById('inputReviewLingkunganAksi');
+                                    var inpCat = document.getElementById('inputReviewLingkunganCatatan');
+                                    if (!form || !inpAksi) return;
+
+                                    if (aksi === 'revisi') {
+                                        if (typeof Swal !== 'undefined') {
+                                            Swal.fire({
+                                                iconHtml: '<i class="bi bi-arrow-counterclockwise" style="font-size:1.5rem;color:#1e293b;"></i>',
+                                                title: '<span class="fs-5 fw-bold text-dark">Minta Revisi Tarif &amp; Parameter</span>',
+                                                html: '<div class="text-start mt-1">'
+                                                    + '<p class="text-muted small mb-2.5">Berikan catatan perbaikan untuk PIC / PJT Lingkungan agar rincian tarif &amp; parameter dapat segera disesuaikan.</p>'
+                                                    + '<label for="swalRevisiLingkunganInput" class="form-label small fw-semibold text-dark mb-1">Catatan Revisi <span class="text-danger">*</span></label>'
+                                                    + '<textarea id="swalRevisiLingkunganInput" class="form-control form-control-sm" rows="4" style="font-size:0.85rem;border-color:#cbd5e1;border-radius:8px;resize:vertical;"></textarea>'
+                                                    + '</div>',
+                                                width: 480,
+                                                showCancelButton: true,
+                                                confirmButtonText: 'Kirim Permintaan Revisi',
+                                                cancelButtonText: 'Batal',
+                                                customClass: {
+                                                    popup: 'rounded-4 p-3',
+                                                    icon: 'border-secondary-subtle bg-light'
+                                                },
+                                                didOpen: function() {
+                                                    var ta = document.getElementById('swalRevisiLingkunganInput');
+                                                    if (ta) setTimeout(function() { ta.focus(); }, 100);
+                                                },
+                                                preConfirm: function() {
+                                                    var ta = document.getElementById('swalRevisiLingkunganInput');
+                                                    var val = ta ? ta.value.trim() : '';
+                                                    if (!val) {
+                                                        Swal.showValidationMessage('Mohon isi catatan revisi terlebih dahulu.');
+                                                        return false;
+                                                    }
+                                                    return val;
+                                                }
+                                            }).then(function(res) {
+                                                if (res.isConfirmed && res.value) {
+                                                    inpAksi.value = 'revisi';
+                                                    inpCat.value = res.value;
+                                                    form.submit();
+                                                }
+                                            });
+                                        } else {
+                                            var note = prompt('Masukkan catatan revisi untuk PIC / PJT:');
+                                            if (note && note.trim()) {
+                                                inpAksi.value = 'revisi';
+                                                inpCat.value = note.trim();
+                                                form.submit();
+                                            }
+                                        }
+                                        return;
+                                    }
+
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            icon: 'question',
+                                            title: 'Setujui Tarif & Parameter?',
+                                            text: 'Status order akan ditetapkan menjadi Siap Penawaran agar Tim Mitra dapat menerbitkan Surat Penawaran Resmi.',
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Ya, Setujui & Siap Penawaran',
+                                            cancelButtonText: 'Batal'
+                                        }).then(function(res) {
+                                            if (res.isConfirmed) {
+                                                inpAksi.value = 'setujui';
+                                                inpCat.value = '';
+                                                form.submit();
+                                            }
+                                        });
+                                    } else if (confirm('Setujui tarif & parameter dan tetapkan Siap Penawaran?')) {
+                                        inpAksi.value = 'setujui';
+                                        inpCat.value = '';
+                                        form.submit();
+                                    }
+                                }
+                                </script>
+                            </check>
+
                             <!-- Read-Only / Lock Notice -->
                             <check if="{{ !@can_edit_lingkungan }}">
                                 <check if="{{ @can_process_lingkungan }}">
                                     <true>
-                                        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 text-warning-emphasis">
-                                            <i class="bi bi-lock-fill text-warning flex-shrink-0"></i>
-                                            <div>{{ @lingkungan_lock_message ?: 'Rincian tarif dan parameter telah diajukan atau disetujui. Pengeditan dikunci, silakan hubungi superadmin.' }}</div>
-                                        </div>
+                                        <check if="{{ in_array(@order.status_proposal_biaya, ['siap_penawaran', 'disetujui']) }}">
+                                            <true>
+                                                <div class="alert bg-light border d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 text-dark">
+                                                    <i class="bi bi-check-circle-fill text-dark flex-shrink-0"></i>
+                                                    <div>{{ @lingkungan_lock_message ?: 'Rincian tarif dan parameter telah disetujui Ketua Tim OPTI Lingkungan (Siap Penawaran).' }}</div>
+                                                </div>
+                                            </true>
+                                            <false>
+                                                <div class="alert alert-warning border border-warning-subtle d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 text-warning-emphasis">
+                                                    <i class="bi bi-hourglass-split text-warning flex-shrink-0"></i>
+                                                    <div>{{ @lingkungan_lock_message ?: 'Rincian tarif dan parameter sedang menunggu persetujuan Ketua Tim OPTI Lingkungan.' }}</div>
+                                                </div>
+                                            </false>
+                                        </check>
                                     </true>
                                     <false>
-                                        <div class="alert alert-warning border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 text-warning-emphasis">
-                                            <i class="bi bi-shield-lock-fill text-warning flex-shrink-0"></i>
-                                            <div>{{ @lingkungan_lock_message ?: 'Mode Pratinjau (Read-Only): Anda tidak memiliki hak akses untuk mengubah halaman ini. Penyusunan dan pengelolaan tarif &amp; parameter merupakan wewenang Ketua Tim OPTI Lingkungan dan PIC Pengujian yang ditugaskan.' }}</div>
-                                        </div>
+                                        <check if="{{ @order.status_proposal_biaya == 'menunggu_approval' }}">
+                                            <true>
+                                                <div class="alert alert-warning border border-warning-subtle d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 text-warning-emphasis">
+                                                    <i class="bi bi-hourglass-split text-warning flex-shrink-0"></i>
+                                                    <div>{{ @lingkungan_lock_message ?: 'Rincian tarif dan parameter telah diajukan dan sedang menunggu persetujuan Ketua Tim OPTI Lingkungan.' }}</div>
+                                                </div>
+                                            </true>
+                                            <false>
+                                                <div class="alert bg-light border d-flex align-items-center gap-2 mb-3 py-2 px-3 small rounded-3 text-secondary">
+                                                    <i class="bi bi-shield-lock-fill text-secondary flex-shrink-0"></i>
+                                                    <div>{{ @lingkungan_lock_message ?: 'Mode Pratinjau (Read-Only): Anda tidak memiliki hak akses untuk mengubah halaman ini. Penyusunan dan pengelolaan tarif &amp; parameter merupakan wewenang Ketua Tim OPTI Lingkungan dan PIC Pengujian yang ditugaskan.' }}</div>
+                                                </div>
+                                            </false>
+                                        </check>
                                     </false>
                                 </check>
                             </check>
@@ -3899,24 +4042,16 @@
                                 <div class="card border rounded-3 mb-3 overflow-hidden shadow-xs">
                                     <div class="card-header bg-white py-2.5 px-3 d-flex justify-content-between align-items-center border-bottom">
                                         <div class="d-flex align-items-center gap-2">
-                                            <i class="bi bi-briefcase-fill text-primary"></i>
+                                            <i class="bi bi-briefcase text-secondary"></i>
                                             <span class="small fw-bold text-dark">Daftar Layanan Jasa Terpilih</span>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                                            <check if="{{ @order.pic_proposal_nama }}">
-                                                <span class="badge bg-white text-dark border shadow-xs py-1 px-2.5">
-                                                    <i class="bi bi-person-check-fill text-primary me-1"></i> PIC Pengujian: <strong>{{ @order.pic_proposal_nama }}</strong>
-                                                </span>
-                                            </check>
-                                            <span class="badge bg-light text-dark border font-monospace">{{ count(@kalkulasi_lingkungan) }} Layanan Jasa</span>
                                         </div>
                                     </div>
                                     <div class="px-3 py-2 bg-light-subtle border-bottom d-flex align-items-center gap-2">
-                                        <span class="text-secondary small fw-semibold"><i class="bi bi-card-heading text-primary me-1"></i>Judul Kegiatan:</span>
+                                        <span class="text-secondary small fw-semibold"><i class="bi bi-card-heading text-secondary me-1"></i>Judul Kegiatan:</span>
                                         <span class="fw-bold text-dark small">{{ @order.judul_kegiatan }}</span>
                                     </div>
                                     <div class="table-responsive">
-                                        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.815rem;">
+                                        <table class="table table-sm table-hover align-middle mb-0" data-no-paginate="true" style="font-size: 0.815rem;">
                                             <thead class="table-light">
                                                 <tr>
                                                     <th class="text-center" style="width: 35px;">No</th>
@@ -3950,12 +4085,12 @@
                                                 <check if="{{ @order.diskon_penawaran > 0 }}">
                                                     <tr>
                                                         <td colspan="5" class="text-end text-muted small">Potongan Diskon Penawaran:</td>
-                                                        <td class="text-end text-danger font-monospace small">- Rp {{ number_format(@order.diskon_penawaran, 0, ',', '.') }}</td>
+                                                        <td class="text-end text-muted font-monospace small">- Rp {{ number_format(@order.diskon_penawaran, 0, ',', '.') }}</td>
                                                     </tr>
                                                 </check>
                                                 <tr>
                                                     <td colspan="5" class="text-end fw-bold text-dark">Total Harga:</td>
-                                                    <td class="text-end fw-bold text-primary font-monospace" style="font-size: 0.95rem;">
+                                                    <td class="text-end fw-bold text-dark font-monospace" style="font-size: 0.95rem;">
                                                         Rp {{ number_format(!empty(@default_nominal) ? @default_nominal : (@order.estimasi_biaya ?: 0), 0, ',', '.') }}
                                                     </td>
                                                 </tr>

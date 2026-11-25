@@ -197,6 +197,7 @@ $f3->route('GET /order/@id/rancop-selulosa', 'OrderController->rancopSelulosa');
 $f3->route('POST /order/@id/rancop-selulosa', 'OrderController->simpanRancopSelulosa');
 $f3->route('GET /order/@id/biaya-lingkungan', 'OrderController->biayaLingkungan');
 $f3->route('POST /order/@id/biaya-lingkungan', 'OrderController->biayaLingkunganPost');
+$f3->route('POST /order/@id/biaya-lingkungan/review', 'OrderController->reviewBiayaLingkunganPost');
 $f3->route('GET /order/@id/form-pelayanan', 'OrderController->formPelayanan');
 $f3->route('POST /order/@id/form-pelayanan', 'OrderController->formPelayananPost');
 $f3->route('POST /order/@id/tunjuk-pic', 'OrderController->tunjukPicProposal');
@@ -283,6 +284,14 @@ $f3->route('POST /po-ppk/@id/catatan/@nid/balas',       'PoRevisiPpkController->
 $f3->route('POST /po-ppk/@id/minta-revisi',             'PoRevisiPpkController->mintaRevisi');
 $f3->route('POST /po-ppk/@id/validasi',                 'PoRevisiPpkController->validasi');
 $f3->route('POST /po-ppk/@id/catatan-ppk',              'PoRevisiPpkController->simpanCatatanPpk');   // catatan PPK BLU (simpan otomatis, seperti catatan Tim Mitra)
+
+// ---- Ajuan perbaikan PO ke PPK BLU (PO yang sudah disetujui): Ketua Tim / Ketua Pelaksana mengajukan, PPK BLU memutuskan ----
+$f3->route('GET /po-ajuan/status',          'PoAjuanPerbaikanController->status');      // siapa boleh mengajukan + ajuan yang berjalan (untuk tombol di daftar)
+$f3->route('POST /po-ajuan/@id/mulai',      'PoAjuanPerbaikanController->mulai');       // pengaju memulai ajuan (alasan + lampiran)
+$f3->route('POST /po-ajuan/@id/kirim',      'PoAjuanPerbaikanController->kirim');       // pengaju mengirim hasil perbaikan ke PPK BLU
+$f3->route('POST /po-ajuan/@id/tarik',      'PoAjuanPerbaikanController->tarik');       // pengaju menarik ajuan
+$f3->route('POST /po-ajuan/@id/tolak',      'PoAjuanPerbaikanController->tolak');       // PPK BLU menolak ajuan
+$f3->route('GET /po-ajuan/@id/lampiran',    'PoAjuanPerbaikanController->lampiran');    // lampiran pendukung ajuan
 
 // ---- Panel catatan di form Edit PO (Ketua Tim, Ketua Pelaksana, Superadmin; izin dicek di dalam) ----
 $f3->route('GET /po-kegiatan/@id/catatan-form',         'PoRevisiPpkController->catatanForm');
@@ -479,6 +488,7 @@ $f3->route('GET /po-kegiatan/@id/review', 'PoReviewController->detail');        
 $f3->route('POST /po-kegiatan/@id/baca', 'PoReviewController->baca');          // tandai kiriman terbaca (dipanggil saat PO dibuka)
 $f3->route('GET /debug-alur/@id', 'PoReviewController->debugAlur');   // SEMENTARA: cek po_alur_log + trigger untuk rincian putaran revisi (superadmin saja); hapus setelah selesai
 $f3->route('GET /debug-riwayat/@id', 'PoReviewController->debugRiwayat');   // SEMENTARA: telusuri Riwayat Aktivitas yang tidak tercatat (superadmin saja); hapus setelah selesai
+
 $f3->route('POST /po-kegiatan/@id/dibuka', 'PoReviewController->baca');          // alias route lama
 $f3->route('POST /po-kegiatan/@id/catatan', 'PoReviewController->catatanTambah'); // Ketua Tim: tambah catatan (draf)
 $f3->route('POST /po-kegiatan/@id/catatan/@nid', 'PoReviewController->catatanAksi');   // hapus / selesai / batalselesai / buka / batalbuka

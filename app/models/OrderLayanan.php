@@ -2425,10 +2425,15 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     if (!$proposalSelesai && ($r['status'] ?? '') !== 'selesai' && ($r['status'] ?? '') !== 'ditolak') {
                         $isTask = true;
                         $isCadanganOnly = ((int)($r['pic_proposal_cadangan_id'] ?? 0) === (int)$userId && (int)($r['pic_proposal_id'] ?? 0) !== (int)$userId);
-                        $reason = $isCadanganOnly 
-                            ? 'Anda ditugaskan sebagai PIC Cadangan Proposal / Perhitungan Biaya'
-                            : 'Anda ditugaskan sebagai PIC Proposal / Perhitungan Biaya';
-                        $badge = $isCadanganOnly ? 'PIC Cadangan' : 'PIC Proposal';
+                        if (($r['status_proposal_biaya'] ?? '') === 'perlu_revisi' || ($r['status_proposal'] ?? '') === 'ditolak') {
+                            $reason = 'Ketua Tim meminta revisi tarif & parameter / proposal';
+                            $badge = (($r['jenis_layanan_opti'] ?? '') === 'lingkungan') ? 'Revisi Tarif' : 'Revisi Proposal';
+                        } else {
+                            $reason = $isCadanganOnly 
+                                ? 'Anda ditugaskan sebagai PIC Cadangan Proposal / Perhitungan Biaya'
+                                : 'Anda ditugaskan sebagai PIC Proposal / Perhitungan Biaya';
+                            $badge = $isCadanganOnly ? 'PIC Cadangan' : 'PIC Proposal';
+                        }
                     }
                 }
             } elseif ($userRole === 'pjt_lingkungan') {
