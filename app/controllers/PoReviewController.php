@@ -975,14 +975,14 @@ class PoReviewController extends Controller {
                          WHERE p.status = 'terkirim' AND p.status_review = 'perlu_revisi' AND p.minta_dibaca_at IS NULL
                            AND o.ketua_pelaksana_id = ?";
                 $r = $db->exec($sql, [1 => (int) $userId]);
-            } elseif ($role === 'ketua_tim' || $role === 'superadmin') {
+            } elseif ($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan' || $role === 'superadmin') {
                 /* sql:belum_dibaca_katim */
                 $sql = "SELECT COUNT(*) AS c FROM po_kegiatan p JOIN order_layanan o ON o.id = p.order_id
                          WHERE p.status = 'terkirim'
                            AND ((p.status_review = 'menunggu_review' AND p.reviewed_at IS NULL)
                              OR (p.status_review = 'direvisi' AND p.revisi_dibaca_at IS NULL))";
                 $prm = [];
-                if ($role === 'ketua_tim' && in_array($divisi, self::DIVISI_VALID, true)) {
+                if (($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') && in_array($divisi, self::DIVISI_VALID, true)) {
                     $sql .= " AND o.jenis_layanan_opti = ?";
                     $prm[1] = $divisi;
                 }
@@ -1018,13 +1018,13 @@ class PoReviewController extends Controller {
                 return 0;
             }
         }
-        if ($role !== 'ketua_tim' && $role !== 'superadmin') { return 0; }
+        if ($role !== 'ketua_tim' && $role !== 'kepala_lab_lingkungan' && $role !== 'superadmin') { return 0; }
         try {
             $sql = "SELECT COUNT(*) AS c FROM po_kegiatan p JOIN order_layanan o ON o.id = p.order_id
                      WHERE p.status IN ('terkirim', 'disetujui_mitra', 'disetujui') AND p.status_review = 'disetujui'
                        AND p.ppk_status IN ('minta', 'katim_review') AND p.ppk_dibaca_at IS NULL AND p.validasi_keuangan_at IS NULL";
             $prm = [];
-            if ($role === 'ketua_tim' && in_array($divisi, self::DIVISI_VALID, true)) {
+            if (($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') && in_array($divisi, self::DIVISI_VALID, true)) {
                 $sql .= " AND o.jenis_layanan_opti = ?";
                 $prm[1] = $divisi;
             }
@@ -1240,7 +1240,7 @@ class PoReviewController extends Controller {
     protected function modeHalaman() {
         if ($this->isSuperadmin()) { return 'katim'; }
         $role = $this->getUserRole();
-        if ($role === 'ketua_tim') { return 'katim'; }
+        if ($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') { return 'katim'; }
         if ($role === 'tim_kerja') { return 'pembuat'; }
         return null;
     }

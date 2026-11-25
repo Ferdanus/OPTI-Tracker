@@ -49,7 +49,7 @@ protected function divisiPenggunaSaatIni() {
     if ($role === 'tim_kerja') {
         return $this->getDivisiTimKerja();
     }
-    if ($role === 'ketua_tim') {
+    if ($role === 'ketua_tim' || $role === 'kepala_lab_lingkungan') {
         $lay = strtolower((string) $this->getUserLayanan());
         return in_array($lay, ['lingkungan', 'selulosa'], true) ? $lay : '';
     }

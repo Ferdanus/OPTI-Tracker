@@ -322,7 +322,7 @@
                                 <tr>
                                     <th class="text-center" style="width: 40px;">No</th>
                                     <th style="width: 155px;">No. &amp; Tgl Order</th>
-                                    <th style="min-width: 290px;">Judul Kegiatan / Proposal &amp; Klien</th>
+                                    <th style="min-width: 290px;">Perusahaan &amp; Judul Kegiatan</th>
                                     <th class="text-center" style="width: 110px;">Divisi OPTI</th>
                                     <check if="{{ !@is_tim_kerja }}">
                                         <th style="width: 150px;">PIC Peneliti</th>
@@ -369,14 +369,14 @@
                                             </div>
                                         </td>
 
-                                        <!-- Judul Kegiatan / Proposal & Klien -->
+                                        <!-- Perusahaan & Judul Kegiatan -->
                                         <td>
-                                            <div class="fw-semibold text-dark mb-1" title="{{ @row.judul_proposal ?: @row.judul_kegiatan }}">
-                                                {{ @row.judul_proposal ?: @row.judul_kegiatan }}
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-1.5 mb-1">
+                                                <i class="bi bi-building text-secondary flex-shrink-0" style="font-size: 0.85rem;"></i>
+                                                <span>{{ @row.nama_perusahaan }}</span>
                                             </div>
-                                            <div class="small text-muted d-flex align-items-start gap-1.5 mt-0.5">
-                                                <i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.82rem;"></i>
-                                                <span class="text-secondary fw-medium" style="line-height: 1.35;">{{ @row.nama_perusahaan }}</span>
+                                            <div class="small text-muted" style="line-height: 1.35;" title="{{ @row.judul_proposal ?: @row.judul_kegiatan }}">
+                                                {{ @row.judul_proposal ?: @row.judul_kegiatan }}
                                             </div>
                                         </td>
 
@@ -477,20 +477,10 @@
 
                                         <!-- Aksi (Kolom Terpisah) -->
                                         <td class="text-center">
-                                            <check if="{{ @row.jenis_layanan_opti == 'lingkungan' }}">
-                                                <true>
-                                                    <a href="{{ @BASE }}/order/{{ @row.id }}/biaya-lingkungan" style="background-color: #1e293b; border-color: #1e293b; font-size: 0.78rem;" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm fw-medium" title="Buka Kalkulasi Tarif &amp; Parameter Lingkungan">
-                                                        <i class="bi {{ @is_tim_kerja ? 'bi-pencil-fill' : 'bi-sliders' }}"></i>
-                                                        <span>{{ @is_tim_kerja ? 'Kerjakan' : 'Kelola' }}</span>
-                                                    </a>
-                                                </true>
-                                                <false>
-                                                    <a href="{{ @BASE }}/order/{{ @row.id }}/proposal" style="background-color: #1e293b; border-color: #1e293b; font-size: 0.78rem;" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm fw-medium" title="Buka Ruang Penyusunan Proposal Teknis">
-                                                        <i class="bi {{ @is_tim_kerja ? 'bi-pencil-fill' : 'bi-journal-check' }}"></i>
-                                                        <span>{{ @is_tim_kerja ? 'Kerjakan' : 'Kelola' }}</span>
-                                                    </a>
-                                                </false>
-                                            </check>
+                                            <a href="{{ @BASE }}/order/{{ @row.id }}#cardParameterBiaya" style="background-color: #1e293b; border-color: #1e293b; font-size: 0.78rem;" class="btn btn-sm btn-dark py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm fw-medium" title="{{ @row.jenis_layanan_opti == 'lingkungan' ? 'Buka Tahap 4 Tarif &amp; Parameter di Detail Order' : 'Buka Tahap 4 Proposal di Detail Order' }}">
+                                                <i class="bi {{ @is_tim_kerja ? 'bi-pencil-fill' : (@row.jenis_layanan_opti == 'lingkungan' ? 'bi-sliders' : 'bi-journal-check') }}"></i>
+                                                <span>{{ @is_tim_kerja ? 'Kerjakan' : 'Kelola' }}</span>
+                                            </a>
                                         </td>
                                     </tr>
                                 </repeat>

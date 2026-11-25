@@ -1,0 +1,14 @@
+{
+    "html.validate.styles": false,
+    "html.validate.scripts": false,
+    "css.validate": false,
+    "files.exclude": {
+        "**/recycle-laterr": true,
+        "**/tmp": true
+    },
+    "search.exclude": {
+        "**/recycle-laterr": true,
+        "**/vendor": true,
+        "**/tmp": true
+    }
+}
