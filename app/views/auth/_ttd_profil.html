@@ -1,0 +1,395 @@
+<!--
+    ======================================================================
+    TTD DIGITAL (ditambahkan Kaa) -- kartu "Tanda Tangan Digital" di Profil Pengguna
+    File BARU, dipasang lewat satu baris include di auth/profil.html (lihat penanda "TTD DIGITAL" di sana).
+    Server: TtdPenggunaController (route /profil/ttd/*), TIDAK diubah. Tampilan "Tirai terbelah": tampilan awal dibagi dua (TTD di kiri, info + tombol di kanan);
+    klik "Ganti TTD" -> kedua sisi bergeser keluar ke kiri/kanan dan form TTD (tab Gambar langsung / Upload foto) terbuka dari tengah memenuhi kartu.
+    Ganti TTD langsung menimpa yang lama, tidak perlu hapus dulu.
+    JANGAN menulis tag include di komentar ini: Fat-Free ikut memprosesnya.
+    ======================================================================
+-->
+<style>
+    .ttdp-chk { box-sizing: border-box; background-image: linear-gradient(45deg,#e5e7eb 25%,transparent 25%),linear-gradient(-45deg,#e5e7eb 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e5e7eb 75%),linear-gradient(-45deg,transparent 75%,#e5e7eb 75%); background-size: 16px 16px; background-position: 0 0,0 8px,8px -8px,-8px 0; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; justify-content: center; min-height: 120px; padding: 8px; overflow: hidden; }
+    .ttdp-chk img, .ttdp-chk canvas { max-height: 110px; max-width: 100%; display: block; }
+    .ttdp-chk img.ttdp-tulis { animation: ttdpTulis 1.1s ease-out; }
+    @keyframes ttdpTulis { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+    .ttdp-lbl { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748b; margin: 14px 0 6px; }
+    .ttdp-aktif { display: inline-flex; align-items: center; gap: 6px; background: #e8f5ee; color: #146c43; border-radius: 999px; padding: 3px 10px; font-size: .75rem; font-weight: 600; }
+    .ttdp-aktif i { width: 7px; height: 7px; border-radius: 50%; background: #198754; display: block; }
+    .ttdp-judul { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0; }
+
+    /* Panggung "tirai terbelah": tinggi mengikuti sisi yang tampil (diatur skrip), sisi depan = tampilan awal, sisi belakang = form */
+    .ttdp-stage { position: relative; overflow: hidden; transition: height .55s cubic-bezier(.65,0,.25,1); }
+    .ttdp-face { position: absolute; left: 0; top: 0; width: 100%; background: #fff; }
+    .ttdp-split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; }
+    @media (max-width: 640px) { .ttdp-split { grid-template-columns: 1fr; gap: 14px; } .ttdp-half.r { padding-left: 0; } .ttdp-half.l .ttdp-chk { min-height: 140px; } }
+    .ttdp-half { min-width: 0; }
+    .ttdp-half.l .ttdp-chk { height: 100%; min-height: 170px; }
+    .ttdp-half.l .ttdp-chk img { max-height: 130px; }
+    .ttdp-half.r { display: flex; flex-direction: column; justify-content: center; gap: 10px; align-items: flex-start; padding-left: 8px; }
+    @media (max-width: 640px) { .ttdp-half.r { padding-left: 0; } }
+    .ttdp-aksi { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .ttdp-front .ttdp-half { transition: transform .55s cubic-bezier(.65,0,.25,1), opacity .4s; }
+    .ttdp-stage.open .ttdp-front .ttdp-half.l { transform: translateX(-115%); opacity: 0; }
+    .ttdp-stage.open .ttdp-front .ttdp-half.r { transform: translateX(115%); opacity: 0; }
+    .ttdp-front { transition: visibility 0s .55s; }
+    .ttdp-stage.open .ttdp-front { visibility: hidden; pointer-events: none; }
+    .ttdp-back { clip-path: inset(0 50% 0 50%); visibility: hidden; transition: clip-path .6s cubic-bezier(.65,0,.25,1), visibility 0s .6s; }
+    .ttdp-stage.open .ttdp-back { clip-path: inset(0 0 0 0); visibility: visible; transition: clip-path .6s cubic-bezier(.65,0,.25,1) .12s, visibility 0s; }
+    @media (prefers-reduced-motion: reduce) { .ttdp-stage, .ttdp-front, .ttdp-back, .ttdp-front .ttdp-half { transition: none !important; } }
+
+    .ttdp-edhead { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .ttdp-kembali { border: 0; background: #f1f5f9; width: 34px; height: 34px; border-radius: 50%; color: #334155; transition: background .15s; line-height: 1; padding: 0; }
+    .ttdp-kembali:hover { background: #e2e8f0; }
+    .ttdp-seg { display: inline-flex; background: #f1f5f9; border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 12px; }
+    .ttdp-seg button { border: 0; background: transparent; padding: 7px 14px; border-radius: 8px; font-size: .82rem; font-weight: 600; color: #64748b; transition: background .15s, color .15s, box-shadow .15s; }
+    .ttdp-seg button.on { background: #fff; color: #0f172a; box-shadow: 0 1px 3px rgba(15,23,42,.15); }
+    .ttdp-pad { position: relative; border: 2px dashed #94a3b8; border-radius: 12px; background: #fff; transition: border-color .15s; }
+    .ttdp-pad.aktif { border-color: #334155; border-style: solid; }
+    .ttdp-pad canvas { display: block; width: 100%; height: 210px; touch-action: none; cursor: crosshair; border-radius: 10px; }
+    .ttdp-pad .garis { position: absolute; left: 6%; right: 6%; bottom: 46px; border-bottom: 1px solid #cbd5e1; pointer-events: none; }
+    .ttdp-pad .x-tanda { position: absolute; left: 6%; bottom: 50px; color: #94a3b8; pointer-events: none; }
+    .ttdp-pad .petunjuk { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: .85rem; pointer-events: none; transition: opacity .2s; text-align: center; padding: 0 12px; }
+    .ttdp-pad.terisi .petunjuk { opacity: 0; }
+    .ttdp-alat { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+    .ttdp-tinta { display: flex; gap: 6px; align-items: center; margin-left: auto; font-size: .8rem; color: #64748b; }
+    .ttdp-tinta button { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #cbd5e1; padding: 0; transition: box-shadow .15s; }
+    .ttdp-tinta button.on { box-shadow: 0 0 0 2px #111827; }
+    .ttdp-tebal { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; font-size: .8rem; color: #64748b; }
+    .ttdp-tebal input[type=range] { flex: 1; min-width: 120px; max-width: 300px; accent-color: #111827; }
+    .ttdp-tebal .contoh { width: 64px; height: 30px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; }
+    .ttdp-tebal .contoh i { display: block; width: 44px; border-radius: 99px; background: #1e3a8a; transition: height .12s; }
+    .ttdp-drop { display: block; border: 2px dashed #94a3b8; border-radius: 12px; padding: 28px 16px; text-align: center; color: #64748b; cursor: pointer; transition: background .15s, border-color .15s; }
+    .ttdp-drop:hover { background: #f8fafc; border-color: #334155; }
+</style>
+
+<!-- ===== TTD DIGITAL (mulai) ===== -->
+<div class="card border-0 shadow-sm mt-4" id="ttdpKartu">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-pen text-primary me-2"></i>Tanda Tangan Digital</h6>
+    </div>
+    <div class="card-body p-4">
+        <p class="text-muted small mb-4">Buat sekali (gambar langsung di layar atau upload foto), lalu otomatis dipakai di dokumen PO yang kamu approve. TTD hanya tampil di dokumen setelah kamu menekan Approve. Berkas disimpan di folder privat, tidak bisa dibuka orang lain lewat alamat web.</p>
+
+        <div class="ttdp-stage" id="ttdpStage">
+            <!-- Sisi depan: dibagi dua sejajar -->
+            <div class="ttdp-face ttdp-front" id="ttdpFront">
+                <div class="ttdp-split">
+                    <div class="ttdp-half l">
+                        <div class="ttdp-chk" id="ttdpSaved"><span class="text-muted small" id="ttdpSavedKosong">Belum ada TTD tersimpan.</span><img id="ttdpSavedImg" alt="TTD tersimpan" hidden></div>
+                    </div>
+                    <div class="ttdp-half r">
+                        <span class="ttdp-aktif" id="ttdpAktif" hidden><i></i>Aktif</span>
+                        <div class="ttdp-judul" id="ttdpJudulV">Belum ada TTD</div>
+                        <span class="text-muted small" id="ttdpMeta">Buat sekali, dipakai di semua PO.</span>
+                        <div class="ttdp-aksi">
+                            <button type="button" class="btn btn-dark fw-semibold" id="ttdpBuka"><i class="bi bi-plus-lg me-1"></i>Buat TTD</button>
+                            <button type="button" class="btn btn-outline-danger" id="ttdpHapus" hidden><i class="bi bi-trash me-1"></i>Hapus</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sisi belakang: form TTD, terbuka dari tengah -->
+            <div class="ttdp-face ttdp-back" id="ttdpBack">
+                <div class="ttdp-edhead">
+                    <button type="button" class="ttdp-kembali" id="ttdpKembali" title="Kembali" aria-label="Kembali"><i class="bi bi-arrow-left"></i></button>
+                    <div class="ttdp-judul" id="ttdpJudul">Buat tanda tangan</div>
+                </div>
+
+                <div class="ttdp-seg" role="tablist" aria-label="Cara membuat TTD">
+                    <button type="button" class="on" id="ttdpTabG" role="tab" aria-selected="true"><i class="bi bi-pencil me-1"></i>Gambar langsung</button>
+                    <button type="button" id="ttdpTabF" role="tab" aria-selected="false"><i class="bi bi-image me-1"></i>Upload foto</button>
+                </div>
+
+                <div id="ttdpPanG">
+                    <div class="ttdp-pad" id="ttdpPad">
+                        <canvas id="ttdpPadCanvas" aria-label="Area menggambar tanda tangan"></canvas>
+                        <span class="x-tanda">&times;</span><span class="garis"></span>
+                        <div class="petunjuk"><span><i class="bi bi-pen me-1"></i>Tanda tangan di sini (pakai mouse, jari, atau stylus)</span></div>
+                    </div>
+                    <div class="ttdp-alat">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="ttdpUndo" title="Urungkan (Ctrl+Z)" disabled><i class="bi bi-arrow-counterclockwise me-1"></i>Urungkan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="ttdpRedo" title="Ulangi (Ctrl+Y)" disabled><i class="bi bi-arrow-clockwise me-1"></i>Ulangi</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="ttdpBersih" disabled><i class="bi bi-eraser me-1"></i>Hapus coretan</button>
+                        <span class="ttdp-tinta">Tinta
+                            <button type="button" style="background:#1e3a8a" data-w="biru" title="Biru tua" aria-label="Biru tua"></button>
+                            <button type="button" class="on" style="background:#111827" data-w="hitam" title="Hitam" aria-label="Hitam"></button>
+                        </span>
+                    </div>
+                    <div class="ttdp-tebal">
+                        <span>Tebal pena</span><span>Tipis</span>
+                        <input type="range" id="ttdpTebal" min="1" max="8" step="0.5" value="2.6" aria-label="Ketebalan pena">
+                        <span>Tebal</span>
+                        <span class="contoh" title="Contoh garis"><i id="ttdpContoh"></i></span>
+                    </div>
+                </div>
+
+                <div id="ttdpPanF" hidden>
+                    <label class="ttdp-drop" for="ttdpFile"><i class="bi bi-cloud-arrow-up fs-4 d-block"></i><b class="text-dark">Pilih foto tanda tangan</b><br><span class="small">Tulis di kertas putih lalu foto (PNG / JPG / WEBP, maksimal 8 MB)</span></label>
+                    <input type="file" id="ttdpFile" accept="image/png,image/jpeg,image/webp" hidden>
+                    <div id="ttdpEdit" hidden>
+                        <div class="ttdp-lbl">Pratinjau (latar dihapus otomatis)</div>
+                        <div class="ttdp-chk"><canvas id="ttdpCanvas"></canvas></div>
+                        <div class="ttdp-lbl">Pembersihan latar</div>
+                        <input type="range" class="form-range" id="ttdpAmbang" min="120" max="250" value="215">
+                        <div class="small text-muted">Geser kalau sisa latar masih terlihat atau goresan terpotong.</div>
+                        <div class="ttdp-lbl">Warna tinta</div>
+                        <div class="d-flex gap-3 small">
+                            <label><input type="radio" name="ttdpWarna" value="biru"> Biru tua</label>
+                            <label><input type="radio" name="ttdpWarna" value="hitam" checked> Hitam</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end mt-3">
+                    <button type="button" class="btn btn-outline-secondary" id="ttdpBatal">Batal</button>
+                    <button type="button" class="btn btn-dark fw-semibold" id="ttdpSimpan" disabled><i class="bi bi-save me-1"></i>Simpan TTD</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="small mt-3" id="ttdpPesan" role="status"></div>
+    </div>
+</div>
+<script>
+(function () {
+    var BASE = '{{ @BASE }}', CSRF = '{{ @csrf_token }}';
+    var $ = function (id) { return document.getElementById(id); };
+    var ada = false, mode = 'g', raw = null, rawFile = null, sibuk = false, hapusT = 0;
+
+    function pesan(t, ok) { var el = $('ttdpPesan'); el.textContent = t || ''; el.className = 'small mt-3 ' + (ok ? 'text-success fw-semibold' : 'text-danger'); }
+    function fmtTgl(detik) {
+        try { var d = new Date(detik * 1000); return 'Diperbarui ' + d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':'); } catch (e) { return ''; }
+    }
+    function terbuka() { return $('ttdpStage').classList.contains('open'); }
+    // Tinggi panggung mengikuti sisi yang sedang tampil (sisi lain diposisikan absolut).
+    function fit() { var f = terbuka() ? $('ttdpBack') : $('ttdpFront'); $('ttdpStage').style.height = f.offsetHeight + 'px'; }
+    function teksTombol() {
+        $('ttdpBuka').innerHTML = ada ? '<i class="bi bi-pencil me-1"></i>Ganti TTD' : '<i class="bi bi-plus-lg me-1"></i>Buat TTD';
+        $('ttdpJudulV').textContent = ada ? 'TTD kamu aktif' : 'Belum ada TTD';
+        $('ttdpJudul').textContent = ada ? 'Ganti tanda tangan' : 'Buat tanda tangan';
+    }
+    function muatStatus(animasi, bukaBilaKosong) {
+        return fetch(BASE + '/profil/ttd/status', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                ada = !!(j && j.ada);
+                var img = $('ttdpSavedImg');
+                img.hidden = !ada; $('ttdpSavedKosong').hidden = ada; $('ttdpHapus').hidden = !ada; $('ttdpAktif').hidden = !ada;
+                $('ttdpMeta').textContent = ada ? fmtTgl(j.versi || 0) : 'Buat sekali, dipakai di semua PO.';
+                img.classList.remove('ttdp-tulis');
+                if (ada) { img.src = BASE + '/profil/ttd/gambar?v=' + (j.versi || Date.now()); if (animasi) { void img.offsetWidth; img.classList.add('ttdp-tulis'); } }
+                teksTombol();
+                if (!ada && bukaBilaKosong) { buka(true); } else { fit(); }
+            }).catch(function () { fit(); });
+    }
+
+    // ===== Buka / tutup form (tirai terbelah) =====
+    function buka(b) {
+        $('ttdpStage').classList.toggle('open', b);
+        if (b) { resetEditor(); pesan(''); setTimeout(ukuranPad, 60); setTimeout(ukuranPad, 740); }
+        fit(); setTimeout(fit, 80); setTimeout(fit, 740);
+    }
+    $('ttdpBuka').addEventListener('click', function () { buka(true); });
+    $('ttdpBatal').addEventListener('click', function () { buka(false); });
+    $('ttdpKembali').addEventListener('click', function () { buka(false); });
+    if (window.ResizeObserver) { var ro = new ResizeObserver(fit); ro.observe($('ttdpFront')); ro.observe($('ttdpBack')); }
+    window.addEventListener('resize', function () { fit(); if (terbuka() && mode === 'g') { ukuranPad(); } });
+
+    // ===== Tab Gambar langsung / Upload foto =====
+    function setMode(m) {
+        mode = m;
+        $('ttdpPanG').hidden = m !== 'g'; $('ttdpPanF').hidden = m !== 'f';
+        $('ttdpTabG').classList.toggle('on', m === 'g'); $('ttdpTabF').classList.toggle('on', m === 'f');
+        $('ttdpTabG').setAttribute('aria-selected', m === 'g' ? 'true' : 'false'); $('ttdpTabF').setAttribute('aria-selected', m === 'f' ? 'true' : 'false');
+        pesan('');
+        if (m === 'g') { ukuranPad(); }
+        statusSimpan();
+    }
+    $('ttdpTabG').addEventListener('click', function () { setMode('g'); });
+    $('ttdpTabF').addEventListener('click', function () { setMode('f'); });
+    function punyaIsi() { return mode === 'g' ? (pad.garis.length > 0) : !!rawFile; }
+    function statusSimpan() { $('ttdpSimpan').disabled = sibuk || !punyaIsi(); }
+    function resetEditor() {
+        pad.garis = []; pad.redo = []; pad.cur = null; raw = rawFile = null;
+        $('ttdpFile').value = ''; $('ttdpEdit').hidden = true;
+        setMode('g'); statusPad(); gambarPad();
+    }
+
+    // ===== Papan gambar (pointer events: mouse, sentuh, stylus) =====
+    var pad = { c: null, x: null, garis: [], redo: [], cur: null, dpr: 1, w: 0, h: 0, lebar: 2.6, warna: 'hitam' };
+    function hexTinta() { return pad.warna === 'hitam' ? '#111827' : '#1e3a8a'; }
+    function contoh() { $('ttdpContoh').style.height = Math.max(1, pad.lebar) + 'px'; $('ttdpContoh').style.background = hexTinta(); }
+    function ukuranPad() {
+        var c = pad.c, r = c.getBoundingClientRect();
+        if (!r.width) { return; }
+        pad.dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+        pad.w = r.width; pad.h = r.height;
+        c.width = Math.round(r.width * pad.dpr); c.height = Math.round(r.height * pad.dpr);
+        pad.x = c.getContext('2d'); pad.x.setTransform(pad.dpr, 0, 0, pad.dpr, 0, 0);
+        gambarPad();
+    }
+    function gambarGaris(x, g) {
+        var p = g.p; if (!p.length) { return; }
+        x.lineWidth = g.w;
+        if (p.length < 3) { x.beginPath(); x.arc(p[0][0], p[0][1], g.w / 2, 0, 6.2832); x.fill(); return; }
+        x.beginPath(); x.moveTo(p[0][0], p[0][1]);
+        for (var i = 1; i < p.length - 1; i++) { x.quadraticCurveTo(p[i][0], p[i][1], (p[i][0] + p[i + 1][0]) / 2, (p[i][1] + p[i + 1][1]) / 2); }
+        x.lineTo(p[p.length - 1][0], p[p.length - 1][1]); x.stroke();
+    }
+    function gambarPad() {
+        var x = pad.x; if (!x) { return; }
+        x.clearRect(0, 0, pad.w, pad.h);
+        x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = x.fillStyle = hexTinta();
+        pad.garis.forEach(function (g) { gambarGaris(x, g); });
+        if (pad.cur) { gambarGaris(x, pad.cur); }
+    }
+    function titik(e) { var r = pad.c.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+    function statusPad() {
+        var isi = pad.garis.length > 0 || !!pad.cur;
+        $('ttdpPad').classList.toggle('terisi', isi);
+        $('ttdpUndo').disabled = !isi; $('ttdpBersih').disabled = !isi; $('ttdpRedo').disabled = pad.redo.length === 0;
+        statusSimpan();
+    }
+    pad.c = $('ttdpPadCanvas');
+    pad.c.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) { return; }
+        e.preventDefault(); pad.c.setPointerCapture(e.pointerId);
+        pad.cur = { p: [titik(e)], w: pad.lebar }; $('ttdpPad').classList.add('aktif'); pesan(''); statusPad(); gambarPad();
+    });
+    pad.c.addEventListener('pointermove', function (e) {
+        if (!pad.cur) { return; }
+        e.preventDefault();
+        var evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [e];
+        evs.forEach(function (ev) { pad.cur.p.push(titik(ev)); });
+        gambarPad();
+    });
+    function selesaiGaris() { if (!pad.cur) { return; } pad.garis.push(pad.cur); pad.redo = []; pad.cur = null; $('ttdpPad').classList.remove('aktif'); statusPad(); gambarPad(); }
+    pad.c.addEventListener('pointerup', selesaiGaris); pad.c.addEventListener('pointercancel', selesaiGaris);
+    // Urungkan / Ulangi: tombol, atau Ctrl+Z, Ctrl+Y (juga Ctrl+Shift+Z; di Mac pakai Cmd).
+    function urungkan() { if (pad.cur || !pad.garis.length) { return; } pad.redo.push(pad.garis.pop()); statusPad(); gambarPad(); }
+    function ulangi() { if (pad.cur || !pad.redo.length) { return; } pad.garis.push(pad.redo.pop()); statusPad(); gambarPad(); }
+    $('ttdpUndo').addEventListener('click', urungkan);
+    $('ttdpRedo').addEventListener('click', ulangi);
+    // Hapus coretan: semua coretan masuk riwayat, jadi masih bisa dikembalikan dengan Ulangi / Ctrl+Y
+    $('ttdpBersih').addEventListener('click', function () { if (pad.cur) { return; } while (pad.garis.length) { pad.redo.push(pad.garis.pop()); } statusPad(); gambarPad(); });
+    document.addEventListener('keydown', function (e) {
+        if (!terbuka() || mode !== 'g' || !(e.ctrlKey || e.metaKey) || e.altKey) { return; }
+        var t = e.target, tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+        if (tag === 'textarea' || (tag === 'input' && ['range', 'radio', 'checkbox', 'file', 'button'].indexOf(t.type) < 0)) { return; }
+        var k = (e.key || '').toLowerCase();
+        if (k === 'z' && !e.shiftKey) { e.preventDefault(); urungkan(); }
+        else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); ulangi(); }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.ttdp-tinta button'), function (b) {
+        b.addEventListener('click', function () {
+            pad.warna = b.getAttribute('data-w');
+            Array.prototype.forEach.call(document.querySelectorAll('.ttdp-tinta button'), function (x) { x.classList.toggle('on', x === b); });
+            contoh(); gambarPad();
+        });
+    });
+    $('ttdpTebal').addEventListener('input', function () { pad.lebar = +this.value; contoh(); });
+    contoh();
+
+    // ===== Foto: pratinjau memakai aturan yang sama dengan server =====
+    function gambarPratinjau() {
+        if (!raw) { return; }
+        var skala = Math.min(1, 600 / (raw.naturalWidth || raw.width));
+        var w = Math.max(1, Math.round((raw.naturalWidth || raw.width) * skala)), h = Math.max(1, Math.round((raw.naturalHeight || raw.height) * skala));
+        var c = $('ttdpCanvas'); c.width = w; c.height = h;
+        var x = c.getContext('2d'); x.clearRect(0, 0, w, h); x.drawImage(raw, 0, 0, w, h);
+        var d = x.getImageData(0, 0, w, h), p = d.data, t = +$('ttdpAmbang').value;
+        var hitam = document.querySelector('input[name=ttdpWarna]:checked').value === 'hitam';
+        var wr = hitam ? 17 : 30, wg = hitam ? 24 : 58, wb = hitam ? 39 : 138;
+        for (var i = 0; i < p.length; i += 4) {
+            var l = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2];
+            if (p[i + 3] < 100 || l >= t) { p[i + 3] = 0; continue; }
+            p[i + 3] = l > t - 40 ? Math.round(255 * (t - l) / 40) : 255;
+            p[i] = wr; p[i + 1] = wg; p[i + 2] = wb;
+        }
+        x.putImageData(d, 0, 0);
+    }
+    $('ttdpFile').addEventListener('change', function (e) {
+        var f = e.target.files[0]; if (!f) { return; }
+        pesan('');
+        if (f.size > 8 * 1024 * 1024) { pesan('Ukuran berkas terlalu besar (maksimal 8 MB).'); return; }
+        var im = new Image();
+        im.onload = function () { raw = im; rawFile = f; $('ttdpEdit').hidden = false; gambarPratinjau(); statusSimpan(); };
+        im.onerror = function () { pesan('Gambar tidak bisa dibaca. Coba foto / berkas lain.'); };
+        im.src = URL.createObjectURL(f);
+    });
+    $('ttdpAmbang').addEventListener('input', gambarPratinjau);
+    Array.prototype.forEach.call(document.querySelectorAll('input[name=ttdpWarna]'), function (r) { r.addEventListener('change', gambarPratinjau); });
+
+    // Kotak gambar -> kanvas kecil berlatar putih: dipotong sesuai goresan (+ sedikit tepi) dan diperkecil bila perlu.
+    function potongCoretan() {
+        var c = pad.c, w = c.width, h = c.height;
+        var d = c.getContext('2d').getImageData(0, 0, w, h).data, minx = w, miny = h, maxx = -1, maxy = -1;
+        for (var y = 0; y < h; y++) { for (var x = 0; x < w; x++) { if (d[(y * w + x) * 4 + 3] > 20) { if (x < minx) { minx = x; } if (x > maxx) { maxx = x; } if (y < miny) { miny = y; } if (y > maxy) { maxy = y; } } } }
+        if (maxx < 0) { return null; }
+        var m = Math.round(8 * pad.dpr);
+        var sx = Math.max(0, minx - m), sy = Math.max(0, miny - m), sw = Math.min(w, maxx + m + 1) - sx, sh = Math.min(h, maxy + m + 1) - sy;
+        var skala = Math.min(1, 560 / sw, 240 / sh);
+        var out = document.createElement('canvas'); out.width = Math.max(1, Math.round(sw * skala)); out.height = Math.max(1, Math.round(sh * skala));
+        var ox = out.getContext('2d'); ox.fillStyle = '#fff'; ox.fillRect(0, 0, out.width, out.height);
+        ox.imageSmoothingEnabled = true; ox.imageSmoothingQuality = 'high';
+        ox.drawImage(c, sx, sy, sw, sh, 0, 0, out.width, out.height);
+        return out;
+    }
+
+    // ===== Simpan (menimpa TTD lama, tidak perlu hapus dulu) =====
+    function kirim(fd) {
+        sibuk = true; statusSimpan(); pesan('Menyimpan...', true);
+        fetch(BASE + '/profil/ttd/unggah', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+            .then(function (o) {
+                if (!o.ok || !o.j.ok) { throw new Error((o.j && o.j.pesan) || 'Gagal menyimpan TTD.'); }
+                var baru = !ada;
+                sibuk = false; buka(false);
+                muatStatus(true).then(function () { pesan(baru ? 'TTD tersimpan. Mulai sekarang dipakai di dokumen PO yang kamu approve.' : 'TTD diperbarui. TTD lama sudah diganti dan dipakai di dokumen PO berikutnya yang kamu approve.', true); });
+            })
+            .catch(function (e) { sibuk = false; pesan(e.message); })
+            .then(statusSimpan);
+    }
+    $('ttdpSimpan').addEventListener('click', function () {
+        if (sibuk || !punyaIsi()) { return; }
+        var fd = new FormData(); fd.append('csrf_token', CSRF);
+        if (mode === 'f') {
+            fd.append('ttd', rawFile); fd.append('ambang', $('ttdpAmbang').value);
+            fd.append('warna', document.querySelector('input[name=ttdpWarna]:checked').value);
+            kirim(fd);
+        } else {
+            // Coretan dipotong rapi sesuai goresan, diperkecil di sini (maks 560 x 240 px, tidak lebih besar dari hasil akhir di server),
+            // lalu dikirim di atas latar putih. Server tidak perlu mengecilkan lagi (pengecilan gambar besar di server bisa menimbulkan garis/abu-abu).
+            var out = potongCoretan();
+            if (!out) { pesan('Gagal membaca gambar tanda tangan.'); return; }
+            out.toBlob(function (blob) {
+                if (!blob) { pesan('Gagal membaca gambar tanda tangan.'); return; }
+                fd.append('ttd', blob, 'ttd-gambar.png'); fd.append('ambang', '215'); fd.append('warna', pad.warna);
+                kirim(fd);
+            }, 'image/png');
+        }
+    });
+
+    // ===== Hapus (dua langkah: klik, lalu klik lagi "Yakin hapus?") =====
+    $('ttdpHapus').addEventListener('click', function () {
+        var b = this;
+        if (!hapusT) {
+            b.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Yakin hapus?';
+            hapusT = setTimeout(function () { hapusT = 0; b.innerHTML = '<i class="bi bi-trash me-1"></i>Hapus'; }, 3500);
+            return;
+        }
+        clearTimeout(hapusT); hapusT = 0; b.innerHTML = '<i class="bi bi-trash me-1"></i>Hapus';
+        var f = new URLSearchParams(); f.append('csrf_token', CSRF);
+        fetch(BASE + '/profil/ttd/hapus', { method: 'POST', body: f, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (j) { if (j && j.ok) { muatStatus().then(function () { pesan('TTD dihapus.', true); }); } else { pesan('Gagal menghapus TTD.'); } })
+            .catch(function () { pesan('Gagal menghapus TTD.'); });
+    });
+
+    fit();
+    muatStatus(false, true);
+})();
+</script>
+<!-- ===== TTD DIGITAL (selesai) ===== -->

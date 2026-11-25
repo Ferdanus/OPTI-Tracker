@@ -1,4 +1,12 @@
 <style>
+    .po-xl-src { font-family: system-ui, 'Segoe UI', Arial, sans-serif; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; background: #ecfdf3; color: #15803d; border: 1px dashed #15803d; border-radius: 8px; padding: 6px 10px; font-size: 12px; margin: 0 0 10px; }
+    .po-xl-src .po-xl-sp { flex: 1; }
+    .po-xl-src .po-xl-tag { font-size: 10.5px; color: #64748b; font-style: italic; }
+    .po-xl-btn { font: inherit; font-size: 12px; font-weight: 600; border: 1px solid #15803d; background: transparent; color: #15803d; border-radius: 999px; padding: 2px 10px; cursor: pointer; text-decoration: none; }
+    .po-xl-btn:hover { background: #15803d; color: #fff; }
+    @media print { .no-print { display: none !important; } }
+</style>
+<style>
     .po-doc-scope { font-family: 'Times New Roman', Times, serif; color: #000; }
     .po-doc-sheet {
         position: relative;
@@ -30,6 +38,7 @@
     .po-doc-sheet .po-body li { list-style: none !important; position: relative; padding-left: 22px; margin-bottom: 3px; text-align: justify; }
     .po-doc-sheet .po-body ol > li::before { content: counter(list-item) "."; position: absolute; left: 0; }
     .po-doc-sheet .po-body ol[type="a"] > li::before, .po-doc-sheet .po-body ol.list-alpha > li::before { content: counter(list-item, lower-alpha) "."; }
+    .po-doc-sheet .po-body ol.list-alpha-upper > li::before { content: counter(list-item, upper-alpha) "."; }   /* A. B. C. (kelas, karena type="A" dianggap sama dengan type="a" oleh CSS) */
     .po-doc-sheet .po-body ul > li::before { content: "\2022"; position: absolute; left: 6px; }
     .po-doc-sheet .po-body li > ol, .po-doc-sheet .po-body li > ul { margin-top: 3px; margin-bottom: 0; }
 
@@ -53,6 +62,7 @@
         word-break: break-word;
     }
     .po-doc-sheet ol[type="a"], .po-doc-sheet ol.list-alpha { list-style-type: lower-alpha !important; }
+    .po-doc-sheet ol.list-alpha-upper { list-style-type: upper-alpha !important; }
 
     /* [BARU] tabel RAB berjenjang (lingkungan) -- banyak kolom sempit (Kali/Jumlah/Hari),
        padding & font dikecilin dikit biar gak kepenuhan / kepotong di kertas A4. */
@@ -291,6 +301,11 @@
 
         <div class="po-section-title"><span class="po-no">{{ @po.nomor_rab ?: 5 }}.</span> <span>RENCANA ANGGARAN BIAYA (RAB)</span></div>
 
+        <!-- [BARU] RAB dari Excel: yang tampil HANYA tabel sheet Excel apa adanya (Nilai Kontrak dan rekap kategori sudah ada di barisnya), tanpa tabel Penerimaan/Pengeluaran bertingkat. -->
+        <check if="{{ @po.rab_excel.html }}">
+            {{ @po.rab_excel.html | raw }}
+        </check>
+
         <!-- [BARU] Format RAB berjenjang khusus SELULOSA -- ngikutin format RAB fisik (contoh
              "RAB KS Chitose"/"RAB KS Pusat Studi Sawit IPB"): a. Penerimaan / Nilai kontrak,
              lalu b. Rencana Pengeluaran dengan kategori berlabel huruf besar (A./B./dst), tiap
@@ -298,7 +313,7 @@
              item tunggal digabung nempel ke baris nomornya, dan item "Lembur" yang beruntun
              dikumpulin jadi satu mini-tabel Hari|Jam|OJ|%|Uang Makan. Beda dari format lingkungan
              di bawah -- makanya dipisah blok sendiri, gak nyampur pengaruhnya ke lingkungan. -->
-        <check if="{{ @po.rab_hitung.is_rab_baru && @order.jenis_layanan_opti == 'selulosa' }}">
+        <check if="{{ @po.rab_hitung.is_rab_baru && @order.jenis_layanan_opti == 'selulosa'  && !@po.rab_excel.html }}">
             <!-- kolom sama persis dengan tabel b. Rencana Pengeluaran di bawahnya (6/40/22/16/16) biar garis kolomnya sejajar -->
             <table class="rab-table" style="margin-bottom:6px;">
                 <colgroup>
@@ -444,7 +459,7 @@
              Biaya). Kategori "tanpa rincian" (mis. Biaya Penunjang Klien) cuma nongol di
              ringkasan persen ini, gak usah punya baris rincian sama sekali. Khusus LINGKUNGAN --
              selulosa punya format sendiri di atas. -->
-        <check if="{{ @po.rab_hitung.is_rab_baru && @order.jenis_layanan_opti != 'selulosa' }}">
+        <check if="{{ @po.rab_hitung.is_rab_baru && @order.jenis_layanan_opti != 'selulosa'  && !@po.rab_excel.html }}">
             <table class="rab-table" style="margin-bottom:6px;">
                 <colgroup>
                     <col style="width:52%;"><col style="width:16%;"><col style="width:32%;">
@@ -567,7 +582,7 @@
         </check>
 
         <!-- Format RAB lama (selulosa): A. Penerimaan / B. Rencana Pengeluaran, gak diubah sama sekali. -->
-        <check if="{{ !@po.rab_hitung.is_rab_baru }}">
+        <check if="{{ !@po.rab_hitung.is_rab_baru  && !@po.rab_excel.html }}">
             <table class="rab-table">
                 <colgroup>
                     <col style="width:26%;"><col style="width:6%;"><col style="width:6%;">
@@ -629,7 +644,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <repeat group="{{ @group.kegiatan }}" value="{{ @keg }}">
+                                <repeat group="{{ isset(@chunk.kegiatan_tampil) && @chunk.kegiatan_tampil ? @chunk.kegiatan_tampil : @group.kegiatan }}" value="{{ @keg }}">
                                     <tr>
                                         <td>{{ @keg.nama }}</td>
                                         <repeat group="{{ @chunk.kolom }}" value="{{ @k }}">

@@ -13,5 +13,10 @@
 /dabatase/*
 /scratch/*
 
+
+/storage/kesanggupan_bayar/*
+/storage/rab_excel/*
+!/storage/rab_excel/.htaccess
+
 /recycle-laterr/
 /config.ini

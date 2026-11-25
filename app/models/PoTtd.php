@@ -364,9 +364,41 @@ class PoTtd
     }
 
     /**
+     * Isi ruang tanda tangan satu penanda tangan (PPK / Ketua Tim).
+     *  - belum approve        : kosong
+     *  - mode layar           : gambar TTD (bila ada) + cap APPROVE miring di atasnya
+     *  - mode cetak (PDF)     : hanya gambar TTD; tanpa gambar kosong (untuk tanda tangan basah)
+     */
+    protected static function htmlRuangTtd($sudah, $uriGambar, $cetak, $gap)
+    {
+        if (!$sudah) { return '&nbsp;'; }
+        $img = '';
+        if ($uriGambar !== '' && strpos($uriGambar, 'data:image/png;base64,') === 0) {
+            $img = '<img src="' . $uriGambar . '" alt="" style="height:' . max(30, (int) $gap - 18) . 'px;max-width:100%">';
+        }
+        if ($cetak) { return $img !== '' ? $img : '&nbsp;'; }
+        if ($img === '') { return self::htmlCap(); }
+        // layar: cap APPROVE di belakang, gambar TTD menimpa di atasnya (goresan TTD tetap terbaca jelas)
+        return '<style>@media print{.ptd-cap-layar{display:none!important}}</style>'
+            . '<span style="position:relative;display:inline-block;line-height:0">'
+            . '<span class="ptd-cap-layar" style="position:absolute;left:50%;top:50%;z-index:1;line-height:1.2;-webkit-transform:translate(-50%,-50%);transform:translate(-50%,-50%);white-space:nowrap">' . self::htmlCap() . '</span>'
+            . '<span style="position:relative;z-index:2;display:inline-block">' . $img . '</span></span>';
+    }
+
+    /** Tulisan APPROVE untuk ruang tanda tangan: hijau pudar, kecil, agak miring; tanpa opacity agar tampil di cetak dan PDF. */
+    protected static function htmlCap()
+    {
+        return '<span style="display:inline-block;border:2px solid #5b9a74;color:#5b9a74;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;padding:2px 9px;line-height:1.2;-webkit-transform:rotate(-9deg);transform:rotate(-9deg)">APPROVE</span>';
+    }
+
+    /**
      * HTML blok tanda tangan (tabel + style sebaris, aman untuk Dompdf maupun browser).
      * $bulanTahun = teks tanggal di atas tanda tangan, mis. "April 2026".
-     * $o: ketuaBawaan (jabatan bila belum dipilih), gap (tinggi ruang tanda tangan, px).
+     * $o: ketuaBawaan (jabatan bila belum dipilih), gap (tinggi ruang tanda tangan, px),
+     *     cap = ['ppk' => bool, 'ketua' => bool]: PPK / Ketua Tim sudah approve (Kepala Balai tidak diberi cap / TTD).
+     *     ttd = ['ppk' => dataURI, 'ketua' => dataURI]: gambar tanda tangan pemilik akun yang approve (kosong bila belum upload).
+     *     mode = 'layar' (preview: TTD + cap APPROVE miring menimpa TTD, cap disembunyikan saat print browser) atau
+     *            'cetak' (PDF / unduh: hanya TTD; tanpa TTD tidak ada apa-apa, ruangnya kosong untuk tanda tangan basah).
      */
     public static function htmlBlok(array $t, $bulanTahun, array $o = array())
     {
@@ -376,6 +408,11 @@ class PoTtd
         $kota = trim($t['kota']) !== '' ? self::h($t['kota']) : '.....';
         $tgl = trim((string) $bulanTahun) !== '' ? self::h($bulanTahun) : '.....';
         $td = 'style="border:0;padding:0;vertical-align:top;text-align:center;font-weight:700;';
+        $cap = (isset($o['cap']) && is_array($o['cap'])) ? $o['cap'] : array();
+        $gambar = (isset($o['ttd']) && is_array($o['ttd'])) ? $o['ttd'] : array();
+        $cetak = (isset($o['mode']) && $o['mode'] === 'cetak');
+        $capPpk = self::htmlRuangTtd(!empty($cap['ppk']), isset($gambar['ppk']) ? (string) $gambar['ppk'] : '', $cetak, $gap);
+        $capKetua = self::htmlRuangTtd(!empty($cap['ketua']), isset($gambar['ketua']) ? (string) $gambar['ketua'] : '', $cetak, $gap);
         return '<div class="ptd-blok" style="margin-top:18px;font-weight:700;page-break-inside:avoid">'
             . '<div style="text-align:right;margin-bottom:14px;font-weight:400">' . $kota . ',&nbsp;&nbsp; ' . $tgl . '</div>'
             . '<table style="width:100%;border-collapse:collapse;table-layout:fixed;border:0"><tr>'
@@ -383,7 +420,7 @@ class PoTtd
             . '<td style="border:0;padding:0;width:10%">&nbsp;</td>'
             . '<td ' . $td . 'width:45%"><div>Pelaksana Kegiatan,</div>' . self::blokBaris($t['ketua'], $ketuaBawaan) . '</td>'
             . '</tr><tr>'
-            . '<td ' . $td . 'height:' . $gap . 'px">&nbsp;</td><td style="border:0;padding:0">&nbsp;</td><td ' . $td . 'height:' . $gap . 'px">&nbsp;</td>'
+            . '<td ' . $td . 'height:' . $gap . 'px;vertical-align:middle">' . $capPpk . '</td><td style="border:0;padding:0">&nbsp;</td><td ' . $td . 'height:' . $gap . 'px;vertical-align:middle">' . $capKetua . '</td>'
             . '</tr><tr>'
             . '<td ' . $td . '">' . self::blokNama($t['ppk']) . '</td><td style="border:0;padding:0">&nbsp;</td><td ' . $td . '">' . self::blokNama($t['ketua']) . '</td>'
             . '</tr></table>'

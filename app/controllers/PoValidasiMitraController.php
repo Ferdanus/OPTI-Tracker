@@ -93,6 +93,7 @@ class PoValidasiMitraController extends Controller {
                         EXISTS(SELECT 1 FROM opti_pembayaran pb WHERE pb.order_id = o.id AND pb.is_kesanggupan_bayar = 1 AND pb.status_verifikasi = 'terverifikasi') AS skb_terverifikasi,
                         " . $this->kolom('p', 'verifikasi_humas_at') . " AS verifikasi_humas_at,
                         " . $this->kolom('p', 'humas_dibaca_at') . " AS humas_dibaca_at,
+                        " . $this->kolom('p', 'disposisi_humas_at') . " AS disposisi_humas_at,
                         " . $this->kolom('p', 'catatan_humas') . " AS catatan_humas,
                         " . $this->kolom('p', 'mitra_dibaca_at') . " AS mitra_dibaca_at,
                         " . $this->kolomProposal() . " AS tgl_proposal,
@@ -138,7 +139,58 @@ class PoValidasiMitraController extends Controller {
             $r['nama_katim']   = isset($peta[$idk]) ? $peta[$idk] : '';
             $hasil[] = $this->petakan($r);
         }
+        return $this->perkayaInfoOrder($hasil);
+    }
+
+    /**
+     * Info order untuk tabel yang disamakan dengan Daftar Order / Daftar PO: nomor permintaan, tanggal order, saluran permohonan, durasi dan Estimasi Biaya.
+     * Diambil dari model order yang sama dengan Daftar Order; kalau gagal, daftar tetap tampil tanpa info tambahan.
+     */
+    protected function perkayaInfoOrder(array $hasil) {
+        $info = [];
+        try {
+            $ids = [];
+            foreach ($hasil as $h) { if (!empty($h['order_id'])) { $ids[] = (int) $h['order_id']; } }
+            if ($ids) {
+                $model = new \OrderLayanan($this->db);
+                foreach ($model->allWithRelasi('', '', '', 'all', 'semua', 'all', array_values(array_unique($ids))) as $ro) { $info[(int) $ro['id']] = $ro; }
+            }
+        } catch (\Throwable $e) { $info = []; }
+        $petaMedia = [
+            'whatsapp' => ['WhatsApp', 'bi-chat-dots'], 'telepon' => ['Telepon', 'bi-telephone'], 'email' => ['E-mail', 'bi-envelope-at'],
+            'fax' => ['Fax', 'bi-printer'], 'datang_langsung' => ['Datang Langsung', 'bi-building'], 'website' => ['Website', 'bi-laptop'],
+        ];
+        foreach ($hasil as &$h) {
+            $ro = isset($info[(int) ($h['order_id'] ?? 0)]) ? $info[(int) $h['order_id']] : null;
+            $pm = $petaMedia[$ro ? (string) ($ro['media_permohonan'] ?? '') : ''] ?? ['Surat', 'bi-envelope-paper'];
+            $acuan = $ro ? (float) (($ro['estimasi_biaya'] ?? 0) ?: ($ro['biaya_po'] ?? 0)) : (float) ($h['nilai'] ?? 0);
+            $bayar = $ro ? (float) ($ro['total_terbayar'] ?? 0) : (float) ($h['terbayar'] ?? 0);
+            $lunas = $ro ? !empty($ro['bayar_lunas']) : !empty($h['lunas']);
+            $h['punya_info_order'] = $ro !== null;
+            $h['nomor_permintaan'] = $ro ? (string) ($ro['nomor_permintaan'] ?? '') : '';
+            $h['tanggal_order']    = ($ro && !empty($ro['tanggal_masuk'])) ? date('d/m/Y', strtotime($ro['tanggal_masuk'])) : '';
+            $h['media_label']      = $pm[0];
+            $h['media_icon']       = $pm[1];
+            $h['durasi_ditentukan'] = $ro ? !empty($ro['durasi_ditentukan']) : false;
+            $h['durasi_tampil']    = $ro ? (string) ($ro['durasi_tampil'] ?? '') : '';
+            $h['durasi_badge_class'] = $ro ? (string) ($ro['durasi_badge_class'] ?? '') : '';
+            $h['durasi_tooltip']   = $ro ? (string) ($ro['durasi_tooltip'] ?? '') : '';
+            $h['eb_acuan']         = number_format($acuan, 0, ',', '.');
+            $h['eb_terbayar']      = $bayar > 0 ? number_format($bayar, 0, ',', '.') : '';
+            $h['eb_lunas']         = $lunas;
+            $h['eb_sisa']          = (!$lunas && $bayar > 0 && $ro) ? number_format((float) ($ro['sisa_tagihan_order'] ?? 0), 0, ',', '.') : '';
+        }
+        unset($h);
         return $hasil;
+    }
+
+    /** Waktu Humas pertama kali membuka PO (setelah PO masuk), atau '' bila belum. */
+    protected static function bacaHumas(array $r) {
+        $b = self::tanggalJam((string) ($r['humas_dibaca_at'] ?? ''));
+        if ($b === '') { return ''; }
+        $m = self::tanggalJam((string) ($r['disposisi_humas_at'] ?? ''));
+        if ($m !== '' && strtotime($b) < strtotime($m)) { return ''; }
+        return $b;
     }
 
     /** Baris DB -> item JSON (daftar + bahan panel samping / tab Alur). */
@@ -195,14 +247,14 @@ class PoValidasiMitraController extends Controller {
             'ttd_nama'           => (string) ($r['po_ttd_nama'] ?? ''),
             'ttd_oleh'           => (string) ($r['po_ttd_oleh_nama'] ?? ''),
             'url_ttd'            => trim((string) ($r['po_ttd_at'] ?? '')) !== '' ? (\Base::instance()->get('BASE') . '/po-kegiatan/' . (int) $r['id'] . '/po-ttd-mitra') : '',
-            'kontrak_url'        => (trim((string) ($r['kontrak_dibuat_at'] ?? '')) !== '' && $this->isSuperadmin()) ? (\Base::instance()->get('BASE') . '/pks/' . (int) $r['id'] . '/unduh') : '',
+            'kontrak_url'        => trim((string) ($r['kontrak_dibuat_at'] ?? '')) !== '' ? $this->urlPksKartu($r['id']) : '',
             // untuk kolom Status PO: revisi PPK BLU dan sudah dibuka PPK BLU atau belum (penanda di-reset tiap perpindahan tahap)
             'ppk_status'         => (string) ($r['ppk_status'] ?? ''),
             // ---- Map Kendali F.PJT-12-03/1 (kartu di tab Berkas; hanya tanggal, jam tidak dipakai) ----
             'disiapkan'          => ((string) ($r['jenis_layanan_opti'] ?? '')) !== '' ? 'Tim Kerja OPTI ' . ucfirst(strtolower((string) $r['jenis_layanan_opti'])) : 'Tim Kerja OPTI',
             'map' => [
                 'proposal' => self::tanggal((string) ($r['tgl_proposal'] ?? '')),
-                'humas'    => self::tanggal((string) ($r['verifikasi_humas_at'] ?? '')),
+                'humas'    => self::tanggal(self::bacaHumas($r)),   // Humas hanya melihat: tanggal pertama kali membuka PO
                 'mitra'    => self::tanggal((string) ($r['tervalidasi_mitra_at'] ?? '')),
                 'keuangan' => self::tanggal((string) ($r['validasi_keuangan_at'] ?? '')),
             ],

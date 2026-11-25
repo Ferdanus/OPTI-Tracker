@@ -94,6 +94,29 @@ class PksDocx {
         }, $xml);
     }
 
+    /**
+     * Paragraf poin bernomor milik template (numId level 0, "(1)") disesuaikan untuk sub-poin:
+     * a = level 1 daftar yang sama (a., b., c.; Word mengulang hurufnya tiap poin utama) dan menjorok satu tingkat;
+     * b = tanpa penomoran, diawali bullet + tab, menjorok satu tingkat.
+     */
+    protected static function sesuaikanTipe($p, $tp, $penanda) {
+        if ($tp !== 'a' && $tp !== 'b') { return $p; }
+        $p = preg_replace_callback('#<w:ind w:left="(\d+)" w:hanging="(\d+)"/>#', function ($m) {
+            return '<w:ind w:left="' . ((int) $m[1] + (int) $m[2]) . '" w:hanging="' . (int) $m[2] . '"/>';
+        }, $p, 1);
+        if ($tp === 'a') {
+            return preg_replace('#(<w:numPr><w:ilvl w:val=")0(")#', '${1}1${2}', $p, 1);
+        }
+        $p = preg_replace('#<w:numPr>.*?</w:numPr>#s', '', $p, 1);
+        return preg_replace_callback(
+            '#<w:r(?:\s[^>]*)?>((?:<w:rPr>(?:(?!</w:rPr>).)*</w:rPr>)?)<w:t(?:\s[^>]*)?>' . preg_quote($penanda, '#') . '</w:t></w:r>#s',
+            function ($m) {
+                return '<w:r>' . $m[1] . '<w:t xml:space="preserve">' . "\u{2022}" . '</w:t></w:r><w:r>' . $m[1] . '<w:tab/></w:r>' . $m[0];
+            },
+            $p, 1
+        );
+    }
+
     /** Gandakan paragraf yang memuat $penanda, satu per item. Daftar kosong: penanda dibuang (satu baris kosong). */
     protected static function ulangParagraf($xml, $penanda, array $items) {
         return preg_replace_callback(self::PARAGRAF, function ($m) use ($penanda, $items) {
@@ -108,7 +131,10 @@ class PksDocx {
             }
             $hasil = '';
             foreach ($items as $item) {
-                if (is_array($item)) {
+                if (is_array($item) && isset($item['tp'])) {
+                    // poin berjenis: n = bernomor (1), a = sub-poin huruf, b = sub-poin bullet
+                    $hasil .= self::gantiRich(self::sesuaikanTipe($p, $item['tp'], $penanda), trim($penanda, '{}'), [$item['runs']]);
+                } elseif (is_array($item)) {
                     $hasil .= self::gantiRich($p, trim($penanda, '{}'), [$item]);   // satu poin = satu baris berformat
                 } else {
                     $hasil .= str_replace($penanda, self::esc($item), $p);
@@ -205,20 +231,36 @@ class PksDocx {
 
     /** Nilai (teks biasa atau HTML editor) -> daftar baris; tiap baris = daftar run ['t','b','i','u']. */
     public static function barisDariTeks($v) {
+        return array_map(function ($x) { return $x['runs']; }, self::urai($v));
+    }
+
+    /**
+     * Seperti barisDariTeks, tapi tiap baris membawa jenis poinnya: [['tp' => 'n'|'a'|'b', 'runs' => [...]], ...].
+     * n = poin bernomor (1), a = sub-poin huruf (a.), b = sub-poin bullet. Jenis dibaca dari atribut data-t pada <div> editor
+     * (atau dari <ol type="a"> / <ul> bila nilainya ditempel dari tempat lain). Teks biasa selalu n.
+     */
+    public static function barisBertipe($v) {
+        return self::urai($v);
+    }
+
+    protected static function urai($v) {
         $v = (string) $v;
         $lines = [];
+        $tipe = [];
         if (!self::adaMarkup($v)) {
             foreach (preg_split('/\R/u', $v) as $b) {
                 $lines[] = [['t' => $b, 'b' => false, 'i' => false, 'u' => false]];
+                $tipe[] = 'n';
             }
-            return self::rapikanBaris($lines);
+            return self::rapikanBaris($lines, $tipe);
         }
         if (!class_exists('DOMDocument')) {
             $v = str_ireplace(['</div>', '</p>', '<br>', '<br/>', '<br />'], "\n", $v);
             foreach (preg_split('/\R/u', html_entity_decode(strip_tags($v), ENT_QUOTES, 'UTF-8')) as $b) {
                 $lines[] = [['t' => $b, 'b' => false, 'i' => false, 'u' => false]];
+                $tipe[] = 'n';
             }
-            return self::rapikanBaris($lines);
+            return self::rapikanBaris($lines, $tipe);
         }
 
         $pakaiErr = libxml_use_internal_errors(true);
@@ -230,11 +272,12 @@ class PksDocx {
         if (!$body) { return []; }
 
         $cur = null;
-        $ambil = function () use (&$lines, &$cur) {
-            if ($cur === null) { $lines[] = []; $cur = count($lines) - 1; }
+        $tpNow = 'n';
+        $ambil = function () use (&$lines, &$tipe, &$cur, &$tpNow) {
+            if ($cur === null) { $lines[] = []; $tipe[] = $tpNow; $cur = count($lines) - 1; }
             return $cur;
         };
-        $walk = function ($node, $b, $i, $u) use (&$walk, &$lines, &$cur, $ambil) {
+        $walk = function ($node, $b, $i, $u) use (&$walk, &$lines, &$cur, &$tpNow, $ambil) {
             foreach ($node->childNodes as $c) {
                 if ($c->nodeType === XML_TEXT_NODE) {
                     $t = preg_replace('/[\r\n\t]+/', ' ', str_replace("\xC2\xA0", ' ', (string) $c->nodeValue));
@@ -249,7 +292,18 @@ class PksDocx {
                 if ($tag === 'br') { $ambil(); $cur = null; continue; }
                 if (in_array($tag, ['div', 'p', 'li', 'ul', 'ol'], true)) {
                     $cur = null;
+                    $simpanTp = $tpNow;
+                    $dt = ($c instanceof \DOMElement && $c->hasAttribute('data-t')) ? strtolower((string) $c->getAttribute('data-t')) : '';
+                    if ($dt === 'a' || $dt === 'b' || $dt === 'n') {
+                        $tpNow = $dt;
+                    } elseif ($tag === 'ul') {
+                        $tpNow = 'b';
+                    } elseif ($tag === 'ol') {
+                        $ty = ($c instanceof \DOMElement) ? strtolower((string) $c->getAttribute('type') . ' ' . (string) $c->getAttribute('style')) : '';
+                        $tpNow = (strpos($ty, 'a') === 0 || strpos($ty, 'lower-alpha') !== false) ? 'a' : 'n';
+                    }
                     $walk($c, $b, $i, $u);
+                    $tpNow = $simpanTp;
                     $cur = null;
                     continue;
                 }
@@ -267,13 +321,16 @@ class PksDocx {
             }
         };
         $walk($body, false, false, false);
-        return self::rapikanBaris($lines);
+        return self::rapikanBaris($lines, $tipe);
     }
 
-    /** Gabungkan run bergaya sama, rapikan spasi tepi baris, buang baris kosong di ujung. */
-    protected static function rapikanBaris(array $lines) {
+    /**
+     * Gabungkan run bergaya sama, rapikan spasi tepi baris, buang baris kosong di ujung.
+     * @return array [['tp' => jenis poin, 'runs' => daftar run], ...]
+     */
+    protected static function rapikanBaris(array $lines, array $tipe = []) {
         $hasil = [];
-        foreach ($lines as $runs) {
+        foreach ($lines as $idx => $runs) {
             $g = [];
             foreach ($runs as $r) {
                 if ($r['t'] === '') { continue; }
@@ -290,38 +347,40 @@ class PksDocx {
                 $g[$n - 1]['t'] = rtrim($g[$n - 1]['t']);
                 $g = array_values(array_filter($g, function ($r) { return $r['t'] !== ''; }));
             }
-            $hasil[] = $g;
+            $tp = isset($tipe[$idx]) ? $tipe[$idx] : 'n';
+            $hasil[] = ['tp' => ($tp === 'a' || $tp === 'b') ? $tp : 'n', 'runs' => $g];
         }
-        while ($hasil && self::teksBaris($hasil[0]) === '') { array_shift($hasil); }
-        while ($hasil && self::teksBaris($hasil[count($hasil) - 1]) === '') { array_pop($hasil); }
+        while ($hasil && self::teksBaris($hasil[0]['runs']) === '') { array_shift($hasil); }
+        while ($hasil && self::teksBaris($hasil[count($hasil) - 1]['runs']) === '') { array_pop($hasil); }
         return $hasil;
     }
 
     /** Bentuk simpan baku: teks biasa kalau tanpa format, kalau berformat HTML sederhana. '' kalau kosong. */
     public static function kanonik($v, $maks) {
-        $baris = self::barisDariTeks($v);
+        $baris = self::barisBertipe($v);
         if (!$baris) { return ''; }
         $adaGaya = false;
         $plain = [];
-        foreach ($baris as $b) {
-            $plain[] = self::teksBaris($b);
-            foreach ($b as $r) { if ($r['b'] || $r['i'] || $r['u']) { $adaGaya = true; } }
+        foreach ($baris as $bt) {
+            $plain[] = self::teksBaris($bt['runs']);
+            if ($bt['tp'] !== 'n') { $adaGaya = true; }
+            foreach ($bt['runs'] as $r) { if ($r['b'] || $r['i'] || $r['u']) { $adaGaya = true; } }
         }
         $teks = implode("\n", $plain);
         if (!$adaGaya && !self::adaMarkup($teks)) {
             return mb_substr($teks, 0, $maks, 'UTF-8');
         }
         $html = '';
-        foreach ($baris as $b) {
+        foreach ($baris as $bt) {
             $isi = '';
-            foreach ($b as $r) {
+            foreach ($bt['runs'] as $r) {
                 $x = htmlspecialchars($r['t'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
                 if ($r['u']) { $x = '<u>' . $x . '</u>'; }
                 if ($r['i']) { $x = '<i>' . $x . '</i>'; }
                 if ($r['b']) { $x = '<b>' . $x . '</b>'; }
                 $isi .= $x;
             }
-            $html .= '<div>' . ($isi !== '' ? $isi : '<br>') . '</div>';
+            $html .= '<div' . ($bt['tp'] !== 'n' ? ' data-t="' . $bt['tp'] . '"' : '') . '>' . ($isi !== '' ? $isi : '<br>') . '</div>';
         }
         if (mb_strlen($html, 'UTF-8') > $maks) {
             return mb_substr($teks, 0, $maks, 'UTF-8');   // terlalu panjang: format dibuang supaya muat di kolom

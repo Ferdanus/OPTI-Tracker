@@ -152,6 +152,8 @@ class Controller {
         $this->f3 = \Base::instance();
         $this->db = $this->f3->get('DB');
         $this->dbSekretariat = $this->f3->get('DB_SEKRETARIAT');
+        // [BARU] tabel dan kolom ajuan perbaikan PO (dibuat otomatis sekali per sesi; dipakai PoRevisiPpkController dkk)
+        if ($this->db && class_exists('PoAjuanPerbaikanController')) { \PoAjuanPerbaikanController::pastikanSkema($this->db); }
     }
 
     /**
@@ -222,6 +224,7 @@ class Controller {
         // indikator "Tugas Saya" dan badge di setiap tab Daftar Order.
         $notifOrderCount = 0;
         $notifPoHumas = 0;
+        $humasSertAda = false;
         try {
             if ($role === 'superadmin') {
                 // Superadmin mengawasi seluruh order aktif yang sedang berjalan maupun order masuk
@@ -242,13 +245,18 @@ class Controller {
             }
 
             if ($role === 'humas') {
-                // Humas: PO yang sudah disetujui Ketua Tim dan menunggu verifikasi Humas (badge PO Humas)
+                // Daftar PO Humas tidak lagi tampil untuk PO OPTI (Humas membaca PO lewat menu PKS, tombol Lihat PO). Menunya hanya muncul
+                // bila ada PO Sertifikasi, karena PO Sertifikasi masih diverifikasi Humas di sana. Badge = PO Sertifikasi yang belum diverifikasi / dibuka Humas.
                 $resHumas = $this->db->exec(
                     "SELECT COUNT(DISTINCT p.order_id) AS c FROM po_kegiatan p
                       WHERE p.status IN ('terkirim','disetujui_mitra','disetujui') AND p.status_review = 'disetujui'
-                        AND p.verifikasi_humas_at IS NULL"
+                        AND p.layanan IN ('" . \PoSchema::SERTIFIKASI . "', 'kalibrasi')
+                        AND (p.verifikasi_humas_at IS NULL OR p.humas_dibaca_at IS NULL
+                             OR (p.disposisi_humas_at IS NOT NULL AND p.humas_dibaca_at < p.disposisi_humas_at))"
                 );
                 $notifPoHumas = (int)($resHumas[0]['c'] ?? 0);
+                $resAdaSert = $this->db->exec("SELECT 1 AS c FROM po_kegiatan p WHERE p.status_review = 'disetujui' AND p.layanan = '" . \PoSchema::SERTIFIKASI . "' LIMIT 1");
+                $humasSertAda = !empty($resAdaSert);
             }
         } catch (\Exception $eOrder) {
             $notifOrderCount = 0;
@@ -257,7 +265,10 @@ class Controller {
         $this->f3->set('jumlah_notif_katim', $notifOrderCount);
         // Badge menu Daftar PO (Humas) = PO yang menunggu verifikasi; badge menu Kontrak = kontrak yang menunggu dibuat
         $this->f3->set('jumlah_notif_po_humas', $notifPoHumas);
+        $this->f3->set('humas_po_sert_ada', $humasSertAda);
         $this->f3->set('jumlah_notif_kontrak', ($role === 'humas' || $role === 'admin_kontrak' || $role === 'superadmin') ? $this->hitungKontrakMenunggu() : 0);
+        // Badge menu BAST (Humas) = BAST yang sudah dikirim Ketua Tim dan menunggu nomor
+        $this->f3->set('jumlah_notif_bast_humas', ($role === 'humas' || $role === 'admin_kontrak' || $role === 'superadmin') ? \OptiBast::hitungMenungguHumas($this->db) : 0);
         // Badge menu PKS Tim Mitra = PKS dari Humas yang belum dibuka dan belum ada PKS bertanda tangan
         $this->f3->set('jumlah_notif_pks_mitra', $isTimMitra ? \PksMitraController::hitungBelumDibuka($this->db) : 0);
 
@@ -385,6 +396,7 @@ try {
                   WHERE o.ketua_pelaksana_id IS NOT NULL
                     AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa', 'pengujian')
                     AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . ")
+                    AND " . $this->sqlSyaratPoMasuk('o') . "
                     AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
         $paramsPo = array();
 
@@ -409,7 +421,10 @@ try {
                       WHERE o.ketua_pelaksana_id IS NOT NULL
                         AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa')
                         AND ((p.status = 'terkirim' AND p.validasi_keuangan_at IS NULL AND COALESCE(p.status_review, '') NOT IN ('disetujui', 'perlu_revisi'))
-                             OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') IN ('minta', 'katim_kerja', 'katim_review')))"
+                             OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') IN ('minta', 'katim_kerja', 'katim_review'))
+                             OR ((p.validasi_keuangan_at IS NOT NULL OR p.status = 'disetujui')
+                                 AND NOT (COALESCE(p.status_review, '') = 'perlu_revisi' OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') IN ('minta', 'katim_kerja', 'ketupel_kerja', 'katim_review')))
+                                 AND (p.po_ttd_file IS NULL OR p.po_ttd_file = '')))"
                    . \PoSchema::bukanSertifikasi('p');
             $paramsPo = array();
             if (in_array($layanan, array('selulosa', 'lingkungan'))) {
@@ -421,6 +436,27 @@ try {
 
         foreach ($this->db->exec($sqlPo, $paramsPo) as $r) {
             $notifPo[strtolower($r['divisi'])] = (int)$r['c'];
+        }
+
+        // Ketua Pelaksana (tim_kerja): badge Daftar PO = angka tombol "Perlu Tindakan" = PO Masuk (dihitung di atas) + Revisi miliknya + Menunggu Tanda Tangan
+        if ($role === 'tim_kerja') {
+            $sqlPerlu = "SELECT o.jenis_layanan_opti AS divisi, COUNT(DISTINCT p.id) AS c
+                         FROM po_kegiatan p
+                         JOIN order_layanan o ON o.id = p.order_id
+                         WHERE o.ketua_pelaksana_id IS NOT NULL
+                           AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa')
+                           AND (
+                                (o.ketua_pelaksana_id = ? AND (p.status IN ('draft', 'terkirim', 'disetujui_mitra', 'disetujui') OR p.validasi_keuangan_at IS NOT NULL)
+                                 AND (COALESCE(p.status_review, '') = 'perlu_revisi' OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') = 'ketupel_kerja')))
+                                OR ((p.validasi_keuangan_at IS NOT NULL OR p.status = 'disetujui')
+                                    AND NOT (COALESCE(p.status_review, '') = 'perlu_revisi' OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') IN ('minta', 'katim_kerja', 'ketupel_kerja', 'katim_review')))
+                                    AND (p.po_ttd_file IS NULL OR p.po_ttd_file = ''))
+                           )"
+                      . \PoSchema::bukanSertifikasi('p') . " GROUP BY o.jenis_layanan_opti";
+            foreach ($this->db->exec($sqlPerlu, array(1 => (int)$userId)) as $r) {
+                $kDiv = strtolower($r['divisi']);
+                $notifPo[$kDiv] = (isset($notifPo[$kDiv]) ? (int)$notifPo[$kDiv] : 0) + (int)$r['c'];
+            }
         }
     }
 } catch (\Exception $ePo) {
@@ -434,10 +470,11 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         if ($isKeuangan || $role === 'ketua_tim' || $role === 'superadmin') {
             try {
                 $whereDivPay = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
-                // Sama dengan tab "Baru Masuk" + "Sedang Berjalan" di halaman Pembayaran: hanya order yang SUDAH didisposisikan ke Keuangan
-                // (status_keuangan 'menunggu_pembayaran' / 'terbayar_sebagian'). Order yang baru DEAL tapi belum didisposisi tidak dihitung.
+                // Sama dengan tab "Baru Masuk" di halaman Pembayaran: hanya order yang SUDAH didisposisikan ke Keuangan
+                // (status_keuangan 'menunggu_pembayaran') dan belum ada satu pun transaksi pembayaran. Yang sudah berjalan/lunas tidak dihitung.
                 $sqlKeuangan = "SELECT COUNT(DISTINCT o.id) as c FROM order_layanan o
-                                WHERE {$whereDivPay} o.status_keuangan IN ('menunggu_pembayaran', 'terbayar_sebagian')
+                                WHERE {$whereDivPay} o.status_keuangan = 'menunggu_pembayaran'
+                                  AND o.id NOT IN (SELECT DISTINCT order_id FROM opti_pembayaran)
                                   AND (o.status IS NULL OR o.status NOT IN ('batal', 'ditolak'))
                                   AND (o.status_rancop IS NULL OR o.status_rancop != 'batal')";
                 $resKeuangan = $this->db->exec($sqlKeuangan);
@@ -466,14 +503,14 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
         $this->f3->set('jumlah_notif_berkas', $notifBerkasCount);
 
         // [BARU] Badge "Penunjukan Pelaksana" (Ka Tim OPTI & Superadmin) -- order yang udah
-        // didisposisi + lunas + sampel diterima, tapi Ketua Pelaksana belum ditunjuk.
+        // didisposisi + pembayaran sudah masuk (termin 1 / lunas) + sampel diterima, tapi Ketua Pelaksana belum ditunjuk.
         $notifPenunjukanPelaksana = 0;
         if ($role === 'ketua_tim' || $role === 'superadmin') {
             try {
                 $whereDivPenunjukan = ($role === 'ketua_tim' && in_array($layanan, array('selulosa', 'lingkungan'))) ? "o.jenis_layanan_opti = '{$layanan}' AND" : "";
                 $sqlPenunjukan = "SELECT COUNT(*) as c FROM order_layanan o
                                   WHERE {$whereDivPenunjukan} o.disposisi_katim_at IS NOT NULL
-                                    AND o.status_keuangan = 'lunas'
+                                    AND o.status_keuangan IN ('lunas', 'terbayar_sebagian')
                                     AND (o.tanggal_terima_sampel IS NOT NULL OR o.tanggal_spm_mulai IS NOT NULL)
                                     AND o.ketua_pelaksana_id IS NULL
                                     AND COALESCE(o.status, '') NOT IN ('batal', 'ditolak', 'selesai')";
@@ -816,8 +853,8 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
      * Ambil role user dari session
      */
     /**
-     * Jumlah order yang kontraknya menunggu dibuat Humas: PO sudah disetujui PPK BLU, PO bertanda tangan sudah di-upload,
-     * kontrak belum ditandai selesai, belum ada BAST dan order belum selesai (sama dengan posisi "PO Aktif - Menunggu Kontrak").
+     * Jumlah order yang PKS-nya menunggu dibuat Humas: PO sudah diverifikasi (di-ACC) Tim Mitra,
+     * PKS belum ditandai selesai, belum ada BAST dan order belum selesai. Humas bisa membuat PKS sejak Tim Mitra ACC (tidak menunggu PPK BLU / tanda tangan PO).
      * Dipakai badge sidebar Daftar Order dan Kontrak. Kolom belum ada / query gagal = 0.
      */
     protected function hitungKontrakMenunggu(): int {
@@ -828,8 +865,7 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             $res = $this->db->exec(
                 "SELECT COUNT(DISTINCT o.id) AS c FROM po_kegiatan p
                    JOIN order_layanan o ON o.id = p.order_id
-                  WHERE p.validasi_keuangan_at IS NOT NULL
-                    AND p.po_ttd_file IS NOT NULL AND p.po_ttd_file <> ''
+                  WHERE p.tervalidasi_mitra_at IS NOT NULL
                     AND p.kontrak_dibuat_at IS NULL
                     AND (o.status IS NULL OR o.status NOT IN ('selesai', 'batal', 'ditolak'))
                     AND NOT EXISTS (SELECT 1 FROM opti_bast b WHERE b.order_id = o.id)"
@@ -1358,43 +1394,70 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
     }
 
     /**
-     * Syarat penerbitan PO Kegiatan sebuah order: pembayaran LUNAS (atau dicatat via Surat Kesanggupan Bayar)
-     * DAN titik awal pengerjaan / SPM sudah aktif. Bayar sebagian cukup untuk mengaktifkan SPM,
-     * tapi PO baru terbuka setelah lunas.
-     * @return array ['ok' => bool, 'lunas' => bool, 'spm' => bool]
+     * URL tombol Lihat Pratinjau pada kartu Kontrak (PKS) di detail PO. Selalu ada kalau PKS sudah dibuat, supaya semua peran bisa
+     * membuka pratinjaunya (halaman PKS ?lihat=1 boleh dibuka semua user yang login). Tautan unduh Word (/unduh) hanya dipakai untuk
+     * peran yang memang boleh mengunduh (Superadmin, Humas, Admin PKS, Tim Mitra); peran lain mendapat tautan lihat saja.
+     */
+    protected function urlPksKartu($poId) {
+        $base = (string) \Base::instance()->get('BASE');
+        $boleh = $this->isSuperadmin() || $this->isTimMitra() || in_array((string) $this->getUserRole(), array('humas', 'admin_kontrak'), true);
+        return $base . '/pks/' . (int) $poId . ($boleh ? '/unduh' : '/form?lihat=1');
+    }
+
+    /**
+     * Potongan SQL (alias order_layanan = $o): order yang SUDAH BOLEH disusun PO-nya, dipakai untuk daftar "PO Masuk" & badge sidebar.
+     * Sama dengan syaratPoTerpenuhi(): penawaran DEAL + pembayaran sudah mulai (termin 1 / sebagian / lunas / Surat Kesanggupan Bayar)
+     * + SPM (Tahap 7) SUDAH DIAKTIFKAN. Simpan draf SPM belum mengisi tanggal_spm_mulai / tanggal_terima_sampel, jadi tidak lolos.
+     */
+    protected function sqlSyaratPoMasuk($o = 'o') {
+        return "(EXISTS (SELECT 1 FROM tb_surat_penawaran spd WHERE spd.order_id = {$o}.id AND spd.status_respon_klien = 'deal')"
+            . " AND ({$o}.tanggal_spm_mulai IS NOT NULL OR {$o}.tanggal_terima_sampel IS NOT NULL)"
+            . " AND ({$o}.status_keuangan IN ('lunas', 'terbayar_sebagian', 'sebagian')"
+            . " OR EXISTS (SELECT 1 FROM opti_pembayaran pbx WHERE pbx.order_id = {$o}.id AND pbx.status_verifikasi = 'terverifikasi')"
+            . " OR EXISTS (SELECT 1 FROM tb_surat_penawaran skx WHERE skx.order_id = {$o}.id AND skx.surat_kesanggupan_bayar IS NOT NULL AND skx.surat_kesanggupan_bayar <> '')))";
+    }
+
+    /**
+     * Syarat penerbitan PO Kegiatan sebuah order: pembayaran SUDAH MULAI (termin pertama / bayar sebagian / lunas,
+     * atau dicatat via Surat Kesanggupan Bayar) DAN titik awal pengerjaan / SPM sudah aktif.
+     * Tidak perlu menunggu lunas.
+     * @return array ['ok' => bool, 'bayar' => bool, 'spm' => bool]
      */
     protected function syaratPoTerpenuhi($orderId) {
         $orderId = (int) $orderId;
         try {
             $r = $this->db->exec(
-                "SELECT o.status_keuangan, o.estimasi_biaya, o.tanggal_spm_mulai, o.tanggal_terima_sampel,
+                "SELECT o.status_keuangan, o.estimasi_biaya, o.tanggal_spm_mulai, o.tanggal_terima_sampel, o.status AS status_order,
+                        (SELECT COUNT(*) FROM tb_surat_penawaran dl WHERE dl.order_id = o.id AND dl.status_respon_klien = 'deal') AS jumlah_deal,
                         COALESCE(sp.nominal_penawaran, 0) AS nominal_penawaran,
                         COALESCE(sp.surat_kesanggupan_bayar, '') AS surat_kesanggupan_bayar,
                         (SELECT COALESCE(SUM(jumlah), 0) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.status_verifikasi = 'terverifikasi') AS total_terbayar,
-                        (SELECT COUNT(*) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.is_kesanggupan_bayar = 1 AND p.status_verifikasi = 'terverifikasi') AS jumlah_kb
+                        (SELECT COUNT(*) FROM opti_pembayaran p WHERE p.order_id = o.id AND p.is_kesanggupan_bayar = 1 AND p.status_verifikasi = 'terverifikasi') AS jumlah_kb,
+                        (SELECT COUNT(*) FROM opti_pembayaran p WHERE p.order_id = o.id AND (p.is_kesanggupan_bayar = 0 OR p.is_kesanggupan_bayar IS NULL) AND p.status_verifikasi = 'terverifikasi') AS jumlah_bayar
                  FROM order_layanan o
                  LEFT JOIN tb_surat_penawaran sp ON sp.id = (
-                     SELECT id FROM tb_surat_penawaran 
-                     WHERE order_id = o.id 
-                     ORDER BY (status_respon_klien = 'deal') DESC, id DESC 
+                     SELECT id FROM tb_surat_penawaran
+                     WHERE order_id = o.id
+                     ORDER BY (status_respon_klien = 'deal') DESC, id DESC
                      LIMIT 1
                  )
                  WHERE o.id = ? LIMIT 1",
                 [1 => $orderId]
             );
         } catch (\Exception $e) {
-            return ['ok' => true, 'lunas' => true, 'spm' => true];   // gagal baca: jangan sampai menutup alur
+            // gagal baca data: tolak (fail-closed), jangan meloloskan PO yang syaratnya tidak bisa diperiksa
+            return ['ok' => false, 'bayar' => false, 'lunas' => false, 'spm' => false, 'deal' => false, 'pesan' => 'Data order tidak bisa diperiksa sekarang. Coba lagi beberapa saat.'];
         }
-        if (empty($r)) { return ['ok' => false, 'lunas' => false, 'spm' => false]; }
-        
+        if (empty($r)) { return ['ok' => false, 'bayar' => false, 'lunas' => false, 'spm' => false, 'deal' => false, 'pesan' => 'Order tidak ditemukan.']; }
+
         $biayaAcuan = (float)($r[0]['nominal_penawaran'] ?: $r[0]['estimasi_biaya']);
         $totalTerbayar = (float)($r[0]['total_terbayar'] ?? 0);
         $jumlahKb = (int)($r[0]['jumlah_kb'] ?? 0);
         $punyaSkb = ($jumlahKb > 0) || !empty(trim((string)($r[0]['surat_kesanggupan_bayar'] ?? '')));
         $statusKeu = (string)($r[0]['status_keuangan'] ?? '');
 
-        $lunas = ($statusKeu === 'lunas') 
-            || ($biayaAcuan > 0 && $totalTerbayar >= $biayaAcuan) 
+        $lunas = ($statusKeu === 'lunas')
+            || ($biayaAcuan > 0 && $totalTerbayar >= $biayaAcuan)
             || $punyaSkb;
 
         // Auto-heal: jika pembayaran sudah mencapai biaya acuan tapi status_keuangan belum 'lunas', sinkronkan ke DB
@@ -1404,8 +1467,21 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
             } catch (\Exception $e) {}
         }
 
-        $spm = !empty($r[0]['tanggal_spm_mulai']) || !empty($r[0]['tanggal_terima_sampel']);
-        return ['ok' => ($lunas && $spm), 'lunas' => $lunas, 'spm' => $spm];
+        // PO cukup menunggu pembayaran SUDAH MULAI (termin pertama / bayar sebagian / lunas / SKB), tidak perlu lunas
+        $bayar = $lunas
+              || in_array($statusKeu, ['terbayar_sebagian', 'sebagian'], true)
+              || ((int) ($r[0]['jumlah_bayar'] ?? 0) > 0);
+        $spm   = !empty($r[0]['tanggal_spm_mulai']) || !empty($r[0]['tanggal_terima_sampel']);
+        // Surat Penawaran wajib sudah DEAL (disetujui klien). Tanpa itu PO tidak boleh dibuat, dikirim, atau disetujui.
+        $deal  = ((int) ($r[0]['jumlah_deal'] ?? 0)) > 0;
+        $aktif = !in_array(strtolower(trim((string) ($r[0]['status_order'] ?? ''))), ['batal', 'ditolak'], true);
+        if (!$deal) { $pesan = 'Surat Penawaran order ini belum berstatus DEAL (disetujui klien).'; }
+        elseif (!$aktif) { $pesan = 'Order ini sudah dibatalkan atau ditolak.'; }
+        elseif (!$bayar && !$spm) { $pesan = 'Belum ada pembayaran tercatat dan SPM belum diaktifkan.'; }
+        elseif (!$bayar) { $pesan = 'Belum ada pembayaran yang tercatat pada order ini.'; }
+        elseif (!$spm) { $pesan = 'SPM (Tahap 7) belum diaktifkan.'; }
+        else { $pesan = ''; }
+        return ['ok' => ($deal && $aktif && $bayar && $spm), 'bayar' => $bayar, 'lunas' => $lunas, 'spm' => $spm, 'deal' => $deal, 'pesan' => $pesan];
     }
 
     /**

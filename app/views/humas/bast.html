@@ -1,0 +1,396 @@
+<!--
+    app/views/humas/bast.html
+    Halaman BAST di menu Humas: BAST yang sudah dikirim Ketua Tim (tab Perlu Nomor) dan yang sudah selesai (tab Selesai).
+    Humas membuka BAST lewat tombol "Isi Nomor": memberi nomor urut, memilih pejabat yang mengetahui, lalu Selesai.
+    Fragment (dirender di dalam layout lewat BastController::halamanHumas()). Class berawalan "dbh-", id berawalan "dbh".
+-->
+<style>
+    .dbh-root {
+        --dbh-primary: var(--color-primary, #334155);
+        --dbh-border: var(--color-border, #e2e8f0);
+        --dbh-muted: var(--color-text-muted, #64748b);
+        --dbh-text: var(--color-text-main, #0f172a);
+        --dbh-display: var(--font-display, inherit);
+        color: var(--dbh-text);
+    }
+    .dbh-root *, .dbh-root *::before, .dbh-root *::after { box-sizing: border-box; }
+    .dbh-root [hidden] { display: none !important; }
+    .dbh-root button { font-family: inherit; cursor: pointer; }
+    .dbh-head { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; }
+    .dbh-head h1 { font-size: 1.45rem; font-weight: 800; margin: 0; font-family: var(--dbh-display); }
+    .dbh-head i { font-size: 1.4rem; }
+    .dbh-baca { font-size: .73rem; font-weight: 600; }
+    .dbh-baca.belum { color: #b45309; }
+    .dbh-baca.sudah { color: #047857; }
+    .dbh-sub { font-size: .75rem; color: var(--dbh-muted); margin-top: 2px; }
+    .dbh-t tbody tr.dbh-unread td { background: #f8fafc; }
+    .dbh-t tr.dbh-unread > td:last-child .dbh-b.pri { position: relative; }
+    .dbh-t tr.dbh-unread > td:last-child .dbh-b.pri::after { content: ''; position: absolute; top: -5px; right: -5px; width: 11px; height: 11px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 0 2px #f8fafc; pointer-events: none; }
+    .dbh-tip { display: inline-block; position: relative; }
+    .dbh-tip:focus { outline: 0; }
+    #dbhTipPop { position: fixed; z-index: 2000; width: 250px; background: #0f172a; color: #fff; border-radius: 11px; padding: 11px 13px; font-size: .76rem; box-shadow: 0 14px 30px rgba(15,23,42,.32); pointer-events: none; opacity: 0; transform: translateY(-4px); transition: opacity .15s, transform .15s; }
+    #dbhTipPop.on { opacity: 1; transform: none; }
+    #dbhTipPop h4 { margin: 0 0 6px; font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; font-weight: 700; }
+    #dbhTipPop .r { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+    #dbhTipPop .r span { color: #cbd5e1; }
+    #dbhTipPop .r b.no { color: #fdba74; }
+    .dbh-card { background: #fff; border: 1px solid var(--dbh-border); border-radius: 12px; box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+    .dbh-tabs { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 16px; border-bottom: 1px solid var(--dbh-border); }
+    .dbh-pill { display: inline-flex; align-items: center; gap: 7px; padding: .45rem .85rem; border-radius: 9999px; font-size: .8rem; font-weight: 600; color: #475569; background: #fff; border: 1px solid var(--dbh-border); transition: all .2s; white-space: nowrap; line-height: 1.2; }
+    .dbh-pill:hover { color: var(--dbh-text); border-color: #94a3b8; transform: translateY(-1px); }
+    .dbh-pill.on { background: var(--dbh-primary); border-color: var(--dbh-primary); color: #fff; box-shadow: 0 2px 6px rgba(51,65,85,.25); }
+    .dbh-tchip { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 9999px; font-size: .72rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #f1f5f9; color: #475569; border: 1px solid var(--dbh-border); font-variant-numeric: tabular-nums; }
+    .dbh-pill.on .dbh-tchip { background: rgba(255,255,255,.25); border-color: transparent; color: #fff; }
+    .dbh-tchip.dg { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+    .dbh-pill.on .dbh-tchip.dg { background: #dc2626; color: #fff; border-color: transparent; }
+    .dbh-filter { padding: 14px 16px; margin-bottom: 14px; }
+    .dbh-frow { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .dbh-sbox { flex: 1 1 260px; display: flex; align-items: stretch; border: 1px solid var(--dbh-border); border-radius: 9px; background: #fff; min-width: 0; overflow: hidden; transition: border-color .2s; }
+    .dbh-sbox:focus-within, .dbh-sa:focus-within { border-color: var(--dbh-primary); }
+    .dbh-sbox > span, .dbh-sa .ic { display: grid; place-items: center; padding: 0 11px; color: var(--dbh-muted); background: #f1f5f9; border-right: 1px solid var(--dbh-border); }
+    .dbh-sbox input { font: inherit; font-size: .85rem; border: 0; background: transparent; padding: .55rem .75rem; width: 100%; min-width: 0; color: inherit; }
+    .dbh-sbox input:focus, .dbh-sa select:focus { outline: 0; }
+    .dbh-sa { display: flex; align-items: stretch; border: 1px solid var(--dbh-border); border-radius: 9px; overflow: hidden; background: #fff; transition: border-color .2s; }
+    .dbh-sa select { font: inherit; font-size: .85rem; font-weight: 600; border: 0; background: transparent; padding: .55rem .6rem; cursor: pointer; max-width: 210px; color: inherit; }
+    .dbh-per { position: relative; }
+    .dbh-btn-per { cursor: pointer; align-items: center; align-self: stretch; gap: 8px; padding: 0 12px 0 0; min-height: 40px; border-radius: 9px; font: inherit; font-size: .85rem; color: inherit; text-align: left; }
+    .dbh-btn-per .ic { align-self: stretch; }
+    .dbh-btn-per .k { font-size: .66rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--dbh-muted); }
+    .dbh-btn-per .v { font-weight: 600; white-space: nowrap; }
+    .dbh-btn-per .c { font-size: .7rem; color: var(--dbh-muted); transition: transform .2s; }
+    .dbh-btn-per[aria-expanded="true"] { border-color: var(--dbh-primary); }
+    .dbh-btn-per[aria-expanded="true"] .c { transform: rotate(180deg); }
+    .dbh-per-panel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; width: 360px; max-width: calc(100vw - 32px); background: #fff; border: 1px solid var(--dbh-border); border-radius: 14px; padding: 14px; box-shadow: 0 14px 36px rgba(15,23,42,.18); display: flex; flex-direction: column; gap: 12px; }
+    .dbh-per-panel[hidden], .dbh-per-panel [data-pp][hidden], .dbh-per-panel .err[hidden] { display: none !important; }
+    .dbh-per-panel .lb { font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--dbh-muted); }
+    .dbh-pseg { display: flex; padding: 3px; gap: 2px; background: #f8fafc; border: 1px solid var(--dbh-border); border-radius: 10px; }
+    .dbh-pseg button { flex: 1; border: 0; background: transparent; padding: 7px 8px; border-radius: 8px; font-weight: 600; font-size: .8rem; color: var(--dbh-muted); cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
+    .dbh-pseg button[aria-pressed="true"] { background: var(--dbh-primary); color: #fff; }
+    .dbh-pb { display: grid; grid-template-columns: minmax(0, 1fr) 124px; gap: 8px; }
+    .dbh-pr { display: flex; flex-direction: column; gap: 8px; }
+    .dbh-pr .row2 { display: grid; grid-template-columns: 52px minmax(0, 1fr) 92px; gap: 8px; align-items: center; font-size: .8rem; font-weight: 600; color: var(--dbh-muted); }
+    .dbh-per-panel .dbh-sa { min-width: 0; width: 100%; }
+    .dbh-per-panel .dbh-sa select { width: 100%; max-width: none; min-width: 0; }
+    .dbh-per-panel .note { font-size: .78rem; color: var(--dbh-muted); }
+    .dbh-per-panel .err { font-size: .78rem; font-weight: 600; color: #dc2626; }
+    .dbh-rst { width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--dbh-border); background: #fff; color: var(--dbh-text); display: grid; place-items: center; transition: all .2s; }
+    .dbh-rst:hover { background: var(--dbh-primary); color: #fff; border-color: var(--dbh-primary); }
+    .dbh-dot { width: 8px; height: 8px; border-radius: 50%; background: #2563eb; display: inline-block; flex: none; }
+    @media (max-width: 575.98px) { .dbh-sa select { width: 100%; max-width: none; } .dbh-sa { flex: 1 1 100%; } }
+    .dbh-tw { overflow-x: auto; }
+    /* Header, ukuran huruf, dan padding tabel mengikuti Bootstrap .table (sama dengan halaman PKS) */
+    table.dbh-t { width: 100%; min-width: 760px; }
+    .dbh-t td { vertical-align: middle; }
+    .dbh-t .dbh-c { text-align: center; }
+    .dbh-t .ord { font-weight: 700; }
+    .dbh-t .pt { font-weight: 600; }
+    .dbh-t .sm { font-size: .75rem; color: var(--dbh-muted); margin-top: 2px; }
+    .dbh-t .jd { max-width: 340px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .dbh-chip { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; white-space: nowrap; }
+    .dbh-chip.baru { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+    .dbh-chip.buka { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .dbh-chip.ok { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+    .dbh-chip.alur { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; font-weight: 700; }
+    .dbh-chip.alur.ok { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+    .dbh-act { display: flex; gap: 6px; flex-wrap: wrap; }
+    .dbh-b { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600; padding: .4rem .8rem; border-radius: 8px; border: 1px solid var(--dbh-border); background: #fff; color: inherit; text-decoration: none; white-space: nowrap; }
+    .dbh-b:hover { border-color: #94a3b8; color: inherit; }
+    .dbh-b.ic { width: 34px; height: 34px; padding: 0; justify-content: center; font-size: .95rem; flex: none; }
+    .dbh-t .dbh-act { flex-wrap: nowrap; }
+    .dbh-b.pri { background: var(--dbh-primary); border-color: var(--dbh-primary); color: #fff; }
+    .dbh-b.pri:hover { background: #1e293b; color: #fff; }
+    .dbh-empty { padding: 42px 16px; text-align: center; color: var(--dbh-muted); }
+    .dbh-empty i { font-size: 2rem; display: block; margin-bottom: 8px; opacity: .6; }
+    .dbh-ft { padding: 10px 14px; font-size: .78rem; color: var(--dbh-muted); border-top: 1px solid var(--dbh-border); }
+</style>
+
+<div class="dbh-root" id="dbhRoot">
+    <div class="dbh-head"><i class="bi bi-patch-check"></i><h1>BAST</h1></div>
+
+    <div class="dbh-card dbh-filter">
+        <div class="dbh-frow">
+            <label class="dbh-sbox"><span><i class="bi bi-search"></i></span><input type="search" id="dbhCari" placeholder="Cari nomor order, perusahaan, judul, atau Ketua Tim" aria-label="Cari BAST" autocomplete="off"></label>
+            <div class="dbh-sa"><span class="ic"><i class="bi bi-grid"></i></span><select id="dbhLay" aria-label="Filter divisi"></select></div>
+            <div class="dbh-per" id="dbhPerWrap">
+                <button type="button" class="dbh-sa dbh-btn-per" id="dbhPerBtn" aria-expanded="false" aria-controls="dbhPerPanel" aria-haspopup="true"><span class="ic"><i class="bi bi-calendar3"></i></span><span class="k">Periode</span><span class="v" id="dbhPerLbl"></span><i class="bi bi-chevron-down c"></i></button>
+                <div class="dbh-per-panel" id="dbhPerPanel" role="dialog" aria-label="Tampilkan data berdasarkan" hidden>
+                    <div class="lb">Tampilkan data berdasarkan</div>
+                    <div class="dbh-pseg" role="group" aria-label="Mode periode">
+                        <button type="button" data-pm="bulan">Per bulan</button>
+                        <button type="button" data-pm="rentang">Rentang bulan</button>
+                        <button type="button" data-pm="semua">Semua data</button>
+                    </div>
+                    <div class="dbh-pb" data-pp="bulan">
+                        <div class="dbh-sa"><span class="ic"><i class="bi bi-calendar3"></i></span><select id="dbhBln" aria-label="Bulan"></select></div>
+                        <div class="dbh-sa"><span class="ic"><i class="bi bi-clock-history"></i></span><select id="dbhThn" aria-label="Tahun"></select></div>
+                    </div>
+                    <div class="dbh-pr" data-pp="rentang">
+                        <div class="row2"><span>Dari</span><div class="dbh-sa"><select id="dbhDB" aria-label="Dari bulan"></select></div><div class="dbh-sa"><select id="dbhDT" aria-label="Dari tahun"></select></div></div>
+                        <div class="row2"><span>Sampai</span><div class="dbh-sa"><select id="dbhSB" aria-label="Sampai bulan"></select></div><div class="dbh-sa"><select id="dbhST" aria-label="Sampai tahun"></select></div></div>
+                        <div class="err" id="dbhRentangErr" hidden>Bulan awal tidak boleh setelah bulan akhir.</div>
+                    </div>
+                    <div class="note" data-pp="semua">Semua data ditampilkan tanpa batas bulan.</div>
+                    <div class="note">Berlaku untuk BAST Selesai (tanggal BAST). Yang Perlu Nomor selalu tampil semua.</div>
+                </div>
+            </div>
+            <button type="button" class="dbh-rst" id="dbhReset" title="Reset filter" aria-label="Reset filter" hidden><i class="bi bi-arrow-counterclockwise"></i></button>
+        </div>
+    </div>
+
+    <div class="dbh-card">
+        <div class="dbh-tabs" id="dbhTabs"></div>
+        <div class="dbh-tw"><table class="table table-hover align-middle mb-0 dbh-t" id="dbhTabel"></table></div>
+        <div class="dbh-empty" id="dbhKosong" hidden></div>
+    </div>
+</div>
+
+<include href="kontrak/_slide_chrome.html" />
+<include href="order/_slide_bast.html" />
+
+<script>
+(function () {
+    var DATA = {{ @bast_humas_json | raw }};
+    var tab = {{ @bast_humas_tab | raw }};
+    ['perlu', 'draft', 'selesai'].forEach(function (k) { DATA[k] = DATA[k] || []; DATA[k].forEach(function (r) { r.st = k; }); });
+    var BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    var BLN_PENUH = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    var NOW = new Date(), BLN0 = NOW.getMonth() + 1, THN0 = NOW.getFullYear();
+    var S = { q: '', lay: '', mode: 'bulan', bln: BLN0, thn: THN0, db: BLN0, dt: THN0, sb: BLN0, st: THN0 };
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function tgl(s, jam) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(s || '');
+        if (!m) { return ''; }
+        return parseInt(m[3], 10) + ' ' + BLN[parseInt(m[2], 10) - 1] + ' ' + m[1] + (jam && m[4] ? ', ' + m[4] + ':' + m[5] : '');
+    }
+    var DIVISI = { selulosa: 'Selulosa', lingkungan: 'Lingkungan', sertifikasi: 'Sertifikasi', pengujian: 'Pengujian', kalibrasi: 'Kalibrasi', pendampingan_teknis: 'Pendampingan Teknis', konsultansi: 'Konsultansi', inspeksi: 'Inspeksi', uji_profesiensi: 'Uji Profesiensi' };
+    function namaDivisi(r) { return DIVISI[r.layanan_kode] || r.layanan || 'Belum Ditentukan'; }
+
+    /* ---------- filter (pola sama dengan halaman PKS) ---------- */
+    /* Periode hanya berlaku untuk BAST Selesai (tanggal BAST). Yang Perlu Nomor selalu tampil semua supaya tidak ada yang tersembunyi. */
+    function idxBulan(y, m) { return y * 12 + m; }
+    function lolosPeriode(r, tabIni) {
+        if (tabIni !== 'selesai' || S.mode === 'semua') { return true; }
+        var t = String(r.tanggal_bast || r.selesai_at || ''), i = idxBulan(+t.slice(0, 4), +t.slice(5, 7));
+        if (S.mode === 'bulan') { return i === idxBulan(S.thn, S.bln); }
+        return i >= idxBulan(S.dt, S.db) && i <= idxBulan(S.st, S.sb);
+    }
+    function lolos(r, tabIni) {
+        if (S.lay && (r.layanan_kode || '') !== S.lay) { return false; }
+        if (!lolosPeriode(r, tabIni)) { return false; }
+        if (S.q) {
+            var h = [r.nomor_order, r.perusahaan, r.judul, r.katim, r.nomor_bast, r.pks_nomor, namaDivisi(r)].join(' ').toLowerCase();
+            if (h.indexOf(S.q) === -1) { return false; }
+        }
+        return true;
+    }
+    function semuaBaris() { return (DATA.perlu || []).concat(DATA.draft || [], DATA.selesai || []); }
+    function daftarTab(k) { return (k === 'semua' ? semuaBaris() : (DATA[k] || [])).filter(function (r) { return lolos(r, r.st); }); }
+    function periodeDefault() { return S.mode === 'bulan' && S.bln === BLN0 && S.thn === THN0; }
+    function filterAktif() { return !!(S.q || S.lay || !periodeDefault()); }
+    function labelPeriode() {
+        if (S.mode === 'semua') { return 'Semua data'; }
+        if (S.mode === 'bulan') { return BLN_PENUH[S.bln - 1] + ' ' + S.thn; }
+        var a = BLN[S.db - 1] + ' ' + S.dt, z = BLN[S.sb - 1] + ' ' + S.st;
+        return a === z ? a : a + ' - ' + z;
+    }
+    function rentangSalah() { return S.mode === 'rentang' && idxBulan(S.dt, S.db) > idxBulan(S.st, S.sb); }
+    function bukaPer(on) { $('dbhPerPanel').hidden = !on; $('dbhPerBtn').setAttribute('aria-expanded', on ? 'true' : 'false'); }
+    function isiFilter() {
+        var kode = {}, lay = Object.keys(DIVISI);
+        Object.keys(DIVISI).forEach(function (k) { kode[k] = DIVISI[k]; });
+        ['perlu', 'selesai'].forEach(function (k) { (DATA[k] || []).forEach(function (r) { if (r.layanan_kode && !kode[r.layanan_kode]) { kode[r.layanan_kode] = r.layanan || r.layanan_kode; lay.push(r.layanan_kode); } }); });
+        $('dbhLay').innerHTML = '<option value="">Semua Divisi</option>' + lay.map(function (k) { return '<option value="' + esc(k) + '">' + esc(kode[k]) + '</option>'; }).join('');
+        var optB = BLN_PENUH.map(function (n, i) { return '<option value="' + (i + 1) + '">' + n + '</option>'; }).join('');
+        var th = {}; th[THN0] = 1;
+        (DATA.selesai || []).forEach(function (r) { var y = +String(r.tanggal_bast || r.selesai_at || '').slice(0, 4); if (y) { th[y] = 1; } });
+        var optT = Object.keys(th).sort().map(function (y) { return '<option>' + y + '</option>'; }).join('');
+        ['dbhBln', 'dbhDB', 'dbhSB'].forEach(function (id) { $(id).innerHTML = optB; });
+        ['dbhThn', 'dbhDT', 'dbhST'].forEach(function (id) { $(id).innerHTML = optT; });
+        sinkron();
+    }
+    function sinkron() {
+        $('dbhBln').value = S.bln; $('dbhThn').value = S.thn;
+        $('dbhDB').value = S.db; $('dbhDT').value = S.dt; $('dbhSB').value = S.sb; $('dbhST').value = S.st;
+    }
+
+    /* ---------- sel tabel (bentuk sama dengan kolom di halaman PKS) ---------- */
+    function orderCell(r) {
+        var h = '<div class="fw-bold text-primary small font-monospace text-nowrap"><a class="text-primary text-decoration-none" href="' + esc(r.url_order) + '">' + esc(r.nomor_order || '-') + '</a></div>';
+        if (r.nomor_permintaan) { h += '<div class="text-muted font-monospace text-nowrap" style="font-size: 0.72rem;">' + esc(r.nomor_permintaan) + '</div>'; }
+        if (r.tanggal_order) { h += '<div class="text-muted text-nowrap" style="font-size: 0.75rem;"><i class="bi bi-calendar3 me-1"></i>' + esc(r.tanggal_order) + '</div>'; }
+        /* durasi order (Hari Kalender / Hari Kerja), sama dengan Daftar Order dan PKS */
+        if (r.punya_info_order) {
+            h += '<div class="mt-1" style="font-size: 0.72rem;">' + (r.durasi_ditentukan
+                ? '<span class="badge ' + esc(r.durasi_badge_class || 'bg-success-subtle text-success border border-success-subtle') + ' px-1.5 py-0.5" title="' + esc(r.durasi_tooltip) + '"><i class="bi bi-clock me-1"></i>' + esc(r.durasi_tampil) + '</span>'
+                : '<span class="text-muted fst-italic">Belum ditentukan</span>') + '</div>';
+        }
+        return h;
+    }
+    function judulCell(r) {
+        return '<div class="d-flex align-items-center flex-wrap gap-1 mb-1"><span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;" title="Saluran Permohonan: ' + esc(r.media_label) + '"><i class="bi ' + esc(r.media_icon) + ' me-1 text-secondary"></i>' + esc(r.media_label) + '</span></div>' +
+            '<div class="text-dark d-flex align-items-start gap-1.5 mb-1" style="font-size: 0.95rem;"><i class="bi bi-building text-secondary flex-shrink-0 mt-0.5" style="font-size: 0.95rem;"></i><span class="text-dark fw-bold" style="line-height: 1.35;">' + esc(r.perusahaan || '-') + '</span></div>' +
+            '<div class="fw-normal text-secondary mb-1" style="font-size: 0.8rem; line-height: 1.4;" title="' + esc(r.judul) + '">' + esc(r.judul || '-') + '</div>';
+    }
+    function biayaCell(r) {
+        var h = '<div class="fw-bold text-dark small">Rp ' + esc(r.eb_acuan || '0') + '</div>';
+        if (r.eb_terbayar) { h += '<div class="text-success" style="font-size: 0.725rem;">' + (r.eb_lunas ? '<i class="bi bi-check2 me-1"></i>' : '') + 'Terbayar Rp ' + esc(r.eb_terbayar) + '</div>'; }
+        if (r.eb_sisa) { h += '<div class="text-danger fw-semibold" style="font-size: 0.725rem;">Sisa Rp ' + esc(r.eb_sisa) + '</div>'; }
+        return h;
+    }
+    function dibukaChip(r) {
+        return r.dibuka_at ? '<div class="dbh-baca sudah"><i class="bi bi-envelope-open me-1"></i>Dibuka ' + esc(tgl(r.dibuka_at, true)) + '</div>'
+                           : '<div class="dbh-baca belum"><i class="bi bi-envelope me-1"></i>Belum dibuka Humas</div>';
+    }
+    function statusAlur(r) {
+        if (r.st === 'perlu') { return '<span class="dbh-chip alur"><i class="bi bi-hourglass-split"></i> Menunggu Nomor BAST</span>'; }
+        if (r.st === 'draft') { return '<span class="dbh-chip"><i class="bi bi-pencil-square"></i> Disusun Ketua Tim</span>'; }
+        return '<span class="dbh-chip alur ok"><i class="bi bi-check2-circle"></i> BAST Selesai</span>';
+    }
+    /* Keterangan: bentuk dan isinya sama dengan kolom Keterangan di Daftar Order (Pelaksana, status tebal, catatan + penanda baca) */
+    function keterangan(r) {
+        var h = '';
+        if (r.ket_pelaksana || r.ket_aksi) {
+            if (r.ket_pelaksana) { h += '<div class="text-secondary fw-semibold" style="font-size: 0.7rem; line-height: 1.25; margin-bottom: 1px;">' + esc(r.ket_pelaksana) + '</div>'; }
+            h += '<div class="text-dark fw-semibold" style="font-size: 0.74rem; line-height: 1.25;">' + esc(r.ket_aksi) + '</div>';
+            if (r.ket_detail) {
+                h += '<div class="text-muted" style="font-size: 0.69rem; line-height: 1.25;">' + esc(r.ket_detail) +
+                     (r.ket_baca ? ' &middot; <span class="' + (r.ket_baca_status === 'belum' ? 'text-warning-emphasis fw-bold' : 'text-success fw-semibold') + '">' + esc(r.ket_baca) + '</span>' : '') + '</div>';
+            }
+        } else if (r.st === 'perlu') {
+            h = dibukaChip(r) + '<div class="dbh-sub" style="margin-top:4px;"><i class="bi bi-send-check me-1"></i>Dikirim ' + esc(tgl(r.dikirim_at, true) || '-') + (r.katim ? ' oleh ' + esc(r.pengirim || r.katim) : '') + '</div>';
+        } else if (r.st === 'draft') {
+            h = '<div class="dbh-sub">Belum dikirim Ketua Tim' + (r.katim ? ' (' + esc(r.katim) + ')' : '') + '</div>';
+        }
+        if (r.st === 'selesai') { h += '<div style="margin-top:4px;"><span class="dbh-chip ok"><i class="bi bi-patch-check"></i> ' + esc(r.nomor_bast) + '</span> <span class="dbh-sub">' + esc(tgl(r.tanggal_bast)) + '</span></div>'; }
+        return h;
+    }
+    /* tombol utama di Aksi: saat disentuh muncul kotak kecil "Status BAST di Humas" (dikirim dan dibuka kapan) */
+    function tipAksi(r, tombol) { return tombol; }   /* kotak "Status BAST di Humas" dihapus (permintaan Kaa) */
+    function detailBtn(r) { return '<a class="dbh-b ic" href="' + esc(r.url_order) + '" title="Detail order" aria-label="Detail order"><i class="bi bi-box-arrow-up-right"></i></a>'; }
+    function aksiHtml(r) {
+        /* tombol utama membuka slide BAST (tampilan seperti slide PO); Isi Nomor ada di dock bawah slide */
+        return tipAksi(r, '<button type="button" class="dbh-b' + (r.st === 'perlu' ? ' pri' : '') + '" data-lihat="' + r.id + '"><i class="bi bi-file-earmark-text"></i> Lihat BAST</button>') + detailBtn(r);
+    }
+    function cariBast(id) { var a = DATA.perlu.concat(DATA.draft, DATA.selesai); for (var i = 0; i < a.length; i++) { if (String(a[i].id) === String(id)) { return a[i]; } } return null; }
+    /* konfigurasi tampilan slide: badge, info, alur, dan dock tombol aksi (kontrak/_slide_chrome.html) */
+    function chromeBast(r) {
+        var meta = 'Divisi <b>' + esc(namaDivisi(r)) + '</b>' + (r.katim ? ' &middot; Ketua Tim <b>' + esc(r.katim) + '</b>' : '') +
+            (r.dikirim_at ? ' &middot; Dikirim ' + esc(tgl(r.dikirim_at, true)) : '') + (r.dibuka_at ? ' &middot; Dibuka Humas ' + esc(tgl(r.dibuka_at, true)) : '');
+        var steps = ['Laporan Akhir selesai', 'BAST disusun Ketua Tim', 'Nomor BAST (Humas)', 'BAST selesai'];
+        if (r.st === 'perlu') {
+            return { pill: 'Menunggu Nomor BAST', draft: true, unduhLabel: 'Unduh BAST', meta: meta, steps: steps, c: 3, note: 'BAST sudah dikirim Ketua Tim. Humas mengisi nomor BAST, lalu BAST selesai.',
+                dock: { hint: '<i class="bi bi-hourglass-split"></i> BAST sudah dikirim Ketua Tim. <b>Isi nomor BAST</b> untuk menyelesaikannya.', label: 'Isi Nomor BAST', icon: 'bi-pencil-square', href: r.url_isi } };
+        }
+        if (r.st === 'draft') {
+            return { pill: 'Disusun Ketua Tim', draft: true, unduhLabel: 'Unduh BAST', meta: meta, steps: steps, c: 2, note: 'BAST masih disusun Ketua Tim. Humas mengisi nomor setelah BAST dikirim.',
+                dock: { hint: '<i class="bi bi-pencil-square"></i> Belum dikirim Ketua Tim' + (r.katim ? ' (' + esc(r.katim) + ')' : '') + '.' } };
+        }
+        return { pill: 'BAST Selesai', pillOk: true, unduhLabel: 'Unduh BAST', meta: meta, steps: steps, c: 5, note: 'Semua langkah selesai.',
+            dock: { hint: '<i class="bi bi-patch-check"></i> Nomor BAST <b>' + esc(r.nomor_bast) + '</b>' + (r.tanggal_bast ? ' &middot; ' + esc(tgl(r.tanggal_bast)) : '') + '.' } };
+    }
+    var slideSibuk = false;
+    function bukaSlide(id) {
+        var r = cariBast(id);
+        if (!r || !window.BastSlide || slideSibuk) { return; }
+        slideSibuk = true;
+        fetch(r.url_order + '/bast/slide-data', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (x) { if (!x.ok) { throw new Error('http ' + x.status); } return x.json(); })
+            .then(function (d) {
+                window.BastSlide.bukaData(d, 'bast', chromeBast(r));
+                if (r.st === 'perlu' && !r.dibuka_at) {   /* server mencatat dibuka Humas saat dokumen BAST dimuat; tampilan daftar ikut diperbarui */
+                    var n = new Date(), z = function (v) { return (v < 10 ? '0' : '') + v; };
+                    r.dibuka_at = n.getFullYear() + '-' + z(n.getMonth() + 1) + '-' + z(n.getDate()) + ' ' + z(n.getHours()) + ':' + z(n.getMinutes()) + ':00';
+                    gambar();
+                }
+            })
+            .catch(function () { window.location.href = r.url_isi; })   /* gagal memuat slide: buka halaman BAST biasa */
+            .then(function () { slideSibuk = false; });
+    }
+    function baris(r, i) {
+        var alur = tab !== 'perlu';   // tab Perlu Tindakan: kolom Status Alur dan Keterangan tidak ditampilkan (sama dengan PKS)
+        var ord = orderCell(r);
+        return '<tr' + (r.st === 'perlu' && !r.dibuka_at ? ' class="dbh-unread"' : '') + '><td class="dbh-c dbh-sub">' + (i + 1) + '</td><td>' + ord + '</td><td>' + judulCell(r) + '</td>' +
+            '<td class="dbh-c"><span class="badge rounded-pill bg-light text-dark border px-2 py-1 fw-semibold text-nowrap" style="font-size:.75rem;">' + esc(namaDivisi(r)) + '</span></td>' +
+            '<td style="white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;">' + biayaCell(r) + '</td>' +
+            (alur ? '<td class="dbh-c">' + statusAlur(r) + '</td>' : '') + '<td>' + keterangan(r) + '</td>' +
+            '<td><div class="dbh-act">' + aksiHtml(r) + '</div></td></tr>';
+    }
+    var TAB_LABEL = { semua: 'Semua', perlu: 'Perlu Tindakan', draft: 'Draft', selesai: 'Selesai' };
+    var TAB_IKON = { semua: 'bi-list-ul', perlu: 'bi-exclamation-circle', draft: 'bi-pencil-square', selesai: 'bi-check2-circle' };
+    function gambar() {
+        var rows = daftarTab(tab), semua = tab === 'semua' ? semuaBaris() : (DATA[tab] || []);
+        var adaBaru = (DATA.perlu || []).some(function (r) { return !r.dibuka_at; });
+        $('dbhTabs').innerHTML = ['semua', 'perlu', 'draft', 'selesai'].map(function (k) {
+            var n = daftarTab(k).length;
+            return '<button type="button" class="dbh-pill' + (tab === k ? ' on' : '') + '" data-tab="' + k + '">' + (k === 'perlu' && adaBaru ? '<span class="dbh-dot" title="Ada yang belum dibuka" style="margin-right:0"></span>' : '') + '<i class="bi ' + TAB_IKON[k] + '"></i>' + TAB_LABEL[k] +
+                ' <span class="dbh-tchip' + (k === 'perlu' && n > 0 ? ' dg' : '') + '">' + n + '</span></button>';
+        }).join('');
+        var alur = tab !== 'perlu';
+        var kepala = '<tr><th class="dbh-c" style="width:40px;">No</th><th style="width:155px;">No. &amp; Tgl Order</th><th style="min-width:260px;">Judul Kegiatan &amp; Klien</th><th class="dbh-c" style="width:110px;">Divisi OPTI</th><th style="width:150px;text-align:right;">Estimasi Biaya</th>' +
+            (alur ? '<th class="dbh-c" style="width:170px;">Status Alur</th>' : '') + '<th style="min-width:190px;">Keterangan</th><th>Aksi</th></tr>';
+        $('dbhTabel').innerHTML = '<thead class="bg-light">' + kepala + '</thead><tbody>' + rows.map(baris).join('') + '</tbody>';
+        $('dbhTabel').hidden = !rows.length;
+        var k = $('dbhKosong');
+        k.hidden = !!rows.length;
+        if (!rows.length) {
+            var pesan = { semua: 'Belum ada BAST.', perlu: 'Belum ada BAST yang menunggu nomor. BAST muncul di sini setelah Ketua Tim mengirimnya.', draft: 'Tidak ada BAST yang sedang disusun Ketua Tim.', selesai: 'Belum ada BAST yang selesai.' }[tab];
+            k.innerHTML = '<i class="bi ' + (tab === 'selesai' ? 'bi-archive' : 'bi-inbox') + '"></i>' + (filterAktif() && semua.length ? 'Tidak ada BAST yang cocok dengan filter ini.' : pesan);
+        }
+        $('dbhReset').hidden = !filterAktif();
+        $('dbhPerLbl').textContent = labelPeriode();
+        [].forEach.call($('dbhPerPanel').querySelectorAll('[data-pm]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-pm') === S.mode)); });
+        [].forEach.call($('dbhPerPanel').querySelectorAll('[data-pp]'), function (el) { el.hidden = el.getAttribute('data-pp') !== S.mode; });
+        $('dbhRentangErr').hidden = !rentangSalah();
+    }
+    function reset() {
+        S.q = ''; S.lay = ''; S.mode = 'bulan'; S.bln = BLN0; S.thn = THN0; S.db = BLN0; S.dt = THN0; S.sb = BLN0; S.st = THN0;
+        $('dbhCari').value = ''; $('dbhLay').value = '';
+        sinkron(); bukaPer(false); gambar();
+    }
+    $('dbhTabs').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-tab]');
+        if (!b) { return; }
+        tab = b.getAttribute('data-tab');
+        try { history.replaceState(null, '', '?tab=' + tab); } catch (x) {}
+        gambar();
+    });
+    $('dbhRoot').addEventListener('click', function (e) {
+        var el;
+        if (!e.target.closest('#dbhPerWrap')) { bukaPer(false); }
+        if (e.target.closest('#dbhPerBtn')) { bukaPer($('dbhPerPanel').hidden); return; }
+        if ((el = e.target.closest('[data-pm]'))) { S.mode = el.getAttribute('data-pm'); gambar(); return; }
+        if (e.target.closest('#dbhReset')) { reset(); }
+        if ((el = e.target.closest('[data-lihat]'))) { bukaSlide(el.getAttribute('data-lihat')); }
+    });
+    document.addEventListener('click', function (e) { if (!e.target.closest('#dbhPerWrap')) { bukaPer(false); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dbhPerPanel').hidden) { bukaPer(false); } });
+    $('dbhCari').addEventListener('input', function () { S.q = this.value.trim().toLowerCase(); gambar(); });
+    $('dbhLay').addEventListener('change', function () { S.lay = this.value; gambar(); });
+    [['dbhBln', 'bln'], ['dbhThn', 'thn'], ['dbhDB', 'db'], ['dbhDT', 'dt'], ['dbhSB', 'sb'], ['dbhST', 'st']].forEach(function (x) {
+        $(x[0]).addEventListener('change', function () { S[x[1]] = +this.value; gambar(); });
+    });
+    /* popover "Status BAST di Humas": satu elemen bersama, posisi fixed supaya tidak terpotong kotak tabel */
+    var tipEl = document.createElement('div'); tipEl.id = 'dbhTipPop'; tipEl.setAttribute('role', 'tooltip'); document.body.appendChild(tipEl);
+    function tipBuka(t) {
+        var d = t.getAttribute('data-td'), b = t.getAttribute('data-tb'), n = t.getAttribute('data-tn');
+        tipEl.innerHTML = '<h4>Status BAST di Humas</h4>' +
+            '<div class="r"><span>Dikirim Ketua Tim</span><b>' + esc(d || '-') + '</b></div>' +
+            '<div class="r"><span>Dibuka Humas</span><b' + (b ? '' : ' class="no"') + '>' + esc(b || 'belum dibuka') + '</b></div>' +
+            (n !== null ? '<div class="r"><span>Tanggal BAST</span><b>' + esc(n || '-') + '</b></div>' : '');
+        var r = t.getBoundingClientRect(), tinggi = tipEl.offsetHeight || 80;
+        var x = Math.max(8, Math.min(r.left, window.innerWidth - 258));
+        var y = (r.bottom + tinggi + 14 < window.innerHeight) ? r.bottom + 8 : Math.max(8, r.top - tinggi - 8);
+        tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+        tipEl.classList.add('on');
+    }
+    function tipTutup() { tipEl.classList.remove('on'); }
+    document.addEventListener('mouseover', function (e) { var t = e.target.closest ? e.target.closest('.dbh-tip') : null; if (t) { tipBuka(t); } });
+    document.addEventListener('mouseout', function (e) { var t = e.target.closest ? e.target.closest('.dbh-tip') : null; if (t && !(e.relatedTarget && t.contains(e.relatedTarget))) { tipTutup(); } });
+    document.addEventListener('focusin', function (e) { var t = e.target.closest ? e.target.closest('.dbh-tip') : null; if (t) { tipBuka(t); } });
+    document.addEventListener('focusout', tipTutup);
+    window.addEventListener('scroll', tipTutup, true);
+    isiFilter();
+    gambar();
+})();
+</script>

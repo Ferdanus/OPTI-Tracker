@@ -108,8 +108,20 @@
                 return (atas(r) + r.offsetHeight) - atas(nx);
             }
             if (bisaTurun(nx) && nx.firstElementChild) {
-                var f = nx.firstElementChild;
-                return Math.min(nx.offsetHeight, (atas(f) + f.offsetHeight) - atas(nx));
+                // isi bersarang (mis. slide review: judul bagian + isi dibungkus): lewati judul-judul di awal isi
+                // (mis. "4.1 Alat"), lalu ikutkan bagian pertama isi sungguhan di bawahnya
+                var kids = Array.prototype.filter.call(nx.children, function (k) {
+                    if (k.classList.contains('po-pgbreak') || k.classList.contains('po-pgnum')) { return false; }
+                    var ck = getComputedStyle(k);
+                    return ck.display !== 'none' && ck.position !== 'absolute' && ck.position !== 'fixed';
+                });
+                var j = 0;
+                while (j < kids.length - 1 && judul(kids[j])) { j++; }
+                var f = kids[j] || nx.firstElementChild;
+                // baris pendek (mis. label "A. Alat") jangan ditinggal sendirian di dasar halaman: ikutkan bagian berikutnya
+                var tujuan = f;
+                if (kids[j + 1] && f.offsetHeight < 32 && !bisaTurun(f)) { tujuan = kids[j + 1]; }
+                return Math.min(nx.offsetHeight, (atas(tujuan) - atas(nx)) + ukuranAwal(tujuan));
             }
             return nx.offsetHeight;
         }

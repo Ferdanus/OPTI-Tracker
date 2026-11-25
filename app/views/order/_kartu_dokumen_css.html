@@ -1,16 +1,15 @@
 <!--
     app/views/order/_kartu_dokumen_css.html
-    Gaya kartu "Dokumen" (kelas "kt-") yang dipakai bersama oleh kartu PO bertanda tangan (Tahap 8) dan kartu Kontrak (Tahap 9) di Detail Order.
+    Gaya kartu "Dokumen" (kelas "kt-", diam saat dibuka, bergerak hanya saat disentuh) yang dipakai bersama oleh kartu PO bertanda tangan (Tahap 8) dan kartu Kontrak (Tahap 9) di Detail Order.
     Aman di-include lebih dari sekali. JANGAN menulis tag template (include, check, dan sejenisnya) di komentar: Fat-Free ikut memprosesnya.
 -->
 <style>
     /* ---- Kartu Kontrak di Detail Order (varian Dokumen): miniatur halaman 1 + rincian + tombol ---- */
     .kt-doc { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 26px; align-items: center; }
-    .kt-th { position: relative; width: 168px; height: 218px; border-radius: 4px; overflow: hidden; background: #fff; padding: 0; border: 0; display: block; transform: rotate(-2.5deg); box-shadow: 0 1px 2px rgba(15,23,42,.2), 0 8px 18px rgba(15,23,42,.16); transition: transform .25s cubic-bezier(.3,.8,.3,1), box-shadow .2s; animation: ktTh .5s cubic-bezier(.3,1.2,.5,1) both; }
+    .kt-th { position: relative; width: 168px; height: 218px; border-radius: 4px; overflow: hidden; background: #fff; padding: 0; border: 0; display: block; transform: rotate(-2.5deg); box-shadow: 0 1px 2px rgba(15,23,42,.2), 0 8px 18px rgba(15,23,42,.16); transition: transform .25s cubic-bezier(.3,.8,.3,1), box-shadow .2s; }
     .kt-th[data-kt-lihat] { cursor: pointer; }
     .kt-doc:hover .kt-th { transform: rotate(0) translateY(-2px); box-shadow: 0 2px 4px rgba(15,23,42,.2), 0 14px 26px rgba(15,23,42,.2); }
     .kt-th:focus-visible { outline: 2px solid #334155; outline-offset: 3px; }
-    @keyframes ktTh { from { opacity: 0; transform: rotate(-9deg) translateY(10px) scale(.94); } to { opacity: 1; transform: rotate(-2.5deg); } }
     .kt-th-mock { position: absolute; inset: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 5px; }
     .kt-th-mock .lg { display: flex; justify-content: space-between; margin-bottom: 8px; }
     .kt-th-mock .lg i { display: block; width: 34px; height: 12px; border: 1.5px solid #94a3b8; border-radius: 2px; }
@@ -21,8 +20,7 @@
     .kt-th iframe { position: absolute; left: 0; top: 0; width: 816px; height: 1056px; border: 0; background: #fff; transform: scale(.2059); transform-origin: 0 0; opacity: 0; pointer-events: none; transition: opacity .35s; }
     .kt-th.ok iframe { opacity: 1; }
     .kt-doc-st { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; font-size: 1.12rem; font-weight: 800; color: #0f172a; }
-    .kt-doc-st .ck { width: 30px; height: 30px; border-radius: 50%; background: #0f172a; color: #fff; display: grid; place-items: center; font-size: .95rem; animation: ktPop .45s cubic-bezier(.3,1.6,.5,1) .15s both; }
-    @keyframes ktPop { from { transform: scale(.3); opacity: 0; } to { transform: none; opacity: 1; } }
+    .kt-doc-st .ck { width: 30px; height: 30px; border-radius: 50%; background: #0f172a; color: #fff; display: grid; place-items: center; font-size: .95rem; }
     .kt-doc-no { font-family: 'Courier New', monospace; font-weight: 700; font-size: .92rem; color: #334155; overflow-wrap: anywhere; }
     .kt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 20px; margin: 16px 0 18px; }
     .kt-grid small { display: block; font-size: .66rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #64748b; }
@@ -49,7 +47,7 @@
     .kt-menu-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-size: .78rem; color: #64748b; text-decoration: none; }
     .kt-menu-link:hover { color: #0f172a; text-decoration: underline; }
     @media (max-width: 575.98px) { .kt-doc { grid-template-columns: 1fr; justify-items: start; } .kt-menu { left: auto; right: 0; transform-origin: top right; } }
-    @media (prefers-reduced-motion: reduce) { .kt-th, .kt-doc-st .ck, .kt-dd.open .kt-menu { animation: none !important; } .kt-th, .kt-btn { transition: none !important; } }
+    @media (prefers-reduced-motion: reduce) { .kt-dd.open .kt-menu { animation: none !important; } .kt-th, .kt-btn { transition: none !important; } }
     a.kt-th { text-decoration: none; }
     .kt-th-tag { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1e293b; color: #fff; font-size: .7rem; font-weight: 800; letter-spacing: .08em; padding: 3px 11px; border-radius: 6px; }
 </style>

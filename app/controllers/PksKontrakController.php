@@ -11,9 +11,11 @@
  *   /pks/@id/pdf             unduh PDF (Word -> PDF lewat LibreOffice bila terpasang; kalau tidak, 501 dan halaman memakai dialog cetak)
  *   /pks/@id/logo            logo klien (butuh login)
  *
- * Nomor PKS "B/<urut>/BBSPJIS/HK/<romawi>/<tahun>" OTOMATIS dari tabel pks_nomor_urut (nomorBaru()), sama pola dengan
- * nomor PO (po_nomor_urut): satu deret per TAHUN (reset ke 1 saat ganti tahun), terbit sekali saat kontrak pertama kali
- * diselesaikan dan tidak berubah lagi. Tanggal perjanjian juga otomatis (hari kontrak diselesaikan); bulan dan tahun nomor mengikuti tanggal itu.
+ * Nomor PKS "B/<urut>/BBSPJIS/HK/<romawi>/<tahun>": angka URUT diisi MANUAL oleh pengguna; bulan (romawi) dan tahun otomatis dari
+ * Tanggal perjanjian (yang juga otomatis: hari kontrak diselesaikan). Nomor didaftarkan di tabel pks_nomor_urut saat kontrak
+ * diselesaikan (daftarkanNomor()). Aturan unik: urut mulai lagi dari 1 tiap tahun (seperti Nomor PO), jadi satu angka urut hanya boleh
+ * dipakai SEKALI per tahun, bulan berapa pun; urut yang sama baru boleh kalau tahunnya beda (UNIQUE KEY uniq_pks_tahun_urut jadi
+ * pengaman terakhir). Cek langsung saat mengetik: GET /pks/@id/cek-nomor.
  *
  * Akses: Superadmin, Humas, dan Admin PKS (lihat ROLE_BOLEH).
  * Kompatibel PHP 7.2. Butuh: migration_pks_kontrak.sql, PksDocx.php, storage/templates/pks_selulosa_template.docx
@@ -45,14 +47,14 @@ class PksKontrakController extends Controller {
      * tipe: teks | area | tgl | uang | bool
      */
     const FIELDS = [
-        // Nomor urut dibuat otomatis oleh sistem saat kontrak diselesaikan (nomorBaru()), bukan diisi pengguna.
-        'nomorUrut'         => ['nomor_urut',          'teks', 30,   false, 'Nomor urut PKS'],
+        // Nomor urut diisi MANUAL (angka saja); bulan dan tahun nomor ikut Tanggal perjanjian. Wajib saat Selesai.
+        'nomorUrut'         => ['nomor_urut',          'teks', 9,    true,  'Nomor urut PKS'],
         'nomorPihakPertama' => ['nomor_pihak_pertama', 'teks', 120,  false, 'Nomor perjanjian versi klien'],
         'tanggal'           => ['tanggal_perjanjian',  'tgl',  0,    true,  'Tanggal perjanjian'],
         'perusahaan'        => ['perusahaan',          'teks', 255,  true,  'Nama perusahaan'],
         'alamatPerusahaan'  => ['alamat_perusahaan',   'rich', 1000, true,  'Alamat perusahaan'],
-        'ttdNama'           => ['ttd_nama',            'teks', 150,  true,  'Nama penandatangan'],
-        'ttdJabatan'        => ['ttd_jabatan',         'teks', 150,  true,  'Jabatan penandatangan'],
+        'ttdNama'           => ['ttd_nama',            'teks', 150,  false, 'Nama penandatangan'],       // opsional: boleh dikosongkan, klien menulisnya sendiri saat tanda tangan
+        'ttdJabatan'        => ['ttd_jabatan',         'teks', 150,  false, 'Jabatan penandatangan'],   // opsional (lihat ttdNama)
         'judul'             => ['judul',               'rich', 1000, true,  'Judul pekerjaan'],
         'ruangLingkup'      => ['ruang_lingkup',       'rich', 6000, true,  'Ruang lingkup'],
         'mulai'             => ['tgl_mulai',           'tgl',  0,    true,  'Tanggal mulai'],
@@ -62,8 +64,8 @@ class PksKontrakController extends Controller {
         'upNama'            => ['up_nama',             'teks', 150,  true,  'UP (nama kontak)'],
         'upJabatan'         => ['up_jabatan',          'teks', 150,  false, 'Jabatan kontak'],
         'alamatNotif'       => ['alamat_notif',        'rich', 1000, true,  'Alamat pemberitahuan'],
-        'telepon'           => ['telepon',             'teks', 60,   true,  'Telepon'],
-        'whatsapp'          => ['whatsapp',            'teks', 60,   false, 'Whats App'],
+        'telepon'           => ['telepon',             'angka', 20,  false, 'Telepon'],       // angka saja, opsional
+        'whatsapp'          => ['whatsapp',            'angka', 20,  false, 'Whats App'],     // angka saja, opsional
         'email'             => ['email',               'teks', 150,  false, 'Email'],
         'kepalaNama'        => ['kepala_nama',         'teks', 150,  true,  'Nama Kepala BBSPJIS'],
         'kepalaJabatan'     => ['kepala_jabatan',      'teks', 150,  true,  'Jabatan Kepala BBSPJIS'],
@@ -91,7 +93,7 @@ class PksKontrakController extends Controller {
         $rows = [];
         $kontrak = [];
         try {
-            $rows = $this->db->exec($this->sqlPoDisposisi() . " ORDER BY COALESCE(p.disposisi_humas_at, p.disetujui_at, p.updated_at) DESC");
+            $rows = $this->db->exec($this->sqlPoDisposisi() . " ORDER BY COALESCE(p.tervalidasi_mitra_at, p.disposisi_humas_at, p.disetujui_at, p.updated_at) DESC");
             try { \PksMitraController::pastikanKolom($this->db); } catch (\Throwable $e) {}   // kolom PKS bertanda tangan (menu PKS Mitra)
             foreach ($this->db->exec("SELECT * FROM pks_kontrak") as $k) {
                 $kontrak[(int) $k['po_id']] = $k;
@@ -161,8 +163,10 @@ class PksKontrakController extends Controller {
                 'url_dok'   => $f3->get('BASE') . '/po-kegiatan/' . $id . '/cetak',
                 'url_dok_unduh' => $f3->get('BASE') . '/po-kegiatan/' . $id . '/unduh',
                 'info_ttd'  => self::infoTtd($r),
+                'masuk_at'  => (string) ($r['tervalidasi_mitra_at'] ?? ''),
             ] + $ekstra;
         }
+        $daftar = $this->perkayaInfoOrder($daftar);   // kolom No. & Tgl Order, saluran, durasi, estimasi biaya: sama dengan Daftar PO / Daftar Order
 
         $tab = (string) $f3->get('GET.tab');
         $pesan = (string) $f3->get('GET.pesan');
@@ -180,7 +184,7 @@ class PksKontrakController extends Controller {
         $this->izinkanBaca($poId, true);
         $po = $this->ambilPo($poId);
         if (!$po) {
-            $f3->error(404, 'PO tidak ditemukan, atau belum disetujui dan didisposisikan ke Humas.');
+            $f3->error(404, 'PO tidak ditemukan, atau belum diverifikasi (di-ACC) Tim Mitra.');
             return;
         }
 
@@ -236,7 +240,7 @@ class PksKontrakController extends Controller {
 
         $po = $this->ambilPo($poId);
         if (!$po) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum memenuhi syarat pembuatan kontrak (validasi PPK BLU & upload PO TTD).'], 404);
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum diverifikasi (di-ACC) Tim Mitra.'], 404);
         }
 
         $orderIdKontrak = (int) ($po['order_id'] ?? 0);
@@ -288,27 +292,33 @@ class PksKontrakController extends Controller {
         $status = $final ? 'selesai' : 'draft';
         $sekarang = date('Y-m-d H:i:s');
         // ---- nomor PKS ----
-        // Sudah pernah terbit -> tetap (tidak berubah walau tanggal diubah). Belum terbit -> terbit hanya saat Selesai.
+        // Urut diisi manual. Didaftarkan ke pks_nomor_urut saat Selesai, atau saat kontrak yang nomornya sudah terbit disimpan lagi
+        // (nomor yang sama boleh diubah, tetap dicek bentrok). Draft yang belum pernah terbit hanya menyimpan angka yang diketik.
         $nomorTerbit = $this->nomorTerbit($lama);
         $idNomorBaru = 0;
+        $nomorLamaRow = null;
         $idNomorLama = ($lama && !empty($lama['id_nomor_urut'])) ? (int) $lama['id_nomor_urut'] : null;
-        if ($nomorTerbit !== '') {
-            $vals['nomorUrut'] = (string) $lama['nomor_urut'];
-            $nomorPks = $nomorTerbit;
-        } elseif ($final) {
+        if ($nomorTerbit !== '' && $vals['nomorUrut'] === '') {
+            $vals['nomorUrut'] = $this->urutBersih((string) $lama['nomor_urut']);   // tidak dikirim: pakai yang sudah terbit
+        }
+        if ($final || $nomorTerbit !== '') {
+            if ($vals['nomorUrut'] === '') {
+                if ($adaBerkas) { $this->hapusBerkasLogo($logoFile); }
+                $this->keluarkanJson(['ok' => false, 'pesan' => 'Nomor urut PKS wajib diisi (angka saja).', 'kosong' => ['nomorUrut']], 422);
+            }
             try {
-                $t = $this->nomorBaru($vals['tanggal']);
+                $t = $this->daftarkanNomor((int) $vals['nomorUrut'], $vals['tanggal'], $idNomorLama);
             } catch (\Exception $e) {
                 if ($adaBerkas) { $this->hapusBerkasLogo($logoFile); }
-                $this->keluarkanJson(['ok' => false, 'pesan' => $e->getMessage()], 500);
+                $kode = (int) $e->getCode();
+                $this->keluarkanJson(['ok' => false, 'pesan' => $e->getMessage(), 'kosong' => $kode === 409 ? ['nomorUrut'] : []], $kode === 409 ? 409 : 500);
             }
-            $idNomorBaru = $t['id'];
-            $idNomorLama = $t['id'];
-            $vals['nomorUrut'] = (string) $t['nomor_urut'];
-            $nomorPks = $t['detail_nomor'];
+            $idNomorBaru  = $t['baru'] ? $t['id'] : 0;
+            $nomorLamaRow = $t['lama'];
+            $idNomorLama  = $t['id'];
+            $nomorPks     = $t['detail_nomor'];
         } else {
-            $vals['nomorUrut'] = '';
-            $nomorPks = $this->nomorPks($vals);   // draft: bagian urut masih titik-titik
+            $nomorPks = $this->nomorPks($vals);   // draft: urut seperti yang diketik (kosong = titik-titik)
         }
 
         $kolom = [];
@@ -345,7 +355,8 @@ class PksKontrakController extends Controller {
             }
         } catch (\Exception $e) {
             if ($adaBerkas) { $this->hapusBerkasLogo($logoFile); }   // batalkan unggahan baru
-            if ($idNomorBaru) { $this->lepasNomor($idNomorBaru); }   // nomor yang baru terbit dilepas lagi (tidak boleh bolong)
+            if ($idNomorBaru) { $this->lepasNomor($idNomorBaru); }   // nomor yang baru didaftarkan dilepas lagi
+            elseif ($nomorLamaRow) { $this->pulihkanNomor($nomorLamaRow); }   // nomor yang diubah dikembalikan ke nilai semula
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Gagal menyimpan PKS. Detail: ' . $e->getMessage()], 500);
         }
 
@@ -369,7 +380,7 @@ class PksKontrakController extends Controller {
             'ok'        => true,
             'status'    => $status,
             'nomor_pks' => $nomorPks,
-            'nomor_terbit' => ($nomorTerbit !== '' || $idNomorBaru > 0),
+            'nomor_terbit' => ($nomorTerbit !== '' || $idNomorLama !== null),
             'logoUrl'   => $logoFile ? $f3->get('BASE') . '/pks/' . $poId . '/logo?v=' . time() : '',
         ]);
     }
@@ -525,7 +536,7 @@ class PksKontrakController extends Controller {
     }
 
     /**
-     * Kontrak selesai -> tandai di PO (po_kegiatan.kontrak_dibuat_at) supaya Tahap 9 (BAST) di Detail Order terbuka.
+     * Kontrak selesai -> tandai di PO (po_kegiatan.kontrak_dibuat_at) supaya BAST (Tahap 11) di Detail Order bisa terbuka setelah Laporan Akhir selesai.
      * Sama dengan tombol "Tandai kontrak dibuat" di Daftar PO Humas. Hanya menandai sekali; kontrak yang dibuka lagi hanya memperbarui nomornya.
      * Gagal menandai tidak boleh menggagalkan penyimpanan kontrak.
      */
@@ -541,7 +552,7 @@ class PksKontrakController extends Controller {
                     [1 => (string) $nomorPks, 2 => $uid, 3 => $unama, 4 => (int) $poId]
                 );
                 try {
-                    \PoReviewController::catatRiwayatOrder($this->db, (int) $poId, $uid, 'Humas membuat PKS (' . $nomorPks . '). Tahap 9 (BAST) terbuka.', 'kontrak_humas');
+                    \PoReviewController::catatRiwayatOrder($this->db, (int) $poId, $uid, 'Humas membuat PKS (' . $nomorPks . '). BAST (Tahap 11) terbuka setelah Laporan Akhir selesai.', 'kontrak_humas');
                     $o = $this->db->exec("SELECT nomor_order, ketua_pelaksana_id, jenis_layanan_opti FROM order_layanan WHERE id = ? LIMIT 1", [1 => (int) $po['order_id']]);
                     $o = !empty($o) ? $o[0] : [];
                     $div = (string) (isset($o['jenis_layanan_opti']) ? $o['jenis_layanan_opti'] : '');
@@ -549,7 +560,7 @@ class PksKontrakController extends Controller {
                     $penerima = [isset($katim[$div]) ? (int) $katim[$div] : 0, (int) (isset($o['ketua_pelaksana_id']) ? $o['ketua_pelaksana_id'] : 0)];
                     \PoReviewController::kabari(
                         $this->db, $penerima, 'PKS Sudah Dibuat',
-                        'Humas sudah membuat PKS untuk PO ' . $po['nomor_po'] . ' (Order #' . (isset($o['nomor_order']) ? $o['nomor_order'] : '-') . '). Tahap 9 (BAST) sudah terbuka.',
+                        'Humas sudah membuat PKS untuk PO ' . $po['nomor_po'] . ' (Order #' . (isset($o['nomor_order']) ? $o['nomor_order'] : '-') . '). BAST (Tahap 11) terbuka setelah Laporan Akhir selesai.',
                         '/order/' . (int) $po['order_id']
                     );
                 } catch (\Throwable $e) {
@@ -557,6 +568,8 @@ class PksKontrakController extends Controller {
                 }
                 // Tim Mitra: ada PKS baru untuk dicetak, diserahkan ke klien, lalu di-upload setelah ditandatangani (menu PKS Mitra)
                 \PksMitraController::kabariMitraPksBaru($this->db, ['order_id' => (int) $po['order_id'], 'po_id' => (int) $poId, 'nomor_po' => isset($po['nomor_po']) ? $po['nomor_po'] : ''], $nomorPks, $unama);
+                // BAST otomatis: kalau PO bertanda tangan dan Laporan Akhir sudah selesai, draf BAST langsung dibuat dari PKS ini (Ketua Tim diberi tahu)
+                try { \OptiBast::siapkanDraf($this->db, (int) $po['order_id'], $uid, $unama); } catch (\Throwable $e) {}
             } elseif ((string) $r[0]['kontrak_nomor'] !== (string) $nomorPks) {
                 $this->db->exec("UPDATE po_kegiatan SET kontrak_nomor = ? WHERE id = ?", [1 => (string) $nomorPks, 2 => (int) $poId]);
             }
@@ -594,13 +607,13 @@ class PksKontrakController extends Controller {
      * DATA PO -> NILAI AWAL
      * ============================================================ */
 
-    /** SELECT dasar: PO Selulosa yang sudah disetujui + didisposisikan ke Humas. */
+    /** SELECT dasar: PO yang sudah di-ACC (diverifikasi) Tim Mitra = didisposisikan ke Humas. Humas baru bisa membuat PKS sejak saat itu. PKS yang sudah ada tetap tampil. */
     protected function sqlPoDisposisi() {
         return "SELECT p.id AS po_id, p.nomor_po, p.status_review,
-                       COALESCE(p.disposisi_humas_at, p.disetujui_at, p.updated_at) AS tgl_disposisi,
+                       COALESCE(p.tervalidasi_mitra_at, p.disposisi_humas_at, p.disetujui_at, p.updated_at) AS tgl_disposisi,
                        p.judul_kegiatan AS po_judul,
                        p.ruang_lingkup, p.jadwal_mulai, p.jadwal_selesai,
-                       " . ($this->kolomBaca() ? "p.po_ttd_at, p.po_ttd_file, p.po_ttd_asal, p.po_ttd_oleh_nama, p.validasi_keuangan_at, p.kontrak_dibuat_at, p.kontrak_dibuat_oleh_nama, p.kontrak_dibaca_at, p.kontrak_dibaca_oleh_nama," : "") . "
+                       " . ($this->kolomBaca() ? "p.po_ttd_at, p.po_ttd_file, p.po_ttd_asal, p.po_ttd_oleh_nama, p.tervalidasi_mitra_at, p.validasi_keuangan_at, p.kontrak_dibuat_at, p.kontrak_dibuat_oleh_nama, p.kontrak_dibaca_at, p.kontrak_dibaca_oleh_nama," : "") . "
                        o.id AS order_id, o.id_customer, o.status AS order_status, o.jenis_layanan_opti, o.judul_kegiatan AS order_judul, o.estimasi_biaya,
                        c.nmcustomer, c.pt_cv,
                        (SELECT sp.nominal_penawaran FROM tb_surat_penawaran sp
@@ -609,8 +622,7 @@ class PksKontrakController extends Controller {
                 FROM po_kegiatan p
                 JOIN order_layanan o ON o.id = p.order_id
                 JOIN tb_customer c ON c.id_customer = o.id_customer
-                WHERE (p.status_review = 'disetujui' OR p.disposisi_humas_at IS NOT NULL)"
-                . ($this->kolomBaca() ? " AND p.validasi_keuangan_at IS NOT NULL AND p.po_ttd_file IS NOT NULL AND p.po_ttd_file <> ''" : "");
+                WHERE (p.tervalidasi_mitra_at IS NOT NULL OR EXISTS (SELECT 1 FROM pks_kontrak kk WHERE kk.po_id = p.id))";
     }
 
     /**
@@ -641,10 +653,11 @@ class PksKontrakController extends Controller {
             if ($w === '') { return; }
             $rows[] = array('ts' => $ts, 'judul' => $judul, 'waktu' => $w, 'oleh' => $oleh, 'ikon' => $ikon);
         };
+        $tambah('PO diverifikasi Tim Mitra (PKS bisa dibuat)', 'tervalidasi_mitra_at', '', 'bi-patch-check');
         $tambah('PO disetujui PPK BLU', 'validasi_keuangan_at', '', 'bi-patch-check');
         $tambah('PO bertanda tangan di-upload', 'po_ttd_at', (string) ($r['po_ttd_oleh_nama'] ?? ''), 'bi-pen');
-        // dibuka sebelum PO bertanda tangan di-upload tidak dihitung
-        if (!empty($r['kontrak_dibaca_at']) && (empty($r['po_ttd_at']) || strtotime((string) $r['kontrak_dibaca_at']) >= strtotime((string) $r['po_ttd_at']))) {
+        // dibuka sebelum PO diverifikasi Tim Mitra tidak dihitung
+        if (!empty($r['kontrak_dibaca_at']) && (empty($r['tervalidasi_mitra_at']) || strtotime((string) $r['kontrak_dibaca_at']) >= strtotime((string) $r['tervalidasi_mitra_at']))) {
             $tambah('Dibuka Humas', 'kontrak_dibaca_at', (string) ($r['kontrak_dibaca_oleh_nama'] ?? ''), 'bi-envelope-open');
         }
         $tambah('PKS dibuat', 'kontrak_dibuat_at', (string) ($r['kontrak_dibuat_oleh_nama'] ?? ''), 'bi-file-earmark-check');
@@ -702,28 +715,111 @@ class PksKontrakController extends Controller {
         return $ada;
     }
 
-    /** Waktu Humas pertama kali membuka antrean kontrak ini. Dibuka sebelum PO bertanda tangan di-upload tidak dihitung. Kosong = belum dibuka. */
+    /**
+     * Tambahkan data Daftar Order ke tiap baris PKS supaya kolom tabel sama dengan Daftar PO:
+     * nomor order, nomor permintaan, tanggal order, durasi, saluran permohonan, dan estimasi biaya / terbayar / sisa.
+     */
+    protected function perkayaInfoOrder(array $hasil) {
+        $info = [];
+        try {
+            $ids = [];
+            foreach ($hasil as $h) { if (!empty($h['order_id'])) { $ids[] = (int) $h['order_id']; } }
+            if ($ids) {
+                $model = new \OrderLayanan($this->db);
+                foreach ($model->allWithRelasi('', '', '', 'all', 'semua', 'all', array_values(array_unique($ids))) as $ro) { $info[(int) $ro['id']] = $ro; }
+            }
+        } catch (\Throwable $e) { $info = []; }
+        $petaMedia = [
+            'whatsapp' => ['WhatsApp', 'bi-chat-dots'], 'telepon' => ['Telepon', 'bi-telephone'], 'email' => ['E-mail', 'bi-envelope-at'],
+            'fax' => ['Fax', 'bi-printer'], 'datang_langsung' => ['Datang Langsung', 'bi-building'], 'website' => ['Website', 'bi-laptop'],
+        ];
+        foreach ($hasil as &$h) {
+            $ro = isset($info[(int) ($h['order_id'] ?? 0)]) ? $info[(int) $h['order_id']] : null;
+            $pm = $petaMedia[$ro ? (string) ($ro['media_permohonan'] ?? '') : ''] ?? ['Surat', 'bi-envelope-paper'];
+            $acuan = $ro ? (float) (($ro['estimasi_biaya'] ?? 0) ?: ($ro['biaya_po'] ?? 0)) : (float) ($h['biaya'] ?? 0);
+            $bayar = $ro ? (float) ($ro['total_terbayar'] ?? 0) : 0.0;
+            $lunas = $ro ? !empty($ro['bayar_lunas']) : false;
+            $h['punya_info_order'] = $ro !== null;
+            $h['order']            = $ro ? (string) ($ro['nomor_order'] ?? '') : '';
+            $h['nomor_permintaan'] = $ro ? (string) ($ro['nomor_permintaan'] ?? '') : '';
+            $h['tanggal_order']    = ($ro && !empty($ro['tanggal_masuk'])) ? date('d/m/Y', strtotime($ro['tanggal_masuk'])) : '';
+            $h['media_label']      = $pm[0];
+            $h['media_icon']       = $pm[1];
+            $h['durasi_ditentukan'] = $ro ? !empty($ro['durasi_ditentukan']) : false;
+            $h['durasi_tampil']    = $ro ? (string) ($ro['durasi_tampil'] ?? '') : '';
+            $h['durasi_badge_class'] = $ro ? (string) ($ro['durasi_badge_class'] ?? '') : '';
+            $h['durasi_tooltip']   = $ro ? (string) ($ro['durasi_tooltip'] ?? '') : '';
+            $h['eb_acuan']         = number_format($acuan, 0, ',', '.');
+            $h['eb_terbayar']      = $bayar > 0 ? number_format($bayar, 0, ',', '.') : '';
+            $h['eb_lunas']         = $lunas;
+            $h['eb_sisa']          = (!$lunas && $bayar > 0 && $ro) ? number_format((float) ($ro['sisa_tagihan_order'] ?? 0), 0, ',', '.') : '';
+        }
+        unset($h);
+        return $hasil;
+    }
+
+    /** Waktu Humas pertama kali membuka antrean kontrak ini. Dibuka sebelum PO diverifikasi Tim Mitra tidak dihitung. Kosong = belum dibuka. */
     protected function bacaValid(array $r) {
         $b = isset($r['kontrak_dibaca_at']) ? trim((string) $r['kontrak_dibaca_at']) : '';
         if ($b === '' || strpos($b, '0000') === 0 || !strtotime($b)) { return ''; }
-        $t = isset($r['po_ttd_at']) ? trim((string) $r['po_ttd_at']) : '';
+        $t = isset($r['tervalidasi_mitra_at']) ? trim((string) $r['tervalidasi_mitra_at']) : '';
         if ($t !== '' && strtotime($t) && strtotime($b) < strtotime($t)) { return ''; }
         return date('Y-m-d H:i:s', strtotime($b));
     }
 
     /** Catat Humas membuka form kontrak (sekali; dibuka lagi setelah PO diunggah ulang dihitung baru). Gagal mencatat tidak boleh menggagalkan halaman. */
     protected function catatDibuka($poId) {
+        $this->catatBacaMapKendali($poId);
         if (!$this->kolomBaca()) { return; }
         try {
             $nama = isset($_SESSION['nama_lengkap']) ? (string) $_SESSION['nama_lengkap'] : 'Humas';
             $this->db->exec(
                 "UPDATE po_kegiatan SET kontrak_dibaca_at = NOW(), kontrak_dibaca_oleh_nama = ?
-                  WHERE id = ? AND (kontrak_dibaca_at IS NULL OR (po_ttd_at IS NOT NULL AND kontrak_dibaca_at < po_ttd_at))",
+                  WHERE id = ? AND (kontrak_dibaca_at IS NULL OR (tervalidasi_mitra_at IS NOT NULL AND kontrak_dibaca_at < tervalidasi_mitra_at))",
                 [1 => $nama, 2 => (int) $poId]
             );
         } catch (\Throwable $e) {
             // abaikan
         }
+    }
+
+    /**
+     * Tanggal baca Humas untuk Map Kendali (po_kegiatan.humas_dibaca_at). Daftar PO Humas sudah tidak ada di menu:
+     * Humas membaca PO yang baru masuk lewat daftar PKS (tombol Lihat PO) atau saat membuka form PKS.
+     * Hanya Humas / Admin PKS yang dicatat (Superadmin yang melihat-lihat tidak mengisi tanggal Humas). Sekali saja, tidak ditimpa;
+     * dihitung baru bila PO diverifikasi ulang Tim Mitra. Gagal mencatat tidak boleh mengganggu halaman.
+     */
+    protected function catatBacaMapKendali($poId) {
+        if (!in_array((string) $this->getUserRole(), ['humas', 'admin_kontrak'], true)) { return; }
+        try {
+            $this->db->exec(
+                "UPDATE po_kegiatan SET humas_dibaca_at = NOW()
+                  WHERE id = ? AND status_review = 'disetujui' AND tervalidasi_mitra_at IS NOT NULL
+                    AND (humas_dibaca_at IS NULL OR humas_dibaca_at < tervalidasi_mitra_at)",
+                [1 => (int) $poId]
+            );
+        } catch (\Throwable $e) {
+            // kolom humas_dibaca_at belum ada (dibuat otomatis oleh Daftar PO Humas / PoSchema): abaikan
+        }
+    }
+
+    /** POST /pks/@id/baca -- Humas membuka "Lihat PO" di daftar PKS: catat waktu baca. Mengembalikan waktu baca yang berlaku ('' bila tidak dicatat). */
+    public function baca($f3, $params) {
+        $this->izinkan(true);
+        $poId = (int) $params['id'];
+        $po = $this->ambilPo($poId);
+        if (!$po) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum diverifikasi (di-ACC) Tim Mitra.'], 404);
+        }
+        if (in_array((string) $this->getUserRole(), ['humas', 'admin_kontrak'], true)) { $this->catatDibuka($poId); }
+        $waktu = '';
+        try {
+            $r = $this->ambilPo($poId);
+            $waktu = $r ? $this->bacaValid($r) : '';
+        } catch (\Throwable $e) {
+            $waktu = '';
+        }
+        $this->keluarkanJson(['ok' => true, 'waktu' => $waktu]);
     }
 
     protected function ambilPo($poId) {
@@ -782,7 +878,7 @@ class PksKontrakController extends Controller {
             'selesai'          => $this->tanggalValid(substr((string) $po['jadwal_selesai'], 0, 10)),
             'biaya'            => $this->pilihBiaya($po),
             'upNama'           => $this->pertama($cust, ['contactperson_opti', 'contactperson', 'nama_pribadi']),
-            'telepon'          => $this->pertama($cust, ['nohpcontactperson_opti', 'nohpcontactperson', 'notelpcustomer']),
+            'telepon'          => preg_replace('/\D+/', '', (string) $this->pertama($cust, ['nohpcontactperson_opti', 'nohpcontactperson', 'notelpcustomer'])),
             'email'            => $this->pertama($cust, ['emailcustomer', 'emailcustomer_sertifikasi']),
         ];
 
@@ -917,7 +1013,11 @@ class PksKontrakController extends Controller {
         return '';
     }
 
-    /** po_kegiatan.ruang_lingkup: JSON {deskripsi, items} (atau teks biasa) -> satu poin per baris, tanpa penanda 1./a./- */
+    /**
+     * po_kegiatan.ruang_lingkup: JSON {deskripsi, items} (atau teks biasa) -> satu poin per baris.
+     * Penanda di awal baris dibuang, tetapi tingkatnya dipertahankan: "1." = poin bernomor, "a." = sub-poin huruf, "-" / bullet = sub-poin bullet.
+     * Hasil: teks biasa bila semua poin bernomor, atau HTML sederhana (<div data-t="a|b">) bila ada sub-poin.
+     */
     protected function ekstrakRuangLingkup($mentah) {
         $rl = json_decode((string) $mentah, true);
         if (!is_array($rl)) {
@@ -927,11 +1027,19 @@ class PksKontrakController extends Controller {
             $rl = ['deskripsi' => '', 'items' => $rl];
         }
 
-        $baris = [];
+        $baris = [];   // [teks, jenis]
+        $adaSub = false;
         $deskripsi = isset($rl['deskripsi']) ? (string) $rl['deskripsi'] : '';
         foreach (preg_split('/\R/u', $deskripsi) as $b) {
-            $b = trim((string) preg_replace('/^(\d+\.|[a-zA-Z]\.|[-\x{2022}])\s*/u', '', trim($b)));
-            if ($b !== '') { $baris[] = $b; }
+            $b = trim($b);
+            $tp = 'n';
+            if (preg_match('/^(\d+\.|[a-z]\.|[A-Z]\.|[-\x{2022}])\s*/u', $b, $mm)) {
+                $m0 = mb_substr($mm[1], 0, 1, 'UTF-8');
+                if (preg_match('/^[a-z]$/', $m0)) { $tp = 'a'; }
+                elseif ($m0 === '-' || $m0 === "\u{2022}") { $tp = 'b'; }
+                $b = trim((string) preg_replace('/^(\d+\.|[a-zA-Z]\.|[-\x{2022}])\s*/u', '', $b));
+            }
+            if ($b !== '') { $baris[] = [$b, $tp]; if ($tp !== 'n') { $adaSub = true; } }
         }
         $items = isset($rl['items']) ? (array) $rl['items'] : [];
         foreach ($items as $it) {
@@ -943,9 +1051,16 @@ class PksKontrakController extends Controller {
             } else {
                 $t = trim((string) $it);
             }
-            if ($t !== '') { $baris[] = $t; }
+            if ($t !== '') { $baris[] = [$t, 'n']; }
         }
-        return implode("\n", $baris);
+        if (!$adaSub) {
+            return implode("\n", array_map(function ($x) { return $x[0]; }, $baris));
+        }
+        $html = '';
+        foreach ($baris as $x) {
+            $html .= '<div' . ($x[1] !== 'n' ? ' data-t="' . $x[1] . '"' : '') . '>' . htmlspecialchars($x[0], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</div>';
+        }
+        return $html;
     }
 
     /* ============================================================
@@ -956,10 +1071,11 @@ class PksKontrakController extends Controller {
     protected function bacaInput($f3) {
         $hasil = [];
         foreach (self::FIELDS as $fid => $def) {
-            $mentah = ($fid === 'nomorUrut') ? '' : $f3->get('POST.' . $fid);   // nomor urut ditetapkan server
+            $mentah = $f3->get('POST.' . $fid);
             if ($mentah === null && isset(self::TETAP[$fid])) { $mentah = self::TETAP[$fid]; }
             $hasil[$fid] = $this->bersihkan($mentah, $def[1], $def[2]);
         }
+        $hasil['nomorUrut'] = $this->urutBersih($hasil['nomorUrut']);   // angka saja, tanpa nol di depan
         return $hasil;
     }
 
@@ -973,6 +1089,8 @@ class PksKontrakController extends Controller {
                 return (int) min($n, 999999999999);
             case 'tgl':
                 return $this->tanggalValid(trim((string) $v));
+            case 'angka':
+                return substr((string) preg_replace('/\D+/', '', (string) $v), 0, (int) $maks);
             case 'rich':
                 // teks berformat dari editor (teks biasa, atau HTML sederhana b/i/u per baris): dibersihkan ke bentuk baku
                 $s = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/u', '', (string) $v);
@@ -1012,6 +1130,7 @@ class PksKontrakController extends Controller {
                 case 'bool': $vals[$fid] = !empty($v); break;
                 case 'uang': $vals[$fid] = (int) round((float) $v); break;
                 case 'tgl':  $vals[$fid] = $v ? substr((string) $v, 0, 10) : ''; break;
+                case 'angka': $vals[$fid] = (string) preg_replace('/\D+/', '', (string) $v); break;
                 default:     $vals[$fid] = (string) $v;
             }
         }
@@ -1085,6 +1204,143 @@ class PksKontrakController extends Controller {
         return ['file' => $nama, 'mime' => ($ext === 'png') ? 'image/png' : 'image/jpeg'];
     }
 
+    /**
+     * POST /pks/@id/logo-link -- ambil gambar logo dari sebuah link (https://...) supaya Humas tidak perlu mengunduh dan mengunggah manual.
+     * Server yang mengunduh (browser sering terblokir aturan CORS), lalu mengirim gambarnya apa adanya ke form. Form memprosesnya persis seperti
+     * unggahan biasa (latar jadi putih, ruang kosong dipotong) dan baru disimpan saat tombol Simpan draft / Selesai ditekan.
+     * Pengamanan: hanya http/https port 80/443, alamat internal / localhost ditolak (juga setelah pengalihan), maksimal 2 MB, isinya harus gambar sungguhan.
+     */
+    public function logoLink($f3, $params) {
+        $this->izinkan(true);
+        if (!$this->ambilPo((int) $params['id'])) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => 'PO tidak ditemukan atau belum diverifikasi (di-ACC) Tim Mitra.'], 404);
+        }
+        $url = isset($_POST['url']) ? trim((string) $_POST['url']) : '';
+        $h = $this->unduhGambarDariLink($url);
+        if (isset($h['galat'])) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => $h['galat']], 422);
+        }
+        http_response_code(200);
+        header('Content-Type: ' . $h['mime']);
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: no-store');
+        header('Content-Length: ' . strlen($h['data']));
+        echo $h['data'];
+        exit;
+    }
+
+    /** @return array ['data'=>bytes, 'mime'=>...] atau ['galat'=>pesan] */
+    protected function unduhGambarDariLink($url) {
+        if ($url === '') { return ['galat' => 'Tempel dulu link gambar logonya.']; }
+        if (strlen($url) > 2000) { return ['galat' => 'Link terlalu panjang.']; }
+        if (!preg_match('~^[a-z][a-z0-9+.\-]*://~i', $url)) { $url = 'https://' . $url; }
+        if (!function_exists('curl_init')) { return ['galat' => 'Ambil dari link belum aktif di server ini (ekstensi cURL PHP belum menyala). Unggah file logonya saja.']; }
+
+        $r = null;
+        for ($alih = 0; $alih <= 3; $alih++) {
+            $p = @parse_url($url);
+            $skema = strtolower((string) (isset($p['scheme']) ? $p['scheme'] : ''));
+            $host = strtolower((string) (isset($p['host']) ? $p['host'] : ''));
+            if (!in_array($skema, ['http', 'https'], true) || $host === '' || isset($p['user']) || isset($p['pass'])) {
+                return ['galat' => 'Link harus diawali http:// atau https:// dan berisi alamat gambar.'];
+            }
+            $port = isset($p['port']) ? (int) $p['port'] : ($skema === 'https' ? 443 : 80);
+            if ($port !== 80 && $port !== 443) { return ['galat' => 'Link dengan port khusus tidak diizinkan.']; }
+            $ip = $this->ipPublik($host);
+            if ($ip === '') { return ['galat' => 'Alamat link tidak bisa dijangkau. Cek ejaan link-nya (alamat internal / localhost tidak diizinkan).']; }
+
+            $r = $this->ambilUrlGambar($url, $host, $port, $ip, true);
+            if ($r['err'] === 60 || $r['err'] === 77 || $r['err'] === 58 || $r['err'] === 35) {
+                // sertifikat SSL tidak bisa diperiksa (umum di Windows tanpa CA bundle). Isinya gambar publik tanpa data rahasia, jadi coba lagi tanpa pemeriksaan.
+                $r = $this->ambilUrlGambar($url, $host, $port, $ip, false);
+            }
+            if ($r['kode'] >= 300 && $r['kode'] < 400 && $r['lokasi'] !== '') {
+                $url = $this->urlGabung($url, $r['lokasi']);
+                continue;
+            }
+            break;
+        }
+        if ($r === null) { return ['galat' => 'Link tidak bisa dibuka.']; }
+        if ($r['kode'] >= 300 && $r['kode'] < 400) { return ['galat' => 'Link dialihkan terlalu banyak kali. Pakai alamat gambar langsungnya.']; }
+        if ($r['terlalu']) { return ['galat' => 'Ukuran gambar dari link ini lebih dari 2 MB. Pilih gambar yang lebih kecil.']; }
+        if ($r['err'] !== 0) { return ['galat' => 'Link tidak bisa dibuka (' . ($r['err'] === 28 ? 'terlalu lama merespons' : 'gagal tersambung') . '). Coba lagi atau unggah file logonya.']; }
+        if ($r['kode'] >= 400) { return ['galat' => 'Link tidak bisa dibuka (kode ' . $r['kode'] . '). Pastikan link bisa dibuka tanpa login.']; }
+
+        $data = $r['data'];
+        $info = ($data !== '') ? @getimagesizefromstring($data) : false;
+        $webp = defined('IMAGETYPE_WEBP') ? IMAGETYPE_WEBP : -1;
+        $peta = [IMAGETYPE_PNG => 'image/png', IMAGETYPE_JPEG => 'image/jpeg', IMAGETYPE_GIF => 'image/gif', $webp => 'image/webp'];
+        if (!$info || !isset($peta[$info[2]]) || $info[0] < 1 || $info[1] < 1) {
+            $awal = strtolower(substr($data, 0, 600));
+            if (strpos($awal, '<svg') !== false) { return ['galat' => 'Format SVG belum didukung. Pakai logo PNG, JPG, atau WEBP.']; }
+            if (strpos($awal, '<html') !== false || strpos($awal, '<!doctype') !== false) {
+                return ['galat' => 'Link ini halaman web, bukan alamat gambar. Klik kanan logonya di website, pilih "Salin alamat gambar", lalu tempel di sini.'];
+            }
+            return ['galat' => 'Isi link bukan gambar PNG, JPG, atau WEBP.'];
+        }
+        if ($info[0] > 8000 || $info[1] > 8000) { return ['galat' => 'Dimensi gambar terlalu besar (maksimal 8000 piksel). Pilih gambar yang lebih kecil.']; }
+        return ['data' => $data, 'mime' => $peta[$info[2]]];
+    }
+
+    /** IPv4 publik untuk host ('' bila host tidak valid / memuat alamat privat atau khusus / tidak ketemu). Dipakai untuk mengunci koneksi ke IP yang sudah diperiksa. */
+    protected function ipPublik($host) {
+        if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $daftar = [$host];
+        } else {
+            if (!preg_match('/^[a-z0-9]([a-z0-9.\-]*[a-z0-9])?$/', $host) || $host === 'localhost') { return ''; }
+            $daftar = @gethostbynamel($host);
+        }
+        if (!$daftar) { return ''; }
+        foreach ($daftar as $ip) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) { return ''; }
+        }
+        return $daftar[0];
+    }
+
+    /** Satu kali unduh (tanpa mengikuti pengalihan). Berhenti begitu melewati batas 2 MB. */
+    protected function ambilUrlGambar($url, $host, $port, $ip, $periksaSsl) {
+        $data = ''; $lokasi = ''; $terlalu = false;
+        $ch = curl_init($url);
+        $opsi = [
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT        => 12,
+            CURLOPT_RESOLVE        => [$host . ':' . $port . ':' . $ip],
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; SILOPTI-Logo/1.0)',
+            CURLOPT_HTTPHEADER     => ['Accept: image/png,image/jpeg,image/webp,image/gif,image/*;q=0.8'],
+            CURLOPT_SSL_VERIFYPEER => (bool) $periksaSsl,
+            CURLOPT_SSL_VERIFYHOST => $periksaSsl ? 2 : 0,
+            CURLOPT_HEADERFUNCTION => function ($c, $baris) use (&$lokasi) {
+                if (stripos($baris, 'location:') === 0) { $lokasi = trim(substr($baris, 9)); }
+                return strlen($baris);
+            },
+            CURLOPT_WRITEFUNCTION  => function ($c, $potong) use (&$data, &$terlalu) {
+                $data .= $potong;
+                if (strlen($data) > self::LOGO_MAKS) { $terlalu = true; return 0; }
+                return strlen($potong);
+            },
+        ];
+        if (defined('CURLOPT_PROTOCOLS') && defined('CURLPROTO_HTTP')) { $opsi[CURLOPT_PROTOCOLS] = CURLPROTO_HTTP | CURLPROTO_HTTPS; }
+        curl_setopt_array($ch, $opsi);
+        curl_exec($ch);
+        $err = (int) curl_errno($ch);
+        $kode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($terlalu) { $err = 0; }   // dihentikan sengaja karena kebesaran
+        return ['data' => $data, 'lokasi' => $lokasi, 'terlalu' => $terlalu, 'err' => $err, 'kode' => $kode];
+    }
+
+    /** Gabungkan alamat pengalihan (bisa relatif) dengan alamat asal. */
+    protected function urlGabung($asal, $lokasi) {
+        if (preg_match('~^[a-z][a-z0-9+.\-]*://~i', $lokasi)) { return $lokasi; }
+        $p = parse_url($asal);
+        $dasar = $p['scheme'] . '://' . $p['host'] . (isset($p['port']) ? ':' . $p['port'] : '');
+        if (strpos($lokasi, '//') === 0) { return $p['scheme'] . ':' . $lokasi; }
+        if (strpos($lokasi, '/') === 0) { return $dasar . $lokasi; }
+        $jalur = isset($p['path']) ? $p['path'] : '/';
+        return $dasar . substr($jalur, 0, strrpos($jalur, '/') + 1) . $lokasi;
+    }
+
     /** Konversi gambar ke PNG dengan latar putih memakai GD. false kalau GD tidak ada atau gagal. */
     protected function ratakanKePng($src, $tipe, $tujuan) {
         if (!function_exists('imagecreatetruecolor') || !function_exists('imagepng')) { return false; }
@@ -1124,7 +1380,19 @@ class PksKontrakController extends Controller {
     /** Nomor PKS lengkap yang SUDAH terbit untuk kontrak ini ('' kalau belum / baru draft tanpa nomor). */
     protected function nomorTerbit($k) {
         if (!$k || trim((string) $k['nomor_urut']) === '') { return ''; }
+        // terbit = sudah didaftarkan di pks_nomor_urut (id_nomor_urut), atau kontrak lama berstatus selesai; draft berisi urut ketikan belum terbit
+        if (empty($k['id_nomor_urut']) && (string) $k['status'] !== 'selesai') { return ''; }
         return (string) $k['nomor_pks'];
+    }
+
+    /** Urut dari isian: angka saja, tanpa nol di depan, maksimal 9 digit ('' kalau kosong atau 0). */
+    protected function urutBersih($v) {
+        $d = ltrim(preg_replace('/\D+/', '', (string) $v), '0');
+        return substr($d, 0, 9);
+    }
+
+    protected function detailNomor($urut, $bulan, $tahun) {
+        return 'B/' . (int) $urut . '/BBSPJIS/HK/' . self::ROMAWI[(int) $bulan] . '/' . (int) $tahun;
     }
 
     /** Tanggal perjanjian otomatis: tanggal tersimpan kalau nomor sudah terbit (terkunci), kalau belum = hari ini. */
@@ -1139,19 +1407,51 @@ class PksKontrakController extends Controller {
     }
 
     /**
-     * Terbitkan Nomor PKS baru: "B/<urut>/BBSPJIS/HK/<ROMAWI>/<TAHUN>". Urut BERLANJUT sepanjang tahun dan kembali ke 1
-     * saat ganti tahun (N = MAX(nomor_urut) tahun itu + 1); bulan dan tahun dari Tanggal perjanjian. Pola sama dengan
-     * PoSchema::nomorBaru(): dikunci per tahun (GET_LOCK), UNIQUE KEY jadi pengaman terakhir (bentrok -> coba angka
-     * berikutnya, maksimal 5x).
+     * Cari nomor yang bentrok: urut + tahun SAMA (bulan tidak dihitung; urut sama tapi tahun beda = boleh).
+     * $kecualiId = baris pks_nomor_urut milik kontrak ini sendiri (tidak dianggap bentrok).
      *
-     * @return array{id:int, detail_nomor:string, nomor_urut:int}
+     * @return array|null  ['id', 'detail_nomor', 'nomor_po'] atau null kalau aman
      */
-    protected function nomorBaru($tanggal) {
+    protected function cariBentrok($urut, $bulan, $tahun, $kecualiId = null) {
+        try {
+            $r = $this->db->exec(
+                'SELECT n.id, n.detail_nomor, (SELECT p.nomor_po FROM pks_kontrak k JOIN po_kegiatan p ON p.id = k.po_id WHERE k.id_nomor_urut = n.id LIMIT 1) AS nomor_po
+                   FROM pks_nomor_urut n WHERE n.nomor_urut = ? AND n.tahun = ? AND n.id <> ? LIMIT 1',
+                [1 => (int) $urut, 2 => (int) $tahun, 3 => (int) $kecualiId]
+            );
+        } catch (\Throwable $e) {
+            try {   // kolom/tabel PO tidak terbaca: cek tanpa nama PO
+                $r = $this->db->exec(
+                    'SELECT n.id, n.detail_nomor, NULL AS nomor_po FROM pks_nomor_urut n WHERE n.nomor_urut = ? AND n.tahun = ? AND n.id <> ? LIMIT 1',
+                    [1 => (int) $urut, 2 => (int) $tahun, 3 => (int) $kecualiId]
+                );
+            } catch (\Throwable $e2) {
+                throw new \Exception('Tabel pks_nomor_urut belum ada. Jalankan migration_pks_kontrak.sql dulu di phpMyAdmin.');
+            }
+        }
+        return empty($r) ? null : $r[0];
+    }
+
+    protected function pesanBentrok(array $b, $urut, $bulan, $tahun) {
+        return 'Nomor urut ' . (int) $urut . ' sudah dipakai di tahun ' . (int) $tahun . ' (' . $b['detail_nomor'] .
+            (!empty($b['nomor_po']) ? ', PO ' . $b['nomor_po'] : '') . '). Isi ulang nomor.';
+    }
+
+    /**
+     * Daftarkan nomor PKS "B/<urut>/BBSPJIS/HK/<ROMAWI>/<TAHUN>" (bulan dan tahun dari Tanggal perjanjian) ke pks_nomor_urut.
+     * Kontrak yang sudah punya baris ($idLama) memperbarui barisnya sendiri; yang belum, menambah baris baru. Pengecekan bentrok
+     * dikunci per tahun (GET_LOCK) dan UNIQUE KEY (tahun, nomor_urut) jadi pengaman terakhir.
+     * Bentrok: Exception dengan kode 409.
+     *
+     * @return array{id:int, detail_nomor:string, baru:bool, lama:?array}
+     */
+    protected function daftarkanNomor($urut, $tanggal, $idLama = null) {
         $ts    = strtotime((string) $tanggal) ?: time();
         $bulan = (int) date('n', $ts);
         $tahun = (int) date('Y', $ts);
+        $detail = $this->detailNomor($urut, $bulan, $tahun);
 
-        $namaKunci  = 'pks_nomor_urut_' . $tahun;
+        $namaKunci  = 'pks_nomor_' . $tahun;
         $kunciDapat = false;
         try {
             $r = $this->db->exec('SELECT GET_LOCK(?, 5) AS k', [1 => $namaKunci]);
@@ -1160,35 +1460,69 @@ class PksKontrakController extends Controller {
         }
 
         try {
-            for ($percobaan = 0; $percobaan < 5; $percobaan++) {
-                try {
-                    $row = $this->db->exec('SELECT COALESCE(MAX(nomor_urut), 0) AS maxu FROM pks_nomor_urut WHERE tahun = ?', [1 => $tahun]);
-                } catch (\Throwable $e) {
-                    throw new \Exception('Tabel pks_nomor_urut belum ada. Jalankan migration_pks_kontrak.sql dulu di phpMyAdmin.');
+            $b = $this->cariBentrok($urut, $bulan, $tahun, $idLama);
+            if ($b) { throw new \Exception($this->pesanBentrok($b, $urut, $bulan, $tahun), 409); }
+
+            try {
+                if ($idLama) {
+                    $lama = $this->db->exec('SELECT * FROM pks_nomor_urut WHERE id = ?', [1 => (int) $idLama]);
+                    if (!empty($lama)) {
+                        $this->db->exec(
+                            'UPDATE pks_nomor_urut SET nomor_urut = ?, bulan = ?, tahun = ?, detail_nomor = ?, updated_at = NOW() WHERE id = ?',
+                            [1 => (int) $urut, 2 => $bulan, 3 => $tahun, 4 => $detail, 5 => (int) $idLama]
+                        );
+                        return ['id' => (int) $idLama, 'detail_nomor' => $detail, 'baru' => false, 'lama' => $lama[0]];
+                    }
                 }
-                $urutanBaru  = (int) (isset($row[0]['maxu']) ? $row[0]['maxu'] : 0) + 1 + $percobaan;
-                $detailNomor = 'B/' . $urutanBaru . '/BBSPJIS/HK/' . self::ROMAWI[$bulan] . '/' . $tahun;
-                try {
-                    $this->db->exec(
-                        'INSERT INTO pks_nomor_urut (nomor_urut, bulan, tahun, detail_nomor, updated_at) VALUES (?, ?, ?, ?, NOW())',
-                        [1 => $urutanBaru, 2 => $bulan, 3 => $tahun, 4 => $detailNomor]
-                    );
-                    $idRow = $this->db->exec('SELECT LAST_INSERT_ID() AS id');
-                    return [
-                        'id'           => (int) (isset($idRow[0]['id']) ? $idRow[0]['id'] : 0),
-                        'detail_nomor' => $detailNomor,
-                        'nomor_urut'   => $urutanBaru,
-                    ];
-                } catch (\Throwable $e) {
-                    continue;   // bentrok UNIQUE -> coba nomor berikutnya
+                $this->db->exec(
+                    'INSERT INTO pks_nomor_urut (nomor_urut, bulan, tahun, detail_nomor, updated_at) VALUES (?, ?, ?, ?, NOW())',
+                    [1 => (int) $urut, 2 => $bulan, 3 => $tahun, 4 => $detail]
+                );
+                $idRow = $this->db->exec('SELECT LAST_INSERT_ID() AS id');
+                return ['id' => (int) (isset($idRow[0]['id']) ? $idRow[0]['id'] : 0), 'detail_nomor' => $detail, 'baru' => true, 'lama' => null];
+            } catch (\Throwable $e) {
+                if (stripos($e->getMessage(), 'duplicate') !== false || stripos($e->getMessage(), '1062') !== false) {
+                    throw new \Exception('Nomor ' . $detail . ' ditolak database. Kalau nomornya sebenarnya belum dipakai, jalankan SQL pembaruan indeks nomor PKS (migration_pks_kontrak.sql) di phpMyAdmin.', 409);
                 }
+                throw new \Exception('Gagal mendaftarkan nomor PKS. Detail: ' . $e->getMessage());
             }
         } finally {
             if ($kunciDapat) {
                 try { $this->db->exec('SELECT RELEASE_LOCK(?)', [1 => $namaKunci]); } catch (\Throwable $e) {}
             }
         }
-        throw new \Exception('Gagal membuat nomor PKS baru, silakan coba lagi.');
+    }
+
+    /** Kembalikan baris pks_nomor_urut ke nilai semula (kalau penyimpanan kontrak gagal setelah nomornya diubah). */
+    protected function pulihkanNomor(array $row) {
+        try {
+            $this->db->exec(
+                'UPDATE pks_nomor_urut SET nomor_urut = ?, bulan = ?, tahun = ?, detail_nomor = ? WHERE id = ?',
+                [1 => (int) $row['nomor_urut'], 2 => (int) $row['bulan'], 3 => (int) $row['tahun'], 4 => (string) $row['detail_nomor'], 5 => (int) $row['id']]
+            );
+        } catch (\Throwable $e) {}
+    }
+
+    /** GET /pks/@id/cek-nomor?urut=12 : apakah urut ini bentrok (urut + tahun sama) pada tanggal perjanjian kontrak ini. */
+    public function cekNomor($f3, $params) {
+        $this->izinkan(true);
+        $poId = (int) $params['id'];
+        $lama = $this->ambilKontrak($poId);
+        $tgl  = $this->tanggalOtomatis($lama);
+        $ts   = strtotime($tgl) ?: time();
+        $bulan = (int) date('n', $ts);
+        $tahun = (int) date('Y', $ts);
+        $urut = $this->urutBersih((string) $f3->get('GET.urut'));
+        if ($urut === '') { $this->keluarkanJson(['ok' => true, 'bentrok' => false, 'nomor' => $this->nomorPks(['tanggal' => $tgl, 'nomorUrut' => ''])]); }
+        try {
+            $b = $this->cariBentrok((int) $urut, $bulan, $tahun, ($lama && !empty($lama['id_nomor_urut'])) ? (int) $lama['id_nomor_urut'] : null);
+        } catch (\Exception $e) {
+            $this->keluarkanJson(['ok' => false, 'pesan' => $e->getMessage()], 500);
+        }
+        $this->keluarkanJson([
+            'ok' => true, 'bentrok' => (bool) $b, 'nomor' => $this->detailNomor($urut, $bulan, $tahun),
+            'pesan' => $b ? $this->pesanBentrok($b, $urut, $bulan, $tahun) : '',
+        ]);
     }
 
     protected function nomorPks(array $v) {
@@ -1205,10 +1539,11 @@ class PksKontrakController extends Controller {
         $n = ($m && $s && $s >= $m) ? ((int) $m->diff($s)->days + 1) : 0;
 
         $lingkup = [];   // satu poin = satu baris berformat (daftar run)
-        foreach (\PksDocx::barisDariTeks($v['ruangLingkup']) as $b) {
-            if (\PksDocx::teksBaris($b) !== '') { $lingkup[] = $b; }
+        foreach (\PksDocx::barisBertipe($v['ruangLingkup']) as $b) {   // [tp => n|a|b, runs => ...]: poin bernomor, sub-poin huruf, sub-poin bullet
+            if (\PksDocx::teksBaris($b['runs']) !== '') { $lingkup[] = $b; }
         }
         $atauStrip = function ($x) { $x = trim((string) $x); return $x !== '' ? $x : '-'; };
+        $atauTitik = function ($x) { $x = trim((string) $x); return $x !== '' ? $x : '..........................'; };   // penandatangan klien kosong: garis titik untuk ditulis tangan
 
         return [
             'perusahaan'          => $v['perusahaan'],
@@ -1220,8 +1555,8 @@ class PksKontrakController extends Controller {
             'bulan'               => $d ? self::BULAN[(int) $d->format('n') - 1] : '',
             'tahun_kata'          => $d ? self::terbilang((int) $d->format('Y')) : '',
             'tanggal_angka'       => $d ? $d->format('d-m-Y') : '',
-            'ttd_nama'            => $v['ttdNama'],
-            'ttd_jabatan'         => $v['ttdJabatan'],
+            'ttd_nama'            => $atauTitik($v['ttdNama']),
+            'ttd_jabatan'         => $atauTitik($v['ttdJabatan']),
             'alamat_perusahaan'   => $v['alamatPerusahaan'],
             'kepala_nama'         => $v['kepalaNama'],
             'kepala_jabatan'      => $v['kepalaJabatan'],
@@ -1240,7 +1575,7 @@ class PksKontrakController extends Controller {
             'up_nama'             => $v['upNama'],
             'up_jabatan'          => trim((string) $v['upJabatan']),
             'alamat_notif'        => $v['alamatNotif'],
-            'telepon'             => $v['telepon'],
+            'telepon'             => $atauStrip($v['telepon']),
             'whatsapp'            => $atauStrip($v['whatsapp']),
             'email'               => $atauStrip($v['email']),
             'ked_up_nama'         => $v['kedUpNama'],

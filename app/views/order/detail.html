@@ -102,7 +102,7 @@
             align-items: center;
             justify-content: space-between;
             position: relative;
-            min-width: 780px;
+            min-width: 860px;
             padding: 1rem 0.5rem 0.25rem 0.5rem;
         }
         .stepper-progress-container::before {
@@ -1203,11 +1203,13 @@
             color: #ffffff !important;
             border-color: transparent !important;
         }
+        /* Badge "Selesai" di stepper: selalu hijau (juga saat tahapnya sedang dibuka) */
+        .stage-status-badge.bg-success,
         .stage-nav-btn.active .stage-status-badge.bg-success {
-            background-color: #ffffff !important;
-            color: #15803d !important;
-            border-color: #ffffff !important;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            background-color: #16a34a !important;
+            color: #ffffff !important;
+            border-color: #16a34a !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
         }
         .stage-badge-aktif {
             background-color: #1e293b;
@@ -1264,7 +1266,7 @@
             opacity: 0.65;
         }
 
-        /* Layar besar (>=1280px): semua tahap (10 tahap termasuk BAST) satu baris; laptop kecil (992px-1279px) 2 baris x 5 kolom agar tidak berhimpitan */
+        /* Layar besar (>=1280px): semua tahap (11 tahap termasuk Laporan Akhir & BAST) satu baris; laptop kecil (992px-1279px) 2 baris x 6 kolom agar tidak berhimpitan */
         @media (min-width: 1280px) {
             .stage-nav-grid {
                 grid-template-columns: none;
@@ -1278,7 +1280,7 @@
         }
         @media (min-width: 992px) and (max-width: 1279.98px) {
             .stage-nav-grid {
-                grid-template-columns: repeat(5, minmax(0, 1fr));
+                grid-template-columns: repeat(6, minmax(0, 1fr));
                 gap: 6px;
             }
             .stage-nav-text { font-size: 0.7rem; }
@@ -2198,8 +2200,18 @@
                         <span class="step-text {{ @stepper[10].state }}">Kontrak PKS</span>
                     </a>
 
-                    <!-- Step 10: BAST (nomor internal 9) -->
-                    <a href="#cardBast" data-stage="9" class="step-checkpoint {{ (9 > @max_accessible_step || @kontrak_panel.menunggu) ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 10: Berita Acara Serah Terima (BAST)">
+                    <!-- Step 10: Laporan Akhir (nomor internal 11) -- ditambahkan Kaa -->
+                    <a href="#cardLaporanAkhir" data-stage="11" class="step-checkpoint {{ !@laporan_akhir.akses ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 10: Laporan Akhir (opsional)">
+                        <div class="step-circle {{ @stepper[11].state }}">
+                            <check if="{{ @stepper[11].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
+                            <check if="{{ @stepper[11].state == 'current' }}"><i class="bi bi-journal-check"></i></check>
+                            <check if="{{ @stepper[11].state == 'waiting' }}"><i class="bi bi-journal-text"></i></check>
+                        </div>
+                        <span class="step-text {{ @stepper[11].state }}">Laporan Akhir</span>
+                    </a>
+
+                    <!-- Step 11: BAST (nomor internal 9) -->
+                    <a href="#cardBast" data-stage="9" class="step-checkpoint {{ (9 > @max_accessible_step || @kontrak_panel.menunggu) ? 'disabled' : '' }}" data-bs-toggle="tooltip" title="Tahap 11: Berita Acara Serah Terima (BAST)">
                         <div class="step-circle {{ @stepper[9].state }}">
                             <check if="{{ @stepper[9].state == 'done' }}"><i class="bi bi-check-lg"></i></check>
                             <check if="{{ @stepper[9].state == 'current' }}"><i class="bi bi-patch-check-fill"></i></check>
@@ -2252,7 +2264,7 @@
                     </div>
                     <div class="action-guide-content">
                         <div class="action-guide-meta">
-                            <span class="action-guide-step-badge">Tahap {{ @langkah_berikutnya.step ?: (@langkah_berikutnya.tahap ?: @current_step) }}</span>
+                            <span class="action-guide-step-badge">Tahap {{ @langkah_berikutnya.tahap_tampil ?: (@langkah_berikutnya.step ?: (@langkah_berikutnya.tahap ?: @current_step)) }}</span>
                             <span class="action-guide-role-badge">
                                 {{ @langkah_berikutnya.penanggung_jawab ?: (@langkah_berikutnya.role ?: 'Petugas') }}
                             </span>
@@ -2616,11 +2628,31 @@
                     </div>
                 </button>
             </li>
-            <!-- Tahap 10: BAST (nomor internal 9) -->
+            <!-- Tahap 10: Laporan Akhir (nomor internal 11) -- ditambahkan Kaa -->
+            <li class="stage-nav-item" role="presentation">
+                <button class="stage-nav-btn {{ @active_step == 11 ? 'active' : '' }} {{ !@laporan_akhir.akses ? 'disabled' : '' }}" id="tab-stage-11" {{ @laporan_akhir.akses ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-11"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-11" aria-selected="{{ @active_step == 11 ? 'true' : 'false' }}">
+                    <div class="stage-nav-title-row">
+                        <span class="stage-nav-badge">10</span>
+                        <span class="stage-nav-text">Laporan Akhir</span>
+                    </div>
+                    <div class="stage-nav-status-row">
+                        <check if="{{ @stepper[11].state == 'done' }}">
+                            <true><span class="badge bg-success text-white stage-status-badge"><i class="bi bi-check2 me-0.5"></i>Selesai</span></true>
+                            <false>
+                                <check if="{{ @stepper[11].state == 'current' }}">
+                                    <true><span class="badge stage-status-badge stage-badge-aktif">Aktif</span></true>
+                                    <false><span class="badge bg-light text-muted stage-status-badge">Menunggu</span></false>
+                                </check>
+                            </false>
+                        </check>
+                    </div>
+                </button>
+            </li>
+            <!-- Tahap 11: BAST (nomor internal 9) -->
             <li class="stage-nav-item" role="presentation">
                 <button class="stage-nav-btn {{ @active_step == 9 ? 'active' : '' }} {{ (9 > @max_accessible_step || @kontrak_panel.menunggu) ? 'disabled' : '' }}" id="tab-stage-9" {{ (9 <= @max_accessible_step && !@kontrak_panel.menunggu) ? 'data-bs-toggle="pill" data-bs-target="#pane-stage-9"' : 'disabled' }} type="button" role="tab" aria-controls="pane-stage-9" aria-selected="{{ @active_step == 9 ? 'true' : 'false' }}">
                     <div class="stage-nav-title-row">
-                        <span class="stage-nav-badge">10</span>
+                        <span class="stage-nav-badge">11</span>
                         <span class="stage-nav-text">BAST</span>
                     </div>
                     <div class="stage-nav-status-row">
@@ -6699,7 +6731,7 @@
                                     </a>
                                     <check if="{{ @order.status_pelaksanaan == 'laporan_selesai' || !empty(@bast) }}">
                                         <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" onclick="switchStage(9, true)">
-                                            Lanjut ke Tahap 9 (BAST) <i class="bi bi-arrow-right ms-1"></i>
+                                            Lanjut ke Tahap 11 (BAST) <i class="bi bi-arrow-right ms-1"></i>
                                         </button>
                                     </check>
                                 </div>
@@ -6721,7 +6753,7 @@
                                 .po-btn-baru::after { content:''; position:absolute; top:-5px; right:-5px; width:12px; height:12px; border-radius:50%; background:#e11d48; border:2px solid #fff; box-shadow:0 0 0 0 rgba(225,29,72,.55); animation:poBaruDenyut 1.6s infinite; }
                                 @keyframes poBaruDenyut { 0% { box-shadow:0 0 0 0 rgba(225,29,72,.55); } 70% { box-shadow:0 0 0 7px rgba(225,29,72,0); } 100% { box-shadow:0 0 0 0 rgba(225,29,72,0); } }
                                 .pa-po { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:14px; }
-                                .pa-tl { display:flex; flex-wrap:wrap; margin:4px 0 16px; }
+                                .pa-tl { display:flex; flex-wrap:wrap; margin:18px 0 16px; }
                                 .pa-st { flex:1; min-width:130px; text-align:center; position:relative; padding:0 4px 4px; }
                                 .pa-st::before { content:""; position:absolute; top:15px; left:-50%; width:100%; height:3px; background:#e2e8f0; z-index:0; }
                                 .pa-st:first-child::before { display:none; }
@@ -6733,6 +6765,70 @@
                                 .pa-nm { font-size:.78rem; font-weight:700; line-height:1.2; color:#0f172a; }
                                 .pa-ac { font-size:.7rem; color:#64748b; }
                                 .pa-tg { font-size:.68rem; color:#475569; margin-top:2px; }
+                                /* lama tiap pihak mengerjakan PO: angka di garis penghubung + keterangan diterima/dibuka + dropdown putaran revisi */
+                                .pa-gl { position:absolute; top:-10px; left:calc(-50% + 20px); width:calc(100% - 40px); display:flex; justify-content:center; z-index:2; pointer-events:none; }
+                                .pa-pill { pointer-events:auto; display:inline-flex; align-items:center; gap:4px; background:#fff; border:1px solid #1e293b; border-radius:999px; padding:2px 9px; font-size:.7rem; font-weight:700; color:#1e293b; white-space:nowrap; line-height:1.35; font-family:inherit; }
+                                .pa-pill i { font-size:.62rem; transition:transform .15s; }
+                                button.pa-pill { cursor:pointer; }
+                                .pa-pill-rev { border-color:#b45309; color:#b45309; background:#fffbeb; }
+                                .pa-pill[aria-expanded=true] i, .pa-rv[aria-expanded=true] i { transform:rotate(180deg); }
+                                .pa-st.done.pa-hr::before { background:repeating-linear-gradient(90deg,#b45309 0 10px,transparent 10px 16px); }
+                                .pa-bk { font-size:.66rem; color:#64748b; margin-top:2px; white-space:nowrap; }
+                                .pa-rv { display:inline-flex; align-items:center; gap:3px; margin-top:5px; font:inherit; font-size:.66rem; font-weight:700; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:999px; padding:1px 8px; }
+                                button.pa-rv { cursor:pointer; }
+                                .pa-dd { position:absolute; top:calc(100% + 2px); left:50%; transform:translateX(-50%); width:380px; max-width:90vw; background:#fff; border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 10px 30px rgba(15,23,42,.16); padding:8px 6px; text-align:left; z-index:30; }
+                                .pa-dd[hidden] { display:none; }
+                                .pa-dd h5 { margin:2px 10px 6px; font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:#b45309; font-weight:700; }
+                                .pa-dd .it { display:flex; gap:10px; padding:7px 10px; border-radius:8px; }
+                                .pa-dd .it:hover { background:#f8fafc; }
+                                .pa-dd .no { flex:0 0 20px; height:20px; border-radius:50%; background:#fffbeb; color:#b45309; border:1px solid #fde68a; display:grid; place-items:center; font-size:.68rem; font-weight:700; margin-top:1px; }
+                                .pa-dd .tx { flex:1; min-width:0; font-size:.76rem; line-height:1.35; color:#0f172a; }
+                                .pa-dd .tx .w { display:block; color:#64748b; font-size:.7rem; }
+                                .pa-dd .pa-ddn { margin:0 10px 4px; font-size:.74rem; line-height:1.45; color:#475569; }
+                                /* rincian putaran revisi, tampilan "per putaran": selebar kartu, di bawah stepper */
+                                .pa-jl { margin:4px 0 16px; border:1px solid #e2e8f0; border-radius:14px; background:#f8fafc; padding:16px; text-align:left; }
+                                .pa-jl[hidden] { display:none; }
+                                .pa-jh { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:baseline; justify-content:space-between; margin-bottom:12px; }
+                                .pa-jh h5 { margin:0; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:#b45309; font-weight:700; }
+                                .pa-jc { display:flex; flex-wrap:wrap; gap:6px; }
+                                .pa-jch { font-size:.72rem; font-weight:600; background:#fff; border:1px solid #e2e8f0; border-radius:999px; padding:2px 10px; color:#334155; }
+                                .pa-jch b { color:#0f172a; }
+                                .pa-jn { font-size:.72rem; color:#475569; background:#fff; border:1px dashed #cbd5e1; border-radius:10px; padding:7px 12px; margin-bottom:10px; line-height:1.45; }
+                                .pa-jsum { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:12px; }
+                                .pa-jlbl { font-size:.66rem; text-transform:uppercase; letter-spacing:.07em; color:#64748b; font-weight:600; }
+                                .pa-jstk { display:flex; height:22px; border-radius:7px; overflow:hidden; border:1px solid #0f172a; margin:8px 0 10px; background:#fff; }
+                                .pa-jstk > div { height:100%; min-width:2px; transform-origin:left; animation:paJGrow .6s ease both; }
+                                .pa-s-ppk { background:#0f172a; } .pa-s-tim { background:#475569; } .pa-s-katim { background:#64748b; } .pa-s-ketupel { background:#cbd5e1; } .pa-s-mitra { background:#94a3b8; }
+                                .pa-s-wait { background:repeating-linear-gradient(45deg,#e2e8f0 0 3px,#fff 3px 6px); }
+                                .pa-jleg { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:.76rem; color:#0f172a; }
+                                .pa-jleg span { display:inline-flex; gap:6px; align-items:center; }
+                                .pa-jleg i { width:11px; height:11px; border-radius:3px; display:inline-block; border:1px solid #cbd5e1; }
+                                .pa-jg { background:#fff; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:8px; overflow:hidden; animation:paJUp .35s ease both; }
+                                .pa-jgb { all:unset; box-sizing:border-box; width:100%; display:flex; gap:10px; align-items:center; justify-content:space-between; padding:11px 14px; cursor:pointer; }
+                                .pa-jgb:focus-visible { outline:2px solid #0f172a; outline-offset:-2px; }
+                                .pa-jgt { display:block; font-weight:700; font-size:.86rem; color:#0f172a; }
+                                .pa-jgs { display:block; color:#64748b; font-size:.74rem; }
+                                .pa-jgr { font-weight:700; font-size:.82rem; color:#0f172a; white-space:nowrap; display:inline-flex; gap:8px; align-items:center; }
+                                .pa-jgr i { font-style:normal; font-size:.6rem; transition:transform .2s; }
+                                .pa-jg:not(.open) .pa-jgr i { transform:rotate(-90deg); }
+                                .pa-jgbd { display:grid; grid-template-rows:0fr; transition:grid-template-rows .3s ease; }
+                                .pa-jg.open .pa-jgbd { grid-template-rows:1fr; }
+                                .pa-jgbd > div { overflow:hidden; min-height:0; }
+                                .pa-jrw { display:grid; grid-template-columns:30px 1fr auto; gap:10px; align-items:start; padding:10px 14px; border-top:1px solid #e2e8f0; }
+                                .pa-jdu { font-weight:700; font-size:.82rem; white-space:nowrap; color:#0f172a; }
+                                @keyframes paJGrow { from { transform:scaleX(0); opacity:.2; } to { transform:scaleX(1); opacity:1; } }
+                                @keyframes paJUp { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+                                .pa-jtx { min-width:0; font-size:.82rem; color:#0f172a; }
+                                .pa-jtx b { display:block; }
+                                .pa-jtx span { display:block; color:#64748b; font-size:.74rem; }
+                                .pa-jsub { margin:4px 0 4px 18px; padding:0; font-size:.78rem; color:#334155; line-height:1.5; }
+                                .pa-jem { display:block; font-style:normal; color:#64748b; font-size:.72rem; margin:0 0 4px; }
+                                .pa-jav { flex:none; width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-size:.66rem; font-weight:700; border:2px solid #0f172a; background:#fff; color:#0f172a; }
+                                .pa-jav.ppk { background:#0f172a; color:#fff; }
+                                .pa-jav.ketupel { background:#f1f5f9; border-style:dashed; }
+                                @media (prefers-reduced-motion:reduce) { .pa-jstk > div, .pa-jg { animation:none; } .pa-jgbd, .pa-jgr i { transition:none; } }
+                                .pa-dd .du { font-weight:700; color:#b45309; white-space:nowrap; font-size:.76rem; }
+                                .pa-lgd { font-size:.68rem; color:#64748b; text-align:center; margin:-6px 0 14px; }
                                 .pa-st.cur .pa-tg { color:#1e293b; font-weight:600; }
                                 .pa-st.rev .pa-tg { color:#dc2626; font-weight:600; }
                                 /* Kartu status PO (ilustrasi amplop) */
@@ -6885,27 +6981,9 @@
                                         </div>
                                     </true>
                                     <false>
-                                        <check if="{{ !empty(@po_alur.syarat_po) && !@po_alur.syarat_po.ok }}">
-                                            <div class="alert alert-warning border border-warning-subtle shadow-xs small mb-0 d-flex align-items-center gap-2.5 p-3 rounded-3">
-                                                <i class="bi bi-exclamation-triangle-fill text-warning fs-4 flex-shrink-0"></i>
-                                                <div>
-                                                    <strong class="text-dark d-block">Penerbitan PO Belum Dapat Dibuka</strong>
-                                                    <span class="text-secondary">
-                                                        <check if="{{ !@po_alur.syarat_po.spm }}">
-                                                            Titik awal pengerjaan &amp; jadwal SPM pada <strong>Tahap 7</strong> belum diaktifkan. Silakan aktifkan jadwal SPM terlebih dahulu agar lembar PO dapat disusun.
-                                                        </check>
-                                                        <check if="{{ @po_alur.syarat_po.spm && !@po_alur.syarat_po.lunas }}">
-                                                            Pembayaran order ini belum lunas atau belum melampirkan Surat Kesanggupan Bayar.
-                                                        </check>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </check>
-                                        <check if="{{ empty(@po_alur.syarat_po) || @po_alur.syarat_po.ok }}">
-                                            <div class="alert alert-info border-0 shadow-xs small mb-0">
-                                                <i class="bi bi-hourglass-split me-1"></i> <strong>{{ @po_alur.ketupel_nama }}</strong> sedang menyusun PO untuk order ini. Form PO hanya tampil untuk Ketua Pelaksana.
-                                            </div>
-                                        </check>
+                                        <div class="alert alert-info border-0 shadow-xs small mb-0">
+                                            <i class="bi bi-hourglass-split me-1"></i> <strong>{{ @po_alur.ketupel_nama }}</strong> sedang menyusun PO untuk order ini. Form PO hanya tampil untuk PIC PO yang ditunjuk.
+                                        </div>
                                     </false>
                                 </check>
                             </check>
@@ -6951,15 +7029,65 @@
                                 </div>
                                 <div class="pa-tl">
                                     <repeat group="{{ @po_alur.langkah }}" value="{{ @l }}">
-                                        <div class="pa-st {{ @l.cls }}">
+                                        <div class="pa-st {{ @l.cls }}{{ @l.rev_tag && @l.cls == 'done' ? ' pa-hr' : '' }}" data-no="{{ @l.no }}">
+                                            <check if="{{ @l.gl }}">
+                                                <div class="pa-gl"><check if="{{ @l.gl_rev }}"><true><button type="button" class="pa-pill pa-pill-rev" onclick="paDd(this)" aria-expanded="false" title="Total waktu langkah ini, termasuk revisi. Klik untuk rincian putaran.">{{ @l.gl }} <i class="bi bi-chevron-down"></i></button></true><false><span class="pa-pill" title="{{ @l.no == 1 ? 'Waktu pengerjaan: dihitung dari disposisi ke Ketua Pelaksana sampai PO dikirim.' : 'Waktu pengerjaan: dihitung dari PO diterima sampai diteruskan ke pihak berikutnya.' }}">{{ @l.gl }}</span></false></check></div>
+                                            </check>
                                             <div class="pa-dot">{{ @l.dot | raw }}</div>
                                             <div class="pa-nm">{{ @l.nama }}</div>
                                             <div class="pa-ac">{{ @l.aktor }}</div>
                                             <check if="{{ @l.tag }}"><div class="pa-tg">{{ @l.tag }}</div></check>
+                                            <repeat group="{{ @l.bk }}" value="{{ @b }}"><div class="pa-bk">{{ @b }}</div></repeat>
                                             <check if="{{ @l.tag2 }}"><div class="pa-tg" style="color: {{ @l.tag2_cls == 'u' ? '#dc2626' : '#475569' }}; font-weight: 600;">{{ @l.tag2 }}</div></check>
+                                            <check if="{{ @l.rev_tag }}">
+                                                <check if="{{ @l.dd_ada }}"><true><div><button type="button" class="pa-rv" onclick="paDd(this)" aria-expanded="false">{{ @l.rev_tag }} <i class="bi bi-chevron-down"></i></button></div></true><false><div><span class="pa-rv">{{ @l.rev_tag }}</span></div></false></check>
+                                            </check>
+                                            <check if="{{ @l.dd_ada && !@l.jalur }}">
+                                                <div class="pa-dd" hidden>
+                                                    <h5>{{ @l.dd_judul }}</h5>
+                                                    <repeat group="{{ @l.dd }}" value="{{ @r }}">
+                                                        <div class="it"><span class="no">{{ @r.no }}</span><div class="tx">{{ @r.pihak }}<span class="w">{{ @r.waktu }}</span></div><div class="du">{{ @r.lama }}</div></div>
+                                                    </repeat>
+                                                    <check if="{{ @l.dd_info }}"><div class="pa-ddn">{{ @l.dd_info }}</div></check>
+                                                </div>
+                                            </check>
                                         </div>
                                     </repeat>
                                 </div>
+                                <div class="pa-lgd">Angka di atas garis = waktu pengerjaan langkah di sebelah kanannya: dihitung dari PO diterima (didisposisikan) sampai diteruskan ke pihak berikutnya, termasuk waktu menunggu dibuka. Untuk Penyusunan (langkah pertama) angkanya ditulis di bawah langkahnya.</div>
+                                <repeat group="{{ @po_alur.langkah }}" value="{{ @l }}">
+                                    <check if="{{ @l.jalur }}"><div class="pa-jl" id="paJl{{ @l.no }}" hidden>{{ @l.jalur | raw }}</div></check>
+                                </repeat>
+                                <script>
+                                    function paDd(el) {
+                                        var st = el.closest('.pa-st'), jl = st && document.getElementById('paJl' + st.getAttribute('data-no'));
+                                        if (jl) {   // rincian putaran berupa jalur bolak-balik: panel selebar kartu di bawah stepper
+                                            var bukaJ = jl.hidden;
+                                            document.querySelectorAll('.pa-jl').forEach(function (d) { d.hidden = true; });
+                                            document.querySelectorAll('.pa-dd').forEach(function (d) { d.hidden = true; });
+                                            document.querySelectorAll('.pa-st [aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+                                            jl.hidden = !bukaJ;
+                                            st.querySelectorAll('[aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', bukaJ ? 'true' : 'false'); });
+                                            if (bukaJ && jl.scrollIntoView) { jl.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+                                            return;
+                                        }
+                                        var dd = st && st.querySelector('.pa-dd');
+                                        if (!dd) { return; }
+                                        var buka = dd.hidden;
+                                        document.querySelectorAll('.pa-dd').forEach(function (d) { d.hidden = true; });
+                                        document.querySelectorAll('.pa-st [aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+                                        dd.hidden = !buka;
+                                        st.querySelectorAll('[aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', buka ? 'true' : 'false'); });
+                                    }
+                                    document.addEventListener('click', function (e) {
+                                        var jg = e.target.closest && e.target.closest('.pa-jgb');
+                                        if (jg) { var gp = jg.parentNode, bk = !gp.classList.contains('open'); gp.classList.toggle('open', bk); jg.setAttribute('aria-expanded', bk ? 'true' : 'false'); return; }
+                                        if (e.target.closest && e.target.closest('.pa-jl')) { return; }
+                                        if (e.target.closest && e.target.closest('.pa-st')) { return; }
+                                        document.querySelectorAll('.pa-dd').forEach(function (d) { d.hidden = true; });
+                                        document.querySelectorAll('.pa-st [aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+                                    });
+                                </script>
                                 <check if="{{ @po_alur.info.html }}">
                                 <div class="pa-stat{{ (@po_alur.aktif && @po_alur.ttd.ada && @po_alur.info.html && !@po_alur.form_revisi) ? ' pa-gab' : '' }}">
                                     <div class="pa-art" aria-hidden="true">
@@ -7082,7 +7210,7 @@
                                                     </div>
                                                 </div>
                                                 <check if="{{ !@po_alur.ttd.kontrak_ada }}">
-                                                    <div class="pt-next"><span class="pt-dot"></span><div><b>Diteruskan ke Humas.</b> Humas membuat PKS di Tahap 9. BAST (Tahap 10) terbuka setelah PKS selesai.</div></div>
+                                                    <div class="pt-next"><span class="pt-dot"></span><div><b>PO Aktif penuh.</b> Laporan Akhir (Tahap 10) sudah terbuka. PKS dibuat Humas di Tahap 9, dan BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir selesai.</div></div>
                                                 </check>
                                                 </check>
                                             </true>
@@ -7148,8 +7276,8 @@
                                             el.classList.remove('pt-shake'); void el.offsetWidth; el.classList.add('pt-shake');
                                             if (pesan) {
                                                 pesan.textContent = el.getAttribute('data-ttd') === '1'
-                                                    ? 'Humas membuat PKS di Tahap 9. BAST (Tahap 10) terbuka setelah PKS selesai.'
-                                                    : 'Upload PO yang sudah ditandatangani dulu. Setelah itu Humas membuat PKS di Tahap 9, lalu BAST (Tahap 10) terbuka.';
+                                                    ? 'Laporan Akhir (Tahap 10) sudah terbuka. BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir selesai.'
+                                                    : 'Upload PO yang sudah ditandatangani dulu. Setelah itu Laporan Akhir (Tahap 10) terbuka, dan BAST (Tahap 11) terbuka setelah PKS dibuat dan Laporan Akhir selesai.';
                                             }
                                         };
                                         var inp = document.getElementById('poTtdFile');
@@ -7294,7 +7422,7 @@
                                             var o = bukaDlg(
                                                 '<div class="pt-big"><i class="bi bi-file-earmark-check"></i></div>' +
                                                 '<h5>Sudah yakin file PO ini benar?</h5>' +
-                                                '<p>Cek kembali file di bawah. Jika sudah benar, PO langsung Aktif penuh dan otomatis diteruskan ke Humas untuk dibuatkan PKS.</p>' +
+                                                '<p>Cek kembali file di bawah. Jika sudah benar, PO langsung Aktif penuh dan Laporan Akhir (Tahap 10) terbuka.</p>' +
                                                 '<div class="pt-sum"><span>Nomor PO</span><b>' + esc(NOMOR_PO || '-') + '</b><span>File</span><b>' + esc(ringkasIsi()) + '</b><span>Ukuran</span><b>' + mb(totalByte()) + '</b></div>' +
                                                 '<div class="pt-hint">Pastikan nomor PO sesuai, dokumen sudah ditandatangani, semua halaman terbaca jelas, dan urutan halaman benar. File tidak dapat diganti setelah di-upload.</div>' +
                                                 '<div class="pt-foot"><button type="button" class="btn btn-outline-dark fw-semibold" data-pt="cek">Cek lagi</button><button type="button" class="btn btn-dark fw-semibold" data-pt="ya"><i class="bi bi-cloud-arrow-up me-1"></i>Ya, upload PO</button></div>');
@@ -7350,7 +7478,7 @@
                                                 var r = null; try { r = JSON.parse(x.responseText); } catch (e) {}
                                                 if (r && r.success) {
                                                     bar.style.width = '100%';
-                                                    tag.innerHTML = '<span class="pt-tag">' + (foto ? (jml > 1 ? 'Foto digabung ke PDF dan ' : 'Foto diubah ke PDF dan ') : '') + 'PO diteruskan ke Humas</span>';
+                                                    tag.innerHTML = '<span class="pt-tag">' + (foto ? (jml > 1 ? 'Foto digabung ke PDF dan ' : 'Foto diubah ke PDF dan ') : '') + 'PO berhasil diunggah</span>';
                                                     setTimeout(function () { window.location.reload(); }, 500);
                                                 } else {
                                                     gagal((r && r.message) ? r.message : 'Gagal meng-upload file. Coba lagi.');
@@ -7597,6 +7725,15 @@
         <!-- End of Pane Stage 10 (Kontrak) -->
 
         <!-- ======================================================== -->
+        <!-- PANE TAHAP 10: LAPORAN AKHIR (nomor internal 11)          -->
+        <!-- Ditambahkan Kaa. Isi kartu: order/_laporan_akhir.html     -->
+        <!-- ======================================================== -->
+        <div class="tab-pane fade {{ @active_step == 11 ? 'show active' : '' }}" id="pane-stage-11" role="tabpanel" aria-labelledby="tab-stage-11">
+            <include href="order/_laporan_akhir.html" />
+        </div>
+        <!-- End of Pane Stage 11 (Laporan Akhir) -->
+
+        <!-- ======================================================== -->
         <!-- PANE TAHAP 10: BERITA ACARA SERAH TERIMA (BAST) & LHU    -->
         <!-- (nomor internal 9)                                       -->
         <!-- ======================================================== -->
@@ -7605,7 +7742,7 @@
                 <div class="system-section-header">
                     <div>
                         <h6 class="m-0 fw-bold text-dark d-flex align-items-center gap-2 font-display">
-                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">10</span>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0.5 small fw-bold">11</span>
                             <i class="bi bi-patch-check-fill text-primary fs-5"></i> Berita Acara Serah Terima (BAST)
                         </h6>
                         <div class="d-none align-items-center flex-wrap gap-2 text-muted small mt-1" style="font-size: 0.72rem; line-height: 1.4; column-gap: 16px; row-gap: 4px;">
@@ -7616,37 +7753,42 @@
                         </div>
                     </div>
                     <check if="{{ !empty(@bast) }}">
-                        <check if="{{ in_array(@bast.status_bast, ['disetujui', 'selesai', 'terbit']) }}">
+                        <check if="{{ @bast.status_bast == 'selesai' }}">
                             <true><span class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i> BAST Diterbitkan</span></true>
-                            <false><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-pencil-square me-1"></i> {{ @bast.status_bast == 'proses_ttd' ? 'Proses TTD BAST' : 'Draf BAST' }}</span></false>
+                            <false>
+                                <check if="{{ @bast.status_bast == 'proses_ttd' }}">
+                                    <true><span class="badge bg-info-subtle text-info-emphasis border border-info-subtle"><i class="bi bi-send-check me-1"></i> Menunggu Nomor Humas</span></true>
+                                    <false><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-pencil-square me-1"></i> Draft BAST</span></false>
+                                </check>
+                            </false>
                         </check>
                     </check>
                     <check if="{{ empty(@bast) }}">
                         <check if="{{ @po_bast_terbuka }}">
-                            <span class="badge bg-info-subtle text-info border border-info-subtle">Siap Penerbitan BAST</span>
+                            <span class="badge bg-info-subtle text-info border border-info-subtle">BAST Sedang Disiapkan</span>
                         </check>
                         <check if="{{ !@po_bast_terbuka }}">
-                            <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu {{ @kontrak_panel.tampil ? 'PKS' : 'PO' }})</span>
+                            <span class="badge bg-light text-secondary border"><i class="bi bi-lock-fill me-1"></i> Terkunci (Menunggu {{ @kontrak_panel.tampil ? ((@kontrak_panel.ada && !@laporan_akhir.selesai) ? 'Laporan Akhir' : 'PKS') : 'PO' }})</span>
                         </check>
                     </check>
                 </div>
 
                 <div class="p-4">
-                    <!-- Opsi Penerbitan BAST jika belum diterbitkan -->
+                    <!-- BAST kosong: dibuat otomatis oleh sistem saat PO bertanda tangan + PKS + Laporan Akhir selesai -->
                     <check if="{{ empty(@bast) }}">
                         <check if="{{ @po_bast_terbuka }}">
                             <div class="p-3 bg-white rounded-3 border shadow-xs d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>
                                     <div class="fw-bold text-dark small mb-0.5">
-                                        <i class="bi bi-patch-check text-primary me-1"></i> Penerbitan Berita Acara Serah Terima (BAST) &amp; LHU
+                                        <i class="bi bi-magic text-primary me-1"></i> BAST disiapkan otomatis dari PKS
                                     </div>
                                     <span class="text-muted small">
-                                        Penerbitan dokumen serah terima hasil pengujian kepada pelanggan untuk penutupan resmi siklus layanan.
+                                        Draf BAST dibuat sistem. Ketua Tim melengkapi jabatan dan NIP Pihak Kedua, lalu mengirimnya ke Humas untuk diberi nomor.
                                     </span>
                                 </div>
-                                <check if="{{ (@is_tim_mitra || @is_admin_order || @is_superadmin) && (!@is_order_selesai || @can_koreksi) }}">
+                                <check if="{{ @bast_mode == 'penuh' }}">
                                     <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" onclick="triggerStageRead(9)">
-                                        <i class="bi bi-file-earmark-plus"></i> Terbitkan Dokumen BAST
+                                        <i class="bi bi-file-earmark-plus"></i> Buat BAST
                                     </a>
                                 </check>
                             </div>
@@ -7654,36 +7796,214 @@
                         <check if="{{ !@po_bast_terbuka }}">
                             <div class="p-3 text-center text-muted bg-light rounded-3 small">
                                 <i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>
-                                Berita Acara Serah Terima (BAST) dapat diterbitkan setelah PO bertanda tangan di-upload dan <strong>PKS selesai dibuat Humas</strong> pada <strong>Tahap 9 (PKS)</strong>.
+                                Berita Acara Serah Terima (BAST) disiapkan otomatis setelah <strong>PKS selesai dibuat Humas</strong> pada <strong>Tahap 9 (PKS)</strong> dan order diselesaikan lewat <strong>Laporan Akhir</strong> pada <strong>Tahap 10</strong>.
                             </div>
                         </check>
                     </check>
 
-                    <!-- Informasi BAST jika sudah ada (Draft / Proses TTD / Terbit) -->
+                    <!-- BAST sudah ada: draft (Ketua Tim melengkapi) -> dikirim ke Humas -> selesai (bernomor) -->
                     <check if="{{ !empty(@bast) }}">
+                        <check if="{{ @bast_embed }}">
+                            <true>
+                                <style>
+                                    .system-section-card:has(#btWrap) { overflow:clip; }
+                                    .bt-frame { margin:12px -1.5rem 0; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; background:#f8fafc; }   /* selebar kartu, sama dengan bingkai PO dan PKS */
+                                    .bt-host { padding:12px 16px 24px; background:#f8fafc; }   /* form BAST dipasang langsung di kartu (tanpa iframe): tidak ada yang terpotong, pratinjau menempel bawaan tema PO */
+                                    .bt-frame.bt-full .bt-host { flex:1; min-height:0; overflow:auto; }
+                                    .bt-frame.bt-full .po-live-card { top:12px; height:calc(100vh - 82px); }
+                                    .bt-fh { background:#f1f5f9; border-bottom:1px solid #cbd5e1; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#1e293b; }
+                                    .bt-frame iframe { display:block; width:100%; height:calc(100vh - 75px - 46px); min-height:420px; border:0; background:#fff; }
+                                    .bt-frame.bt-full { position:fixed; inset:0; margin:0; z-index:1060; border:0; display:flex; flex-direction:column; }
+                                    .bt-frame.bt-full iframe { flex:1; height:auto; min-height:0; }
+                                </style>
+                                <div class="small text-secondary mb-1">
+                                    <check if="{{ @bast_mode == 'humas' }}">
+                                        <true>Dikirim Ketua Tim. Isi <b>nomor urut</b> dan pilih <b>pejabat yang mengetahui</b> di bawah, lalu klik <b>Selesai</b>. Tanggal BAST otomatis hari ini.</true>
+                                        <false>
+                                            <check if="{{ @bast_mode == 'katim' }}">
+                                                <true>BAST sudah disiapkan otomatis dari PKS. Lengkapi <b>jabatan</b> dan <b>NIP</b> Anda di bawah, lalu klik <b>Kirim ke Humas</b>.</true>
+                                                <false>Isi BAST di bawah. Ketua Tim melengkapi lalu mengirim ke Humas, Humas memberi nomor.</false>
+                                            </check>
+                                        </false>
+                                    </check>
+                                </div>
+                                <div class="bt-frame" id="btWrap">
+                                    <div class="bt-fh">
+                                        <span><b>Berita Acara Serah Terima (BAST)</b> &middot; Order #{{ @order.nomor_order }}</span>
+                                        <span class="d-inline-flex gap-1">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="btFull"><i class="bi bi-arrows-fullscreen me-1"></i><span>Layar penuh</span></button>
+                                        </span>
+                                    </div>
+                                    <div class="bt-host" id="btHost" data-src="{{ @bast_embed_url }}"><div class="text-secondary small py-4 text-center">Memuat form BAST...</div></div>
+                                </div>
+                                <script>
+                                (function () {
+                                    var wrap = document.getElementById('btWrap'), full = document.getElementById('btFull');
+                                    if (!wrap || !full) { return; }
+                                    /* Muat form BAST langsung ke kartu (fragment tanpa layout). Kalau gagal, jatuh ke iframe seperti sebelumnya. */
+                                    var host = document.getElementById('btHost');
+                                    if (host) {
+                                        var src = host.getAttribute('data-src') || '';
+                                        var pakaiIframe = function () {
+                                            host.className = ''; host.innerHTML = '';
+                                            var f = document.createElement('iframe'); f.id = 'btFrame'; f.title = 'Form BAST'; f.src = src; host.appendChild(f);
+                                        };
+                                        fetch(src.replace(/([?&])embed=1/, '$1fragment=1'), { credentials: 'same-origin', headers: { 'Accept': 'text/html' } })
+                                            .then(function (r) { if (!r.ok) { throw new Error('http ' + r.status); } return r.text(); })
+                                            .then(function (html) {
+                                                if (html.indexOf('id="dpkRoot"') === -1) { throw new Error('bukan form BAST'); }
+                                                window.BT_INLINE = true;
+                                                var tpl = document.createElement('template'); tpl.innerHTML = html;
+                                                var skrip = [].slice.call(tpl.content.querySelectorAll('script'));
+                                                skrip.forEach(function (s) { s.parentNode.removeChild(s); });
+                                                host.innerHTML = '';
+                                                host.appendChild(tpl.content);
+                                                skrip.forEach(function (lama) {
+                                                    var baru = document.createElement('script');
+                                                    if (lama.src) { baru.src = lama.src; baru.async = false; } else { baru.text = lama.textContent; }
+                                                    host.appendChild(baru);
+                                                });
+                                            })
+                                            .catch(function (e) { try { console.error('[BAST]', e); } catch (x) {} pakaiIframe(); });
+                                    }
+                                    function penuh(on) {
+                                        wrap.classList.toggle('bt-full', on);
+                                        document.body.style.overflow = on ? 'hidden' : '';
+                                        full.querySelector('span').textContent = on ? 'Tutup layar penuh' : 'Layar penuh';
+                                    }
+                                    full.addEventListener('click', function () { penuh(!wrap.classList.contains('bt-full')); });
+                                    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && wrap.classList.contains('bt-full')) { penuh(false); } });
+                                })();
+                                </script>
+                            </true>
+                            <false>
+                        <!-- Slide "Lihat BAST" (tab BAST dan tab Berkas), tampilannya sama dengan slide "Lihat PO" -->
+                        <include href="order/_slide_bast.html" />
+                        <check if="{{ @bast.status_bast == 'proses_ttd' }}">
+                        <true>
+                        <!-- BAST sudah dikirim, menunggu nomor Humas: kartu dokumen bergaya PKS (miniatur + rincian + animasi) -->
+                        <include href="order/_kartu_dokumen_css.html" />
+                        <style>
+                            /* Hanya animasi saat disentuh: kartu diam, miniatur terangkat dan tombol naik saat kursor di atas kartu (gaya kt- bawaan) */
+                            .bw-doc .kt-th, .bw-doc .kt-doc-st .ck { animation:none; }
+                            .bw-doc .kt-th-tag { background:#fff; color:#475569; border:1.5px dashed #94a3b8; white-space:nowrap; }
+                            .bw-doc .kt-doc-st .ck { background:#0369a1; }
+                            .bw-sub { color:#64748b; font-size:.84rem; margin:0 0 4px; }
+                            .bw-steps { display:flex; align-items:center; flex-wrap:wrap; gap:6px 0; margin:12px 0 0; }
+                            .bw-s { display:inline-flex; align-items:center; gap:7px; font-size:.78rem; font-weight:700; color:#94a3b8; }
+                            .bw-s i { width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-size:.7rem; border:2px solid #cbd5e1; background:#fff; color:#94a3b8; font-style:normal; }
+                            .bw-s.done { color:#0f172a; }
+                            .bw-s.done i { background:#047857; border-color:#047857; color:#fff; }
+                            .bw-s.now { color:#0369a1; }
+                            .bw-s.now i { border-color:#0369a1; color:#0369a1; background:#e0f2fe; }
+                            .bw-ln { width:28px; height:2px; background:#e2e8f0; margin:0 8px; position:relative; overflow:hidden; border-radius:2px; }
+                            .bw-ln.fill::after { content:""; position:absolute; inset:0; background:#047857; }
+                            .bw-dibuka-belum { color:#b45309; font-weight:700; }
+                            .bw-dibuka-sudah { color:#047857; font-weight:700; }
+                        </style>
+                        <div class="kt-doc bw-doc">
+                            <div class="kt-th" aria-hidden="true">
+                                <div class="kt-th-mock" aria-hidden="true"><div class="lg"><i></i><i></i></div><div class="t"></div><div class="n"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div></div>
+                                <span class="kt-th-tag">NOMOR BELUM ADA</span>
+                            </div>
+                            <div style="min-width:0;">
+                                <h5 class="kt-doc-st"><span class="ck"><i class="bi bi-hourglass-split"></i></span>Menunggu nomor dari Humas</h5>
+                                <p class="bw-sub">
+                                    <check if="{{ @bast_mode == 'katim' }}">
+                                        <true>Jabatan dan NIP Anda sudah terkirim dan tidak bisa diubah lagi. Humas akan memberi nomor dan memilih pejabat yang mengetahui.</true>
+                                        <false>Humas mengisi nomor urut dan memilih pejabat yang mengetahui; tanggal BAST otomatis hari nomor diberikan.</false>
+                                    </check>
+                                </p>
+                                <div class="bw-steps" aria-label="Posisi BAST">
+                                    <span class="bw-s done"><i class="bi bi-check-lg"></i>Dikirim Ketua Tim</span>
+                                    <span class="bw-ln fill"></span>
+                                    <span class="bw-s {{ @bast.dibuka_humas_at ? 'done' : 'now' }}"><i class="bi {{ @bast.dibuka_humas_at ? 'bi-check-lg' : 'bi-envelope-open' }}"></i>Dibuka Humas</span>
+                                    <span class="bw-ln {{ @bast.dibuka_humas_at ? 'fill' : '' }}"></span>
+                                    <span class="bw-s {{ @bast.dibuka_humas_at ? 'now' : '' }}"><i class="bi bi-hash"></i>Nomor dan pejabat</span>
+                                </div>
+                                <div class="kt-grid">
+                                    <div><small>Pihak Kedua (Ketua Tim)</small><span>{{ @bast.pihak_kedua_nama ?: '-' }}</span></div>
+                                    <div><small>Dikirim</small><span>{{ @bast.dikirim_at ? date('d M Y, H:i', strtotime(@bast.dikirim_at)) : '-' }}</span></div>
+                                    <div><small>Status Humas</small><span class="{{ @bast.dibuka_humas_at ? 'bw-dibuka-sudah' : 'bw-dibuka-belum' }}"><check if="{{ @bast.dibuka_humas_at }}"><true>Dibuka {{ date('d M Y, H:i', strtotime(@bast.dibuka_humas_at)) }}</true><false>Belum dibuka</false></check></span></div>
+                                    <div><small>Mitra</small><span>{{ @order.nama_perusahaan }}</span></div>
+                                </div>
+                                <div class="kt-acts">
+                                    <check if="{{ @bast_mode == 'humas' || @bast_mode == 'penuh' }}">
+                                        <true><a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="kt-btn pri" onclick="triggerStageRead(9)"><i class="bi bi-pencil-square"></i>Isi Nomor BAST</a></true>
+                                        <false><a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="kt-btn pri" data-bast-slide data-no-loader="true"><i class="bi bi-eye"></i>Lihat BAST</a></false>
+                                    </check>
+                                </div>
+                            </div>
+                        </div>
+                        </true>
+                        <false>
                         <div class="p-3 bg-white rounded-3 border border-primary-subtle shadow-xs">
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div>
                                     <div class="d-flex align-items-center gap-2 mb-1">
-                                        <check if="{{ in_array(@bast.status_bast, ['disetujui', 'selesai', 'terbit']) }}">
+                                        <check if="{{ @bast.status_bast == 'selesai' }}">
                                             <true>
                                                 <span class="badge bg-success text-white fw-bold px-2 py-0.5">
                                                     <i class="bi bi-patch-check-fill me-1"></i> BAST Diterbitkan
                                                 </span>
+                                                <strong class="text-dark font-monospace">{{ @bast.nomor_bast }}</strong>
                                             </true>
                                             <false>
-                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-bold px-2 py-0.5">
-                                                    <i class="bi bi-pencil-square me-1"></i> {{ @bast.status_bast == 'proses_ttd' ? 'Proses TTD BAST' : 'Draf BAST' }}
-                                                </span>
+                                                <check if="{{ @bast.status_bast == 'proses_ttd' }}">
+                                                    <true>
+                                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle fw-bold px-2 py-0.5">
+                                                            <i class="bi bi-send-check me-1"></i> Menunggu Nomor dari Humas
+                                                        </span>
+                                                        <span class="text-muted small">{{ @bast.dibuka_humas_at ? 'Sudah dibuka Humas' : 'Belum dibuka Humas' }}</span>
+                                                    </true>
+                                                    <false>
+                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-bold px-2 py-0.5">
+                                                            <i class="bi bi-pencil-square me-1"></i> Draft BAST
+                                                        </span>
+                                                        <span class="text-muted small">Menunggu Ketua Tim melengkapi dan mengirim ke Humas</span>
+                                                    </false>
+                                                </check>
                                             </false>
                                         </check>
-                                        <strong class="text-dark font-monospace">{{ @bast.nomor_bast }}</strong>
                                     </div>
                                     <div class="small text-secondary">
-                                        Tanggal: <strong>{{ date('d M Y', strtotime(@bast.tanggal_bast)) }}</strong> &bull; Pihak Pertama: <strong>{{ @bast.pihak_pertama_nama }}</strong>
+                                        <check if="{{ @bast.status_bast == 'selesai' }}">
+                                            <true>Tanggal: <strong>{{ date('d M Y', strtotime(@bast.tanggal_bast)) }}</strong> &bull; Pihak Pertama: <strong>{{ @bast.pihak_pertama_nama ?: '-' }}</strong></true>
+                                            <false>
+                                                Pihak Kedua (Ketua Tim): <strong>{{ @bast.pihak_kedua_nama ?: '-' }}</strong>
+                                                <check if="{{ @bast.status_bast == 'proses_ttd' && @bast.dikirim_at }}">
+                                                    &bull; Dikirim: <strong>{{ date('d M Y, H:i', strtotime(@bast.dikirim_at)) }}</strong>
+                                                </check>
+                                            </false>
+                                        </check>
                                     </div>
                                 </div>
-                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <check if="{{ @bast.status_bast == 'selesai' }}">
+                                        <true>
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" data-bast-slide data-no-loader="true"><i class="bi bi-eye me-1"></i> Buka BAST</a>
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/unduh" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1"><i class="bi bi-file-earmark-word me-1"></i> Unduh Word</a>
+                                        </true>
+                                        <false>
+                                            <check if="{{ @bast_mode == 'katim' && @bast.status_bast != 'proses_ttd' }}">
+                                                <true>
+                                                    <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" onclick="triggerStageRead(9)"><i class="bi bi-pencil-square me-1"></i> Lengkapi dan Kirim ke Humas</a>
+                                                </true>
+                                                <false>
+                                                    <check if="{{ @bast_mode == 'humas' }}">
+                                                        <true>
+                                                            <check if="{{ @bast.status_bast == 'proses_ttd' }}">
+                                                                <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" onclick="triggerStageRead(9)"><i class="bi bi-pencil-square me-1"></i> Isi Nomor</a>
+                                                            </check>
+                                                        </true>
+                                                        <false>
+                                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" data-bast-slide data-no-loader="true"><i class="bi bi-eye me-1"></i> {{ @bast_mode == 'penuh' ? 'Buka BAST' : 'Lihat BAST' }}</a>
+                                                        </false>
+                                                    </check>
+                                                </false>
+                                            </check>
+                                        </false>
+                                    </check>
                                     <check if="{{ @bast.file_dokumen_bast }}">
                                         <button type="button" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1 btn-preview-pdf" data-preview-pdf="{{ @BASE }}/{{ @bast.file_dokumen_bast }}" data-title="Dokumen BAST" data-subtitle="Nomor: {{ @bast.nomor_bast }}">
                                             <i class="bi bi-file-earmark-pdf-fill me-1"></i> Unduh Berkas BAST
@@ -7705,6 +8025,10 @@
                                 </div>
                             </div>
                         </div>
+                        </false>
+                        </check>
+                            </false>
+                        </check>
                     </check>
                 </div>
             </div>
@@ -8667,10 +8991,21 @@ window.addEventListener('message', function (e) {
                     </check>
                 </div>
 
+                <div class="dp-bar" id="dpUnduhBar">
+                    <button type="button" class="dp-btn d-none" id="dpUnduhMulai"><i class="bi bi-download"></i>Unduh bukti pembayaran</button>
+                    <div class="dp-pilih d-none" id="dpPilihBar">
+                        <label class="dp-chk"><input type="checkbox" class="dp-cbx" id="dpPilihSemua">Pilih semua</label>
+                        <span class="dp-sp"></span>
+                        <button type="button" class="dp-btn" id="dpBatal">Batal</button>
+                        <button type="button" class="dp-btn pri" id="dpGo" disabled><i class="bi bi-download"></i>Unduh (0)</button>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
                         <thead class="text-muted">
                             <tr>
+                                <th class="dp-cbcol d-none" style="width: 28px;"></th>
                                 <th class="fw-semibold">Termin</th>
                                 <th class="fw-semibold">Tanggal</th>
                                 <th class="fw-semibold text-end">Jumlah</th>
@@ -8682,6 +9017,11 @@ window.addEventListener('message', function (e) {
                         <tbody>
                             <repeat group="{{ @riwayat_bayar }}" value="{{ @rb }}">
                                 <tr>
+                                    <td class="dp-cbcol d-none">
+                                        <check if="{{ empty(@rb.is_kesanggupan_bayar) && !empty(@rb.bukti_bayar) }}">
+                                            <input type="checkbox" class="dp-cb" data-dp-cb="{{ @rb.id }}" data-termin="{{ @rb.termin_ke }}" data-jumlah="{{ (float)@rb.jumlah }}" data-tgl="{{ date('Y-m-d', strtotime(@rb.tanggal_bayar)) }}" data-status="{{ @rb.status_verifikasi ?: 'terverifikasi' }}" aria-label="Pilih Termin {{ @rb.termin_ke }}">
+                                        </check>
+                                    </td>
                                     <td class="text-nowrap">
                                         <check if="{{ !empty(@rb.is_kesanggupan_bayar) }}">
                                             <true>Kesanggupan</true>
@@ -8755,6 +9095,17 @@ window.addEventListener('message', function (e) {
 #modalDetailPembayaran .dp-lihat:hover { background: #0f172a; color: #fff; border-color: #0f172a; }
 #modalDetailPembayaran .dp-lihat:active { transform: scale(.96); }
 #modalDetailPembayaran .dp-lihat:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
+#modalDetailPembayaran .dp-bar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+#modalDetailPembayaran .dp-pilih { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; }
+#modalDetailPembayaran .dp-sp { flex: 1; }
+#modalDetailPembayaran .dp-btn { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 600; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; cursor: pointer; transition: background .15s, border-color .15s, transform .15s; }
+#modalDetailPembayaran .dp-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+#modalDetailPembayaran .dp-btn:active { transform: scale(.97); }
+#modalDetailPembayaran .dp-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+#modalDetailPembayaran .dp-btn.pri { background: #0f172a; color: #fff; border-color: #0f172a; }
+#modalDetailPembayaran .dp-btn.pri:hover:not(:disabled) { background: #1e293b; }
+#modalDetailPembayaran .dp-chk { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 600; color: #0f172a; cursor: pointer; margin: 0; }
+#modalDetailPembayaran .dp-cb, #modalDetailPembayaran .dp-cbx { width: 16px; height: 16px; accent-color: #0f172a; cursor: pointer; }
 #modalDetailPembayaran #dpBar.dp-anim { transition: width 1.1s cubic-bezier(.22, .8, .2, 1) .15s; }
 #modalDetailPembayaran.dp-go tbody tr { animation: dpUp .45s ease-out both; }
 #modalDetailPembayaran.dp-go tbody tr:nth-child(1) { animation-delay: .25s; }
@@ -8811,6 +9162,210 @@ window.addEventListener('message', function (e) {
     });
 })();
 </script>
+
+<script>
+    /* ===== Unduh bukti pembayaran di modal "Detail Pembayaran" (cara kerja SAMA dengan slide Daftar PO > tab Berkas) ===== */
+    (function () {
+        var modal = document.getElementById('modalDetailPembayaran');
+        if (!modal) return;
+    
+        var BASE  = '{{ @BASE }}';
+        var NOMOR = '{{ @order.nomor_po ?: (@order.nomor_order ?: @order.nomor_permintaan) }}';
+        var BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+        var mode = false, sibuk = false;
+    
+        function el(id) { return document.getElementById(id); }
+        function rp(n) { return 'Rp ' + Math.round(parseFloat(n) || 0).toLocaleString('id-ID'); }
+        function tglSingkat(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? (+m[3]) + ' ' + BULAN[+m[2] - 1] + ' ' + m[1] : '-'; }
+        function namaBerkas(awal) { return awal + '-' + String(NOMOR || 'PO').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+        function toast(text, galat) {
+            if (typeof Swal === 'undefined') { if (galat) { alert(text); } return; }
+            Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: galat ? 6000 : 3500, timerProgressBar: true })
+                .fire({ icon: galat ? 'error' : 'success', title: text });
+        }
+    
+        /* ---------- Disalin apa adanya dari slide (daftar.html) ---------- */
+        function statusTermin(s) { return s === 'terverifikasi' ? 'Terverifikasi' : (s === 'ditolak' ? 'Ditolak' : 'Menunggu verifikasi'); }
+        function aman(s) { return String(s == null ? '' : s).replace(/[^\x20-\x7E -ÿ]/g, '?'); }
+        function simpanBlob(blob, nama) {
+            var a = document.createElement('a'), u = URL.createObjectURL(blob);
+            a.href = u; a.download = nama; document.body.appendChild(a); a.click();
+            setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(u); }, 1500);
+        }
+        function muatPdfLib() {
+            if (window.PDFLib) { return Promise.resolve(window.PDFLib); }
+            return new Promise(function (ok, no) {
+                var s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+                s.onload = function () { window.PDFLib ? ok(window.PDFLib) : no(new Error('Pustaka PDF gagal dimuat.')); };
+                s.onerror = function () { no(new Error('Pustaka PDF gagal dimuat. Cek koneksi internet.')); };
+                document.head.appendChild(s);
+            });
+        }
+        function jenisBerkas(buf) {
+            var u = new Uint8Array(buf.slice(0, 8));
+            if (u[0] === 0x25 && u[1] === 0x50 && u[2] === 0x44 && u[3] === 0x46) { return 'pdf'; }
+            if (u[0] === 0x89 && u[1] === 0x50 && u[2] === 0x4E && u[3] === 0x47) { return 'png'; }
+            if (u[0] === 0xFF && u[1] === 0xD8) { return 'jpg'; }
+            return 'lain';
+        }
+        // webp / gif: ubah dulu ke PNG lewat canvas supaya bisa disisipkan ke PDF
+        function gambarKePng(buf, tipe) {
+            return new Promise(function (ok, no) {
+                var u = URL.createObjectURL(new Blob([buf], { type: tipe || 'image/webp' })), im = new Image();
+                im.onload = function () {
+                    var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+                    c.getContext('2d').drawImage(im, 0, 0); URL.revokeObjectURL(u);
+                    c.toBlob(function (b) { if (!b) { no(new Error('gambar')); return; } if (b.arrayBuffer) { b.arrayBuffer().then(ok, no); } else { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = no; fr.readAsArrayBuffer(b); } }, 'image/png');
+                };
+                im.onerror = function () { URL.revokeObjectURL(u); no(new Error('gambar')); };
+                im.src = u;
+            });
+        }
+        function gabungBukti(L, daftar, nomorPo) {
+            var W = 595.28, H = 841.89, BAND = 78, MX = 24, ATAS = 14, BAWAH = 34, AW = W - 2 * MX, AH = H - BAND - ATAS - BAWAH;
+            var gagal = [], alasan = '';
+            return L.PDFDocument.create().then(function (out) {
+                return Promise.all([out.embedFont(L.StandardFonts.HelveticaBold), out.embedFont(L.StandardFonts.Helvetica)]).then(function (fs) {
+                    var tebal = fs[0], biasa = fs[1], semua = [];
+                    function halamanBaru(t, ket) {
+                        var pg = out.addPage([W, H]), gelap = L.rgb(0.059, 0.09, 0.165), abu = L.rgb(0.39, 0.45, 0.55);
+                        pg.drawLine({ start: { x: 0, y: H - BAND }, end: { x: W, y: H - BAND }, thickness: 1.2, color: L.rgb(0.8, 0.835, 0.878) });
+                        pg.drawText(aman('TERMIN KE-' + t.termin_ke), { x: 36, y: H - 38, size: 22, font: tebal, color: gelap });
+                        pg.drawText(aman(rp(t.jumlah) + '  |  Dibayar ' + tglSingkat(t.tanggal_bayar) + '  |  ' + statusTermin(t.status_verifikasi) + (ket || '')), { x: 36, y: H - 58, size: 9.5, font: biasa, color: abu });
+                        var a = 'Bukti Pembayaran', b = aman('PO ' + nomorPo);
+                        pg.drawText(a, { x: W - 36 - tebal.widthOfTextAtSize(a, 10), y: H - 36, size: 10, font: tebal, color: gelap });
+                        pg.drawText(b, { x: W - 36 - biasa.widthOfTextAtSize(b, 9), y: H - 54, size: 9, font: biasa, color: abu });
+                        semua.push(pg);
+                        return pg;
+                    }
+                    function taruh(w, h) { var sc = Math.min(AW / w, AH / h, 2), dw = w * sc, dh = h * sc; return { x: (W - dw) / 2, y: H - BAND - ATAS - dh, width: dw, height: dh }; }
+                    var rantai = Promise.resolve();
+                    daftar.forEach(function (d) {
+                        rantai = rantai.then(function () {
+                            var jenis = jenisBerkas(d.buf), siap;
+                            if (jenis === 'pdf') {
+                                siap = L.PDFDocument.load(d.buf, { ignoreEncryption: true }).then(function (src) {
+                                    return out.embedPdf(src, src.getPageIndices());
+                                }).then(function (eps) {
+                                    eps.forEach(function (ep, i) {
+                                        var pg = halamanBaru(d.t, eps.length > 1 ? '  |  hal. ' + (i + 1) + '/' + eps.length : '');
+                                        pg.drawPage(ep, taruh(ep.width, ep.height));
+                                    });
+                                });
+                            } else {
+                                var ambil = jenis === 'png' ? out.embedPng(d.buf) : (jenis === 'jpg' ? out.embedJpg(d.buf) : gambarKePng(d.buf, d.tipe).then(function (png) { return out.embedPng(png); }));
+                                siap = ambil.then(function (im) {
+                                    var pg = halamanBaru(d.t, '');
+                                    pg.drawImage(im, taruh(im.width, im.height));
+                                });
+                            }
+                            return siap.catch(function (err) {   // satu file rusak jangan menggagalkan semuanya
+                                if (window.console) { console.error('Gabung bukti termin ke-' + d.t.termin_ke + ' gagal:', err); }
+                                if (!alasan) { alasan = String(err && err.message || err || ''); }
+                                gagal.push(d.t.termin_ke);
+                                var pg = halamanBaru(d.t, '');
+                                pg.drawText(aman('File bukti termin ke-' + d.t.termin_ke + ' tidak bisa digabungkan.'), { x: MX + 12, y: H - BAND - 60, size: 12, font: tebal, color: L.rgb(0.6, 0.1, 0.1) });
+                                pg.drawText('Unduh file ini secara terpisah dari tombol "Lihat file".', { x: MX + 12, y: H - BAND - 80, size: 10, font: biasa, color: L.rgb(0.39, 0.45, 0.55) });
+                            });
+                        });
+                    });
+                    return rantai.then(function () {
+                        semua.forEach(function (pg, i) {
+                            var tx = 'Halaman ' + (i + 1) + ' dari ' + semua.length;
+                            pg.drawText(tx, { x: (W - biasa.widthOfTextAtSize(tx, 8)) / 2, y: 16, size: 8, font: biasa, color: L.rgb(0.39, 0.45, 0.55) });
+                        });
+                        return out.save();
+                    }).then(function (bytes) { return { bytes: bytes, gagal: gagal, alasan: alasan }; });
+                });
+            });
+        }
+    
+        /* ---------- Bagian khusus modal ini: kotak centang per termin, tombol, dan unduh ---------- */
+        function semuaCb() { return Array.prototype.slice.call(modal.querySelectorAll('.dp-cb')); }
+        function dipilih() { return semuaCb().filter(function (c) { return c.checked; }); }
+    
+        function render() {
+            var n = dipilih().length, total = semuaCb().length;
+            Array.prototype.forEach.call(modal.querySelectorAll('.dp-cbcol'), function (x) { x.classList.toggle('d-none', !mode); });
+            el('dpUnduhMulai').classList.toggle('d-none', mode || !total);
+            el('dpPilihBar').classList.toggle('d-none', !mode);
+            el('dpPilihSemua').checked = total > 0 && n === total;
+            el('dpPilihSemua').disabled = sibuk;
+            el('dpBatal').disabled = sibuk;
+            semuaCb().forEach(function (c) { c.disabled = sibuk; });
+            var go = el('dpGo');
+            go.disabled = !n || sibuk;
+            go.innerHTML = sibuk ? '<i class="bi bi-hourglass-split"></i>Menggabungkan...'
+                : '<i class="bi bi-download"></i>' + (n > 1 ? 'Unduh PDF gabungan (' : 'Unduh (') + n + ')';
+        }
+        function reset() { mode = false; sibuk = false; semuaCb().forEach(function (c) { c.checked = false; }); render(); }
+    
+        // Ambil file bukti lewat /api/doc-preview (JSON base64), jalur yang sama dengan tombol "Lihat". Tidak ikut dicegat IDM / ekstensi unduhan.
+        function ambilBukti(x) {
+            var u = BASE + '/api/doc-preview?url=' + encodeURIComponent(BASE + '/pembayaran/bukti/' + x.id) + '&t=' + Date.now();
+            return fetch(u, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' }).then(function (r) {
+                return r.json();
+            }).then(function (j) {
+                if (!j || !j.success || !j.base64) { throw new Error((j && j.message) || ('Bukti termin ke-' + x.t.termin_ke + ' gagal diambil.')); }
+                var bin = atob(j.base64), u8 = new Uint8Array(bin.length);
+                for (var i = 0; i < bin.length; i++) { u8[i] = bin.charCodeAt(i); }
+                return { t: x.t, buf: u8.buffer, tipe: String(j.mime || '').toLowerCase(), nama: j.filename || '', ext: j.ext || '' };
+            });
+        }
+
+        function unduh() {
+            if (sibuk) { return; }
+            var pilih = dipilih().map(function (c) {
+                return { id: c.getAttribute('data-dp-cb'), t: { termin_ke: c.getAttribute('data-termin'), jumlah: c.getAttribute('data-jumlah'), tanggal_bayar: c.getAttribute('data-tgl'), status_verifikasi: c.getAttribute('data-status') } };
+            }).sort(function (a, b) { return (parseFloat(a.t.termin_ke) || 0) - (parseFloat(b.t.termin_ke) || 0); });
+            if (!pilih.length) { return; }
+            pilih.forEach(function (x) { x.url = BASE + '/pembayaran/bukti/' + x.id; });
+    
+            if (pilih.length === 1) {   // satu termin: unduh file aslinya.
+                // Lewat fetch + blob (bukan <a href="/pembayaran/bukti/..">) karena klik ke alamat itu ditangkap layout.html dan malah membuka pratinjau.
+                var satu = pilih[0];
+                sibuk = true; render();
+                ambilBukti(satu).then(function (d) {
+                    var nama = d.nama || (namaBerkas('Bukti-Pembayaran-Termin-' + satu.t.termin_ke) + '.' + (d.ext || 'pdf'));
+                    simpanBlob(new Blob([d.buf], { type: d.tipe || 'application/octet-stream' }), nama);
+                }).then(function () {
+                    reset(); toast('Bukti pembayaran diunduh.');
+                }).catch(function (e) {
+                    sibuk = false; render(); toast(e.message || 'Gagal mengunduh bukti.', true);
+                });
+                return;
+            }
+            sibuk = true; render();
+            var ok = false;
+            muatPdfLib().then(function (L) {
+                return Promise.all(pilih.map(ambilBukti)).then(function (daftar) { return gabungBukti(L, daftar, NOMOR); });
+            }).then(function (res) {
+                simpanBlob(new Blob([res.bytes], { type: 'application/pdf' }), namaBerkas('Bukti-Pembayaran') + '.pdf');
+                ok = true;
+                if (res.gagal.length) { toast('PDF jadi, tapi termin ke-' + res.gagal.join(', ') + ' tidak bisa digabung (ditandai di PDF).' + (res.alasan ? ' Penyebab: ' + res.alasan.slice(0, 120) : ''), true); }
+                else { toast('PDF gabungan ' + pilih.length + ' termin diunduh.'); }
+            }).catch(function (e) { toast(e.message || 'Gagal menyiapkan PDF.', true); }).then(function () {
+                sibuk = false; if (ok) { reset(); } else { render(); }
+            });
+        }
+    
+        modal.addEventListener('click', function (e) {
+            var t = e.target;
+            if (t.closest('#dpUnduhMulai')) { mode = true; semuaCb().forEach(function (c) { c.checked = true; }); render(); return; }
+            if (t.closest('#dpBatal'))      { if (!sibuk) { reset(); } return; }
+            if (t.closest('#dpGo'))         { unduh(); }
+        });
+        modal.addEventListener('change', function (e) {
+            var t = e.target;
+            if (sibuk || !t || !t.classList) { return; }
+            if (t.id === 'dpPilihSemua') { semuaCb().forEach(function (c) { c.checked = t.checked; }); render(); }
+            else if (t.classList.contains('dp-cb')) { render(); }
+        });
+        modal.addEventListener('show.bs.modal', reset);
+        modal.addEventListener('hidden.bs.modal', function () { if (!sibuk) { reset(); } });
+    })();
+    </script>
 
 <!-- Modal Lihat PO OPTI (dokumen yang sama dengan Daftar PO: /po-kegiatan/@id/preview) -->
 <div class="modal fade" id="modalLihatPoOpti" tabindex="-1" aria-hidden="true">
@@ -9888,8 +10443,9 @@ function switchStage(stageNum, smoothScroll, targetSelector) {
     if (!stageNum) return;
     // Proteksi: Tidak boleh melompat ke tahapan di masa depan (melebihi current_step)
     // Tahap Kontrak (nomor internal 10) punya aturan akses sendiri: terbuka kalau tombol tabnya aktif
-    var tabKontrak = (stageNum === 10) ? document.getElementById('tab-stage-10') : null;
-    if (stageNum === 10 ? (!tabKontrak || tabKontrak.disabled) : (stageNum > maxAccessibleStep)) {
+    // Laporan Akhir (nomor internal 11, ditambahkan Kaa) sama: terbuka kalau tombol tabnya aktif
+    var tabKontrak = (stageNum === 10 || stageNum === 11) ? document.getElementById('tab-stage-' + stageNum) : null;
+    if ((stageNum === 10 || stageNum === 11) ? (!tabKontrak || tabKontrak.disabled) : (stageNum > maxAccessibleStep)) {
         return;
     }
 
@@ -9976,7 +10532,9 @@ document.addEventListener('DOMContentLoaded', function() {
         '#cardBast': 9,
         '#pane-stage-9': 9,
         '#cardKontrak': 10,
-        '#pane-stage-10': 10
+        '#pane-stage-10': 10,
+        '#cardLaporanAkhir': 11,
+        '#pane-stage-11': 11
     };
 
     // Inisialisasi Upload 3 Dokumen Penawaran DEAL
@@ -10510,7 +11068,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             var stage = parseInt(cp.getAttribute('data-stage'), 10) || (idx + 1);
             if (cp.classList.contains('disabled')) { return; }
-            if (stage === 10 || stage <= maxAccessibleStep) {
+            if (stage === 10 || stage === 11 || stage <= maxAccessibleStep) {
                 switchStage(stage, true);
             }
         });
@@ -12294,6 +12852,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!formDetail) return;
 
     var sisaTagihan = {{ (float)(@order.sisa_tagihan ?: (@penawaran.nominal_penawaran ?: (@order.estimasi_biaya ?: 0))) }};
+    var sudahTerbayar = {{ (float)(@order.terbayar ?: 0) }};   // dipakai popup konfirmasi pembayaran belum lunas
     var sudahDisposisi = {{ !empty(@order.disposisi_katim_at) ? 'true' : 'false' }};
     var divisiOrder = '{{ @order.jenis_layanan_opti }}';
 
@@ -12477,39 +13036,49 @@ document.addEventListener('DOMContentLoaded', function () {
         formDetail.submit();
     }
 
+    // Popup konfirmasi saat pembayaran belum melunasi sisa tagihan: rincian angka + bar progres, lalu Simpan atau Kembali ubah
+    function konfirmasiBelumLunas(angka, lanjut) {
+        var sisaSetelah = Math.max(0, sisaTagihan - angka);
+        var total = sudahTerbayar + sisaTagihan;
+        var pct = total > 0 ? Math.max(0, Math.min(100, Math.round((sudahTerbayar + angka) / total * 100))) : 0;
+        if (typeof Swal === 'undefined') {
+            if (confirm('Pembayaran ' + rupiah(angka) + ' belum melunasi tagihan (sisa ' + rupiah(sisaSetelah) + '). Tetap simpan?')) { lanjut(); }
+            return;
+        }
+        var baris = function (label, nilai, gaya) {
+            return '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 12px;border-top:1px solid #e3e7ee;font-size:.9rem;' + (gaya || '') + '"><span style="flex:1;min-width:0">' + label + '</span><b style="white-space:nowrap">' + nilai + '</b></div>';
+        };
+        var tabel = '<div style="border:1px solid #e3e7ee;border-radius:10px;overflow:hidden;margin:10px 0">' +
+            baris('Total tagihan', rupiah(total), 'border-top:0;color:#475569') +
+            baris('Sudah dibayar sebelumnya', rupiah(sudahTerbayar), 'color:#475569') +
+            baris('Dibayar sekarang', rupiah(angka), 'color:#0f172a') +
+            baris('Sisa tagihan', rupiah(sisaSetelah), 'background:#fdecec;color:#c62828') + '</div>';
+        var bar = '<div style="height:10px;border-radius:5px;background:#f4f6fa;border:1px solid #e3e7ee;overflow:hidden;margin:10px 0 4px"><div id="bayarBarIsi" style="height:100%;width:0;background:#1e293b;transition:width .8s ease"></div></div>' +
+            '<div style="display:flex;justify-content:space-between;font-size:.78rem;color:#64748b"><span>Terbayar ' + pct + '%</span><span>Sisa ' + (100 - pct) + '%</span></div>';
+        Swal.fire({
+            icon: 'warning',
+            width: 580,
+            title: 'Pembayaran ini belum melunasi tagihan',
+            html: '<div class="text-start"><div class="small text-secondary">Periksa rinciannya sebelum disimpan.</div>' + tabel + bar + '</div>',
+            showCancelButton: true,
+            confirmButtonText: 'Simpan pembayaran',
+            cancelButtonText: 'Kembali',
+            confirmButtonColor: '#1e293b',
+            reverseButtons: true,
+            didOpen: function () { setTimeout(function () { var b = document.getElementById('bayarBarIsi'); if (b) { b.style.width = pct + '%'; } }, 80); }
+        }).then(function (hasil) { if (hasil.isConfirmed) { lanjut(); } });
+    }
+
     if (btnSimpan) {
         btnSimpan.addEventListener('click', function () {
-            var angka = parseInt(hidden ? hidden.value : 0, 10) || 0;
-            if (angka <= 0) {
-                alert('Jumlah nominal pembayaran wajib diisi.');
-                if (display) display.focus();
+            if (inputDisp) inputDisp.value = '0';
+            var modeSkipKlik = document.getElementById('inputIsKesanggupanDetail') && document.getElementById('inputIsKesanggupanDetail').value === '1';
+            var angkaKlik = parseInt(hidden ? hidden.value : 0, 10) || 0;
+            if (!modeSkipKlik && angkaKlik > 0 && sisaTagihan > 0 && angkaKlik < sisaTagihan) {
+                konfirmasiBelumLunas(angkaKlik, function () { if (inputDisp) inputDisp.value = '0'; submitFormDenganValidasi(); });
                 return;
             }
-            if (angka > sisaTagihan && sisaTagihan > 0) {
-                submitFormDenganValidasi();
-                return;
-            }
-            var pesan = 'Pembayaran sebesar <strong>' + rupiah(angka) + '</strong> akan disimpan ke riwayat pembayaran order ini.';
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'question',
-                    title: 'Simpan Pembayaran?',
-                    html: '<div class="text-start small text-secondary">' + pesan + '</div>',
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="bi bi-check2-circle me-1"></i> Ya, Simpan Pembayaran',
-                    cancelButtonText: 'Batal',
-                    confirmButtonColor: '#1e293b',
-                    reverseButtons: true
-                }).then(function (result) {
-                    if (result.isConfirmed) {
-                        if (inputDisp) inputDisp.value = '0';
-                        submitFormDenganValidasi();
-                    }
-                });
-            } else if (confirm('Simpan pembayaran sebesar ' + rupiah(angka) + ' untuk order ini?')) {
-                if (inputDisp) inputDisp.value = '0';
-                submitFormDenganValidasi();
-            }
+            submitFormDenganValidasi();
         });
     }
 

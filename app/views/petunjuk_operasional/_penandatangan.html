@@ -23,6 +23,8 @@
     .ptd-kota .req { color: #dc3545; }
     .ptd-ctl { width: 100%; text-align: left; border: 1px solid #cbd5e1; border-radius: 8px; padding: 5px 12px; min-height: 38px; display: flex; align-items: center; gap: 8px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.03); cursor: pointer; font: inherit; color: #0f172a; transition: border-color .2s, box-shadow .2s; }
     .ptd-ctl:hover { border-color: #94a3b8; }
+    .ptd-ctl.ptd-baca, .ptd-ctl.ptd-baca:hover { cursor: default; background: #f8fafc; border-color: #cbd5e1; box-shadow: none; opacity: 1; }
+    .ptd-ctl.ptd-baca .ptd-chev { display: none; }
     .ptd-ctl:focus-visible, .ptd-ctl.is-open { outline: none; border-color: #64748b; box-shadow: 0 0 0 3px rgba(30,41,59,.15); }
     .ptd-ctl.is-bad { border-color: #dc3545; }
     .ptd-ctl .ptd-ph { color: #94a3b8; font-size: .84rem; }
@@ -244,13 +246,15 @@
     function mount(host, state, opt) {
         opt = opt || {};
         if (!host) { return null; }
+        // opt.slots = hanya sebagian kolom (mis. ['mengetahui'] di BAST); opt.baca = hanya tampil (tidak bisa dipilih); opt.judul_<kolom> / opt.ket_<kolom> = teks judul dan keterangan
+        var daftarSlot = (opt.slots && opt.slots.length) ? SLOT.filter(function (sd) { return opt.slots.indexOf(sd.key) !== -1; }) : SLOT;
         var h = '';
         if (opt.kota) {
             h += '<div class="ptd-kota"><div><label>Kota <span class="req">*</span></label><input type="text" class="form-control form-control-sm" name="ttd_kota" id="ptdKota" maxlength="80" value="' + esc(state.kota) + '"></div>' +
                 '<div><label>Bulan &amp; tahun</label><input type="text" class="form-control form-control-sm bg-light" id="ptdBulan" readonly tabindex="-1" value="' + esc(opt.bulanTahun ? opt.bulanTahun() : '') + '"></div></div>';
         }
-        SLOT.forEach(function (sd) {
-            h += '<div class="ptd-slot" data-slot="' + sd.key + '"><div class="ptd-cap"><span class="ptd-no">' + sd.no + '</span><b>' + esc(sd.judul) + '</b><small>' + esc(opt['ket_' + sd.key] || sd.ket) + '</small></div>' +
+        daftarSlot.forEach(function (sd) {
+            h += '<div class="ptd-slot" data-slot="' + sd.key + '"><div class="ptd-cap">' + (daftarSlot.length > 1 ? '<span class="ptd-no">' + sd.no + '</span>' : '') + '<b>' + esc(opt['judul_' + sd.key] || sd.judul) + '</b><small>' + esc(opt['ket_' + sd.key] || sd.ket) + '</small></div>' +
                 '<button type="button" class="ptd-ctl" aria-haspopup="listbox" data-ctl="' + sd.key + '"></button>' +
                 '<div class="ptd-det" data-det="' + sd.key + '"></div>' +
                 ['id', 'nama', 'nip', 'jabatan', 'baris'].map(function (f) { return '<input type="hidden" name="ttd_' + sd.key + '_' + f + '" data-h="' + sd.key + '_' + f + '">'; }).join('') +
@@ -263,7 +267,7 @@
             var s = state[sd.key], ctl = host.querySelector('[data-ctl="' + sd.key + '"]'), det = host.querySelector('[data-det="' + sd.key + '"]');
             ctl.innerHTML = (s.nama
                 ? '<span class="ptd-itm"><span class="ptd-jb">' + I_JAB + esc(s.jabatan) + '</span><span class="ptd-nm">' + esc(s.nama) + '</span></span>'
-                : '<span class="ptd-ph">Pilih pejabat penandatangan...</span>') + I_CHV;
+                : '<span class="ptd-ph">' + esc(opt.baca ? (opt.ph_baca || 'Belum dipilih') : 'Pilih pejabat penandatangan...') + '</span>') + I_CHV;
             det.className = 'ptd-det' + (s.nama ? '' : ' is-empty');
             det.innerHTML = s.nama
                 ? '<span>Nama</span><b>' + esc(s.nama) + '</b><span>NIP</span><b>' + esc(s.nip || '-') + '</b><span>Tertulis</span><b>' + esc((s.baris && s.baris.length ? s.baris : [s.jabatan]).join(' / ')) + '</b>'
@@ -273,8 +277,9 @@
             ctl.classList.remove('is-bad');
         }
         var ketuaNama = [];   // nama Ketua Tim untuk layanan PO ini (diisi dari server)
-        SLOT.forEach(function (sd) {
+        daftarSlot.forEach(function (sd) {
             tulis(sd);
+            if (opt.baca) { var cb = host.querySelector('[data-ctl="' + sd.key + '"]'); cb.disabled = true; cb.classList.add('ptd-baca'); return; }
             pembuat(host.querySelector('[data-ctl="' + sd.key + '"]'), sd, state, function (s) {
                 state[sd.key] = s; tulis(sd);
                 var i = host.querySelector('[data-h="' + sd.key + '_nama"]');
@@ -287,9 +292,9 @@
         // (masih bisa diganti lewat pilihan). Dilewati bila opt.auto === false (mis. PO terkirim yang hanya dilihat).
         function isiBawaan() {
             if (opt.auto === false || !master) { return; }
-            if (SLOT.some(function (sd) { return state[sd.key].nama; })) { return; }
+            if (daftarSlot.some(function (sd) { return state[sd.key].nama; })) { return; }
             var ada = false;
-            SLOT.forEach(function (sd) {
+            daftarSlot.forEach(function (sd) {
                 var d = null;
                 if (sd.key === 'ketua' && ketuaNama.length) {   // Ketua Tim sesuai layanan (selulosa / lingkungan)
                     d = master.filter(function (x) { return /ketua tim/i.test(x.jabatan) && namaKetuaCocok(x, ketuaNama); })[0] || null;
@@ -305,7 +310,7 @@
             host.dispatchEvent(new CustomEvent('ptd:change', { bubbles: true, detail: { slot: 'auto' } }));
             if (opt.onChange) { opt.onChange('auto', state); }
         }
-        Promise.all([muat().catch(function () { return null; }), muatKetua(opt.layanan || layananOpt)]).then(function (h) {
+        Promise.all([opt.baca ? Promise.resolve(null) : muat().catch(function () { return null; }), daftarSlot.some(function (sd) { return sd.key === 'ketua'; }) ? muatKetua(opt.layanan || layananOpt) : Promise.resolve([])]).then(function (h) {
             ketuaNama = h[1] || [];
             if (h[0]) { isiBawaan(); }
         });
@@ -315,14 +320,14 @@
         }
         return {
             segarkan: function () {
-                SLOT.forEach(tulis);
+                daftarSlot.forEach(tulis);
                 var k = host.querySelector('#ptdKota'); if (k) { k.value = state.kota; }
                 var b = host.querySelector('#ptdBulan'); if (b && opt.bulanTahun) { b.value = opt.bulanTahun(); }
             },
             bulan: function () { var b = host.querySelector('#ptdBulan'); if (b && opt.bulanTahun) { b.value = opt.bulanTahun(); } },
             tandaiKurang: function () {
                 var pertama = null;
-                SLOT.forEach(function (sd) {
+                daftarSlot.forEach(function (sd) {
                     var ctl = host.querySelector('[data-ctl="' + sd.key + '"]');
                     if (!state[sd.key].nama) { ctl.classList.add('is-bad'); if (!pertama) { pertama = ctl; } }
                 });

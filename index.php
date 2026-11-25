@@ -137,6 +137,18 @@ $f3->route('GET /logout', 'AuthController->logout');
 $f3->route('POST /logout', 'AuthController->logout');
 $f3->route('GET /profil', 'AuthController->profileGet');
 $f3->route('POST /profil/simpan', 'AuthController->profilePost');
+// ===== TTD DIGITAL (ditambahkan Kaa, mulai): tanda tangan gambar milik pengguna, dipakai di dokumen PO =====
+$f3->route('GET /profil/ttd/status', 'TtdPenggunaController->status');
+$f3->route('GET /profil/ttd/gambar', 'TtdPenggunaController->gambar');
+$f3->route('POST /profil/ttd/unggah', 'TtdPenggunaController->unggah');
+$f3->route('POST /profil/ttd/hapus', 'TtdPenggunaController->hapus');
+// ===== TTD DIGITAL (selesai) =====
+// ===== LAPORAN AKHIR (ditambahkan Kaa, mulai): Tahap 10 di antara PKS dan BAST, opsional =====
+$f3->route('POST /order/@id/laporan-akhir/unggah', 'LaporanAkhirController->unggah');
+$f3->route('POST /order/@id/laporan-akhir/hapus', 'LaporanAkhirController->hapus');
+$f3->route('POST /order/@id/laporan-akhir/selesai', 'LaporanAkhirController->selesai');
+$f3->route('GET /order/@id/laporan-akhir', 'LaporanAkhirController->lihat');
+// ===== LAPORAN AKHIR (selesai) =====
 
 $f3->route('GET /dashboard', 'DashboardOptiController->index');
 
@@ -273,18 +285,29 @@ $f3->route('POST /po-revisi-ppk/@id/kirim-katim',       'PoRevisiPpkController->
 // Katim atau Ketua Pelaksana yang sedang mengerjakan: centang catatan selesai / batal
 $f3->route('POST /po-revisi-ppk/@id/catatan',          'PoRevisiPpkController->catatanTambahKatim'); // Ketua Tim menambah catatan perbaikan (draf)
 $f3->route('POST /po-revisi-ppk/@id/catatan/@nid',      'PoRevisiPpkController->catatanAksi');
+$f3->route('POST /po-revisi-ppk/@id/catatan/@nid/balas', 'PoRevisiPpkController->catatanBalas');       // balas / jelaskan catatan (Ketua Tim, Ketua Pelaksana)
 
 // ---- PPK BLU: halaman "Validasi PPK BLU" ----
 $f3->route('GET /po-ppk',                               'PoRevisiPpkController->indexPpk');
 $f3->route('GET /po-ppk/data',                          'PoRevisiPpkController->dataPpk');
 $f3->route('GET /po-ppk/@id/detail',                    'PoRevisiPpkController->detailPpk');
+$f3->route('GET /po-ppk/@id/baseline',                  'PoRevisiPpkController->baselinePpk');   // pembanding sorotan perubahan di slide PPK BLU
 $f3->route('GET /po-ppk/@id/berkas',                    'PoRevisiPpkController->berkasPpk');          // tab Berkas di slide PPK BLU
 $f3->route('GET /po-ppk/@id/berkas-bukti/@pid',         'PoRevisiPpkController->berkasBuktiPpk');     // file bukti pembayaran untuk PPK BLU
 $f3->route('POST /po-ppk/@id/catatan',                  'PoRevisiPpkController->catatanTambah');   // tambah catatan (draf)
 $f3->route('POST /po-ppk/@id/catatan/@nid',             'PoRevisiPpkController->catatanHapus');    // hapus draf (aksi=hapus)
+$f3->route('POST /po-ppk/@id/catatan/@nid/balas',       'PoRevisiPpkController->catatanBalasPpk'); // PPK BLU membalas catatan miliknya
 $f3->route('POST /po-ppk/@id/minta-revisi',             'PoRevisiPpkController->mintaRevisi');
 $f3->route('POST /po-ppk/@id/validasi',                 'PoRevisiPpkController->validasi');
 $f3->route('POST /po-ppk/@id/catatan-ppk',              'PoRevisiPpkController->simpanCatatanPpk');   // catatan PPK BLU (simpan otomatis, seperti catatan Tim Mitra)
+
+// ---- Ajuan perbaikan PO ke PPK BLU (PO yang sudah disetujui): Ketua Tim / Ketua Pelaksana mengajukan, PPK BLU memutuskan ----
+$f3->route('GET /po-ajuan/status',          'PoAjuanPerbaikanController->status');      // siapa boleh mengajukan + ajuan yang berjalan (untuk tombol di daftar)
+$f3->route('POST /po-ajuan/@id/mulai',      'PoAjuanPerbaikanController->mulai');       // pengaju memulai ajuan (alasan + lampiran)
+$f3->route('POST /po-ajuan/@id/kirim',      'PoAjuanPerbaikanController->kirim');       // pengaju mengirim hasil perbaikan ke PPK BLU
+$f3->route('POST /po-ajuan/@id/tarik',      'PoAjuanPerbaikanController->tarik');       // pengaju menarik ajuan
+$f3->route('POST /po-ajuan/@id/tolak',      'PoAjuanPerbaikanController->tolak');       // PPK BLU menolak ajuan
+$f3->route('GET /po-ajuan/@id/lampiran',    'PoAjuanPerbaikanController->lampiran');    // lampiran pendukung ajuan
 
 // ---- Panel catatan di form Edit PO (Ketua Tim, Ketua Pelaksana, Superadmin; izin dicek di dalam) ----
 $f3->route('GET /po-kegiatan/@id/catatan-form',         'PoRevisiPpkController->catatanForm');
@@ -318,6 +341,13 @@ $f3->route('GET /order/@id/bast', 'BastController->formBast');
 $f3->route('GET /order/@id/bast/buat', 'BastController->formBast');
 $f3->route('POST /order/@id/bast/simpan', 'BastController->simpanBast');
 $f3->route('POST /order/@id/bast/tutup', 'BastController->tutupOrder');
+$f3->route('POST /order/@id/bast/draft', 'BastController->simpanBast');
+$f3->route('POST /order/@id/bast/selesai', 'BastController->selesaiBast');
+$f3->route('POST /order/@id/bast/kirim', 'BastController->kirimBast');
+$f3->route('GET /humas/bast', 'BastController->halamanHumas');
+$f3->route('GET /order/@id/bast/cek-nomor', 'BastController->cekNomor');
+$f3->route('GET /order/@id/bast/unduh', 'BastController->unduh');
+$f3->route('GET /order/@id/bast/slide-data', 'OrderController->bastSlideJson');   // data slide BAST (halaman Humas BAST)
 
 // ==========================================
 // ROUTE MODUL PO (DASHBOARD & MONITORING)
@@ -454,6 +484,11 @@ $f3->route('GET /po-kegiatan', 'PoKegiatanController->index');
 $f3->route('GET /po-kegiatan/pilih', 'PoKegiatanController->pilihJenis');
 $f3->route('GET /po-kegiatan/buat', 'PoKegiatanController->create');
 $f3->route('POST /po-kegiatan/simpan', 'PoKegiatanController->store');
+// RAB dari file Excel: baca file (AJAX dari form PO) dan pratinjau/unduh berkas yang baru diunggah. Path sengaja tidak di bawah /po-kegiatan/@id/... supaya tidak bentrok.
+$f3->route('POST /po-rab-excel/baca', 'PoKegiatanController->rabExcelBaca');
+$f3->route('GET /po-rab-excel/@token', 'PoKegiatanController->rabExcelLihat');
+$f3->route('GET /po-rab-excel/@token/grid', 'PoKegiatanController->rabExcelGrid');
+$f3->route('POST /po-rab-excel/hitung', 'PoKegiatanController->rabExcelHitung');
 $f3->route('GET /po-kegiatan/@id/edit', 'PoKegiatanController->edit');
 $f3->route('POST /po-kegiatan/@id/update', 'PoKegiatanController->update');
 $f3->route('GET /po-kegiatan/@id/preview', 'PoKegiatanController->previewFragment');
@@ -467,19 +502,39 @@ $f3->route('GET /po-kegiatan/daftar/data', 'PoReviewController->data');         
 $f3->route('GET /po-kegiatan/notif', 'PoReviewController->notifJson');
 $f3->route('GET /po-kegiatan/@id/review', 'PoReviewController->detail');        // rincian + catatan
 $f3->route('POST /po-kegiatan/@id/baca', 'PoReviewController->baca');          // tandai kiriman terbaca (dipanggil saat PO dibuka)
+$f3->route('GET /debug-alur/@id', 'PoReviewController->debugAlur');   // SEMENTARA: cek po_alur_log + trigger untuk rincian putaran revisi (superadmin saja); hapus setelah selesai
+$f3->route('GET /debug-riwayat/@id', 'PoReviewController->debugRiwayat');   // SEMENTARA: telusuri Riwayat Aktivitas yang tidak tercatat (superadmin saja); hapus setelah selesai
+
 $f3->route('POST /po-kegiatan/@id/dibuka', 'PoReviewController->baca');          // alias route lama
 $f3->route('POST /po-kegiatan/@id/catatan', 'PoReviewController->catatanTambah'); // Ketua Tim: tambah catatan (draf)
 $f3->route('POST /po-kegiatan/@id/catatan/@nid', 'PoReviewController->catatanAksi');   // hapus / selesai / batalselesai / buka / batalbuka
 $f3->route('POST /po-kegiatan/@id/minta-revisi', 'PoReviewController->mintaRevisi');
 $f3->route('POST /po-kegiatan/@id/kirim-revisi', 'PoReviewController->kirimRevisi');
 $f3->route('POST /po-kegiatan/@id/setujui', 'PoReviewController->setujui');
+$f3->route('POST /po-kegiatan/@id/libatkan-pjt', 'PoReviewController->libatkanPjt');   // Ketua Tim melibatkan PJT Lingkungan
+$f3->route('POST /po-kegiatan/@id/tarik-pjt', 'PoReviewController->tarikPjt');
+$f3->route('POST /po-kegiatan/@id/pjt-acc', 'PoReviewController->pjtAcc');   // PJT: ACC
+$f3->route('POST /po-kegiatan/@id/pjt-masukan', 'PoReviewController->pjtMasukan');
+$f3->route('POST /po-kegiatan/@id/pjt-catatan', 'PoReviewController->pjtCatatanTambah');   // PJT: tambah catatan per bagian (draf)
+$f3->route('POST /po-kegiatan/@id/pjt-catatan/@nid', 'PoReviewController->pjtCatatanHapus');   // PJT: hapus draf catatannya   // PJT: kirim masukan ke Ketua Tim
+$f3->route('GET /po-kegiatan/@id/baseline', 'PoReviewController->baseline');   // salinan PO terakhir yang ditinjau pengguna (tanda merah perubahan)
+$f3->route('POST /po-kegiatan/@id/pjt-tinjau', 'PoReviewController->tinjauPjt');   // Ketua Tim: masukan PJT sudah ditinjau
 $f3->route('POST /po-kegiatan/@id/buka-kembali', 'PoReviewController->bukaKembali');
 $f3->route('GET /po-kegiatan/@id/po-ttd', 'PoReviewController->lihatPoTtd');   // tab PO TTD di slide Ketua Tim / Ketua Pelaksana
 $f3->route('GET /po-kegiatan/@id/po-ttd-mitra', 'PoValidasiMitraController->lihatPoTtd');   // tab PO TTD di slide Tim Mitra
-$f3->route('GET /po-ppk/@id/po-ttd', 'PoRevisiPpkController->lihatPoTtdPpk');   // tab PO TTD di slide PPK BLU
+$f3->route('GET /po-ppk/@id/po-ttd', 'PoRevisiPpkController->lihatPoTtdPpk');
+// Ajuan perbaikan PO ke PPK BLU setelah PO disetujui (Ketua Tim atau Ketua Pelaksana mengajukan, PPK BLU memutuskan)
+$f3->route('GET /po-ajuan/status',          'PoAjuanPerbaikanController->status');    // ?ids=1,2,3 : tombol di Daftar PO dan Daftar Order
+$f3->route('POST /po-ajuan/@id/mulai',      'PoAjuanPerbaikanController->mulai');     // @id = id PO
+$f3->route('POST /po-ajuan/@id/kirim',      'PoAjuanPerbaikanController->kirim');     // @id = id PO
+$f3->route('POST /po-ajuan/@id/tarik',      'PoAjuanPerbaikanController->tarik');     // @id = id PO
+$f3->route('POST /po-ajuan/@id/tolak',      'PoAjuanPerbaikanController->tolak');     // @id = id PO (PPK BLU)
+$f3->route('GET /po-ajuan/@id/lampiran',    'PoAjuanPerbaikanController->lampiran');  // @id = id ajuan   // tab PO TTD di slide PPK BLU
+$f3->route('GET /po-kegiatan/@id/rab-excel', 'PoReviewController->rabExcel');   // pratinjau / unduh Excel RAB asli (slide review)
 $f3->route('GET /po-kegiatan/@id/berkas', 'PoReviewController->berkas');         // tab Dokumen: surat kesanggupan bayar + bukti pembayaran
 $f3->route('GET /po-kegiatan/@id/berkas/kesanggupan', 'PoReviewController->berkasKesanggupan');
 $f3->route('GET /po-kegiatan/@id/berkas/bukti/@pid', 'PoReviewController->berkasBukti');
+$f3->route('GET /po-kegiatan/@id/alur-langkah', 'OrderController->alurPoPanel');   // tab Alur di panel review: stepper alur PO + waktu pengerjaan (potongan HTML)
 $f3->route('GET /po-kegiatan/@id/chat', 'PoReviewController->chatList');
 $f3->route('POST /po-kegiatan/@id/chat', 'PoReviewController->chatKirim');
 $f3->route('POST /po-kegiatan/@id/chat/baca', 'PoReviewController->chatBaca');
@@ -607,11 +662,14 @@ $f3->route('POST /push/unsubscribe', 'PushController->unsubscribe');
 $f3->route('GET /pks',               'PksKontrakController->index');
 $f3->route('GET /pks/@id/form',      'PksKontrakController->form');
 $f3->route('GET /pks/@id/po-ttd',    'PksKontrakController->poTtd');       // slide "Lihat PO": PO bertanda tangan milik kontrak ini
+$f3->route('POST /pks/@id/baca',     'PksKontrakController->baca');        // Humas membuka "Lihat PO" di daftar PKS: catat waktu baca (dipakai Map Kendali)
+$f3->route('GET /pks/@id/cek-nomor', 'PksKontrakController->cekNomor');   // cek bentrok nomor urut (urut + bulan + tahun) saat mengetik
 $f3->route('POST /pks/@id/simpan',   'PksKontrakController->simpan');
 $f3->route('POST /pks/@id/selesai',  'PksKontrakController->selesai');
 $f3->route('GET /pks/@id/unduh',     'PksKontrakController->unduh');
 $f3->route('GET /pks/@id/pdf',       'PksKontrakController->pdf');
 $f3->route('GET /pks/@id/logo',      'PksKontrakController->logo');
+$f3->route('POST /pks/@id/logo-link', 'PksKontrakController->logoLink');   // ambil logo klien dari link gambar
 
 // pks-mitra (menu PKS untuk Tim Mitra: lihat/cetak PKS dari Humas, upload PKS bertanda tangan klien)
 $f3->route('GET /pks-mitra',                'PksMitraController->index');
