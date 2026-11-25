@@ -14,13 +14,13 @@ class BastController extends Controller {
     /** Isian wajib saat Selesai: id => label */
     const WAJIB = array('nomorUrut' => 'Nomor urut BAST', 'tanggal' => 'Tanggal BAST', 'perusahaan' => 'Perusahaan', 'alamat' => 'Alamat perusahaan',
                         'ttdNama' => 'Nama Pihak Pertama', 'ttdJabatan' => 'Jabatan Pihak Pertama', 'judul' => 'Judul pekerjaan', 'pksNomor' => 'Nomor PKS',
-                        'pksTanggal' => 'Tanggal PKS', 'keduaNama' => 'Nama Pihak Kedua', 'keduaJabatan' => 'Jabatan Pihak Kedua',
+                        'pksTanggal' => 'Tanggal PKS', 'keduaNama' => 'Nama Pihak Kedua', 'keduaJabatan' => 'Jabatan Pihak Kedua', 'keduaNip' => 'NIP Pihak Kedua',
                         'mengetahuiNama' => 'Pejabat yang mengetahui', 'mengetahuiJabatan' => 'Jabatan pejabat yang mengetahui');
     /** Isian wajib saat Ketua Tim mengirim ke Humas (nomor, tanggal, dan pejabat yang mengetahui diisi Humas belakangan) */
     const WAJIB_KIRIM = array('perusahaan' => 'Perusahaan', 'alamat' => 'Alamat perusahaan', 'ttdNama' => 'Nama Pihak Pertama', 'ttdJabatan' => 'Jabatan Pihak Pertama',
-                              'judul' => 'Judul pekerjaan', 'pksNomor' => 'Nomor PKS', 'pksTanggal' => 'Tanggal PKS', 'keduaNama' => 'Nama Pihak Kedua', 'keduaJabatan' => 'Jabatan Pihak Kedua');
+                              'judul' => 'Judul pekerjaan', 'pksNomor' => 'Nomor PKS', 'pksTanggal' => 'Tanggal PKS', 'keduaNama' => 'Nama Pihak Kedua', 'keduaJabatan' => 'Jabatan Pihak Kedua', 'keduaNip' => 'NIP Pihak Kedua');
     /** Isian yang dikunci dari PKS kalau PKS-nya ada */
-    const DARI_PKS = array('perusahaan', 'alamat', 'ttdNama', 'ttdJabatan', 'judul', 'pksNomor', 'pksTanggal');
+    const DARI_PKS = array('perusahaan', 'alamat', 'ttdNama', 'ttdJabatan', 'judul', 'pksNomor', 'pksNomorP1', 'pksTanggal');
 
     /**
      * Form BAST (form + pratinjau dokumen live), isinya mengikuti peran:
@@ -81,7 +81,7 @@ class BastController extends Controller {
 
         $v = array(
             'nomorUrut' => '', 'tanggal' => date('Y-m-d'),
-            'perusahaan' => '', 'alamat' => '', 'ttdNama' => '', 'ttdJabatan' => '', 'judul' => '', 'pksNomor' => '', 'pksTanggal' => '',
+            'perusahaan' => '', 'alamat' => '', 'ttdNama' => '', 'ttdJabatan' => '', 'judul' => '', 'pksNomor' => '', 'pksNomorP1' => '', 'pksTanggal' => '',
             'keduaNama' => '', 'keduaJabatan' => '', 'keduaNip' => '',
             'mengetahuiNama' => '', 'mengetahuiJabatan' => '',
         );
@@ -93,6 +93,7 @@ class BastController extends Controller {
             $v['ttdJabatan'] = (string) $pks['ttd_jabatan'];
             $v['judul']      = $this->teksPolos($pks['judul']);
             $v['pksNomor']   = (string) $pks['nomor_pks'];
+            $v['pksNomorP1'] = $this->nomorPihakPertama($pks);
             $v['pksTanggal'] = $pks['tanggal_perjanjian'] ? substr((string) $pks['tanggal_perjanjian'], 0, 10) : '';
         } else {
             $v['perusahaan'] = trim((string) ($order['nama_perusahaan'] ?? ''));
@@ -159,6 +160,14 @@ class BastController extends Controller {
                     $this->logActivity($orderId, 'bast', 'melihat_tahap_bast', 'Melihat dokumen BAST');
                 }
             } catch (\Exception $e) {}
+        }
+
+        // ?fragment=1 : hanya isi form (tanpa layout), dipasang langsung di kartu Tahap 11 Detail Order (bukan di dalam iframe)
+        if ((string) $f3->get('GET.fragment') === '1') {
+            header('Content-Type: text/html; charset=utf-8');
+            header('Cache-Control: private, no-store');
+            echo \Template::instance()->render('bast/form.html');
+            return;
         }
 
         $this->render('bast/form.html', "Berita Acara Serah Terima - Order #{$order['nomor_order']}", 'order');
@@ -282,6 +291,13 @@ class BastController extends Controller {
         $tsPks = !empty($b['pks_tanggal']) ? strtotime((string) $b['pks_tanggal']) : false;
         $nip = trim((string) $b['pihak_kedua_nip']);
         $jab = trim((string) $b['pihak_kedua_jabatan']);
+        // Nomor PKS di dokumen: nomor perjanjian versi klien (Pihak Pertama, kalau diisi di PKS); nomor kita (Pihak Kedua). Kosong -> tidak ditampilkan.
+        $nomorPks = (string) $b['pks_nomor'];
+        if (!empty($b['order_id'])) {
+            $pksDoc = $this->ambilPks((int) $b['order_id']);
+            $p1 = $pksDoc ? $this->nomorPihakPertama($pksDoc) : '';
+            if ($p1 !== '') { $nomorPks = $p1 . '; ' . $nomorPks; }
+        }
         return array(
             'nomor_bast'         => (string) $b['nomor_bast'],
             'hari'               => self::HARI[(int) date('N', $ts) - 1],
@@ -293,9 +309,9 @@ class BastController extends Controller {
             'perusahaan'         => (string) $b['pihak_pertama_perusahaan'],
             'alamat_perusahaan'  => (string) $b['pihak_pertama_alamat'],
             'kedua_nama'         => (string) $b['pihak_kedua_nama'],
-            'kedua_nip_jabatan'  => ($nip !== '' ? 'NIP. ' . $nip . ($jab !== '' ? ' / ' : '') : '') . $jab,
+            'kedua_nip_jabatan'  => ($nip !== '' ? 'NIP. ' . $nip . ($jab !== '' ? ' & ' : '') : '') . $jab,
             'judul'              => (string) $b['judul_pekerjaan'],
-            'nomor_pks'          => (string) $b['pks_nomor'],
+            'nomor_pks'          => $nomorPks,
             'tanggal_pks'        => $tsPks ? ((int) date('j', $tsPks) . ' ' . OptiBast::BULAN[(int) date('n', $tsPks) - 1] . ' ' . date('Y', $tsPks)) : '',
             'mengetahui_jabatan' => (string) $b['mengetahui_jabatan'],
             'mengetahui_nama'    => (string) $b['mengetahui_nama'],
@@ -359,6 +375,7 @@ class BastController extends Controller {
             $v['ttdJabatan'] = (string) $pks['ttd_jabatan'];
             $v['judul']      = $this->teksPolos($pks['judul']);
             $v['pksNomor']   = (string) $pks['nomor_pks'];
+            $v['pksNomorP1'] = $this->nomorPihakPertama($pks);
             $v['pksTanggal'] = $pks['tanggal_perjanjian'] ? substr((string) $pks['tanggal_perjanjian'], 0, 10) : '';
         }
         if ($mode === 'humas') {   // tanggal BAST = hari Humas memberi nomor (BAST yang sudah selesai tetap pada tanggalnya)
@@ -369,6 +386,7 @@ class BastController extends Controller {
         if ($final || $kirim) {
             $kosong = array(); $label = array();
             foreach (($final ? self::WAJIB : self::WAJIB_KIRIM) as $id => $lbl) {
+                if ($id === 'keduaNip' && !in_array('keduaNip', $boleh, true)) { continue; }   // NIP diisi Ketua Tim; peran lain (mis. Humas pada BAST lama tanpa NIP) tidak bisa mengisinya, jadi tidak ditahan di sini
                 if (trim((string) $v[$id]) === '') { $kosong[] = $id; $label[] = $lbl; }
             }
             if ($kosong) {
@@ -509,11 +527,53 @@ class BastController extends Controller {
         }
         \OptiBast::pastikanSkema($this->db);
         $base = (string) $f3->get('BASE');
-        $petakan = function ($rows) use ($base) {
+        // Data Daftar Order untuk kolom tabel (nomor, tanggal order, saluran, durasi, estimasi biaya): sumbernya sama dengan halaman PKS
+        $rowsPerlu = \OptiBast::daftarHumas($this->db, \OptiBast::ST_KIRIM);
+        $rowsSelesai = \OptiBast::daftarHumas($this->db, \OptiBast::ST_SELESAI);
+        $rowsDraf = \OptiBast::daftarHumas($this->db, \OptiBast::ST_DRAF);   // BAST yang masih disusun Ketua Tim (belum dikirim)
+        $infoOrder = array();
+        try {
+            $ids = array();
+            foreach (array_merge($rowsPerlu, $rowsSelesai, $rowsDraf) as $r) { if (!empty($r['order_id'])) { $ids[] = (int) $r['order_id']; } }
+            if ($ids) {
+                $om = new \OrderLayanan($this->db);
+                foreach ($om->allWithRelasi('', '', '', 'all', 'semua', 'all', array_values(array_unique($ids))) as $ro) { $infoOrder[(int) $ro['id']] = $ro; }
+            }
+        } catch (\Throwable $e) { $infoOrder = array(); }
+        $petaMedia = array(
+            'whatsapp' => array('WhatsApp', 'bi-chat-dots'), 'telepon' => array('Telepon', 'bi-telephone'), 'email' => array('E-mail', 'bi-envelope-at'),
+            'fax' => array('Fax', 'bi-printer'), 'datang_langsung' => array('Datang Langsung', 'bi-building'), 'website' => array('Website', 'bi-laptop'),
+        );
+        $petakan = function ($rows) use ($base, $infoOrder, $petaMedia) {
             $h = array();
             foreach ($rows as $r) {
                 $oid = (int) $r['order_id'];
+                $ro = isset($infoOrder[$oid]) ? $infoOrder[$oid] : null;
+                $pm = $petaMedia[$ro ? (string) ($ro['media_permohonan'] ?? '') : ''] ?? array('Surat', 'bi-envelope-paper');
+                $acuan = $ro ? (float) (($ro['estimasi_biaya'] ?? 0) ?: ($ro['biaya_po'] ?? 0)) : 0.0;
+                $bayar = $ro ? (float) ($ro['total_terbayar'] ?? 0) : 0.0;
+                $lunas = $ro ? !empty($ro['bayar_lunas']) : false;
                 $h[] = array(
+                    'layanan_kode' => (string) $r['jenis_layanan_opti'],
+                    'tanggal_order' => ($ro && !empty($ro['tanggal_masuk'])) ? date('d/m/Y', strtotime($ro['tanggal_masuk'])) : '',
+                    'nomor_permintaan' => $ro ? (string) ($ro['nomor_permintaan'] ?? '') : '',
+                    'media_label' => $pm[0], 'media_icon' => $pm[1],
+                    'punya_info_order' => $ro ? true : false,
+                    'durasi_ditentukan' => $ro ? !empty($ro['durasi_ditentukan']) : false,
+                    'durasi_tampil' => $ro ? (string) ($ro['durasi_tampil'] ?? '') : '',
+                    'durasi_badge_class' => $ro ? (string) ($ro['durasi_badge_class'] ?? '') : '',
+                    'durasi_tooltip' => $ro ? (string) ($ro['durasi_tooltip'] ?? '') : '',
+                    'eb_acuan' => number_format($acuan, 0, ',', '.'),
+                    'eb_terbayar' => $bayar > 0 ? number_format($bayar, 0, ',', '.') : '',
+                    'eb_lunas' => $lunas,
+                    'eb_sisa' => (!$lunas && $bayar > 0 && $ro) ? number_format((float) ($ro['sisa_tagihan_order'] ?? 0), 0, ',', '.') : '',
+                    // Keterangan yang sama persis dengan kolom Keterangan di Daftar Order (dihitung OrderLayanan::resolveStageStatus)
+                    'ket_pelaksana' => $ro ? (string) ($ro['keterangan_pelaksana'] ?? '') : '',
+                    'ket_aksi' => $ro ? (string) (($ro['keterangan_sub'] ?? '') !== '' ? $ro['keterangan_sub'] : ($ro['keterangan_aksi'] ?? '')) : '',
+                    'ket_detail' => $ro ? (string) ($ro['keterangan_detail'] ?? '') : '',
+                    'ket_baca' => $ro ? (string) ($ro['keterangan_baca'] ?? '') : '',
+                    'ket_baca_status' => $ro ? (string) ($ro['po_baca_status'] ?? '') : '',
+                    'selesai_at' => !empty($r['updated_at']) ? (string) $r['updated_at'] : '',
                     'id' => (int) $r['id'], 'order_id' => $oid, 'nomor_order' => (string) $r['nomor_order'],
                     'perusahaan' => (string) $r['pihak_pertama_perusahaan'], 'judul' => (string) $r['judul_pekerjaan'],
                     'layanan' => ucwords(str_replace('_', ' ', (string) $r['jenis_layanan_opti'])),
@@ -530,10 +590,11 @@ class BastController extends Controller {
             }
             return $h;
         };
-        $data = array('perlu' => $petakan(\OptiBast::daftarHumas($this->db, \OptiBast::ST_KIRIM)), 'selesai' => $petakan(\OptiBast::daftarHumas($this->db, \OptiBast::ST_SELESAI)));
+        $data = array('perlu' => $petakan($rowsPerlu), 'draft' => $petakan($rowsDraf), 'selesai' => $petakan($rowsSelesai));
         $tab = (string) $f3->get('GET.tab');
         $f3->set('bast_humas_json', json_encode($data, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP));
-        $f3->set('bast_humas_tab', json_encode($tab === 'selesai' ? 'selesai' : 'perlu'));
+        $f3->set('bast_slide_json', '{}');   // slide BAST dipakai untuk banyak order: datanya diambil per order saat tombol Lihat BAST diklik
+        $f3->set('bast_humas_tab', json_encode(in_array($tab, array('semua', 'draft', 'selesai'), true) ? $tab : 'perlu'));
         $this->render('humas/bast.html', 'BAST', 'bast_humas');
     }
 
@@ -602,6 +663,12 @@ class BastController extends Controller {
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /** Nomor perjanjian versi klien (Pihak Pertama) dari PKS; kosong / strip dianggap tidak diisi. */
+    protected function nomorPihakPertama($pks) {
+        $n = trim((string) (is_array($pks) && isset($pks['nomor_pihak_pertama']) ? $pks['nomor_pihak_pertama'] : ''));
+        return ($n === '-' ) ? '' : $n;
     }
 
     protected function namaPerusahaan($pks, $order) {

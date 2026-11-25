@@ -142,6 +142,8 @@ class Controller {
         $this->f3 = \Base::instance();
         $this->db = $this->f3->get('DB');
         $this->dbSekretariat = $this->f3->get('DB_SEKRETARIAT');
+        // [BARU] tabel dan kolom ajuan perbaikan PO (dibuat otomatis sekali per sesi; dipakai PoRevisiPpkController dkk)
+        if ($this->db && class_exists('PoAjuanPerbaikanController')) { \PoAjuanPerbaikanController::pastikanSkema($this->db); }
     }
 
     /**
@@ -373,6 +375,7 @@ try {
                   WHERE o.ketua_pelaksana_id IS NOT NULL
                     AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa', 'pengujian')
                     AND NOT EXISTS (SELECT 1 FROM po_kegiatan p WHERE p.order_id = o.id" . \PoSchema::bukanSertifikasi('p') . ")
+                    AND " . $this->sqlSyaratPoMasuk('o') . "
                     AND o.status NOT IN ('batal', 'ditolak', 'selesai')";
         $paramsPo = array();
 
@@ -387,15 +390,18 @@ try {
         $sqlPo .= " GROUP BY o.jenis_layanan_opti";
 
         if ($role === 'ketua_tim') {
-            // Ketua Tim tidak menyusun PO, jadi badge Daftar PO = jumlah PO di tab "Perlu Tindakan" divisinya (menunggu review / keputusan / review revisi Ketua Tim),
-            // bukan order yang belum dibuatkan PO (itu pekerjaan Ketua Pelaksana).
+            // Ketua Tim tidak menyusun PO, jadi badge Daftar PO = jumlah PO di tab "Perlu Tindakan" divisinya (menunggu review / keputusan / review revisi Ketua Tim + Menunggu Tanda Tangan),
+            // bukan order yang belum dibuatkan PO (itu pekerjaan Ketua Pelaksana). Menunggu Tanda Tangan = sudah disetujui PPK BLU, PO bertanda tangan belum di-upload.
             $sqlPo = "SELECT o.jenis_layanan_opti AS divisi, COUNT(DISTINCT p.id) AS c
                       FROM po_kegiatan p
                       JOIN order_layanan o ON o.id = p.order_id
                       WHERE o.ketua_pelaksana_id IS NOT NULL
                         AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa')
                         AND ((p.status = 'terkirim' AND p.validasi_keuangan_at IS NULL AND COALESCE(p.status_review, '') NOT IN ('disetujui', 'perlu_revisi'))
-                             OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') IN ('minta', 'katim_kerja', 'katim_review')))"
+                             OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') IN ('minta', 'katim_kerja', 'katim_review'))
+                             OR ((p.validasi_keuangan_at IS NOT NULL OR p.status = 'disetujui')
+                                 AND NOT (COALESCE(p.status_review, '') = 'perlu_revisi' OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') IN ('minta', 'katim_kerja', 'ketupel_kerja', 'katim_review')))
+                                 AND (p.po_ttd_file IS NULL OR p.po_ttd_file = '')))"
                    . \PoSchema::bukanSertifikasi('p');
             $paramsPo = array();
             if (in_array($layanan, array('selulosa', 'lingkungan'))) {
@@ -407,6 +413,27 @@ try {
 
         foreach ($this->db->exec($sqlPo, $paramsPo) as $r) {
             $notifPo[strtolower($r['divisi'])] = (int)$r['c'];
+        }
+
+        // Ketua Pelaksana (tim_kerja): badge Daftar PO = angka tombol "Perlu Tindakan" = PO Masuk (dihitung di atas) + Revisi miliknya + Menunggu Tanda Tangan
+        if ($role === 'tim_kerja') {
+            $sqlPerlu = "SELECT o.jenis_layanan_opti AS divisi, COUNT(DISTINCT p.id) AS c
+                         FROM po_kegiatan p
+                         JOIN order_layanan o ON o.id = p.order_id
+                         WHERE o.ketua_pelaksana_id IS NOT NULL
+                           AND o.jenis_layanan_opti IN ('lingkungan', 'selulosa')
+                           AND (
+                                (o.ketua_pelaksana_id = ? AND (p.status IN ('draft', 'terkirim', 'disetujui_mitra', 'disetujui') OR p.validasi_keuangan_at IS NOT NULL)
+                                 AND (COALESCE(p.status_review, '') = 'perlu_revisi' OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') = 'ketupel_kerja')))
+                                OR ((p.validasi_keuangan_at IS NOT NULL OR p.status = 'disetujui')
+                                    AND NOT (COALESCE(p.status_review, '') = 'perlu_revisi' OR (COALESCE(p.status_review, '') = 'disetujui' AND COALESCE(p.ppk_status, '') IN ('minta', 'katim_kerja', 'ketupel_kerja', 'katim_review')))
+                                    AND (p.po_ttd_file IS NULL OR p.po_ttd_file = ''))
+                           )"
+                      . \PoSchema::bukanSertifikasi('p') . " GROUP BY o.jenis_layanan_opti";
+            foreach ($this->db->exec($sqlPerlu, array(1 => (int)$userId)) as $r) {
+                $kDiv = strtolower($r['divisi']);
+                $notifPo[$kDiv] = (isset($notifPo[$kDiv]) ? (int)$notifPo[$kDiv] : 0) + (int)$r['c'];
+            }
         }
     }
 } catch (\Exception $ePo) {
@@ -1330,6 +1357,30 @@ $this->f3->set('jumlah_notif_po_selulosa', $notifPo['selulosa']);
                 );
             }
         } catch (\Exception $e) {}
+    }
+
+    /**
+     * URL tombol Lihat Pratinjau pada kartu Kontrak (PKS) di detail PO. Selalu ada kalau PKS sudah dibuat, supaya semua peran bisa
+     * membuka pratinjaunya (halaman PKS ?lihat=1 boleh dibuka semua user yang login). Tautan unduh Word (/unduh) hanya dipakai untuk
+     * peran yang memang boleh mengunduh (Superadmin, Humas, Admin PKS, Tim Mitra); peran lain mendapat tautan lihat saja.
+     */
+    protected function urlPksKartu($poId) {
+        $base = (string) \Base::instance()->get('BASE');
+        $boleh = $this->isSuperadmin() || $this->isTimMitra() || in_array((string) $this->getUserRole(), array('humas', 'admin_kontrak'), true);
+        return $base . '/pks/' . (int) $poId . ($boleh ? '/unduh' : '/form?lihat=1');
+    }
+
+    /**
+     * Potongan SQL (alias order_layanan = $o): order yang SUDAH BOLEH disusun PO-nya, dipakai untuk daftar "PO Masuk" & badge sidebar.
+     * Sama dengan syaratPoTerpenuhi(): penawaran DEAL + pembayaran sudah mulai (termin 1 / sebagian / lunas / Surat Kesanggupan Bayar)
+     * + SPM (Tahap 7) SUDAH DIAKTIFKAN. Simpan draf SPM belum mengisi tanggal_spm_mulai / tanggal_terima_sampel, jadi tidak lolos.
+     */
+    protected function sqlSyaratPoMasuk($o = 'o') {
+        return "(EXISTS (SELECT 1 FROM tb_surat_penawaran spd WHERE spd.order_id = {$o}.id AND spd.status_respon_klien = 'deal')"
+            . " AND ({$o}.tanggal_spm_mulai IS NOT NULL OR {$o}.tanggal_terima_sampel IS NOT NULL)"
+            . " AND ({$o}.status_keuangan IN ('lunas', 'terbayar_sebagian', 'sebagian')"
+            . " OR EXISTS (SELECT 1 FROM opti_pembayaran pbx WHERE pbx.order_id = {$o}.id AND pbx.status_verifikasi = 'terverifikasi')"
+            . " OR EXISTS (SELECT 1 FROM tb_surat_penawaran skx WHERE skx.order_id = {$o}.id AND skx.surat_kesanggupan_bayar IS NOT NULL AND skx.surat_kesanggupan_bayar <> '')))";
     }
 
     /**

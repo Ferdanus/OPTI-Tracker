@@ -414,6 +414,12 @@ btnSimpanDisposisi.addEventListener('click', function () {
                     return;
                 }
 
+                // Pembayaran yang melunasi sisa tagihan: tampilkan rincian + bar penuh dulu (satu gaya dengan popup belum lunas)
+                if (sisaTagihan > 0 && angka >= sisaTagihan && (!inputDisposisi || inputDisposisi.value !== '1')) {
+                    konfirmasiLunas(angka, function () { form.submit(); });
+                    return;
+                }
+
                 // Validasi lolos -- baru sekarang beneran kirim form-nya
                 form.submit();
             });
@@ -454,6 +460,42 @@ btnSimpanDisposisi.addEventListener('click', function () {
                 },
                 buttonsStyling: false,
                 didOpen: function () { setTimeout(function () { var b = document.getElementById('bayarBarIsi'); if (b) { b.style.width = pct + '%'; } }, 80); }
+            }).then(function (hasil) { if (hasil.isConfirmed) { lanjut(); } });
+        }
+        // ===== Popup konfirmasi pembayaran LUNAS: rincian angka + bar progres penuh, lalu Simpan atau Kembali ubah =====
+        function konfirmasiLunas(angka, lanjut) {
+            var total = sudahTerbayar + sisaTagihan;
+            if (typeof Swal === 'undefined') {
+                if (confirm('Pembayaran ' + rupiah(angka) + ' melunasi tagihan. Order akan diteruskan ke Ketua Tim ' + labelDivisi() + '. Simpan?')) { lanjut(); }
+                return;
+            }
+            var baris = function (label, nilai, gaya) {
+                return '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 12px;border-top:1px solid #e3e7ee;font-size:.9rem;' + (gaya || '') + '"><span style="flex:1;min-width:0">' + label + '</span><b style="white-space:nowrap">' + nilai + '</b></div>';
+            };
+            var tabel = '<div style="border:1px solid #e3e7ee;border-radius:10px;overflow:hidden;margin:10px 0">' +
+                baris('Total tagihan', rupiah(total), 'border-top:0;color:#475569') +
+                baris('Sudah dibayar sebelumnya', rupiah(sudahTerbayar), 'color:#475569') +
+                baris('Dibayar sekarang', rupiah(angka), 'color:#0f172a') +
+                baris('Sisa tagihan', rupiah(0), 'background:#e8f7ee;color:#15803d') + '</div>';
+            var bar = '<div style="height:10px;border-radius:5px;background:#f4f6fa;border:1px solid #e3e7ee;overflow:hidden;margin:10px 0 4px"><div id="bayarBarIsi" style="height:100%;width:0;background:#16a34a;transition:width .8s ease"></div></div>' +
+                '<div style="display:flex;justify-content:space-between;font-size:.78rem;color:#64748b"><span>Terbayar 100%</span><span>Sisa 0%</span></div>';
+            Swal.fire({
+                icon: 'success',
+                width: 580,
+                title: 'Pembayaran ini melunasi tagihan',
+                html: '<div class="text-start"><div class="small text-secondary">Periksa rinciannya sebelum disimpan. Setelah disimpan, order ini lunas dan informasinya diteruskan ke <strong>Tim Mitra</strong> dan <strong>Ketua Tim ' + labelDivisi() + '</strong>.</div>' + tabel + bar + '</div>',
+                showCancelButton: true,
+                confirmButtonText: 'Simpan pembayaran',
+                cancelButtonText: 'Kembali',
+                confirmButtonColor: '#1e293b',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-4 shadow-lg p-2',
+                    confirmButton: 'btn btn-dark px-3 py-2 fw-semibold rounded-3 mx-1',
+                    cancelButton: 'btn btn-outline-secondary px-3 py-2 fw-semibold rounded-3 mx-1'
+                },
+                buttonsStyling: false,
+                didOpen: function () { setTimeout(function () { var b = document.getElementById('bayarBarIsi'); if (b) { b.style.width = '100%'; } }, 80); }
             }).then(function (hasil) { if (hasil.isConfirmed) { lanjut(); } });
         }
         // ===== Popup peringatan (satu gaya untuk semua notif validasi di form ini; gaya sama dengan dialog Disposisi) =====

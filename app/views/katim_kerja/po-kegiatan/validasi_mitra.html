@@ -508,6 +508,34 @@
     tr.po-unread > td:last-child .btn-primary { position: relative; }
     tr.po-unread > td:last-child .btn-primary::after { content: ''; position: absolute; top: -5px; right: -5px; width: 11px; height: 11px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 0 2px #f8fafc; animation: poUnreadPulse 1.6s ease-out 1; pointer-events: none; }
     @keyframes poUnreadPulse { 0% { box-shadow: 0 0 0 2px #f8fafc, 0 0 0 0 rgba(37, 99, 235, .5); } 100% { box-shadow: 0 0 0 2px #f8fafc, 0 0 0 10px rgba(37, 99, 235, 0); } }
+    /* Kolom Aksi: Lihat / Review dan Detail awalnya ikon saja; saat disorot (atau difokus lewat keyboard) tombol melebar ke kiri dan katanya muncul, sama dengan Daftar PO Katim.
+       Margin negatif mengimbangi pertambahan lebar, jadi tepi kanan grup tidak bergeser. Layar sentuh: kata selalu tampil. */
+    .btn-lihat-geser { --w: 2.5em; position: relative; z-index: 1; transition: margin .25s ease; }
+    .btn-lihat-geser.btn-detail-geser { --w: 3em; }
+    .btn-lihat-geser:not(.aksi-ikon) .aksi-lbl, .btn-lihat-geser .lihat-lbl { display:inline-block; width:0; margin-left:0; opacity:0; overflow:hidden; white-space:nowrap; vertical-align:bottom; transition:width .25s ease, margin-left .25s ease, opacity .2s ease; }
+    .btn-lihat-geser:not(.aksi-ikon):hover, .btn-lihat-geser:not(.aksi-ikon):focus-visible { z-index: 3; }
+    .btn-lihat-geser:not(.aksi-ikon):not(.btn-detail-geser):hover, .btn-lihat-geser:not(.aksi-ikon):not(.btn-detail-geser):focus-visible { margin-left: calc(-1 * (var(--w) + .35rem)); }
+    .hm-idx-table td .d-inline-flex > * { transition: margin .25s ease; }
+    .hm-idx-table td .d-inline-flex:has(.btn-detail-geser:hover) > :first-child:not(.btn-detail-geser), .hm-idx-table td .d-inline-flex:has(.btn-detail-geser:focus-visible) > :first-child:not(.btn-detail-geser) { margin-left: calc(-1 * (3em + .35rem)); }
+    .btn-lihat-geser.btn-detail-geser:hover, .btn-lihat-geser.btn-detail-geser:focus-visible { margin-left: 0; }
+    .btn-lihat-geser:hover:not(.aksi-ikon) .aksi-lbl, .btn-lihat-geser:hover .lihat-lbl,
+    .btn-lihat-geser:focus-visible:not(.aksi-ikon) .aksi-lbl, .btn-lihat-geser:focus-visible .lihat-lbl { width:var(--w); margin-left:.35rem; opacity:1; }
+    @media (hover: none) {
+        .btn-lihat-geser:not(.aksi-ikon) .aksi-lbl, .btn-lihat-geser .lihat-lbl { width:var(--w); margin-left:.35rem; opacity:1; }
+        .btn-lihat-geser:hover, .btn-lihat-geser:focus-visible { margin-left: 0 !important; margin-right: 0 !important; }
+    }
+    /* Kolom No dan No. & Tgl Order terkunci saat tabel digeser ke samping (seperti freeze panes di Excel), sama dengan Daftar PO Katim. Layar sempit (< 768px) tidak dikunci.
+       Bayangan tipis di tepi muncul begitu tabel mulai bergeser (kelas po-scrolled). */
+    @media (min-width: 768px) {
+        .hm-idx-table th:nth-child(-n+2), .hm-idx-table td:nth-child(-n+2) { position: sticky; z-index: 2; }
+        .hm-idx-table th:nth-child(-n+2) { z-index: 3; background-color: #f8f9fa; }
+        .hm-idx-table td:nth-child(-n+2) { background-color: var(--bs-table-bg, #fff); }
+        .hm-idx-table tr.po-unread td:nth-child(-n+2) { background-color: #f8fafc; }
+        .hm-idx-table th:nth-child(1), .hm-idx-table td:nth-child(1) { left: 0; box-sizing: border-box; width: 52px; min-width: 52px; max-width: 52px; padding-left: .5rem !important; padding-right: .5rem !important; white-space: nowrap; }
+        .hm-idx-table th:nth-child(2), .hm-idx-table td:nth-child(2) { left: 52px; }
+        .hm-idx-table th:nth-child(2)::after, .hm-idx-table td:nth-child(2)::after { content: ''; position: absolute; top: 0; bottom: 0; right: -9px; width: 9px; pointer-events: none; opacity: 0; transition: opacity .15s ease; background: linear-gradient(to right, rgba(15, 23, 42, .14), rgba(15, 23, 42, 0)); }
+        .table-responsive.po-scrolled .hm-idx-table th:nth-child(2)::after, .table-responsive.po-scrolled .hm-idx-table td:nth-child(2)::after { opacity: 1; }
+    }
 </style>
 <!-- Mode panel tunggal: dibuka dari detail order di dalam iframe (?embed=1&buka=ID). Hanya slide verifikasi yang tampil, daftar disembunyikan. -->
 <style>
@@ -515,6 +543,13 @@
     html.hm-solo .main-container { padding: 0 !important; }
     html.hm-solo .hm-root > :not(.hm-scrim):not(.hm-sheet):not(.hm-dlg):not(.hm-fv):not(.hm-toast) { display: none !important; }
 </style>
+<script>
+    // Tandai wadah tabel yang sedang bergeser ke samping (untuk bayangan di tepi kolom terkunci); delegasi supaya tetap jalan setelah tabel dimuat ulang per tab.
+    document.addEventListener('scroll', function (e) {
+        var t = e.target;
+        if (t && t.classList && t.classList.contains('table-responsive')) { t.classList.toggle('po-scrolled', t.scrollLeft > 2); }
+    }, true);
+</script>
 <include href="petunjuk_operasional/_tema_catatan.html" />
 <script>(function () { try { var q = window.location.search; if (window.self !== window.top && /[?&]embed=1(&|$)/.test(q) && /[?&]buka=\d+/.test(q)) { document.documentElement.classList.add('hm-solo'); if (/[?&]ph=1(&|$)/.test(q)) { document.documentElement.classList.add('hm-ph'); } if (/[?&]sc=1(&|$)/.test(q)) { document.body.classList.add('sidebar-collapsed'); } } } catch (e) {} })();</script>
 
@@ -530,57 +565,6 @@
     <check if="{{ @error_message }}">
         <div class="hm-alert" role="alert">{{ @error_message }}</div>
     </check>
-
-    <div class="row g-3 mb-4" id="hmMetrics">
-        <div class="col-6 col-lg-3">
-            <div class="metric-card" title="Semua PO yang masuk ke Tim Mitra">
-                <div>
-                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total Dokumen</span>
-                    <h3 class="fw-bold text-dark mb-0 mt-1" id="mTotal">0</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Semua PO yang masuk ke Tim Mitra</span>
-                </div>
-                <div class="metric-icon-box" style="background-color: #f1f5f9; color: var(--color-primary); border: 1px solid #cbd5e1;">
-                    <i class="bi bi-clipboard2-data"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="metric-card cursor-pointer" data-kartu="perlu" role="button" title="Lihat PO yang perlu tindakan">
-                <div>
-                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Perlu Tindakan</span>
-                    <h3 class="fw-bold mb-0 mt-1" style="color: #d97706;" id="mTindakan">0</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Menunggu verifikasi Anda</span>
-                </div>
-                <div class="metric-icon-box" style="background-color: #fef3c7; color: #d97706; border: 1px solid #fde68a;">
-                    <i class="bi bi-exclamation-circle-fill"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="metric-card cursor-pointer" data-kartu="disetujui" role="button" title="Lihat tab Sedang Berjalan">
-                <div>
-                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Sedang Berjalan</span>
-                    <h3 class="fw-bold mb-0 mt-1" style="color: #2563eb;" id="mBerjalan">0</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">Lanjut ke PPK BLU</span>
-                </div>
-                <div class="metric-icon-box" style="background-color: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;">
-                    <i class="bi bi-hourglass-split"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="metric-card cursor-pointer" data-kartu="po_selesai" role="button" title="Lihat tab PO Aktif">
-                <div>
-                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">PO Aktif</span>
-                    <h3 class="fw-bold mb-0 mt-1" style="color: #059669;" id="mAktif">0</h3>
-                    <span class="small text-muted" style="font-size: 0.75rem;">PO sudah bertanda tangan</span>
-                </div>
-                <div class="metric-icon-box" style="background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
-                    <i class="bi bi-check-circle-fill"></i>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body p-3">
@@ -1035,13 +1019,9 @@
     }
     function render() {
         var n = unreadCount();
-        var dasar = {}, hitungKartu = {};
-        ['semua', 'perlu', 'disetujui', 'po_selesai'].forEach(function (t) { dasar[t] = dasarTab(t); hitungKartu[t] = dataTab(t).filter(cocokDivisi).length; });
-        // kartu ringkasan ikut filter layanan (bukan periode)
-        $('mTotal').textContent = hitungKartu.perlu + hitungKartu.disetujui + hitungKartu.po_selesai;
-        $('mTindakan').textContent = hitungKartu.perlu;
-        $('mBerjalan').textContent = hitungKartu.disetujui;
-        $('mAktif').textContent = hitungKartu.po_selesai;
+        var dasar = {};
+        ['semua', 'perlu', 'disetujui', 'po_selesai'].forEach(function (t) { dasar[t] = dasarTab(t); });
+        // (kotak ringkasan di atas daftar sudah dihapus; angka ada di chip tab)
         // chip di tab ikut semua filter (pencarian, layanan, periode)
         $('countSemua').textContent = dasar.semua.length;
         $('countPerlu').textContent = dasar.perlu.length;
@@ -1089,13 +1069,13 @@
             '<th class="text-center" style="width: 40px;">No</th><th style="width: 155px;">No. &amp; Tgl Order</th><th style="width: 185px;">Nomor PO</th>' +
             '<th style="min-width: 260px;">Judul Kegiatan &amp; Klien</th><th class="text-center" style="width: 110px;">Divisi OPTI</th>' +
             '<th class="text-end text-nowrap" style="width: 150px;">Estimasi Biaya</th>' + (alur ? '<th class="text-center" style="width: 150px;">Status Alur</th>' +
-            '<th style="min-width: 190px;">Keterangan</th>' : '') + '<th class="text-center" style="width: 190px;">Aksi</th></tr></thead><tbody>' +
+            '<th style="min-width: 190px;">Keterangan</th>' : '') + '<th class="text-center" style="width: 120px;">Aksi</th></tr></thead><tbody>' +
             rows.map(function (p, i) {
                 var ta = tabAsal(p, t);
                 var tombol = ta === 'perlu'
-                    ? '<button type="button" class="btn btn-sm btn-primary py-1 px-2" data-open="' + p.id + '" title="Review PO (buka panel)"><i class="bi bi-eye me-1"></i>Review</button>'
-                    : '<button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" data-open="' + p.id + '" title="Lihat PO (hanya lihat)"><i class="bi bi-eye me-1"></i>Lihat</button>';
-                var detail = p.order_id ? '<a href="' + BASE + '/order/' + p.order_id + '" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Buka detail order"><i class="bi bi-box-arrow-up-right me-1"></i>Detail</a>' : '';
+                    ? '<button type="button" class="btn btn-sm btn-primary btn-lihat-geser py-1 px-2" style="--w:3.4em" data-open="' + p.id + '" title="Review PO (buka panel)" aria-label="Review"><i class="bi bi-eye"></i><span class="lihat-lbl">Review</span></button>'
+                    : '<button type="button" class="btn btn-sm btn-primary btn-lihat-geser py-1 px-2" data-open="' + p.id + '" title="Lihat PO (hanya lihat)" aria-label="Lihat"><i class="bi bi-eye"></i><span class="lihat-lbl">Lihat</span></button>';
+                var detail = p.order_id ? '<a href="' + BASE + '/order/' + p.order_id + '" class="btn btn-sm btn-outline-secondary btn-lihat-geser btn-detail-geser py-1 px-2" title="Buka detail order" aria-label="Detail"><i class="bi bi-box-arrow-up-right"></i><span class="aksi-lbl">Detail</span></a>' : '';
                 return '<tr class="' + (ta === 'perlu' && isUnread(p) ? 'po-unread' : '') + '" data-open="' + p.id + '">' +
                     '<td class="text-center text-muted small">' + (awal + i + 1) + '</td>' +
                     '<td>' + orderCell(p) + '</td>' +

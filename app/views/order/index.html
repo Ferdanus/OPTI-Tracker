@@ -847,6 +847,9 @@ tr.row-user-task:hover > td {
                                                              <i class="bi bi-speedometer2"></i>
                                                          </a>
                                                      </check>
+                                                     <check if="{{ !empty(@ord.pk_id) }}">
+                                                         <span data-ajuan-po="{{ @ord.pk_id }}" data-ajuan-dari="order" hidden></span>
+                                                     </check>
 
                                                     <button type="button"
                                                         class="btn btn-sm py-1 px-2 d-inline-flex align-items-center justify-content-center shadow-none btn-lampiran-clip btn-modal-lampiran-order"

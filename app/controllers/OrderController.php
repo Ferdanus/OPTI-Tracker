@@ -125,7 +125,7 @@ class OrderController extends Controller {
                     $giliran = in_array($userRole, array('ppk', 'ppk_blu', 'pejabat'), true);
                 } elseif ($pemegang === 'katim' || $pemegang === 'katim_ttd') {
                     $giliran = $isKetuaTim;
-                } elseif ($pemegang === 'humas_kontrak') {
+                } elseif ($pemegang === 'humas_kontrak' || $pemegang === 'humas_bast') {
                     $giliran = ($userRole === 'humas');
                 } elseif ($pemegang === 'pic') {
                     $giliran = ($uidLogin > 0 && $uidLogin === (int) ($barisOrder['ketua_pelaksana_id'] ?? 0));
@@ -565,6 +565,90 @@ class OrderController extends Controller {
             $this->setFlashError('Gagal memperbarui order: ' . $e->getMessage());
             $f3->reroute("/order/{$id}/edit");
         }
+    }
+
+    /**
+     * Data slide "Lihat BAST" (dokumen BAST + tab Berkas). Dipakai Detail Order (variabel bast_slide_json) dan halaman Humas BAST (lewat bastSlideJson).
+     */
+    protected function bastSlideData($order, $poKegiatan, $bast, $kontrakPoId) {
+        $f3 = \Base::instance();
+        $id = (int) $order['id'];
+        $bsBase = $f3->get('BASE');
+        $bsPoId = !empty($poKegiatan['id']) ? (int) $poKegiatan['id'] : 0;
+        // Data PO untuk kartu di tab Berkas (bentuknya sama dengan data slide PO di Daftar PO: Map Kendali, PO bertanda tangan, PKS)
+        $bsPo = null;
+        if ($bsPoId > 0) {
+            $bsTgl = function ($v) { $v = trim((string) $v); return ($v !== '' && strpos($v, '0000') !== 0 && strtotime($v)) ? date('Y-m-d', strtotime($v)) : ''; };
+            $bsTglProposal = '';
+            try {
+                $kolProp = $this->db->exec("SHOW COLUMNS FROM opti_proposal_riset LIKE 'disetujui_ketua_at'");
+                if (!empty($kolProp)) {
+                    $rowProp = $this->db->exec('SELECT disetujui_ketua_at FROM opti_proposal_riset WHERE order_id = ? ORDER BY id DESC LIMIT 1', array((int) $id));
+                    if (!empty($rowProp[0]['disetujui_ketua_at'])) { $bsTglProposal = (string) $rowProp[0]['disetujui_ketua_at']; }
+                }
+            } catch (\Exception $e) {}
+            // Humas "sudah membuka" hanya berlaku kalau dibuka SETELAH PO disetujui Ketua Tim
+            $bsHumas = !empty($poKegiatan['humas_dibaca_at']) ? (string) $poKegiatan['humas_dibaca_at'] : '';
+            if ($bsHumas !== '' && !empty($poKegiatan['disposisi_humas_at']) && $bsHumas < (string) $poKegiatan['disposisi_humas_at']) { $bsHumas = ''; }
+            $bsDiv = strtolower(trim((string) ($order['jenis_layanan_opti'] ?? '')));
+            $bsTtdAda = !empty($poKegiatan['po_ttd_at']);
+            $bsKonAda = !empty($poKegiatan['kontrak_dibuat_at']);
+            $bsPo = array(
+                'id'         => $bsPoId,
+                'nomor'      => (string) ($poKegiatan['nomor_po'] ?? ''),
+                'judul'      => (string) (!empty($poKegiatan['judul']) ? $poKegiatan['judul'] : ($order['judul_kegiatan'] ?? '')),
+                'disiapkan'  => ($bsDiv !== '' && $bsDiv !== 'belum_ditentukan') ? ('Tim Kerja OPTI ' . ucfirst($bsDiv)) : 'Tim Kerja OPTI',
+                'map'        => array(
+                    'proposal' => $bsTgl($bsTglProposal),
+                    'humas'    => $bsTgl($bsHumas),
+                    'mitra'    => $bsTgl($poKegiatan['tervalidasi_mitra_at'] ?? ''),
+                    'keuangan' => $bsTgl($poKegiatan['validasi_keuangan_at'] ?? ''),
+                ),
+                'ppk_valid_at' => !empty($poKegiatan['validasi_keuangan_at']) ? (string) $poKegiatan['validasi_keuangan_at'] : null,
+                'ttd_at'       => $bsTtdAda ? (string) $poKegiatan['po_ttd_at'] : null,
+                'ttd_nama'     => (string) ($poKegiatan['po_ttd_nama'] ?? ''),
+                'ttd_oleh'     => (string) ($poKegiatan['po_ttd_oleh_nama'] ?? ''),
+                'url_ttd'      => !empty($poKegiatan['po_ttd_file']) ? ($bsBase . '/order/' . (int) $order['id'] . '/po-ttd') : '',
+                'kontrak_at'    => $bsKonAda ? (string) $poKegiatan['kontrak_dibuat_at'] : null,
+                'kontrak_nomor' => (string) ($poKegiatan['kontrak_nomor'] ?? ''),
+                'kontrak_oleh'  => (string) ($poKegiatan['kontrak_dibuat_oleh_nama'] ?? ''),
+                'kontrak_url'   => ($bsKonAda && $kontrakPoId > 0) ? $this->urlPksKartu($kontrakPoId) : '',
+            );
+        }
+        $bsSt = (string) ($bast['status_bast'] ?? '');
+        $bsStTeks = ($bsSt === 'selesai') ? 'BAST diterbitkan' : (($bsSt === 'proses_ttd') ? 'Menunggu nomor dari Humas' : 'Draft BAST');
+        return array(
+            'judul'       => ($bsSt === 'selesai' && !empty($bast['nomor_bast'])) ? (string) $bast['nomor_bast'] : ('BAST · Order #' . (string) ($order['nomor_order'] ?? $id)),
+            'sub'         => trim((string) ($order['nama_perusahaan'] ?? '') . ' · ' . $bsStTeks, ' ·'),
+            'urlFragment' => $bsBase . '/order/' . (int) $id . '/bast/buat?fragment=1',
+            'urlEmbed'    => $bsBase . '/order/' . (int) $id . '/bast/buat?embed=1',
+            'urlUnduh'    => ($bsSt === 'selesai') ? ($bsBase . '/order/' . (int) $id . '/bast/unduh') : '',
+            // sumber isi tab Berkas di slide PO: dicoba berurutan sesuai hak akses peran (Daftar PO, lalu halaman Humas)
+            'urlBerkas'   => ($bsPoId > 0) ? array($bsBase . '/po-kegiatan/' . $bsPoId . '/berkas', $bsBase . '/po-humas/' . $bsPoId . '/berkas') : array(),
+            'base'        => $bsBase,
+            'po'          => $bsPo,
+            'urlDokPo'      => ($bsPoId > 0) ? ($bsBase . '/po-kegiatan/' . $bsPoId . '/cetak') : '',
+            'urlDokPoUnduh' => ($bsPoId > 0) ? ($bsBase . '/po-kegiatan/' . $bsPoId . '/unduh') : '',
+        );
+    }
+
+    /** GET /order/@id/bast/slide-data : data slide BAST satu order (JSON), dipakai slide di halaman Humas BAST */
+    public function bastSlideJson($f3, $params) {
+        $this->requirePermission('order:view', '/order');
+        header('Content-Type: application/json; charset=utf-8');
+        $id = (int) ($params['id'] ?? 0);
+        $order = (new OrderLayanan($this->db))->getDetail($id);
+        if (!$order) { http_response_code(404); echo json_encode(array('ok' => false)); return; }
+        $poKegiatan = null;
+        try { \PoSchema::pastikan($this->db); } catch (\Throwable $e) {}
+        try {
+            $pm = new PoKegiatan($this->db);
+            $pm->load(array('order_id = ?' . \PoSchema::bukanSertifikasi(''), $id));
+            if (!$pm->dry()) { $poKegiatan = $this->sinkronKontrakPks($pm->cast()); }
+        } catch (\Exception $e) {}
+        $bast = (new OptiBast($this->db))->getByOrderId($id);
+        $kontrakPoId = (!empty($poKegiatan) && !empty($poKegiatan['id'])) ? (int) $poKegiatan['id'] : 0;
+        echo json_encode($this->bastSlideData($order, $poKegiatan, $bast, $kontrakPoId), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP);
     }
 
     /**
@@ -1460,6 +1544,9 @@ class OrderController extends Controller {
             'embed_url' => $f3->get('BASE') . '/kontrak/' . $kontrakPoId . '/form?embed=1',
         ));
 
+        // Slide "Lihat BAST" (Detail Order, Tahap 11): isi tab BAST dimuat dari form BAST, tab Berkas memakai kartu yang sama dengan tab Berkas di slide PO
+        $f3->set('bast_slide_json', json_encode($this->bastSlideData($order, $poKegiatan, $bast, $kontrakPoId), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP));
+
         // Step 9: BAST
         $isBastDone = $isPoDone && !empty($bast) && (
             in_array($bast['status_bast'] ?? '', ['disetujui', 'selesai', 'terbit']) ||
@@ -1937,6 +2024,10 @@ class OrderController extends Controller {
         }
 
         $langkahBerikutnya['tahap'] = $langkahBerikutnya['step'] ?? $currentStep;
+        // Nomor tahap yang DITAMPILKAN di kartu atas (nomor internal BAST = 9, PKS = 10, Laporan Akhir = 11; yang tampil di stepper: PKS 9, Laporan Akhir 10, BAST 11)
+        $petaTahapTampil = array('#cardBast' => 11, '#cardKontrak' => 9, '#cardLaporanAkhir' => 10);
+        $tcKartu = (string) ($langkahBerikutnya['target_card'] ?? '');
+        if ($currentStep === 9 && isset($petaTahapTampil[$tcKartu])) { $langkahBerikutnya['tahap_tampil'] = $petaTahapTampil[$tcKartu]; }
         $langkahBerikutnya['tipe'] = $langkahBerikutnya['tipe_badge'] ?? 'primary';
         $langkahBerikutnya['role'] = $langkahBerikutnya['penanggung_jawab'] ?? '';
         $langkahBerikutnya['tombol_label'] = $langkahBerikutnya['tombol_teks'] ?? 'Lanjutkan';

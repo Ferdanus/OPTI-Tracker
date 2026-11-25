@@ -53,8 +53,8 @@ class PksKontrakController extends Controller {
         'tanggal'           => ['tanggal_perjanjian',  'tgl',  0,    true,  'Tanggal perjanjian'],
         'perusahaan'        => ['perusahaan',          'teks', 255,  true,  'Nama perusahaan'],
         'alamatPerusahaan'  => ['alamat_perusahaan',   'rich', 1000, true,  'Alamat perusahaan'],
-        'ttdNama'           => ['ttd_nama',            'teks', 150,  true,  'Nama penandatangan'],
-        'ttdJabatan'        => ['ttd_jabatan',         'teks', 150,  true,  'Jabatan penandatangan'],
+        'ttdNama'           => ['ttd_nama',            'teks', 150,  false, 'Nama penandatangan'],       // opsional: boleh dikosongkan, klien menulisnya sendiri saat tanda tangan
+        'ttdJabatan'        => ['ttd_jabatan',         'teks', 150,  false, 'Jabatan penandatangan'],   // opsional (lihat ttdNama)
         'judul'             => ['judul',               'rich', 1000, true,  'Judul pekerjaan'],
         'ruangLingkup'      => ['ruang_lingkup',       'rich', 6000, true,  'Ruang lingkup'],
         'mulai'             => ['tgl_mulai',           'tgl',  0,    true,  'Tanggal mulai'],
@@ -1535,6 +1535,7 @@ class PksKontrakController extends Controller {
             if (\PksDocx::teksBaris($b['runs']) !== '') { $lingkup[] = $b; }
         }
         $atauStrip = function ($x) { $x = trim((string) $x); return $x !== '' ? $x : '-'; };
+        $atauTitik = function ($x) { $x = trim((string) $x); return $x !== '' ? $x : '..........................'; };   // penandatangan klien kosong: garis titik untuk ditulis tangan
 
         return [
             'perusahaan'          => $v['perusahaan'],
@@ -1546,8 +1547,8 @@ class PksKontrakController extends Controller {
             'bulan'               => $d ? self::BULAN[(int) $d->format('n') - 1] : '',
             'tahun_kata'          => $d ? self::terbilang((int) $d->format('Y')) : '',
             'tanggal_angka'       => $d ? $d->format('d-m-Y') : '',
-            'ttd_nama'            => $v['ttdNama'],
-            'ttd_jabatan'         => $v['ttdJabatan'],
+            'ttd_nama'            => $atauTitik($v['ttdNama']),
+            'ttd_jabatan'         => $atauTitik($v['ttdJabatan']),
             'alamat_perusahaan'   => $v['alamatPerusahaan'],
             'kepala_nama'         => $v['kepalaNama'],
             'kepala_jabatan'      => $v['kepalaJabatan'],

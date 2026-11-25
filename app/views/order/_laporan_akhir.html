@@ -57,6 +57,26 @@
     .la-conf { position:absolute; left:50%; top:46px; width:7px; height:7px; border-radius:50%; pointer-events:none; animation:laBurst .9s ease-out .5s both; }
     @media (prefers-reduced-motion:reduce) { .la-ov, .la-dlg, .la-arr, .la-file, .la-suk * { animation-duration:.01ms !important; transition:none !important; } }
 </style>
+<include href="order/_kartu_dokumen_css.html" />
+<style>
+    /* Kartu Laporan Akhir selesai: gaya kartu dokumen (sama dengan PKS dan BAST) + animasi */
+    #cardLaporanAkhir .lad-sub { color:#64748b; font-size:.84rem; margin:0; }
+    /* Hanya animasi saat disentuh: kartu diam, miniatur terangkat dan tombol naik saat kursor di atas kartu (gaya kt- bawaan) */
+    #cardLaporanAkhir .lad-doc .kt-th, #cardLaporanAkhir .lad-doc .kt-doc-st .ck { animation:none; }
+    #cardLaporanAkhir .lad-chart { height:46px; border:1px solid #e2e8f0; border-radius:3px; display:flex; align-items:flex-end; gap:5px; padding:5px 7px; margin:4px 0; }
+    #cardLaporanAkhir .lad-chart i { flex:1; background:#94a3b8; border-radius:1px 1px 0 0; }
+    #cardLaporanAkhir .lad-chart i:nth-child(1) { height:40%; } #cardLaporanAkhir .lad-chart i:nth-child(2) { height:75%; }
+    #cardLaporanAkhir .lad-chart i:nth-child(3) { height:55%; } #cardLaporanAkhir .lad-chart i:nth-child(4) { height:90%; }
+    #cardLaporanAkhir .lad-pdf { background:#b91c1c; }
+    #cardLaporanAkhir .lad-none { background:#fff; color:#475569; border:1.5px dashed #94a3b8; white-space:nowrap; }
+    #cardLaporanAkhir .lad-kosong .kt-th-mock .l, #cardLaporanAkhir .lad-kosong .lad-chart { opacity:.35; }
+    #cardLaporanAkhir .lad-kosong::before { content:""; position:absolute; left:-20%; top:48%; width:140%; height:2px; background:#94a3b8; transform:rotate(-32deg); z-index:2; opacity:.75; }
+    #cardLaporanAkhir .lad-doc .kt-doc-st .ck { background:#047857; }
+    #cardLaporanAkhir .lad-bast { display:inline-flex; align-items:center; gap:7px; font-weight:700; color:#047857; }
+    #cardLaporanAkhir .lad-bast i { width:8px; height:8px; border-radius:50%; background:#047857; }
+    #cardLaporanAkhir .lad-bast.tunggu { color:#b45309; }
+    #cardLaporanAkhir .lad-bast.tunggu i { background:#b45309; }
+</style>
 
 <div class="system-section-card mb-3" id="cardLaporanAkhir" data-la="{{ @laporan_akhir.json }}">
     <div class="system-section-header">
@@ -118,13 +138,31 @@
             h = '<div class="la-body"><div class="la-kunci"><i class="bi bi-lock-fill text-secondary opacity-50 me-1"></i>Laporan Akhir terbuka setelah <strong>PO bertanda tangan di-upload</strong> pada <strong>Tahap 8</strong> (PO Aktif).</div></div>';
         } else if (S.selesai) {
             st = '<span class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i> Selesai</span>';
-            h = '<div class="la-body">' +
-                '<div class="la-selesai">' + CEK.replace('<svg', '<svg width="26" height="26"') + '<div><b>Order selesai.</b> ' + (S.ada ? 'Laporan akhir tersimpan.' : 'Diselesaikan tanpa laporan akhir.') +
-                (S.pks ? ' BAST sudah terbuka.' : ' BAST akan terbuka setelah PKS dibuat.') + '</div></div>' +
-                (S.ada ? '<div class="mt-3">' + chip(false) + '</div>' : '') +
-                ((!S.ada && S.boleh && !S.bast) ? '<div class="mt-3"><button type="button" class="btn btn-sm btn-outline-dark fw-semibold" data-a="pilih">Unggah laporan (jika nanti ada)</button></div>' : '') +
-                (S.selesai_oleh ? '<div class="text-muted small mt-3">Diselesaikan oleh <span class="text-dark fw-medium">' + esc(S.selesai_oleh) + '</span>' + (S.selesai_at ? ' &middot; ' + esc(S.selesai_at) : '') + '</div>' : '') +
-                '</div>';
+            var mock = '<div class="kt-th-mock" aria-hidden="true"><div class="lg"><i></i><i></i></div><div class="t"></div><div class="n"></div><div class="l"></div><div class="l"></div><div class="l s"></div>' +
+                '<div class="lad-chart"><i></i><i></i><i></i><i></i></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div></div>';
+            var thumb = S.ada
+                ? '<a class="kt-th lad-th" target="_blank" rel="noopener" href="' + esc(S.url.lihat) + '" aria-label="Lihat laporan akhir" title="Lihat laporan akhir">' + mock + '<span class="kt-th-tag lad-pdf">PDF</span></a>'
+                : '<div class="kt-th lad-th lad-kosong" aria-hidden="true">' + mock + '<span class="kt-th-tag lad-none">TANPA LAPORAN</span></div>';
+            var bastTxt = S.pks ? '<span class="lad-bast"><i></i>Sudah terbuka</span>' : '<span class="lad-bast tunggu"><i></i>Terbuka setelah PKS dibuat</span>';
+            var acts = '';
+            if (S.ada) {
+                acts += '<a class="kt-btn pri" target="_blank" rel="noopener" href="' + esc(S.url.lihat) + '"><i class="bi bi-eye"></i>Lihat laporan</a>' +
+                        '<a class="kt-btn" href="' + esc(S.url.lihat) + '?unduh=1"><i class="bi bi-download"></i>Unduh</a>';
+            } else if (S.boleh && !S.bast) {
+                acts += '<button type="button" class="kt-btn" data-a="pilih"><i class="bi bi-upload"></i>Unggah laporan (jika nanti ada)</button>';
+            }
+            if (S.pks) { acts += '<button type="button" class="kt-btn" data-a="kebast">Lanjut ke BAST<i class="bi bi-arrow-right"></i></button>'; }
+            h = '<div class="la-body"><div class="kt-doc lad-doc">' + thumb +
+                '<div style="min-width:0;"><h5 class="kt-doc-st"><span class="ck"><i class="bi bi-check-lg"></i></span>Order selesai</h5>' +
+                '<p class="lad-sub">' + (S.ada ? 'Laporan akhir tersimpan.' : 'Diselesaikan tanpa laporan akhir (boleh, laporan ini opsional).') + '</p>' +
+                '<div class="kt-grid">' +
+                    '<div><small>Diselesaikan oleh</small><span>' + (S.selesai_oleh ? esc(S.selesai_oleh) : '-') + '</span></div>' +
+                    '<div><small>Tanggal</small><span>' + (S.selesai_at ? esc(S.selesai_at) : '-') + '</span></div>' +
+                    '<div><small>Berkas</small><span>' + (S.ada ? esc(S.nama) + ' <span class="text-muted">(' + ukuran(S.ukuran) + ')</span>' : 'Tidak ada') + '</span></div>' +
+                    '<div><small>BAST (Tahap 11)</small><span>' + bastTxt + '</span></div>' +
+                '</div>' +
+                (acts ? '<div class="kt-acts">' + acts + '</div>' : '') +
+                '</div></div></div>';
         } else if (!S.boleh) {
             st = '<span class="badge bg-light text-secondary border"><i class="bi bi-hourglass-split me-1"></i> Menunggu Ketua Pelaksana / Ketua Tim</span>';
             h = '<div class="la-body"><div class="la-kunci" style="text-align:left"><i class="bi bi-hourglass-split me-1"></i>Pengujian berjalan. Ketua Pelaksana atau Ketua Tim dapat meng-upload laporan akhir (opsional) lalu menekan <strong>Selesai</strong>.</div>' +
@@ -239,6 +277,10 @@
         var k2 = a.getAttribute('data-a');
         if (k2 === 'pilih' || k2 === 'ganti') { inp.click(); }
         else if (k2 === 'selesai') { dialogSelesai(); }
+        else if (k2 === 'kebast') {
+            var lb = document.querySelector('a.step-checkpoint[href="#cardBast"]');
+            if (lb && !lb.classList.contains('disabled')) { lb.click(); } else { window.location.href = BASE + '/order/' + S.id + '?tahap=9'; }
+        }
         else if (k2 === 'hapus') { dialogHapus(); }
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal && !sedangKirim) { tutup(); } });

@@ -449,8 +449,13 @@ class PoReviewController extends Controller {
         }
 
         $n = $this->hitungCatatan((int) $po['id']);
+        $drafDibuang = 0;
         if ($n['draf'] > 0) {
-            $this->keluarkanJson(['ok' => false, 'pesan' => 'Ada ' . $n['draf'] . ' catatan draf yang belum dikirim. Kirim lewat Minta revisi atau hapus dulu.'], 422);
+            // Katim berubah pikiran: catatan draf (belum dikirim) boleh dibuang saat menyetujui, tapi hanya bila sudah dikonfirmasi di layar (buang_draf=1)
+            if ((string) $f3->get('POST.buang_draf') !== '1') {
+                $this->keluarkanJson(['ok' => false, 'perlu_konfirmasi_draf' => (int) $n['draf'], 'pesan' => 'Ada ' . $n['draf'] . ' catatan draf yang belum dikirim. Konfirmasi dulu bahwa catatan draf boleh dibuang, atau kirim lewat Minta revisi.'], 422);
+            }
+            $drafDibuang = (int) $n['draf'];
         }
         if ($n['terbuka'] > 0) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Masih ada ' . $n['terbuka'] . ' catatan yang belum diperbaiki.'], 422);
@@ -471,11 +476,15 @@ class PoReviewController extends Controller {
         if ((int) $diubah === 0) {
             $this->keluarkanJson(['ok' => false, 'pesan' => 'Status PO sudah berubah. Muat ulang halaman.'], 409);
         }
+        if ($drafDibuang > 0) {   // setelah persetujuan tersimpan: buang catatan draf yang belum dikirim
+            try { $this->db->exec("DELETE FROM po_revisi_catatan WHERE po_id = ? AND tahap = 'review' AND state = 'draf'" . $this->sqlSembunyiPjt(), [1 => (int) $po['id']]); }
+            catch (\Throwable $eDr) { error_log('[po_review] gagal membuang catatan draf saat setujui: ' . $eDr->getMessage()); }
+        }
         // Bekukan gambar TTD Ketua Tim untuk PO ini (dokumen lama tidak ikut berubah bila TTD akun diganti / pejabat berganti).
         try { if (class_exists('PoTtdSnapshot')) { \PoTtdSnapshot::bekukan($this->db, (int) $po['id'], 'ketua'); } } catch (\Throwable $eSnap) { error_log('[PoTtdSnapshot] ' . $eSnap->getMessage()); }
 
         $nama = $this->namaPengguna($uid, 'Ketua Tim');
-        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', $nama . ' menyetujui PO. PO terkunci dan langsung diteruskan ke Tim Mitra (verifikasi). Humas membukanya di menu PKS setelah Tim Mitra memverifikasi.');
+        self::catatPesanSistem($this->db, $po['id'], $uid, 'katim', $nama . ' menyetujui PO' . ($drafDibuang > 0 ? ' (' . $drafDibuang . ' catatan draf dibuang)' : '') . '. PO terkunci dan langsung diteruskan ke Tim Mitra (verifikasi). Humas membukanya di menu PKS setelah Tim Mitra memverifikasi.');
         self::kabari($this->db, [(int) $po['ketua_pelaksana_id']], 'PO disetujui', 'PO ' . $po['nomor_po'] . ' disetujui Ketua Tim.');
         // PO yang disetujui Ketua Tim langsung masuk ke Tim Mitra (verifikasi). Humas baru menerimanya di menu PKS setelah Tim Mitra memverifikasi (tidak ada lagi Daftar PO Humas)
         foreach ([
@@ -815,7 +824,7 @@ class PoReviewController extends Controller {
 
     /** Simpan salinan HTML dokumen untuk satu pihak. $timpa = true menimpa, false hanya mengisi bila belum ada. */
     public static function simpanBaseline($db, $poId, $sisi, $html, $timpa) {
-        if ((string) $html === '' || !in_array($sisi, ['katim', 'pembuat', 'pjt'], true)) { return; }
+        if ((string) $html === '' || !in_array($sisi, ['katim', 'pembuat', 'pjt', 'ppk'], true)) { return; }   // 'ppk' = pembanding slide review PPK BLU (diisi saat PPK BLU minta revisi / ajuan perbaikan dimulai)
         try {
             if ($timpa) {
                 $db->exec("INSERT INTO po_baseline (po_id, sisi, isi, diperbarui_at) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE isi = VALUES(isi), diperbarui_at = NOW()",
@@ -827,11 +836,12 @@ class PoReviewController extends Controller {
         } catch (\Throwable $e) { error_log('[po_baseline] gagal menyimpan pembanding (apakah tabel po_baseline sudah dibuat?): ' . $e->getMessage()); }
     }
 
-    /** Dipanggil saat PO disimpan: pihak lain dapat pembanding = isi sebelum diedit (bila belum punya), penyunting dapat isi sesudahnya. */
+    /** Dipanggil saat PO disimpan: setiap pihak (termasuk penyunting) dapat pembanding = isi sebelum diedit (bila belum punya). */
     public static function catatBaselineEdit($db, $poId, $sisiEditor, $htmlSebelum, $htmlSesudah) {
         foreach (['katim', 'pembuat', 'pjt'] as $s) {
-            if ($s === $sisiEditor) { self::simpanBaseline($db, $poId, $s, $htmlSesudah, true); }
-            else { self::simpanBaseline($db, $poId, $s, $htmlSebelum, false); }
+            // Semua pihak (termasuk penyunting) mendapat pembanding = isi sebelum diedit bila belum punya, jadi hasil edit tampil merah
+            // untuk penyunting juga sampai ia bertindak berikutnya (minta revisi / kirim revisi / ACC / setujui) dan pembandingnya diperbarui.
+            self::simpanBaseline($db, $poId, $s, $htmlSebelum, false);
         }
     }
 
@@ -843,12 +853,26 @@ class PoReviewController extends Controller {
         } catch (\Throwable $e) { /* pelengkap */ }
     }
 
+    /** True bila PO sudah final dari sisi review: order selesai, atau disetujui Ketua Tim dan tidak sedang dalam revisi PPK BLU. */
+    protected function poSelesaiDitinjau(array $po) {
+        if (strtolower(trim((string) ($po['order_status'] ?? ''))) === 'selesai') { return true; }
+        if (strtolower(trim((string) ($po['status_review'] ?? ''))) !== 'disetujui') { return false; }
+        if (!$this->kolomAda('ppk_status')) { return true; }
+        try {
+            $r = $this->db->exec("SELECT ppk_status FROM po_kegiatan WHERE id = ? LIMIT 1", [1 => (int) $po['id']]);
+            $ppk = !empty($r) ? (string) ($r[0]['ppk_status'] ?? '') : '';
+            return !in_array($ppk, ['minta', 'katim_kerja', 'ketupel_kerja', 'katim_review'], true);
+        } catch (\Throwable $e) { return true; }
+    }
+
     /** GET /po-kegiatan/@id/baseline -- salinan dokumen PO terakhir yang ditinjau pengguna ini ('' bila belum ada). */
     public function baseline($f3, $params) {
         list($po, $sisi) = $this->aksesBaca((int) $params['id']);
         $s = $this->sisiPengguna($po);
         $html = '';
-        if ($s !== null) {
+        // Tanda merah "berubah sejak terakhir Anda tinjau" hanya berguna selama PO masih dalam proses review.
+        // PO yang sudah disetujui Ketua Tim (dan tidak sedang direvisi PPK BLU) atau yang ordernya sudah selesai: tidak ada pembanding, banner & teks merah tidak tampil.
+        if ($s !== null && !$this->poSelesaiDitinjau($po)) {
             try {
                 $r = $this->db->exec("SELECT isi FROM po_baseline WHERE po_id = ? AND sisi = ? LIMIT 1", [1 => (int) $po['id'], 2 => $s]);
                 if (!empty($r)) { $html = (string) $r[0]['isi']; }
@@ -1839,7 +1863,7 @@ class PoReviewController extends Controller {
                 'kontrak_nomor'    => (string) ($r['kontrak_nomor'] ?? ''),
                 'kontrak_oleh'     => (string) ($r['kontrak_dibuat_oleh_nama'] ?? ''),
                 'url_ttd'          => !empty($r['po_ttd_at']) ? (\Base::instance()->get('BASE') . '/po-kegiatan/' . (int) $r['id'] . '/po-ttd') : '',
-                'kontrak_url'      => (!empty($r['kontrak_dibuat_at']) && $this->isSuperadmin()) ? (\Base::instance()->get('BASE') . '/pks/' . (int) $r['id'] . '/unduh') : '',
+                'kontrak_url'      => !empty($r['kontrak_dibuat_at']) ? $this->urlPksKartu($r['id']) : '',
                 // catatan Humas ikut tampil setelah Humas memverifikasi PO
                 'catatan_humas'    => (!empty($r['humas_ver_at']) && isset($r['catatan_humas'])) ? trim((string) $r['catatan_humas']) : '',
                 // catatan Tim Mitra baru ditampilkan setelah Tim Mitra memvalidasi PO

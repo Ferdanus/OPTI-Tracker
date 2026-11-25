@@ -860,8 +860,8 @@ class RabExcel {
                 if ($v === null || $v === '') { $sel[$ci] = null; continue; }
                 $kosong = false; $adaKol[$ci] = true;
                 $adr = $huruf($ci) . $no; $gy = isset($gayaSel[$adr]) ? (array) $gayaSel[$adr] : [];
-                if (is_numeric($v) && !is_string($v)) { $sel[$ci] = ['n', (float) $v, self::teksAngkaDokumen($v, isset($fmtSel[$adr]) ? $fmtSel[$adr] : ''), $gy]; }
-                else { $sel[$ci] = ['t', (string) $v, (string) $v, $gy]; }
+                if (is_numeric($v) && !is_string($v)) { $sel[$ci] = ['n', (float) $v, self::teksAngkaDokumen($v, isset($fmtSel[$adr]) ? $fmtSel[$adr] : ''), $gy, $adr]; }
+                else { $sel[$ci] = ['t', (string) $v, (string) $v, $gy, $adr]; }
             }
             if (!$kosong) { $baris[] = $sel; $noBaris[] = $no; }
         }
@@ -909,7 +909,7 @@ class RabExcel {
         foreach ($bobot as $k => $b) { $lebar[$k] = round($b * 100 / $jml, 2); }
         // 3. HTML
         $tb = 'border:1px solid #444;padding:1px 3px;font-size:7.5pt;line-height:1.25;vertical-align:middle;';
-        $o = '<table style="border-collapse:collapse;width:100%;table-layout:fixed;margin:0;"><colgroup>';
+        $o = '<table data-sh="' . htmlspecialchars((string) $sh['nama'], ENT_QUOTES, 'UTF-8') . '" style="border-collapse:collapse;width:100%;table-layout:fixed;margin:0;"><colgroup>';
         foreach ($lebar as $w) { $o .= '<col style="width:' . $w . '%;">'; }
         // baris judul di awal tabel (judul tabel + judul kolom) dimasukkan ke <thead>: pemecah halaman pratinjau dan PDF mengulangnya di tiap halaman
         // dan tidak meninggalkan judul sendirian di dasar halaman. Hanya bila ada baris judul kolom dan sesudahnya masih ada baris isi.
@@ -924,13 +924,14 @@ class RabExcel {
         foreach ($lebar as $w) { $o .= '<td style="width:' . $w . '%;padding:0;border:0;height:0;font-size:1px;line-height:1px;"></td>'; }
         $o .= '</tr>';
         $e = function ($t) { return nl2br(htmlspecialchars($t, ENT_QUOTES, 'UTF-8')); };
+        $dA = function ($x) { return ($x && !empty($x[4])) ? ' data-a="' . $x[4] . '"' : ''; };   // alamat sel Excel (mis. K17): dipakai form untuk menyorot sel yang diubah
         foreach ($info as $bi => $r) {
             if ($nHead > 0 && $bi === $nHead) { $o .= '</thead><tbody>'; }
             $c = $r['c']; $jenis = $r['jenis'];
             $tebalSel = function ($x, $biasa) use ($adaGaya) { return $adaGaya ? !empty($x[3]['b']) : $biasa; };
             $ratakan = function ($x, $bawaan) { $a = isset($x[3]['a']) ? $x[3]['a'] : ''; $jorok = !empty($x[3]['i']) ? 'padding-left:' . (3 + 9 * (int) $x[3]['i']) . 'px;' : ''; if ($a === 'l') { return 'text-align:left;' . $jorok; } if ($a === 'c') { return 'text-align:center;' . $jorok; } if ($a === 'r') { return 'text-align:right;' . $jorok; } return $bawaan . $jorok; };
-            if ($jenis === 'bagian') { $o .= '<tr><td colspan="' . $nk . '" style="' . $tb . $ratakan($c[0], 'text-align:center;') . ($tebalSel($c[0], true) ? 'font-weight:bold;' : '') . 'background:#f3f5f8;">' . $e($c[0][2]) . '</td></tr>'; continue; }
-            if ($jenis === 'sub') { $p = $r['pertama']; $o .= '<tr>' . ($p > 0 ? '<td colspan="' . $p . '" style="' . $tb . '"></td>' : '') . '<td colspan="' . ($nk - $p) . '" style="' . $tb . $ratakan($c[$p], '') . ($tebalSel($c[$p], false) ? 'font-weight:bold;' : '') . '">' . $e($c[$p][2]) . '</td></tr>'; continue; }
+            if ($jenis === 'bagian') { $o .= '<tr><td' . $dA($c[0]) . ' colspan="' . $nk . '" style="' . $tb . $ratakan($c[0], 'text-align:center;') . ($tebalSel($c[0], true) ? 'font-weight:bold;' : '') . 'background:#f3f5f8;">' . $e($c[0][2]) . '</td></tr>'; continue; }
+            if ($jenis === 'sub') { $p = $r['pertama']; $o .= '<tr>' . ($p > 0 ? '<td colspan="' . $p . '" style="' . $tb . '"></td>' : '') . '<td' . $dA($c[$p]) . ' colspan="' . ($nk - $p) . '" style="' . $tb . $ratakan($c[$p], '') . ($tebalSel($c[$p], false) ? 'font-weight:bold;' : '') . '">' . $e($c[$p][2]) . '</td></tr>'; continue; }
             $o .= '<tr>';
             if ($jenis === 'judul') {
                 for ($k = 0; $k < $nk; $k++) {
@@ -940,7 +941,7 @@ class RabExcel {
                     $span = 1; while ($k + $span < $nk && $c[$k + $span] === null && empty($tt[$bi][$k + $span])) { $span++; }
                     if ($mgk) { $span = $mgk[0]; }
                     $rsp = ($mgk && $mgk[1] > 1) ? ' rowspan="' . $mgk[1] . '"' : '';
-                    $o .= '<td' . ($span > 1 ? ' colspan="' . $span . '"' : '') . $rsp . ' style="' . $tb . ($c[$k] !== null ? $ratakan($c[$k], 'text-align:center;') . ($tebalSel($c[$k], true) ? 'font-weight:bold;' : '') : '') . 'background:#e4e8ee;">' . ($c[$k] !== null ? $e($c[$k][2]) : '') . '</td>';
+                    $o .= '<td' . $dA($c[$k]) . ($span > 1 ? ' colspan="' . $span . '"' : '') . $rsp . ' style="' . $tb . ($c[$k] !== null ? $ratakan($c[$k], 'text-align:center;') . ($tebalSel($c[$k], true) ? 'font-weight:bold;' : '') : '') . 'background:#e4e8ee;">' . ($c[$k] !== null ? $e($c[$k][2]) : '') . '</td>';
                     $k += $span - 1;
                 }
             } else {
@@ -956,7 +957,7 @@ class RabExcel {
                     if ($x[0] === 'n') { $st .= $ratakan($x, ($k === 0) ? 'text-align:center;' : 'text-align:right;'); if ($k !== 0 || !empty($x[3]['a'])) { $st .= 'white-space:nowrap;'; } }
                     elseif ($r['nNum'] > 0 && mb_strlen($x[1]) <= 6) { $st .= $ratakan($x, 'text-align:center;'); }
                     else { $st .= $ratakan($x, ''); }
-                    $o .= '<td' . $mgAttr . ' style="' . $st . '">' . $e($x[2]) . '</td>';
+                    $o .= '<td' . $mgAttr . $dA($x) . ' style="' . $st . '">' . $e($x[2]) . '</td>';
                 }
             }
             $o .= '</tr>';

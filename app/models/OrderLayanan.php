@@ -540,7 +540,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $pkKolom = '';
         foreach (array('judul_kegiatan', 'status', 'status_review', 'ppk_status', 'disetujui_at', 'verifikasi_humas_at', 'tervalidasi_mitra_at', 'validasi_keuangan_at',
                        'reviewed_at', 'minta_dibaca_at', 'revisi_dibaca_at', 'humas_dibaca_at', 'disposisi_humas_at', 'ppk_dibaca_at', 'mitra_dibaca_at',
-                       'ronde_ppk', 'ppk_status_at', 'po_ttd_file', 'po_ttd_at', 'kontrak_dibuat_at', 'kontrak_dibaca_at') as $kcol) {
+                       'ronde_ppk', 'ppk_status_at', 'ajuan_id', 'po_ttd_file', 'po_ttd_at', 'kontrak_dibuat_at', 'kontrak_dibaca_at') as $kcol) {
             if (isset($pkAda[$kcol])) { $pkKolom .= ' pk.' . $kcol . ' AS pk_' . $kcol . ','; }
         }
         // Nomor putaran perbaikan dari Ketua Tim (catatan asal 'katim') pada ronde PPK BLU yang berjalan; kolomnya baru ada setelah fitur dipakai
@@ -556,6 +556,14 @@ class OrderLayanan extends \DB\SQL\Mapper {
         if ($rcAda && isset($pkAda['ronde_ppk'])) {
             $pkKolom .= " (SELECT COALESCE(MAX(rc.putaran), 0) FROM po_revisi_catatan rc WHERE rc.po_id = pk.id AND rc.tahap = 'ppk' AND rc.asal = 'katim' AND rc.ronde = pk.ronde_ppk AND rc.state <> 'draf') AS pk_putaran_katim,";
         }
+        // Status draf PKS (draft / selesai) untuk Status Alur: Penyusunan PKS. Hanya dipilih kalau tabel pks_kontrak ada.
+        static $pksAda = null;
+        if ($pksAda === null) {
+            try { $pksAda = count($this->db->exec("SHOW TABLES LIKE 'pks_kontrak'")) > 0; } catch (\Exception $e) { $pksAda = false; }
+        }
+        if ($pksAda) {
+            $pkKolom .= " (SELECT kk.status FROM pks_kontrak kk WHERE kk.po_id = pk.id LIMIT 1) AS pk_pks_status,";
+        }
         $sql = "SELECT o.*, 
                        c.nmcustomer AS nama_perusahaan, c.pt_cv, 
                        COALESCE(NULLIF(c.contactperson_opti, ''), NULLIF(c.contactperson, ''), c.nama_pribadi, '-') AS pic,
@@ -570,7 +578,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                        sp.file_penawaran_ttd, sp.file_bukti_persetujuan, sp.surat_kesanggupan_bayar,
                        pr.judul_proposal, pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
                        pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
-                       b.id AS bast_id, b.status_bast,
+                       b.id AS bast_id, b.status_bast," . self::kolomBastTambahan() . "
                        COALESCE(u_tolak.nama_user, u_tinjau.nama_user, '-') AS nama_penolak,
                        COALESCE(NULLIF(o.alasan_tolak, ''), NULLIF(tk.alasan_penolakan, ''), '-') AS alasan_tolak,
                        COALESCE(o.tanggal_tolak, tk.tanggal_tinjauan) AS tanggal_tolak,
@@ -835,6 +843,25 @@ class OrderLayanan extends \DB\SQL\Mapper {
     }
 
     /**
+     * Kolom tambahan BAST untuk daftar order (kapan dikirim Ketua Tim & kapan pertama dibuka Humas).
+     * Dicek dulu apakah kolomnya sudah ada supaya query tidak gagal di database yang skemanya belum diperbarui.
+     */
+    protected static function kolomBastTambahan(): string {
+        static $kol = null;
+        if ($kol === null) {
+            $kol = '';
+            try {
+                $db = \Base::instance()->get('DB');
+                $ada = array();
+                foreach ((array) $db->exec('SHOW COLUMNS FROM opti_bast') as $c) { $ada[$c['Field']] = true; }
+                if (isset($ada['dikirim_at']))       { $kol .= ' b.dikirim_at AS bast_dikirim_at,'; }
+                if (isset($ada['dibuka_humas_at']))  { $kol .= ' b.dibuka_humas_at AS bast_dibuka_at,'; }
+            } catch (\Throwable $e) { $kol = ''; }
+        }
+        return $kol;
+    }
+
+    /**
      * Posisi PO Kegiatan di rantai Disusun -> Review Ketua Tim -> Verifikasi Humas -> Tim Mitra -> PPK BLU -> PO Aktif.
      * Hanya membaca kolom pk_* hasil join di daftar order; kalau join tidak ada (mis. dipanggil dari detail) mengembalikan null.
      * Aturan sama dengan OrderController::alurPoTahap8.
@@ -879,6 +906,17 @@ class OrderLayanan extends \DB\SQL\Mapper {
         $sr = (string) ($o['pk_status_review'] ?? '');
         if ($sr === 'disetujui') {
             $putKatim = (int) ($o['pk_putaran_katim'] ?? 0);
+            // Ajuan perbaikan PO (PO sudah Aktif, PO versi lama tetap berlaku): tahapnya diberi awalan "Ajuan" supaya tidak tertukar dengan revisi PO baru (sama dengan Daftar PO)
+            if (!empty($o['pk_ajuan_id'])) {
+                $lama = " \u{00B7} PO versi lama tetap berlaku";
+                switch ((string) ($o['pk_ppk_status'] ?? '')) {
+                    case 'minta':          return $r('Ajuan Perbaikan: PPK BLU Meminta Revisi', 'Menunggu keputusan Ketua Tim' . $lama, 'katim', true, $baca('ppk_dibaca_at', 'Ketua Tim'), 'Ajuan: Revisi PPK BLU', 'rose');
+                    case 'katim_kerja':    return $r('Ajuan Perbaikan Dikerjakan Ketua Tim', 'Ketua Tim sedang memperbaiki PO' . $lama, 'katim', true, null, 'Ajuan: Dikerjakan', 'rose');
+                    case 'ketupel_kerja':  return $r('Ajuan Perbaikan Dikerjakan Pelaksana', 'Ketua Pelaksana sedang memperbaiki PO' . $lama, 'pic', true, $baca('ppk_dibaca_at', 'Ketua Pelaksana'), 'Ajuan: Dikerjakan', 'rose');
+                    case 'katim_review':   return $r('Review Hasil Revisi Ajuan Perbaikan', 'Menunggu review Ketua Tim' . $lama, 'katim', true, $baca('ppk_dibaca_at', 'Ketua Tim'), 'Ajuan: Review Revisi', 'rose');
+                }
+                return $r('Ajuan Perbaikan Menunggu Keputusan PPK BLU', 'PO versi lama tetap berlaku sampai PPK BLU memutuskan', 'ppk', false, null, 'Ajuan: Menunggu PPK BLU', 'blue');
+            }
             switch ((string) ($o['pk_ppk_status'] ?? '')) {
                 case 'minta':          return $r('PPK Meminta Revisi', 'Menunggu keputusan Ketua Tim', 'katim', true, $baca('ppk_dibaca_at', 'Ketua Tim'), 'Revisi PPK BLU');
                 case 'katim_kerja':    return $r('Revisi PPK Dikerjakan Ketua Tim', 'Ketua Tim sedang memperbaiki PO', 'katim', true, null, 'Revisi PPK BLU');
@@ -897,9 +935,27 @@ class OrderLayanan extends \DB\SQL\Mapper {
                         return $r('Menunggu Tanda Tangan', 'Ketua Tim mencetak PO, menandatangani, lalu meng-upload PO bertanda tangan', 'katim_ttd', true, null, 'Menunggu Tanda Tangan', 'rose');
                     }
                     if (array_key_exists('pk_kontrak_dibuat_at', $o) && empty($o['pk_kontrak_dibuat_at'])) {
-                        return $r("PO Aktif \u{00B7} Menunggu PKS", 'PO bertanda tangan sudah di-upload, Humas membuat PKS', 'humas_kontrak', true, $baca('kontrak_dibaca_at', 'Humas', 'tervalidasi_mitra_at'), 'PO Aktif', 'emerald');
+                        // PO bertanda tangan sudah di-upload, PKS belum selesai: Penyusunan PKS (draf sudah disimpan) atau PO Ditandatangani (PKS belum dimulai)
+                        if (strtolower(trim((string) ($o['pk_pks_status'] ?? ''))) === 'draft') {
+                            return $r('Penyusunan PKS', 'Draf PKS sudah disimpan, Humas menyelesaikan PKS', 'humas_kontrak', true, $baca('kontrak_dibaca_at', 'Humas', 'tervalidasi_mitra_at'), 'Penyusunan PKS', 'blue');
+                        }
+                        return $r("PO Ditandatangani \u{00B7} Menunggu PKS", 'PO bertanda tangan sudah di-upload, Humas membuat PKS', 'humas_kontrak', true, $baca('kontrak_dibaca_at', 'Humas', 'tervalidasi_mitra_at'), 'PO Ditandatangani', 'emerald');
                     }
-                    return $r('PO Aktif', 'PO bertanda tangan & PKS lengkap, BAST terbuka', '', false, null, 'PO Aktif', 'emerald');
+                    // PKS sudah dibuat: urutan berikutnya Laporan Akhir lalu BAST (BAST baru terbuka kalau Laporan Akhir selesai)
+                    if (array_key_exists('laporan_akhir_selesai_at', $o) && empty($o['laporan_akhir_selesai_at'])) {
+                        return $r('Penyusunan Laporan Akhir', 'PKS sudah dibuat, Laporan Akhir belum diselesaikan', '', false, null, 'Penyusunan Laporan Akhir', 'blue');
+                    }
+                    if (in_array(strtolower(trim((string) ($o['status_bast'] ?? ''))), array('proses_ttd', 'dikirim'), true)) {   // 'proses_ttd' = OptiBast::ST_KIRIM (sudah dikirim Ketua Tim, menunggu nomor Humas)
+                        // BAST sudah dikirim Ketua Tim: bola ada di Humas (isi nomor BAST). Penanda baca = kapan Humas pertama kali membuka BAST ini.
+                        $bcBast = null;
+                        if (array_key_exists('bast_dibuka_at', $o)) {
+                            $tb = trim((string) $o['bast_dibuka_at']);
+                            if ($tb !== '' && (strpos($tb, '0000') === 0 || !strtotime($tb))) { $tb = ''; }
+                            $bcBast = array('belum' => ($tb === ''), 'teks' => ($tb === '' ? 'belum dibuka Humas' : 'dibuka Humas ' . $jam($tb)));
+                        }
+                        return $r('Menunggu Nomor BAST', 'BAST sudah dikirim, menunggu nomor dari Humas', 'humas_bast', false, $bcBast, 'Menunggu Nomor BAST', 'blue');
+                    }
+                    return $r('Penyusunan BAST', 'Laporan Akhir selesai, BAST sedang disusun', '', false, null, 'Penyusunan BAST', 'blue');
                 }
                 return $r('PO Aktif', 'Pengerjaan lab dimulai', '', false, null, 'PO Aktif', 'emerald');
             }
@@ -1002,7 +1058,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
             || ($o['status_pelaksanaan'] ?? '') === 'laporan_selesai';
         if ($isBastDone) {
             return [
-                'label' => 'Selesai (BAST)',
+                'label' => 'BAST Selesai',
                 'class' => 'status-pill status-pill-emerald',
                 'icon'  => 'bi-check2-all',
                 'user'  => 'Tim Mitra & Pelanggan',
@@ -1341,7 +1397,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     sp.file_penawaran_ttd, sp.file_bukti_persetujuan, sp.surat_kesanggupan_bayar,
                     pr.judul_proposal, pr.durasi_kegiatan AS proposal_durasi, pr.status_proposal,
                     pr.file_proposal, pr.estimasi_total_biaya, pr.disetujui_ketua_at AS proposal_disetujui_at,
-                    b.id AS bast_id, b.status_bast,
+                    b.id AS bast_id, b.status_bast," . self::kolomBastTambahan() . "
                     COALESCE((SELECT SUM(jumlah) FROM opti_pembayaran WHERE order_id = o.id), 0) AS total_terbayar,
                        " . $this->sqlPunyaKesanggupan() . " AS punya_kesanggupan,
                     (SELECT MAX(tanggal_bayar) FROM opti_pembayaran WHERE order_id = o.id) AS tanggal_bayar_terakhir,
@@ -2568,6 +2624,7 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     'Review PO',
                     'Pengujian Lab',
                     'Selesai (BAST)',
+                    'BAST Selesai',
                     'Order Selesai'
                 ]) || !empty($r['tanggal_spm_mulai']) || !empty($r['tanggal_terima_sampel']);
 
@@ -2593,6 +2650,11 @@ class OrderLayanan extends \DB\SQL\Mapper {
                     $isTask = true;
                     $reason = 'PO bertanda tangan sudah di-upload, menunggu Humas membuat PKS';
                     $badge = 'Buat PKS';
+                
+                } elseif ($pmHumas === 'humas_bast') {
+                    $isTask = true;
+                    $reason = 'BAST sudah dikirim Ketua Tim, menunggu Humas mengisi nomor BAST';
+                    $badge = 'Beri Nomor BAST';
                 }
             } elseif (in_array($userRole, ['ppk', 'ppk_blu', 'pejabat'], true)) {
                 if ((string) ($r['po_pemegang'] ?? '') === 'ppk') {

@@ -231,10 +231,12 @@
         o = x || {};
         Object.keys(V).forEach(function (k) { hancur(V[k]); });
         V = { dok: baru(o.urlDokumen), ttd: baru(o.urlDoc) };
+        if (o.chrome) { V.dok.zoom = 100; V.ttd.zoom = 100; }   // dibuka dari halaman PKS: mulai di 100%, bukan pas lebar
         $('psNo').textContent = o.nomor || '';
         $('psSub').textContent = o.sub || '';
         var dt = $('psDetail'); dt.hidden = !o.urlDetail; if (o.urlDetail) { dt.href = o.urlDetail; }
         $('psTgTtd').hidden = !!o.urlDoc;
+        if (window.SlideChrome) { window.SlideChrome.pasang(sl, o.chrome || null); }   // tampilan ala Daftar PO (halaman PKS)
         sl.classList.add('on'); sc.classList.add('on'); sl.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
         tab(o.urlDoc ? 'ttd' : 'dok');

@@ -119,7 +119,7 @@
             Swal.fire({
                 icon: 'question', iconColor: '#64748b', title: 'Selesaikan PKS dengan nomor ini?',
                 html: (o.nomor ? '<div class="pnd-nomor">' + String(o.nomor).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div>' : '') +
-                      '<p class="mb-2">Nomor ini akan didaftarkan begitu kamu klik <b>Daftarkan Nomor PKS</b>, lalu PKS langsung ditandai selesai.</p>',
+                      '<p class="mb-2">Nomor ini akan didaftarkan begitu klik <b>Daftarkan Nomor PKS</b>, kemudian PKS akan ditandai selesai.</p>',
                 showCancelButton: true, confirmButtonText: 'Daftarkan Nomor PKS', cancelButtonText: 'Batal', reverseButtons: true,
                 allowOutsideClick: false, customClass: KELAS, buttonsStyling: false
             }).then(function (r) { if (r.isConfirmed) { jalan(o, dur); } });

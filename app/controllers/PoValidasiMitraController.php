@@ -247,7 +247,7 @@ class PoValidasiMitraController extends Controller {
             'ttd_nama'           => (string) ($r['po_ttd_nama'] ?? ''),
             'ttd_oleh'           => (string) ($r['po_ttd_oleh_nama'] ?? ''),
             'url_ttd'            => trim((string) ($r['po_ttd_at'] ?? '')) !== '' ? (\Base::instance()->get('BASE') . '/po-kegiatan/' . (int) $r['id'] . '/po-ttd-mitra') : '',
-            'kontrak_url'        => (trim((string) ($r['kontrak_dibuat_at'] ?? '')) !== '' && $this->isSuperadmin()) ? (\Base::instance()->get('BASE') . '/pks/' . (int) $r['id'] . '/unduh') : '',
+            'kontrak_url'        => trim((string) ($r['kontrak_dibuat_at'] ?? '')) !== '' ? $this->urlPksKartu($r['id']) : '',
             // untuk kolom Status PO: revisi PPK BLU dan sudah dibuka PPK BLU atau belum (penanda di-reset tiap perpindahan tahap)
             'ppk_status'         => (string) ($r['ppk_status'] ?? ''),
             // ---- Map Kendali F.PJT-12-03/1 (kartu di tab Berkas; hanya tanggal, jam tidak dipakai) ----

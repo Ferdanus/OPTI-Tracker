@@ -1203,11 +1203,13 @@
             color: #ffffff !important;
             border-color: transparent !important;
         }
+        /* Badge "Selesai" di stepper: selalu hijau (juga saat tahapnya sedang dibuka) */
+        .stage-status-badge.bg-success,
         .stage-nav-btn.active .stage-status-badge.bg-success {
-            background-color: #ffffff !important;
-            color: #15803d !important;
-            border-color: #ffffff !important;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            background-color: #16a34a !important;
+            color: #ffffff !important;
+            border-color: #16a34a !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
         }
         .stage-badge-aktif {
             background-color: #1e293b;
@@ -2262,7 +2264,7 @@
                     </div>
                     <div class="action-guide-content">
                         <div class="action-guide-meta">
-                            <span class="action-guide-step-badge">Tahap {{ @langkah_berikutnya.step ?: (@langkah_berikutnya.tahap ?: @current_step) }}</span>
+                            <span class="action-guide-step-badge">Tahap {{ @langkah_berikutnya.tahap_tampil ?: (@langkah_berikutnya.step ?: (@langkah_berikutnya.tahap ?: @current_step)) }}</span>
                             <span class="action-guide-role-badge">
                                 {{ @langkah_berikutnya.penanggung_jawab ?: (@langkah_berikutnya.role ?: 'Petugas') }}
                             </span>
@@ -7671,8 +7673,10 @@
                             <true>
                                 <style>
                                     .system-section-card:has(#btWrap) { overflow:clip; }
-                                    .bt-frame { margin:12px -1.5rem 0; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; background:#fff; }   /* selebar kartu, sama dengan bingkai PO dan PKS */
-                                    .bt-frame:not(.bt-full) { position:sticky; top:75px; z-index:40; }
+                                    .bt-frame { margin:12px -1.5rem 0; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; background:#f8fafc; }   /* selebar kartu, sama dengan bingkai PO dan PKS */
+                                    .bt-host { padding:12px 16px 24px; background:#f8fafc; }   /* form BAST dipasang langsung di kartu (tanpa iframe): tidak ada yang terpotong, pratinjau menempel bawaan tema PO */
+                                    .bt-frame.bt-full .bt-host { flex:1; min-height:0; overflow:auto; }
+                                    .bt-frame.bt-full .po-live-card { top:12px; height:calc(100vh - 82px); }
                                     .bt-fh { background:#f1f5f9; border-bottom:1px solid #cbd5e1; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:.8rem; color:#1e293b; }
                                     .bt-frame iframe { display:block; width:100%; height:calc(100vh - 75px - 46px); min-height:420px; border:0; background:#fff; }
                                     .bt-frame.bt-full { position:fixed; inset:0; margin:0; z-index:1060; border:0; display:flex; flex-direction:column; }
@@ -7696,12 +7700,38 @@
                                             <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="btFull"><i class="bi bi-arrows-fullscreen me-1"></i><span>Layar penuh</span></button>
                                         </span>
                                     </div>
-                                    <iframe id="btFrame" src="{{ @bast_embed_url }}" title="Form BAST" loading="lazy"></iframe>
+                                    <div class="bt-host" id="btHost" data-src="{{ @bast_embed_url }}"><div class="text-secondary small py-4 text-center">Memuat form BAST...</div></div>
                                 </div>
                                 <script>
                                 (function () {
                                     var wrap = document.getElementById('btWrap'), full = document.getElementById('btFull');
                                     if (!wrap || !full) { return; }
+                                    /* Muat form BAST langsung ke kartu (fragment tanpa layout). Kalau gagal, jatuh ke iframe seperti sebelumnya. */
+                                    var host = document.getElementById('btHost');
+                                    if (host) {
+                                        var src = host.getAttribute('data-src') || '';
+                                        var pakaiIframe = function () {
+                                            host.className = ''; host.innerHTML = '';
+                                            var f = document.createElement('iframe'); f.id = 'btFrame'; f.title = 'Form BAST'; f.src = src; host.appendChild(f);
+                                        };
+                                        fetch(src.replace(/([?&])embed=1/, '$1fragment=1'), { credentials: 'same-origin', headers: { 'Accept': 'text/html' } })
+                                            .then(function (r) { if (!r.ok) { throw new Error('http ' + r.status); } return r.text(); })
+                                            .then(function (html) {
+                                                if (html.indexOf('id="dpkRoot"') === -1) { throw new Error('bukan form BAST'); }
+                                                window.BT_INLINE = true;
+                                                var tpl = document.createElement('template'); tpl.innerHTML = html;
+                                                var skrip = [].slice.call(tpl.content.querySelectorAll('script'));
+                                                skrip.forEach(function (s) { s.parentNode.removeChild(s); });
+                                                host.innerHTML = '';
+                                                host.appendChild(tpl.content);
+                                                skrip.forEach(function (lama) {
+                                                    var baru = document.createElement('script');
+                                                    if (lama.src) { baru.src = lama.src; baru.async = false; } else { baru.text = lama.textContent; }
+                                                    host.appendChild(baru);
+                                                });
+                                            })
+                                            .catch(function (e) { try { console.error('[BAST]', e); } catch (x) {} pakaiIframe(); });
+                                    }
                                     function penuh(on) {
                                         wrap.classList.toggle('bt-full', on);
                                         document.body.style.overflow = on ? 'hidden' : '';
@@ -7713,6 +7743,66 @@
                                 </script>
                             </true>
                             <false>
+                        <!-- Slide "Lihat BAST" (tab BAST dan tab Berkas), tampilannya sama dengan slide "Lihat PO" -->
+                        <include href="order/_slide_bast.html" />
+                        <check if="{{ @bast.status_bast == 'proses_ttd' }}">
+                        <true>
+                        <!-- BAST sudah dikirim, menunggu nomor Humas: kartu dokumen bergaya PKS (miniatur + rincian + animasi) -->
+                        <include href="order/_kartu_dokumen_css.html" />
+                        <style>
+                            /* Hanya animasi saat disentuh: kartu diam, miniatur terangkat dan tombol naik saat kursor di atas kartu (gaya kt- bawaan) */
+                            .bw-doc .kt-th, .bw-doc .kt-doc-st .ck { animation:none; }
+                            .bw-doc .kt-th-tag { background:#fff; color:#475569; border:1.5px dashed #94a3b8; white-space:nowrap; }
+                            .bw-doc .kt-doc-st .ck { background:#0369a1; }
+                            .bw-sub { color:#64748b; font-size:.84rem; margin:0 0 4px; }
+                            .bw-steps { display:flex; align-items:center; flex-wrap:wrap; gap:6px 0; margin:12px 0 0; }
+                            .bw-s { display:inline-flex; align-items:center; gap:7px; font-size:.78rem; font-weight:700; color:#94a3b8; }
+                            .bw-s i { width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-size:.7rem; border:2px solid #cbd5e1; background:#fff; color:#94a3b8; font-style:normal; }
+                            .bw-s.done { color:#0f172a; }
+                            .bw-s.done i { background:#047857; border-color:#047857; color:#fff; }
+                            .bw-s.now { color:#0369a1; }
+                            .bw-s.now i { border-color:#0369a1; color:#0369a1; background:#e0f2fe; }
+                            .bw-ln { width:28px; height:2px; background:#e2e8f0; margin:0 8px; position:relative; overflow:hidden; border-radius:2px; }
+                            .bw-ln.fill::after { content:""; position:absolute; inset:0; background:#047857; }
+                            .bw-dibuka-belum { color:#b45309; font-weight:700; }
+                            .bw-dibuka-sudah { color:#047857; font-weight:700; }
+                        </style>
+                        <div class="kt-doc bw-doc">
+                            <div class="kt-th" aria-hidden="true">
+                                <div class="kt-th-mock" aria-hidden="true"><div class="lg"><i></i><i></i></div><div class="t"></div><div class="n"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l"></div><div class="l s"></div><div class="l"></div><div class="l"></div></div>
+                                <span class="kt-th-tag">NOMOR BELUM ADA</span>
+                            </div>
+                            <div style="min-width:0;">
+                                <h5 class="kt-doc-st"><span class="ck"><i class="bi bi-hourglass-split"></i></span>Menunggu nomor dari Humas</h5>
+                                <p class="bw-sub">
+                                    <check if="{{ @bast_mode == 'katim' }}">
+                                        <true>Jabatan dan NIP Anda sudah terkirim dan tidak bisa diubah lagi. Humas akan memberi nomor dan memilih pejabat yang mengetahui.</true>
+                                        <false>Humas mengisi nomor urut dan memilih pejabat yang mengetahui; tanggal BAST otomatis hari nomor diberikan.</false>
+                                    </check>
+                                </p>
+                                <div class="bw-steps" aria-label="Posisi BAST">
+                                    <span class="bw-s done"><i class="bi bi-check-lg"></i>Dikirim Ketua Tim</span>
+                                    <span class="bw-ln fill"></span>
+                                    <span class="bw-s {{ @bast.dibuka_humas_at ? 'done' : 'now' }}"><i class="bi {{ @bast.dibuka_humas_at ? 'bi-check-lg' : 'bi-envelope-open' }}"></i>Dibuka Humas</span>
+                                    <span class="bw-ln {{ @bast.dibuka_humas_at ? 'fill' : '' }}"></span>
+                                    <span class="bw-s {{ @bast.dibuka_humas_at ? 'now' : '' }}"><i class="bi bi-hash"></i>Nomor dan pejabat</span>
+                                </div>
+                                <div class="kt-grid">
+                                    <div><small>Pihak Kedua (Ketua Tim)</small><span>{{ @bast.pihak_kedua_nama ?: '-' }}</span></div>
+                                    <div><small>Dikirim</small><span>{{ @bast.dikirim_at ? date('d M Y, H:i', strtotime(@bast.dikirim_at)) : '-' }}</span></div>
+                                    <div><small>Status Humas</small><span class="{{ @bast.dibuka_humas_at ? 'bw-dibuka-sudah' : 'bw-dibuka-belum' }}"><check if="{{ @bast.dibuka_humas_at }}"><true>Dibuka {{ date('d M Y, H:i', strtotime(@bast.dibuka_humas_at)) }}</true><false>Belum dibuka</false></check></span></div>
+                                    <div><small>Mitra</small><span>{{ @order.nama_perusahaan }}</span></div>
+                                </div>
+                                <div class="kt-acts">
+                                    <check if="{{ @bast_mode == 'humas' || @bast_mode == 'penuh' }}">
+                                        <true><a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="kt-btn pri" onclick="triggerStageRead(9)"><i class="bi bi-pencil-square"></i>Isi Nomor BAST</a></true>
+                                        <false><a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="kt-btn pri" data-bast-slide data-no-loader="true"><i class="bi bi-eye"></i>Lihat BAST</a></false>
+                                    </check>
+                                </div>
+                            </div>
+                        </div>
+                        </true>
+                        <false>
                         <div class="p-3 bg-white rounded-3 border border-primary-subtle shadow-xs">
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div>
@@ -7757,7 +7847,7 @@
                                 <div class="d-flex align-items-center flex-wrap gap-2">
                                     <check if="{{ @bast.status_bast == 'selesai' }}">
                                         <true>
-                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1"><i class="bi bi-eye me-1"></i> Buka BAST</a>
+                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" data-bast-slide data-no-loader="true"><i class="bi bi-eye me-1"></i> Buka BAST</a>
                                             <a href="{{ @BASE }}/order/{{ @order.id }}/bast/unduh" class="btn btn-outline-primary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1"><i class="bi bi-file-earmark-word me-1"></i> Unduh Word</a>
                                         </true>
                                         <false>
@@ -7773,7 +7863,7 @@
                                                             </check>
                                                         </true>
                                                         <false>
-                                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" onclick="triggerStageRead(9)"><i class="bi bi-eye me-1"></i> {{ @bast_mode == 'penuh' ? 'Buka BAST' : 'Lihat BAST' }}</a>
+                                                            <a href="{{ @BASE }}/order/{{ @order.id }}/bast/buat" class="btn btn-outline-secondary btn-sm fw-semibold shadow-xs d-inline-flex align-items-center gap-1" data-bast-slide data-no-loader="true"><i class="bi bi-eye me-1"></i> {{ @bast_mode == 'penuh' ? 'Buka BAST' : 'Lihat BAST' }}</a>
                                                         </false>
                                                     </check>
                                                 </false>
@@ -7788,6 +7878,8 @@
                                 </div>
                             </div>
                         </div>
+                        </false>
+                        </check>
                             </false>
                         </check>
                     </check>

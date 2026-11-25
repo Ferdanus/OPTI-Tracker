@@ -191,6 +191,10 @@
     padding: 0.35rem 0.5rem;
     user-select: none;
 }
+/* Tombol Bersihkan Format (penghapus) selalu di pojok kanan baris pertama; tombol lain yang kepanjangan turun ke baris berikutnya di sebelah kirinya */
+.po-editor-toolbar { flex-wrap: nowrap !important; align-items: flex-start !important; }
+.po-editor-toolbar > div:first-child { flex: 1 1 auto; min-width: 0; }
+.po-editor-toolbar > div:last-child { flex: 0 0 auto; }
 .btn-editor {
     display: inline-flex;
     align-items: center;
@@ -273,6 +277,24 @@
 .po-editor-content ol ol ol > li {
     list-style-type: lower-roman !important;
 }
+/* Penomoran huruf besar (A. B. C.): pakai kelas, karena atribut type="A" dianggap sama dengan type="a" oleh CSS */
+.po-editor-content ol.list-alpha-upper,
+.po-editor-content ol.list-alpha-upper > li {
+    list-style-type: upper-alpha !important;
+}
+/* Menu ukuran huruf di toolbar editor (posisi fixed supaya tidak terpotong editor) */
+.fs-wrap { position: relative; display: inline-flex; }
+.btn-editor.fs-btn { min-width: 64px; justify-content: space-between; gap: 4px; padding: 0 0.45rem; }
+.btn-editor.fs-btn .fs-val { font-variant-numeric: tabular-nums; }
+.btn-editor.fs-btn i { font-size: 0.62rem; transition: transform 0.2s; }
+.fs-wrap.open .btn-editor.fs-btn i { transform: rotate(180deg); }
+.fs-menu { position: fixed; z-index: 2100; width: 150px; max-height: 300px; overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px; box-shadow: 0 12px 30px rgba(15,23,42,.16); display: none; }
+.fs-menu.open { display: block; animation: fsMenuIn .14s ease both; }
+@keyframes fsMenuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.fs-opt { display: flex; align-items: center; justify-content: space-between; width: 100%; border: 0; background: transparent; padding: 6px 9px; border-radius: 7px; font-size: 0.8rem; font-weight: 600; color: #334155; cursor: pointer; text-align: left; }
+.fs-opt:hover { background: #f1f5f9; }
+.fs-opt.on { background: #e0e7ff; color: #1d4ed8; }
+.fs-opt small { color: #94a3b8; font-weight: 500; }
 .po-editor-content p, .po-editor-content div {
     margin-bottom: 0.35rem;
     line-height: 1.65;
@@ -1050,7 +1072,65 @@ body.rabxl-lock { overflow: hidden; }
 .rabxl-prev .xlg { border: 0; border-radius: 0; }
 .rabxl-prev .xl-bar { display: none; }
 .rabxl-prev-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 12px; background: #f7f7f7; border-top: 1px solid #e0e0e0; font-size: .8rem; color: #64748b; }
+/* sel Excel yang diubah disorot di pratinjau dokumen (hanya tampilan layar; cetak/PDF tidak ikut) */
+#poLiveSheetContainer td.po-xl-chg { background: #fff3a6 !important; box-shadow: inset 0 0 0 1.5px #f59e0b; position: relative; }
+@media print { #poLiveSheetContainer td.po-xl-chg { background: transparent !important; box-shadow: none !important; } }
 .rabxl-prev-btn { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+/* Edit tabel langsung di tab Excel + tombol Lebarkan/Kecilkan */
+.rabxl-xtool { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
+.rabxl-xbtn { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.rabxl-xban { border-radius: 10px; padding: 7px 12px; font-size: .78rem; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; }
+.rabxl-xban.edit { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+.rabxl-xtool .rabxl-st.busy { color: #92400e; }
+/* Layar penuh tabel Excel (Lebarkan): meluncur dari kanan; preview dokumen bisa dimunculkan di samping */
+#rabXlTiles2 { display: none; }
+#rabXlPXl:not(.rabxl-fs) .rabxl-fshd { display: contents; }
+#rabXlPXl:not(.rabxl-fs) .rabxl-fshd > :not(.rabxl-xtool) { display: none; }
+#rabXlPXl.rabxl-fs:not([hidden]) { position: fixed; inset: 0; z-index: 1050; background: #f1f5f9; display: flex; flex-direction: column; gap: 10px; padding: 14px 18px; overflow: hidden; transform: translateX(100%); transition: transform .32s cubic-bezier(.22,.8,.3,1), right .25s ease; }
+#rabXlPXl.rabxl-fs.go { transform: none; }
+#rabXlPXl.rabxl-fs.rabxl-fswith { right: calc(34vw + 28px); }
+#rabXlPXl.rabxl-fs .rabxl-fshd { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#rabXlPXl.rabxl-fs .rabxl-fshd b { font-size: 1.05rem; }
+#rabXlPXl.rabxl-fs #rabXlTiles2 { display: block; flex: 0 1 auto; min-width: 0; }
+#rabXlPXl.rabxl-fs #rabXlTiles2 .rabxl-tiles { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+#rabXlPXl.rabxl-fs #rabXlTiles2 .rabxl-tile { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 12px; border-radius: 999px; }
+#rabXlPXl.rabxl-fs #rabXlTiles2 .rabxl-tile .l { font-size: .72rem; }
+#rabXlPXl.rabxl-fs #rabXlTiles2 .rabxl-tile .v { font-size: .86rem; margin-top: 0; }
+#rabXlPXl.rabxl-fs #rabXlTiles2 .rabxl-tile .s { display: none; }
+#rabXlPXl.rabxl-fs .rabxl-prev-bar { display: none; }
+#rabXlPXl.rabxl-fs .rabxl-lebar { display: none; }
+#rabXlPXl.rabxl-fs .rabxl-prev { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#rabXlPXl.rabxl-fs .rabxl-prev .xg-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#rabXlPXl.rabxl-fs #rabXlGrid { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#rabXlPXl.rabxl-fs #rabXlGrid .xlg { flex: 1; min-height: 0; }
+#rabXlPXl.rabxl-fs #rabXlGrid .xl-scroll { max-height: none !important; flex: 1; min-height: 0; }
+#poPreviewCol.rabxl-fsprev { display: block !important; position: fixed; top: 14px; right: 14px; bottom: 14px; width: 34vw; max-width: none; flex: none; padding: 0; z-index: 1051; }
+#poPreviewCol.rabxl-fsprev .po-live-card { position: static; height: 100%; }
+#poPreviewCol.rabxl-fsprev .po-live-viewport { height: calc(100% - 56px); min-height: 0; }
+body.rabxl-fslock { overflow: hidden; }
+html.rabxl-fslock { overflow: hidden !important; }
+/* Fokus penuh: tabel memakai seluruh layar; toolbar berupa pil ringkas melayang yang bentuknya tetap */
+#rabXlPXl.rabxl-fs:not([hidden]) { padding: 0; gap: 0; background: #fff; }
+#rabXlPXl.rabxl-fs .rabxl-fshd { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 30; width: max-content; max-width: calc(100% - 24px); background: rgba(255,255,255,.97); border: 1px solid #cbd5e1; border-radius: 22px; box-shadow: 0 6px 24px rgba(15,23,42,.18); padding: 5px 8px 5px 14px; gap: 8px; }
+#rabXlPXl.rabxl-fs .rabxl-fshd b { font-size: .9rem; }
+#rabXlPXl.rabxl-fs.rabxl-editing .rabxl-fshd { border-color: #fb923c; box-shadow: 0 6px 24px rgba(234,88,12,.28); }
+#rabXlPXl.rabxl-fs .rabxl-xtool { display: contents; }
+#rabXlPXl.rabxl-fs #rabXlStatus3 { display: none; }
+#rabXlPXl.rabxl-fs #rabXlTiles2 .rabxl-tile:not(:first-child), #rabXlPXl.rabxl-fs #rabXlFsNama, #rabXlPXl.rabxl-fs #rabXlFsPv, #rabXlPXl.rabxl-fs #rabXlXBan { display: none; }
+#rabXlPXl.rabxl-fs .rabxl-prev { border: 0; border-radius: 0; }
+#rabXlPXl.rabxl-fs #rabXlGrid .xl-scroll { scrollbar-width: none; }
+#rabXlPXl.rabxl-fs #rabXlGrid .xl-scroll::-webkit-scrollbar { display: none; }
+#rabXlPXl.rabxl-fs .rabxl-prev-foot { position: absolute; right: 14px; bottom: 10px; z-index: 25; padding: 3px 6px; background: rgba(255,255,255,.96); border: 1px solid #cbd5e1; border-radius: 999px; box-shadow: 0 4px 14px rgba(15,23,42,.14); }
+#rabXlPXl.rabxl-fs #rabXlPXlRingkas { display: none; }
+#rabXlFsVbar, #rabXlFsHint { display: none; }
+#rabXlPXl.rabxl-fs #rabXlFsVbar { display: block; position: absolute; right: 3px; top: 56px; bottom: 56px; width: 4px; background: #e2e8f0; border-radius: 3px; z-index: 20; pointer-events: none; }
+#rabXlFsVbar i { position: absolute; left: 0; right: 0; background: #64748b; border-radius: 3px; }
+#rabXlPXl.rabxl-fs #rabXlFsHint { display: block; position: absolute; left: 50%; transform: translateX(-50%); bottom: 46px; z-index: 25; background: rgba(30,41,59,.88); color: #fff; border-radius: 8px; padding: 4px 12px; font-size: .74rem; pointer-events: none; animation: rabxlHint 7s forwards; }
+/* Edit tabel di layar penuh: bar atas menempel (bukan melayang) dan pita menu lengkap ala Excel tampil di bawahnya */
+#rabXlPXl.rabxl-fs.rabxl-editing .rabxl-fshd { position: static; transform: none; width: auto; max-width: none; flex: none; border: 0; border-bottom: 1px solid #fed7aa; border-radius: 0; box-shadow: none; background: #fff7ed; padding: 6px 14px; }
+#rabXlPXl.rabxl-fs.rabxl-editing .rabxl-prev .xl-bar { display: flex; }
+#rabXlPXl.rabxl-fs.rabxl-editing .rabxl-prev-foot, #rabXlPXl.rabxl-fs.rabxl-editing #rabXlFsHint { display: none; }
+@keyframes rabxlHint { 0%, 75% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 .rabxl-tabrow .rabxl-st { display: none; }
 .rabxl-xhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; }
 .rabxl-xhead .btn { white-space: nowrap; }
@@ -1097,7 +1177,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
 <!-- Top Header Navigation -->
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
-        <a href="{{ @dari == 'index' ? (@BASE . '/po-kegiatan') : (@revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti)) }}" class="po-kembali btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill shadow-xs">
+        <a href="{{ @dari == 'index' ? (@BASE . '/po-kegiatan') : (@revisi_konteks ? (@dari == 'daftar' ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan')) : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti)) }}" class="po-kembali btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill shadow-xs">
             <i class="bi bi-arrow-left"></i> <span>Kembali</span>
         </a>
         <div>
@@ -1139,7 +1219,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
         .rv-prog i { display: block; height: 100%; width: 0; background: #059669; transition: width .25s; }
         .rv-list { margin: 10px 0 0; padding: 0; list-style: none; display: none; max-height: 40vh; overflow: auto; }
         .rv-list.open { display: block; }
-        .rv-item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-top: 1px solid #fde68a; font-size: .84rem; }
+        .rv-item { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; padding: 6px 0; border-top: 1px solid #fde68a; font-size: .84rem; }
         .rv-item label { margin: 0; cursor: pointer; flex: 1; }
         .rv-item .rv-bag { display: inline-block; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: #92400e; background: #fef3c7; border-radius: 6px; padding: 1px 6px; margin-right: 6px; }
         .rv-item.done label span.t { text-decoration: line-through; color: #64748b; }
@@ -1148,6 +1228,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
         .rv-inline.done { border-left-color: #059669; background: #ecfdf5; }
         .rv-inline .rv-row { display: flex; gap: 8px; align-items: flex-start; }
         .rv-inline .rv-row + .rv-row { margin-top: 6px; }
+        .rv-item .pb-wrap, .rv-inline .pb-wrap { padding-left: 24px; margin-bottom: 4px; }
         .rv-inline label { margin: 0; cursor: pointer; }
         .rv-inline .done-t { text-decoration: line-through; color: #64748b; }
         .rv-asal { display: inline-block; font-size: .66rem; font-weight: 700; padding: 1px 8px; border-radius: 20px; background: #ffedd5; color: #c2410c; margin-right: 6px; }
@@ -1419,6 +1500,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                         <span class="editor-divider"></span>
                         <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                         <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
+                        <button type="button" class="btn-editor" data-cmd="insertAlphaUpperList" title="Penomoran Huruf BESAR (A. B. C.)"><span class="fw-bold" style="font-size:0.75rem;">A.</span></button>
                         <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
                         <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
                         <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
@@ -1435,6 +1517,8 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                         <button type="button" class="btn-editor" data-cmd="uppercase" title="Ubah Huruf BESAR">AA</button>
                         <button type="button" class="btn-editor" data-cmd="lowercase" title="Ubah huruf kecil">aa</button>
                         <button type="button" class="btn-editor" data-cmd="capitalize" title="Kapitalkan Awal Kata">Aa</button>
+                        <span class="editor-divider"></span>
+                        <div class="fs-wrap"><button type="button" class="btn-editor fs-btn" data-cmd="fsToggle" title="Ukuran huruf"><span class="fs-val">11 pt</span><i class="bi bi-chevron-down"></i></button><div class="fs-menu"></div></div>
                     </div>
                     <div class="d-flex align-items-center gap-1">
                         <button type="button" class="btn-editor text-danger" data-cmd="removeFormat" title="Bersihkan Format"><i class="bi bi-eraser"></i></button>
@@ -1486,6 +1570,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                             <span class="editor-divider"></span>
                             <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                             <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
+                            <button type="button" class="btn-editor" data-cmd="insertAlphaUpperList" title="Penomoran Huruf BESAR (A. B. C.)"><span class="fw-bold" style="font-size:0.75rem;">A.</span></button>
                             <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
                             <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
                             <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
@@ -1502,6 +1587,8 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                             <button type="button" class="btn-editor" data-cmd="uppercase" title="Ubah Huruf BESAR">AA</button>
                             <button type="button" class="btn-editor" data-cmd="lowercase" title="Ubah huruf kecil">aa</button>
                             <button type="button" class="btn-editor" data-cmd="capitalize" title="Kapitalkan Awal Kata">Aa</button>
+                            <span class="editor-divider"></span>
+                            <div class="fs-wrap"><button type="button" class="btn-editor fs-btn" data-cmd="fsToggle" title="Ukuran huruf"><span class="fs-val">11 pt</span><i class="bi bi-chevron-down"></i></button><div class="fs-menu"></div></div>
                         </div>
                         <div class="d-flex align-items-center gap-1">
                             <button type="button" class="btn-editor text-danger" data-cmd="removeFormat" title="Bersihkan Format"><i class="bi bi-eraser"></i></button>
@@ -1560,6 +1647,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                             <span class="editor-divider"></span>
                             <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                             <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
+                            <button type="button" class="btn-editor" data-cmd="insertAlphaUpperList" title="Penomoran Huruf BESAR (A. B. C.)"><span class="fw-bold" style="font-size:0.75rem;">A.</span></button>
                             <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
                             <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
                             <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
@@ -1576,6 +1664,8 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                             <button type="button" class="btn-editor" data-cmd="uppercase" title="Ubah Huruf BESAR">AA</button>
                             <button type="button" class="btn-editor" data-cmd="lowercase" title="Ubah huruf kecil">aa</button>
                             <button type="button" class="btn-editor" data-cmd="capitalize" title="Kapitalkan Awal Kata">Aa</button>
+                            <span class="editor-divider"></span>
+                            <div class="fs-wrap"><button type="button" class="btn-editor fs-btn" data-cmd="fsToggle" title="Ukuran huruf"><span class="fs-val">11 pt</span><i class="bi bi-chevron-down"></i></button><div class="fs-menu"></div></div>
                         </div>
                         <div class="d-flex align-items-center gap-1">
                             <button type="button" class="btn-editor text-danger" data-cmd="removeFormat" title="Bersihkan Format"><i class="bi bi-eraser"></i></button>
@@ -1612,6 +1702,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                             <span class="editor-divider"></span>
                             <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                             <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
+                            <button type="button" class="btn-editor" data-cmd="insertAlphaUpperList" title="Penomoran Huruf BESAR (A. B. C.)"><span class="fw-bold" style="font-size:0.75rem;">A.</span></button>
                             <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
                             <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
                             <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
@@ -1628,6 +1719,8 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                             <button type="button" class="btn-editor" data-cmd="uppercase" title="Ubah Huruf BESAR">AA</button>
                             <button type="button" class="btn-editor" data-cmd="lowercase" title="Ubah huruf kecil">aa</button>
                             <button type="button" class="btn-editor" data-cmd="capitalize" title="Kapitalkan Awal Kata">Aa</button>
+                            <span class="editor-divider"></span>
+                            <div class="fs-wrap"><button type="button" class="btn-editor fs-btn" data-cmd="fsToggle" title="Ukuran huruf"><span class="fs-val">11 pt</span><i class="bi bi-chevron-down"></i></button><div class="fs-menu"></div></div>
                         </div>
                         <div class="d-flex align-items-center gap-1">
                             <button type="button" class="btn-editor text-danger" data-cmd="removeFormat" title="Bersihkan Format"><i class="bi bi-eraser"></i></button>
@@ -1669,6 +1762,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                                 <span class="editor-divider"></span>
                                 <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                                 <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
+                                <button type="button" class="btn-editor" data-cmd="insertAlphaUpperList" title="Penomoran Huruf BESAR (A. B. C.)"><span class="fw-bold" style="font-size:0.75rem;">A.</span></button>
                                 <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
                                 <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
                                 <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
@@ -1685,6 +1779,8 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                                 <button type="button" class="btn-editor" data-cmd="uppercase" title="Ubah Huruf BESAR">AA</button>
                                 <button type="button" class="btn-editor" data-cmd="lowercase" title="Ubah huruf kecil">aa</button>
                                 <button type="button" class="btn-editor" data-cmd="capitalize" title="Kapitalkan Awal Kata">Aa</button>
+                                <span class="editor-divider"></span>
+                                <div class="fs-wrap"><button type="button" class="btn-editor fs-btn" data-cmd="fsToggle" title="Ukuran huruf"><span class="fs-val">11 pt</span><i class="bi bi-chevron-down"></i></button><div class="fs-menu"></div></div>
                             </div>
                             <div class="d-flex align-items-center gap-1">
                                 <button type="button" class="btn-editor text-danger" data-cmd="removeFormat" title="Bersihkan Format"><i class="bi bi-eraser"></i></button>
@@ -1733,6 +1829,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                                 <span class="editor-divider"></span>
                                 <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                                 <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
+                                <button type="button" class="btn-editor" data-cmd="insertAlphaUpperList" title="Penomoran Huruf BESAR (A. B. C.)"><span class="fw-bold" style="font-size:0.75rem;">A.</span></button>
                                 <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
                                 <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
                                 <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
@@ -1749,6 +1846,8 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                                 <button type="button" class="btn-editor" data-cmd="uppercase" title="Ubah Huruf BESAR">AA</button>
                                 <button type="button" class="btn-editor" data-cmd="lowercase" title="Ubah huruf kecil">aa</button>
                                 <button type="button" class="btn-editor" data-cmd="capitalize" title="Kapitalkan Awal Kata">Aa</button>
+                                <span class="editor-divider"></span>
+                                <div class="fs-wrap"><button type="button" class="btn-editor fs-btn" data-cmd="fsToggle" title="Ukuran huruf"><span class="fs-val">11 pt</span><i class="bi bi-chevron-down"></i></button><div class="fs-menu"></div></div>
                             </div>
                             <div class="d-flex align-items-center gap-1">
                                 <button type="button" class="btn-editor text-danger" data-cmd="removeFormat" title="Bersihkan Format"><i class="bi bi-eraser"></i></button>
@@ -2015,6 +2114,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                             <span class="editor-divider"></span>
                             <button type="button" class="btn-editor" data-cmd="insertOrderedList" title="Penomoran Angka (1. 2. 3.)"><i class="bi bi-list-ol"></i></button>
                             <button type="button" class="btn-editor" data-cmd="insertAlphaList" title="Penomoran Huruf (a. b. c.)"><span class="fw-bold" style="font-size:0.75rem;">a.</span></button>
+                            <button type="button" class="btn-editor" data-cmd="insertAlphaUpperList" title="Penomoran Huruf BESAR (A. B. C.)"><span class="fw-bold" style="font-size:0.75rem;">A.</span></button>
                             <button type="button" class="btn-editor" data-cmd="insertUnorderedList" title="Daftar Bullet (•)"><i class="bi bi-list-ul"></i></button>
                             <button type="button" class="btn-editor" data-cmd="indent" title="Jorok baris pertama paragraf (Tab)"><i class="bi bi-text-indent-left"></i></button>
                             <button type="button" class="btn-editor" data-cmd="outdent" title="Hapus jorokan (Shift+Tab)"><i class="bi bi-text-indent-right"></i></button>
@@ -2031,6 +2131,8 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
                             <button type="button" class="btn-editor" data-cmd="uppercase" title="Ubah Huruf BESAR">AA</button>
                             <button type="button" class="btn-editor" data-cmd="lowercase" title="Ubah huruf kecil">aa</button>
                             <button type="button" class="btn-editor" data-cmd="capitalize" title="Kapitalkan Awal Kata">Aa</button>
+                            <span class="editor-divider"></span>
+                            <div class="fs-wrap"><button type="button" class="btn-editor fs-btn" data-cmd="fsToggle" title="Ukuran huruf"><span class="fs-val">11 pt</span><i class="bi bi-chevron-down"></i></button><div class="fs-menu"></div></div>
                         </div>
                         <div class="d-flex align-items-center gap-1">
                             <button type="button" class="btn-editor text-danger" data-cmd="removeFormat" title="Bersihkan Format"><i class="bi bi-eraser"></i></button>
@@ -2067,7 +2169,7 @@ table.rabxl-doctbl tr[data-r] { cursor: pointer; } table.rabxl-doctbl tr[data-r]
     <!-- Sticky Bottom Action Bar -->
     <div class="po-sticky-bar">
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ @dari == 'index' ? (@BASE . '/po-kegiatan') : (@revisi_konteks ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti)) }}" class="po-kembali btn btn-outline-secondary px-3.5 py-2 rounded-pill shadow-xs fw-semibold">
+            <a href="{{ @dari == 'index' ? (@BASE . '/po-kegiatan') : (@revisi_konteks ? (@dari == 'daftar' ? (@BASE . '/po-kegiatan/daftar') : (@BASE . '/po-kegiatan')) : (@BASE . '/po-kegiatan?divisi=' . @order.jenis_layanan_opti)) }}" class="po-kembali btn btn-outline-secondary px-3.5 py-2 rounded-pill shadow-xs fw-semibold">
                 <i class="bi bi-arrow-left me-1"></i> Batal / Kembali
             </a>
             <button type="button" class="btn btn-outline-primary btn-sm px-3 py-1.5 rounded-pill shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 d-xl-none" onclick="switchPoViewMode('preview')">
@@ -2571,20 +2673,32 @@ function findActiveOl(editorEl) {
 function makeOlAlpha(ol) {
     if (!ol) return;
     ol.setAttribute('type', 'a');
+    ol.classList.remove('list-alpha-upper');
     ol.classList.add('list-alpha');
     ol.style.setProperty('list-style-type', 'lower-alpha', 'important');
+}
+
+// Penomoran huruf besar: A. B. C.
+function makeOlAlphaUpper(ol) {
+    if (!ol) return;
+    ol.setAttribute('type', 'A');
+    ol.classList.remove('list-alpha');
+    ol.classList.add('list-alpha-upper');
+    ol.style.setProperty('list-style-type', 'upper-alpha', 'important');
 }
 
 function makeOlDecimal(ol) {
     if (!ol) return;
     ol.removeAttribute('type');
     ol.classList.remove('list-alpha');
+    ol.classList.remove('list-alpha-upper');
     ol.style.removeProperty('list-style-type');
 }
 
 function normalizeLists(editorEl) {
     if (!editorEl) return;
     editorEl.querySelectorAll('ol').forEach(function (ol) {
+        if (ol.classList.contains('list-alpha-upper')) { return; }   // A. B. C. dipilih pengguna: jangan diubah otomatis
         var isNested = false;
         var p = ol.parentNode;
         while (p && p !== editorEl) {
@@ -3459,16 +3573,20 @@ function updateEditorToolbar(wrap) {
     var anchor = sel && sel.anchorNode;
     var curList = (anchor && editorEl && editorEl.contains(anchor)) ? getClosestList(anchor, editorEl) : curOl;
 
-    var isAlpha = curList && curList.nodeName === 'OL' && (curList.getAttribute('type') === 'a' || curList.classList.contains('list-alpha') || curList.style.listStyleType === 'lower-alpha');
-    var isNum = curList && curList.nodeName === 'OL' && !isAlpha;
+    var isAlphaUp = !!(curList && curList.nodeName === 'OL' && curList.classList.contains('list-alpha-upper'));
+    var isAlpha = !isAlphaUp && curList && curList.nodeName === 'OL' && (curList.getAttribute('type') === 'a' || curList.classList.contains('list-alpha') || curList.style.listStyleType === 'lower-alpha');
+    var isNum = curList && curList.nodeName === 'OL' && !isAlpha && !isAlphaUp;
     var isUl = curList && curList.nodeName === 'UL';
 
     var btnNum = wrap.querySelector('.btn-editor[data-cmd="insertOrderedList"]');
     var btnAlpha = wrap.querySelector('.btn-editor[data-cmd="insertAlphaList"]');
+    var btnAlphaUp = wrap.querySelector('.btn-editor[data-cmd="insertAlphaUpperList"]');
     var btnUl = wrap.querySelector('.btn-editor[data-cmd="insertUnorderedList"]');
 
     if (btnNum) btnNum.classList.toggle('is-active', !!isNum);
     if (btnAlpha) btnAlpha.classList.toggle('is-active', !!isAlpha);
+    if (btnAlphaUp) btnAlphaUp.classList.toggle('is-active', isAlphaUp);
+    tampilUkuranHuruf(wrap, editorEl);
     if (btnUl) btnUl.classList.toggle('is-active', !!isUl);
 
     // Deteksi alignment aktif secara presisi
@@ -3531,6 +3649,102 @@ function updateEditorToolbar(wrap) {
     });
 }
 
+/* ===== Ukuran huruf (pt) di editor PO =====
+   Ukuran bawaan dokumen PO 11 pt. Pilihan dibungkus <span style="font-size: N pt"> supaya ikut tampil di pratinjau dan PDF PO. */
+var PO_UKURAN_HURUF = [8, 9, 10, 11, 12, 14, 16, 18, 20];
+var PO_UKURAN_BAWAAN = 11;
+
+function tutupPilihUkuran() {
+    document.querySelectorAll('.fs-menu.open').forEach(function (m) { m.classList.remove('open'); });
+    document.querySelectorAll('.fs-wrap.open').forEach(function (w) { w.classList.remove('open'); });
+}
+
+function togglePilihUkuran(wrap) {
+    var fw = wrap.querySelector('.fs-wrap');
+    if (!fw) return;
+    var menu = fw.querySelector('.fs-menu');
+    var buka = !menu.classList.contains('open');
+    tutupPilihUkuran();
+    if (!buka) return;
+    var r = fw.querySelector('.fs-btn').getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 160)) + 'px';
+    menu.style.top = (r.bottom + 4) + 'px';
+    var cur = parseInt((fw.querySelector('.fs-val').textContent || '').replace(/\D/g, ''), 10);
+    menu.querySelectorAll('.fs-opt').forEach(function (o) { o.classList.toggle('on', parseInt(o.getAttribute('data-fs'), 10) === cur); });
+    menu.classList.add('open');
+    fw.classList.add('open');
+}
+
+function siapkanPilihUkuran(wrap, editorEl, ta) {
+    var fw = wrap.querySelector('.fs-wrap');
+    if (!fw) return;
+    var menu = fw.querySelector('.fs-menu');
+    if (!menu.children.length) {
+        menu.innerHTML = '<button type="button" class="fs-opt" data-fs="0">Normal <small>' + PO_UKURAN_BAWAAN + ' pt</small></button>' +
+            PO_UKURAN_HURUF.map(function (u) { return '<button type="button" class="fs-opt" data-fs="' + u + '">' + u + ' pt</button>'; }).join('');
+    }
+    menu.addEventListener('mousedown', function (e) { e.preventDefault(); });   // seleksi teks di editor tetap terjaga
+    menu.addEventListener('click', function (e) {
+        var o = e.target.closest('.fs-opt');
+        if (!o) return;
+        e.preventDefault();
+        terapkanUkuranHuruf(editorEl, parseInt(o.getAttribute('data-fs'), 10));
+        tutupPilihUkuran();
+        normalizeLists(editorEl);
+        syncEditorToTextarea(editorEl, ta);
+        updateEditorToolbar(wrap);
+    });
+}
+
+function terapkanUkuranHuruf(editorEl, pt) {
+    editorEl.focus();
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount || !editorEl.contains(sel.anchorNode)) return;
+    if (sel.isCollapsed) {
+        // tanpa blok: berlaku untuk baris / paragraf tempat kursor berada
+        var n = sel.anchorNode;
+        if (n.nodeType === 3) n = n.parentNode;
+        while (n && n !== editorEl && !/^(LI|P|DIV|TD|TH)$/.test(n.nodeName)) n = n.parentNode;
+        if (n && n !== editorEl) {
+            if (pt) {
+                n.style.fontSize = pt + 'pt';
+            } else {
+                n.style.removeProperty('font-size');
+                n.querySelectorAll('[style*="font-size"]').forEach(function (x) { x.style.removeProperty('font-size'); });
+                if (!n.getAttribute('style')) n.removeAttribute('style');
+            }
+        }
+        return;
+    }
+    if (!pt) {
+        // Normal: buang ukuran huruf pada bagian yang diblok
+        var rg = sel.getRangeAt(0);
+        editorEl.querySelectorAll('[style*="font-size"]').forEach(function (x) {
+            if (rg.intersectsNode(x)) { x.style.removeProperty('font-size'); if (!x.getAttribute('style')) { x.removeAttribute('style'); } }
+        });
+        return;
+    }
+    document.execCommand('fontSize', false, '7');
+    editorEl.querySelectorAll('font[size="7"]').forEach(function (f) {
+        var sp = document.createElement('span');
+        sp.style.fontSize = pt + 'pt';
+        sp.innerHTML = f.innerHTML;
+        f.parentNode.replaceChild(sp, f);
+    });
+    editorEl.querySelectorAll('span[style*="font-size"] span[style*="font-size"]').forEach(function (x) { x.style.removeProperty('font-size'); });
+}
+
+function tampilUkuranHuruf(wrap, editorEl) {
+    var v = wrap.querySelector('.fs-val');
+    if (!v || !editorEl) return;
+    var sel = window.getSelection();
+    var n = sel && sel.anchorNode;
+    if (!n || !editorEl.contains(n)) return;
+    if (n.nodeType === 3) n = n.parentNode;
+    var px = parseFloat(window.getComputedStyle(n).fontSize);
+    if (px) v.textContent = Math.round(px * 3 / 4) + ' pt';
+}
+
 function executeEditorCommand(wrap, editorEl, ta, cmd) {
     if (['adjustColWidth', 'addRow', 'delRow', 'addCol', 'delCol', 'delTable'].indexOf(cmd) === -1) {
         editorEl.focus();
@@ -3543,7 +3757,7 @@ function executeEditorCommand(wrap, editorEl, ta, cmd) {
         var sel = window.getSelection();
         var anchor = sel && sel.anchorNode;
         var curList = (anchor && editorEl.contains(anchor)) ? getClosestList(anchor, editorEl) : findActiveOl(editorEl);
-        var isAlpha = curList && curList.nodeName === 'OL' && (curList.getAttribute('type') === 'a' || curList.classList.contains('list-alpha') || curList.style.listStyleType === 'lower-alpha');
+        var isAlpha = curList && curList.nodeName === 'OL' && (curList.getAttribute('type') === 'a' || curList.classList.contains('list-alpha') || curList.classList.contains('list-alpha-upper') || curList.style.listStyleType === 'lower-alpha');
 
         if (curList && curList.nodeName === 'OL') {
             var isNested = false;
@@ -3580,7 +3794,9 @@ function executeEditorCommand(wrap, editorEl, ta, cmd) {
                 p = p.parentNode;
             }
 
-            if (isAlpha) {
+            if (curList.classList.contains('list-alpha-upper')) {
+                makeOlAlpha(curList);   // daftar A. B. C. diganti jadi a. b. c.
+            } else if (isAlpha) {
                 if (isNested) {
                     document.execCommand('outdent', false, null);
                     normalizeLists(editorEl);
@@ -3597,6 +3813,23 @@ function executeEditorCommand(wrap, editorEl, ta, cmd) {
             var newOl = findActiveOl(editorEl);
             makeOlAlpha(newOl);
         }
+    } else if (cmd === 'insertAlphaUpperList') {
+        var selU = window.getSelection();
+        var anchorU = selU && selU.anchorNode;
+        var curListU = (anchorU && editorEl.contains(anchorU)) ? getClosestList(anchorU, editorEl) : findActiveOl(editorEl);
+        if (curListU && curListU.nodeName === 'OL') {
+            if (curListU.classList.contains('list-alpha-upper')) {
+                document.execCommand('insertOrderedList', false, null);   // sudah A. B. C.: matikan penomoran
+            } else {
+                makeOlAlphaUpper(curListU);
+            }
+        } else {
+            document.execCommand('insertOrderedList', false, null);
+            makeOlAlphaUpper(findActiveOl(editorEl));
+        }
+    } else if (cmd === 'fsToggle') {
+        togglePilihUkuran(wrap);
+        return;
     } else if (cmd === 'indent' || cmd === 'outdent') {
         // sama dengan tombol Tab / Shift+Tab di editor
         indentEditor(editorEl, cmd === 'outdent');
@@ -3966,6 +4199,10 @@ function initTableResizing(editorEl, ta, wrap) {
     });
 }
 
+document.addEventListener('click', function (e) { if (!e.target.closest('.fs-wrap') && !e.target.closest('.fs-menu')) { tutupPilihUkuran(); } });
+window.addEventListener('scroll', tutupPilihUkuran, true);
+window.addEventListener('resize', tutupPilihUkuran);
+
 function initAllPoEditors() {
     document.querySelectorAll('.po-editor-wrap').forEach(function (wrap) {
         var ta = wrap.querySelector('textarea');
@@ -3985,6 +4222,8 @@ function initAllPoEditors() {
             normalizeLists(editorEl);
             syncEditorToTextarea(editorEl, ta);
         };
+
+        siapkanPilihUkuran(wrap, editorEl, ta);
 
         // Toolbar buttons
         wrap.querySelectorAll('.btn-editor').forEach(function (btn) {
@@ -6043,7 +6282,7 @@ function hitungRabLive() {
 /* ============================================================ */
 var RAB_XL_BASE = '{{ @BASE }}';
 var rabXl = { mode: '', tahap: 'kosong', busy: false, galat: '', token: '', nama: '', ukuran: 0, waktu: '', hasil: null, pilih: {}, dipakai: [], koreksi: [], masalah: [],
-              payload: null, wb: null, xg: null, laci: null, edited: {}, sheetNama: '', pustaka: null, manual: false, tab: 'ring', memuat: false, simpanBusy: false, ulang: false, berubah: false, kembali: false, ver: 0, timer: null, hitungBusy: false, status: '', statusGalat: false, terapBusy: false };
+              payload: null, wb: null, xg: null, laci: null, edited: {}, sheetNama: '', pustaka: null, manual: false, tab: 'ring', memuat: false, simpanBusy: false, ulang: false, berubah: false, kembali: false, ver: 0, timer: null, hitungBusy: false, status: '', statusGalat: false, terapBusy: false, edit: false, fs: false, fsPrev: false, snap: null };
 
 function rabXlNorm(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
 function rabXlUkuran(b) { return b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
@@ -6080,7 +6319,7 @@ function rabXlPilihMode(m) {
     if (m === 'manual') {
         // lepas dari Excel: isi kategori di bawah tetap ada dan bisa dilanjutkan manual
         rabXl.tahap = 'kosong'; rabXl.hasil = null; rabXl.token = ''; rabXl.nama = ''; rabXl.dipakai = []; rabXl.koreksi = []; rabXl.masalah = [];
-        rabXl.payload = null; rabXl.wb = null; rabXl.xg = null; rabXl.laci = null; rabXl.berubah = false; rabXl.kembali = false; rabXl.manual = false; rabXl.tab = 'ring'; clearTimeout(rabXl.timer);
+        rabXl.payload = null; rabXl.wb = null; rabXl.xg = null; rabXl.laci = null; rabXl.berubah = false; rabXl.kembali = false; rabXl.manual = false; rabXl.tab = 'ring'; clearTimeout(rabXl.timer); rabXl.edit = false; rabXl.snap = null;
     }
     rabXlSetHidden(); rabXlGambar(); hitungRabLive();
 }
@@ -6122,10 +6361,33 @@ function rabXlIsiKategori() {
 }
 // Isi RAB diubah lewat kode (bukan ketikan), jadi pratinjau dokumen di kanan perlu disegarkan sendiri.
 function rabXlSegarkanPratinjau() { if (typeof window.triggerLivePreviewRefresh === 'function') { window.triggerLivePreviewRefresh(); } }
+// Sorot sel Excel yang diubah (rabXl.edited: "Sheet!A1") pada tabel RAB di pratinjau dokumen. Hanya kelas di layar, HTML asli untuk cetak tidak disentuh.
+function rabXlSorotPratinjau() {
+    var c = document.getElementById('poLiveSheetContainer'); if (!c) return;
+    var peta = {}, n = 0, k, p, sh, a;
+    for (k in (rabXl.edited || {})) {
+        if (!rabXl.edited[k]) continue;
+        p = k.lastIndexOf('!'); if (p < 1) continue;
+        sh = k.slice(0, p); a = k.slice(p + 1); (peta[sh] = peta[sh] || {})[a] = true;
+    }
+    Array.prototype.forEach.call(c.querySelectorAll('td.po-xl-chg'), function (td) { td.classList.remove('po-xl-chg'); td.removeAttribute('title'); });
+    Array.prototype.forEach.call(c.querySelectorAll('table[data-sh]'), function (t) {
+        var m = peta[t.getAttribute('data-sh')]; if (!m) return;
+        Array.prototype.forEach.call(t.querySelectorAll('td[data-a]'), function (td) {
+            if (m[td.getAttribute('data-a')]) { td.classList.add('po-xl-chg'); td.title = 'Diubah di Excel (' + td.getAttribute('data-a') + ')'; n++; }
+        });
+    });
+    return n;
+}
+(function () {
+    var c = document.getElementById('poLiveSheetContainer'), t = 0;
+    if (!c || !window.MutationObserver) return;
+    new MutationObserver(function () { clearTimeout(t); t = setTimeout(function () { try { rabXlSorotPratinjau(); } catch (e) { /* sorotan hanya pelengkap */ } }, 30); }).observe(c, { childList: true, subtree: true });
+})();
 function rabXlTerapkan() {
     if (!rabXl.hasil) return;
     rabXlIsiKategori();
-    rabXl.tahap = 'terapkan'; rabXl.waktu = rabXlSekarang(); rabXl.manual = false; rabXl.tab = 'ring'; rabXl.drawer = false;
+    rabXl.tahap = 'terapkan'; rabXl.waktu = rabXlSekarang(); rabXl.manual = false; rabXl.tab = 'ring'; rabXl.drawer = false; rabXl.edit = false; rabXl.snap = null;
     rabXlSetHidden(); hitungRabLive(); rabXlGambar();
     var pn = document.getElementById('rabXlPanel'); if (pn && pn.scrollIntoView) { pn.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 }
@@ -6184,7 +6446,7 @@ function rabXlPustaka(cb) {
 }
 function rabXlMuatGrid(g) {
     rabXl.payload = (g && g.sheets && g.sheets.length) ? g : null; rabXl.wb = null; rabXl.xg = null; rabXl.laci = null; rabXl.edited = {}; rabXl.sheetNama = '';
-    rabXl.berubah = false; rabXl.ver = 0; rabXl.status = ''; rabXl.statusGalat = false; clearTimeout(rabXl.timer);
+    rabXl.berubah = false; rabXl.ver = 0; rabXl.status = ''; rabXl.statusGalat = false; clearTimeout(rabXl.timer); rabXl.edit = false; rabXl.snap = null;
     rabXl.pilih = {};
     if (rabXl.payload && rabXl.hasil) { (rabXl.hasil.sheets || []).forEach(function (s) { if (s.jenis === 'rab' || s.jenis === 'rekap') rabXl.pilih[s.nama] = true; }); }
 }
@@ -6193,11 +6455,12 @@ function rabXlInfoSheet(nama) { var r = null; ((rabXl.hasil && rabXl.hasil.sheet
 function rabXlCatatUbah(ev) {
     if (ev && ev.reset) return;
     rabXl.berubah = true; rabXl.ver++; rabXl.edited = (rabXl.xg && rabXl.xg.edited) || {}; rabXl.status = 'Mengubah...'; rabXl.statusGalat = false; rabXlStatusGambar();
-    clearTimeout(rabXl.timer); rabXl.timer = setTimeout(function () { if (rabXl.tahap === 'terapkan') { rabXlSimpanTerap(); } else { rabXlHitung(false); } }, 600);
+    clearTimeout(rabXl.timer); rabXl.timer = setTimeout(function () { if (rabXl.tahap === 'terapkan' && !rabXl.edit) { rabXlSimpanTerap(); } else { rabXlHitung(false); } }, 600);
 }
 function rabXlStatusGambar() {
-    var e = document.getElementById('rabXlStatus'); if (!e) return;
-    e.textContent = rabXl.status || (rabXl.berubah ? 'Sudah diubah' : ''); e.className = 'rabxl-st' + (rabXl.statusGalat ? ' err' : '');
+    var teks = rabXl.status || (rabXl.berubah ? (rabXl.edit ? 'Belum disimpan' : 'Sudah diubah') : '');
+    var kls = 'rabxl-st' + (rabXl.statusGalat ? ' err' : (rabXl.edit && rabXl.berubah ? ' busy' : ''));
+    ['rabXlStatus', 'rabXlStatus2', 'rabXlStatus3'].forEach(function (id) { var e = document.getElementById(id); if (e) { e.textContent = teks; e.className = kls; } });
 }
 // Kirim isi tabel ke server: dianalisis ulang (simpan=false) atau ditulis ke berkas Excel (simpan=true).
 function rabXlHitung(simpan) {
@@ -6292,27 +6555,31 @@ function rabXlLompat(sheet, baris) {
     var w = document.getElementById('rabXlWrap'); if (w && w.scrollIntoView) { w.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
 }
 // Buat tabel (sekali per tampilan panel). wb tetap hidup walau panel digambar ulang, jadi isiannya tidak hilang.
+function rabXlBuatGrid(mount) {
+    var dp = rabXlDipilih(); var awal = rabXl.sheetNama && rabXl.wb.order.indexOf(rabXl.sheetNama) >= 0 ? rabXl.sheetNama : (dp[0] || rabXl.wb.order[0]);
+    rabXl.xg = new XL.Grid({
+        mount: mount, wb: rabXl.wb, sheet: awal, fill: true, maxHeight: (rabXl.drawer ? Math.max(240, window.innerHeight - 360) : 400), readonly: (rabXl.tahap === 'terapkan' && !rabXl.edit), toolbar: (rabXl.tahap !== 'terapkan' || !!(rabXl.edit && rabXl.fs)), title: rabXl.nama || 'Tabel Excel',
+        tabList: rabXlDipilih,
+        tabBadge: function (n) {
+            var s = rabXlInfoSheet(n), bad = (rabXlPeranBaris().bad[n]) || {}, ada = Object.keys(bad).length;
+            var warna = ada ? '#dc2626' : (s && s.jenis === 'rab' ? '#2563eb' : (s && s.jenis === 'rekap' ? '#d97706' : '#94a3b8'));
+            return '<span class="tb" style="background:' + warna + '"></span>';
+        },
+        onSheet: function (n) { rabXl.sheetNama = n; },
+        onChange: rabXlCatatUbah
+    });
+    rabXl.xg.edited = rabXl.edited || {}; rabXl.xg.render();
+    if (rabXl.tahap === 'terapkan' && rabXl.xg.el.tabs && rabXlDipilih().length <= 1) { rabXl.xg.el.tabs.style.display = 'none'; }
+}
+
 function rabXlBangun() {
     if (!document.getElementById('rabXlGrid')) return;
     rabXlPustaka(function () {
         var mount = document.getElementById('rabXlGrid'); if (!mount || (rabXl.tahap !== 'dibaca' && rabXl.tahap !== 'terapkan') || !rabXl.payload) return;
         var pertama = false;
         if (!rabXl.wb) { rabXl.wb = XL.fromGrid(rabXl.payload); pertama = true; }
-        var dp = rabXlDipilih(); var awal = rabXl.sheetNama && rabXl.wb.order.indexOf(rabXl.sheetNama) >= 0 ? rabXl.sheetNama : (dp[0] || rabXl.wb.order[0]);
-        rabXl.xg = new XL.Grid({
-            mount: mount, wb: rabXl.wb, sheet: awal, fill: true, maxHeight: (rabXl.drawer ? Math.max(240, window.innerHeight - 360) : 400), readonly: (rabXl.tahap === 'terapkan'), toolbar: (rabXl.tahap !== 'terapkan'), title: rabXl.nama || 'Tabel Excel',
-            tabList: rabXlDipilih,
-            tabBadge: function (n) {
-                var s = rabXlInfoSheet(n), bad = (rabXlPeranBaris().bad[n]) || {}, ada = Object.keys(bad).length;
-                var warna = ada ? '#dc2626' : (s && s.jenis === 'rab' ? '#2563eb' : (s && s.jenis === 'rekap' ? '#d97706' : '#94a3b8'));
-                return '<span class="tb" style="background:' + warna + '"></span>';
-            },
-            onSheet: function (n) { rabXl.sheetNama = n; },
-            onChange: rabXlCatatUbah
-        });
-        rabXl.xg.edited = rabXl.edited || {}; rabXl.xg.render();
+        rabXlBuatGrid(mount);
         var pb = document.getElementById('rabXlPrevBar'); if (pb) { pb.textContent = rabXl.nama || 'Tabel Excel'; }
-        if (rabXl.tahap === 'terapkan' && rabXl.xg.el.tabs && rabXlDipilih().length <= 1) { rabXl.xg.el.tabs.style.display = 'none'; }
         rabXl.laci = new XL.Laci({ mount: document.getElementById('rabXlWrap'), pill: document.getElementById('rabXlPill'), onJump: rabXlLompat });
         // di tahap terapkan tombol ringkas bisa diklik dari tab mana pun: otomatis pindah ke tab Excel
         document.getElementById('rabXlPill').addEventListener('click', function () { if (rabXl.tahap === 'terapkan' && rabXl.tab !== 'xl') { rabXlTab('xl'); if (!rabXl.laci.open) { rabXl.laci.open = true; rabXl.laci.paint(); } } });
@@ -6490,6 +6757,7 @@ function rabXlQty(it) {
     return p.join(' × ') + ' × ' + rupiah(it.satuan);
 }
 function rabXlTab(t) {
+    if (t !== 'xl' && rabXl.fs) { rabXlFsSet(false); }
     rabXl.tab = t;
     document.querySelectorAll('#rabXlTabs [data-xt]').forEach(function (b) { b.classList.toggle('on', b.dataset.xt === t); });
     var m = { ring: 'rabXlPRing', rinci: 'rabXlPRinci', xl: 'rabXlPXl' };
@@ -6503,11 +6771,13 @@ function rabXlTerapIsi() {
     var banding = (nk !== null && nk !== undefined) ? nk : (pk > 0 ? pk : null), sel = banding === null ? null : hs.total - banding, nKat = (hs.kategori || []).length, nItem = 0;
     (hs.kategori || []).forEach(function (k) { ((k.ringkas && k.ringkas.kegiatan) || []).forEach(function (g) { nItem += g.items.length; g.grup.forEach(function (x) { nItem += x.items.length; }); }); });
     var perlu = N.perlu.length, selKls = sel === null ? '' : (Math.abs(sel) < 1 ? 'ok' : 'warn');
-    t.innerHTML = '<div class="rabxl-tiles">' +
+    var frg = document.getElementById('rabXlPXlRingkas'); if (frg) { frg.textContent = nKat + ' kategori · ' + rupiah(hs.total || 0); }
+    var tilesH = '<div class="rabxl-tiles">' +
         '<div class="rabxl-tile"><div class="l">Total RAB</div><div class="v">' + rupiah(hs.total) + '</div><div class="s">' + nKat + ' kategori' + (nItem ? ' · ' + nItem + ' item' : '') + '</div></div>' +
         '<div class="rabxl-tile"><div class="l">Nilai Kontrak</div><div class="v">' + (banding === null ? '-' : rupiah(banding)) + '</div><div class="s">' + ((nk !== null && nk !== undefined) ? 'dari file Excel' : 'dari penerimaan di form') + '</div></div>' +
         '<div class="rabxl-tile ' + selKls + '"><div class="l">Selisih</div><div class="v">' + (sel === null ? '-' : (Math.abs(sel) < 1 ? 'Seimbang' : (sel > 0 ? '+' : '-') + rupiah(Math.abs(sel)))) + '</div><div class="s">' + (sel === null ? '' : (Math.abs(sel) < 1 ? 'RAB sama dengan Nilai Kontrak' : (sel > 0 ? 'RAB lebih besar dari kontrak' : 'RAB kurang dari kontrak'))) + '</div></div>' +
         '<div class="rabxl-tile ' + (perlu ? 'bad' : 'ok') + '"><div class="l">Pengecekan</div><div class="v">' + (perlu ? perlu + ' perlu dicek' : 'Semua sesuai') + '</div><div class="s">' + (perlu ? 'buka tombol "perlu dicek" untuk rinciannya' : 'tidak ada catatan') + '</div></div></div>';
+    t.innerHTML = tilesH; var t2 = document.getElementById('rabXlTiles2'); if (t2) { t2.innerHTML = tilesH; }
     // --- tab Ringkasan
     var h = '';
     (hs.kategori || []).forEach(function (k, i) {
@@ -6581,6 +6851,139 @@ function rabXlMuatTerap() {
         })
         .catch(function (e) { rabXl.memuat = false; rabXl.gagalMuat = true; rabXl.galat = e.message || 'Berkas tidak bisa dibuka.'; rabXlGambar(); });
 }
+/* ---------- Edit tabel langsung di tab Excel (tanpa buka laci) ---------- */
+// Tombol Edit tabel membuka tabel untuk diketik. Selama mode edit tidak ada simpan otomatis: angka total tetap dihitung ulang (tanpa menyimpan),
+// isi RAB di form baru berubah setelah Simpan perubahan. Batal mengembalikan tabel ke keadaan sebelum Edit tabel.
+function rabXlEditGambar() {
+    var pxl = document.getElementById('rabXlPXl'); if (pxl) { pxl.classList.toggle('rabxl-editing', !!rabXl.edit); }
+    var ban = document.getElementById('rabXlXBan'), box = document.getElementById('rabXlEditBox');
+    if (ban) {
+        ban.className = 'rabxl-xban' + (rabXl.edit ? ' edit' : '');
+        ban.innerHTML = rabXl.edit
+            ? '<b>Mode edit.</b> Klik sel lalu ketik, atau klik dua kali. Enter pindah ke baris bawah. Isi RAB di form baru berubah setelah kamu tekan <b>Simpan perubahan</b>.'
+            : 'Tabel hanya dibaca. Tekan <b>Edit tabel</b> untuk mengubah angka.';
+    }
+    if (!box) return;
+    box.innerHTML = rabXl.edit
+        ? '<button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3" id="rabXlEditBatal">Batal</button><button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlEditSimpan">Simpan perubahan</button>'
+        : '<button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlEditMulai">Edit tabel</button>';
+    var m = box.querySelector('#rabXlEditMulai'), b = box.querySelector('#rabXlEditBatal'), s = box.querySelector('#rabXlEditSimpan');
+    if (m) m.addEventListener('click', rabXlEditMulai);
+    if (b) b.addEventListener('click', rabXlEditBatal);
+    if (s) s.addEventListener('click', rabXlEditSimpan);
+}
+/* Pita menu lengkap ala Excel (Beranda, Tampilan, bilah rumus, bilah status) hanya tampil saat Edit tabel di layar penuh */
+function rabXlRibbonSinkron() {
+    var xg = rabXl.xg; if (!xg || rabXl.tahap !== 'terapkan' || !document.getElementById('rabXlGrid')) return;
+    var mau = !!(rabXl.edit && rabXl.fs);
+    if (!!xg.tb === mau) { try { xg.render(); } catch (e) { /* digambar ulang nanti */ } return; }
+    var st = { sel: xg.sel, rng: xg.rng, anc: xg.anc, far: xg.far, sheet: xg.sheet };
+    rabXl.edited = xg.edited || rabXl.edited || {};
+    rabXlBuatGrid(document.getElementById('rabXlGrid'));
+    var n = rabXl.xg;
+    try { n.sel = st.sel; n.rng = st.rng; n.anc = st.anc; n.far = st.far; n.render(); if (mau) { n.el.scroll.focus(); } } catch (e) { /* posisi sel tidak penting */ }
+}
+function rabXlEditMulai() {
+    if (!rabXl.xg || !rabXl.wb || rabXl.edit) return;
+    rabXl.snap = { state: rabXl.wb.state(), edited: JSON.parse(JSON.stringify(rabXl.xg.edited || {})), berubah: rabXl.berubah };
+    rabXl.edit = true; rabXl.xg.o.readonly = false; rabXl.status = ''; rabXl.statusGalat = false;
+    rabXlEditGambar(); rabXlStatusGambar();
+    rabXlRibbonSinkron();
+    try { rabXl.xg.el.scroll.focus(); } catch (e) { /* fokus hanya pelengkap */ }
+}
+function rabXlEditSimpan() {
+    if (!rabXl.edit || !rabXl.xg) return;
+    if (rabXl.xg.editing) { rabXl.xg.commit(); }   // sel yang sedang diketik ikut tersimpan
+    clearTimeout(rabXl.timer);
+    rabXl.edit = false; rabXl.xg.o.readonly = true; rabXl.snap = null;
+    rabXlRibbonSinkron();
+    rabXlEditGambar();
+    if (rabXl.berubah) { rabXlSimpanTerap(); } else { rabXl.status = ''; rabXlStatusGambar(); }
+}
+function rabXlEditBatal() {
+    if (!rabXl.edit || !rabXl.xg || !rabXl.snap) return;
+    var xg = rabXl.xg, sn = rabXl.snap, ubah;
+    if (xg.editing) { xg.cancel(); }
+    clearTimeout(rabXl.timer);
+    ubah = rabXl.wb.state() !== sn.state;
+    rabXl.wb.restore(sn.state); xg.edited = sn.edited; rabXl.edited = sn.edited; xg.hist = []; xg.fut = [];
+    rabXl.edit = false; xg.o.readonly = true; rabXl.berubah = sn.berubah; rabXl.snap = null; rabXl.ver++;
+    try { xg.clampSel(); } catch (e) { /* posisi sel tidak penting */ }
+    xg.render(); rabXlRibbonSinkron(); rabXlEditGambar();
+    if (ubah) {
+        rabXlHitung(false).then(function () { rabXl.status = 'Perubahan dibatalkan'; rabXl.statusGalat = false; rabXlStatusGambar(); });
+    } else { rabXl.status = ''; rabXlStatusGambar(); }
+}
+/* ---------- Lebarkan: tabel Excel meluncur dari kanan memenuhi layar. Preview dokumen bisa dimunculkan di samping lewat tombol di dalamnya ---------- */
+function rabXlLebarGambar() {
+    var box = document.getElementById('rabXlLebarBox'), pv = document.getElementById('rabXlFsPv'), tt = document.getElementById('rabXlFsTutup'), nm = document.getElementById('rabXlFsNama');
+    if (box) {
+        box.innerHTML = '<button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3" id="rabXlLebarBtn" title="Buka tabel Excel memenuhi layar">Lebarkan</button>';
+        box.querySelector('#rabXlLebarBtn').addEventListener('click', function () { rabXlFsSet(true); });
+    }
+    if (nm) { nm.textContent = rabXl.nama || ''; }
+    if (pv) {
+        pv.innerHTML = '<button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3" id="rabXlFsPvBtn">' + (rabXl.fsPrev ? 'Sembunyikan preview' : 'Tampilkan preview') + '</button>';
+        pv.querySelector('#rabXlFsPvBtn').addEventListener('click', function () { rabXlFsPrevSet(!rabXl.fsPrev); });
+    }
+    if (tt && !tt._pasang) { tt._pasang = true; tt.addEventListener('click', function () { rabXlFsSet(false); }); }
+}
+function rabXlFsVbar() {
+    var g = document.querySelector('#rabXlGrid .xl-scroll'), v = document.getElementById('rabXlFsVbar'), i = v && v.firstChild;
+    if (!g || !i) return;
+    var f = g.clientHeight / Math.max(1, g.scrollHeight);
+    v.style.visibility = f >= 0.999 ? 'hidden' : 'visible';
+    i.style.height = Math.max(8, f * 100) + '%';
+    i.style.top = (g.scrollTop / Math.max(1, g.scrollHeight) * 100) + '%';
+}
+function rabXlFsRender(ms) {
+    clearTimeout(rabXl._fsT);
+    rabXl._fsT = setTimeout(function () {
+        if (rabXl.xg && rabXl.tab === 'xl' && document.getElementById('rabXlGrid')) { try { rabXl.xg.render(); } catch (e) { /* digambar ulang saat panel dibuka lagi */ } }
+        if (window.currentZoomMode === 'fit' && typeof window.autoFitZoom === 'function') { window.autoFitZoom(); }
+        rabXlFsVbar();
+    }, ms || 340);
+}
+function rabXlFsPrevSet(on) {
+    var x = document.getElementById('rabXlPXl'), pc = document.getElementById('poPreviewCol');
+    rabXl.fsPrev = !!on && !!rabXl.fs;
+    if (x) { x.classList.toggle('rabxl-fswith', rabXl.fsPrev); }
+    if (pc) { pc.classList.toggle('rabxl-fsprev', rabXl.fsPrev); }
+    rabXlLebarGambar(); rabXlFsRender(280);
+}
+function rabXlFsSet(on, cepat) {
+    on = !!on; if (on === !!rabXl.fs) return;
+    // Lebarkan langsung membuka mode edit lengkap (pita Excel). Kalau ditutup tanpa ada yang diubah, kembali ke mode baca.
+    if (!on && rabXl._fsAuto && rabXl.edit && rabXl.snap && rabXl.wb && rabXl.wb.state() === rabXl.snap.state) { rabXl._fsAuto = false; rabXlEditBatal(); }
+    if (!on) { rabXl._fsAuto = false; }
+    var x = document.getElementById('rabXlPXl'), pill = document.getElementById('rabXlPill');
+    rabXl.fs = on;
+    if (on) {
+        document.body.classList.add('rabxl-fslock');
+        if (x) { x.classList.add('rabxl-fs'); void x.offsetWidth; requestAnimationFrame(function () { x.classList.add('go'); }); }
+        var hp = document.getElementById('rabXlFsPill'); if (pill && hp) { hp.appendChild(pill); }   // tombol "perlu dicek" ikut pindah ke judul layar penuh
+        document.documentElement.classList.add('rabxl-fslock');
+        if (x && !x._vb) { x._vb = true; x.addEventListener('scroll', rabXlFsVbar, true); }
+        if (rabXl.xg) { try { rabXl.xg.setZoom(100); } catch (e) { /* ukuran huruf bawaan saja */ } }
+    } else {
+        rabXl.fsPrev = false;
+        var pc = document.getElementById('poPreviewCol'); if (pc) { pc.classList.remove('rabxl-fsprev'); }
+        if (x) { x.classList.remove('rabxl-fswith', 'go'); }
+        document.body.classList.remove('rabxl-fslock');
+        document.documentElement.classList.remove('rabxl-fslock');
+        var tr = document.querySelector('.rabxl-tabrow'); if (pill && tr) { tr.appendChild(pill); }
+        if (rabXl.xg) { try { if (rabXl.xg.editing) { rabXl.xg.commit(); } rabXl.xg.setZoom(100); } catch (e) { /* ukuran huruf bawaan saja */ } }
+        if (x) { if (cepat) { x.classList.remove('rabxl-fs'); } else { setTimeout(function () { var y = document.getElementById('rabXlPXl'); if (y && !rabXl.fs) { y.classList.remove('rabxl-fs'); } }, 340); } }
+    }
+    if (on && !rabXl.edit && rabXl.xg && rabXl.wb && rabXl.tahap === 'terapkan') { rabXl._fsAuto = true; rabXlEditMulai(); }
+    rabXlRibbonSinkron();
+    rabXlLebarGambar(); rabXlFsRender(360);
+}
+document.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Escape' || !rabXl.fs) return;
+    if (rabXl.xg && rabXl.xg.editing) return;
+    rabXlFsSet(false);
+});
 function rabXlTerapHtml() {
     var h = '';
     if (rabXl.manual) {
@@ -6599,11 +7002,11 @@ function rabXlTerapHtml() {
     h += '<div id="rabXlPRing"></div>';
     h += '<div id="rabXlPRinci" hidden><div class="rabxl-doc"><table class="rabxl-doctbl" id="rabXlDoc"></table></div></div>';
     var nKatP = (rabXl.hasil.kategori || []).length;
-    h += '<div id="rabXlPXl" hidden><div class="rabxl-sub" style="margin:0 0 8px">Pratinjau hasil import dari Excel. Angka dihitung dari file.</div>' +
+    h += '<div id="rabXlPXl" hidden><div class="rabxl-fshd"><b>Excel RAB</b><span class="rabxl-sub" style="margin:0" id="rabXlFsNama"></span><span class="rabxl-st" id="rabXlStatus3"></span><div id="rabXlTiles2"></div><div class="rabxl-xtool"><div class="rabxl-xban" id="rabXlXBan" style="flex:1 1 280px"></div><span class="rabxl-st" id="rabXlStatus2"></span><span class="rabxl-xbtn" id="rabXlEditBox"></span><span class="rabxl-lebar" id="rabXlLebarBox"></span></div><span style="flex:1"></span><span id="rabXlFsPill"></span><span id="rabXlFsPv"></span><button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3" id="rabXlFsTutup">Kecilkan (Esc)</button></div>' +
          '<div class="rabxl-prev"><div class="rabxl-prev-bar" id="rabXlPrevBar"></div><div class="xg-wrap" id="rabXlWrap"><div id="rabXlGrid"></div></div>' +
-         '<div class="rabxl-prev-foot"><span>' + nKatP + ' kategori · ' + rupiah(rabXl.hasil.total || 0) + '</span><span class="rabxl-prev-btn">' +
+         '<div class="rabxl-prev-foot"><span id="rabXlPXlRingkas">' + nKatP + ' kategori · ' + rupiah(rabXl.hasil.total || 0) + '</span><span class="rabxl-prev-btn">' +
          '<a class="btn btn-sm btn-outline-dark rounded-pill px-3" href="' + RAB_XL_BASE + '/po-rab-excel/' + escHtmlRab(rabXl.token) + '?unduh=1">Unduh</a>' +
-         '<button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="rabXlEditor">Buka editor Excel</button></span></div></div></div>';
+         '</span></div></div><div id="rabXlFsVbar"><i></i></div><div id="rabXlFsHint">Gulir: roda mouse, panah, atau PageUp / PageDown</div></div>';
     h += '<div class="rabxl-bawah"><button type="button" class="rabxl-link" id="rabXlUbahSheet">Ubah sheet yang dipakai</button><span>·</span><button type="button" class="rabxl-link" id="rabXlManual">Perlu mengubah tanpa Excel? Edit manual (lanjutan)</button></div>';
     return h;
 }
@@ -6615,9 +7018,9 @@ function rabXlTerapPasang(p) {
     });
     if (q('#rabXlEditor')) q('#rabXlEditor').addEventListener('click', rabXlBukaEditor);
     if (q('#rabXlManual')) q('#rabXlManual').addEventListener('click', function () { rabXl.manual = true; clearTimeout(rabXl.timer); rabXlGambar(); });
-    if (q('#rabXlUbahSheet')) q('#rabXlUbahSheet').addEventListener('click', function () { rabXl.tahap = 'dibaca'; rabXl.kembali = true; rabXl.galat = ''; rabXl.drawer = true; rabXl.langkah = 1; rabXlSetHidden(); rabXlGambar(); });
+    if (q('#rabXlUbahSheet')) q('#rabXlUbahSheet').addEventListener('click', function () { rabXl.edit = false; rabXl.snap = null; rabXl.tahap = 'dibaca'; rabXl.kembali = true; rabXl.galat = ''; rabXl.drawer = true; rabXl.langkah = 1; rabXlSetHidden(); rabXlGambar(); });
     p.querySelectorAll('#rabXlTabs [data-xt]').forEach(function (b) { b.addEventListener('click', function () { rabXlTab(b.dataset.xt); }); });
-    if (rabXl.payload && rabXl.hasil && !rabXl.manual) { rabXlTab(rabXl.tab || 'ring'); rabXlTerapIsi(); rabXlBangun(); }
+    if (rabXl.payload && rabXl.hasil && !rabXl.manual) { rabXlTab(rabXl.tab || 'ring'); rabXlTerapIsi(); rabXlBangun(); rabXlEditGambar(); rabXlLebarGambar(); rabXlStatusGambar(); }
 }
 function rabXlGambar() {
     var p = document.getElementById('rabXlPanel'); if (!p) return;
@@ -6625,6 +7028,7 @@ function rabXlGambar() {
     box.querySelectorAll('[data-xl-mode]').forEach(function (b) { b.classList.toggle('on', b.dataset.xlMode === rabXl.mode); });
     var h = '';
     rabXlAturTampilan();
+    if (rabXl.fs) { rabXlFsSet(false, true); }   // panel digambar ulang: layar penuh ditutup dulu
     if (rabXl.mode !== 'excel') { p.innerHTML = ''; rabXl.drawer = false; rabXlDrawerGambar(); return; }
     if (rabXl.galat) { h += '<div class="rabxl-galat">' + escHtmlRab(rabXl.galat) + '</div>'; }
     if (rabXl.busy) {
@@ -8165,6 +8569,15 @@ var btnKirim = document.getElementById('btnKirim');
 
 // ---- sebelum submit: tuang jadwalState (murni JS) jadi hidden input ----
 document.getElementById('formPo').addEventListener('submit', function (e) {
+    // Tabel Excel sedang diedit dan belum disimpan: isi RAB di form masih versi lama, jadi jangan lanjut diam-diam.
+    if (typeof rabXl !== 'undefined' && rabXl.edit && rabXl.berubah) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (typeof rabXlTab === 'function') { rabXlTab('xl'); }
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'warning', title: 'Perubahan tabel Excel belum disimpan', text: 'Tekan Simpan perubahan (atau Batal) di tab Excel dulu, lalu simpan PO.', confirmButtonText: 'Oke' });
+        }
+        return;
+    }
     // Pengaman terakhir (mis. submit lewat Enter): tahun Tanggal Surat PO harus sesuai.
     var tglPo = document.getElementById('inputTanggalPo');
     if (tglPo && tglPo.getAttribute('data-tahun-wajib')) {
@@ -8569,7 +8982,7 @@ window.performLivePreviewFetch = function() {
     .then(function (html) {
         container.innerHTML = html;
         container.__asliHtml = html;   // isi asli (tanpa pemisah halaman), dipakai untuk cetak
-        try { window.paginasiPreview(); } catch (ePg) { console.error('Paginasi pratinjau gagal:', ePg); }
+        try { window.paginasiPreview(); } catch (ePg) { console.error('Paginasi pratinjau gagal:', ePg); } try { rabXlSorotPratinjau(); } catch (eSr) { /* sorotan hanya pelengkap */ }
         if (pulseDot) pulseDot.classList.remove('syncing');
         if (syncText) syncText.textContent = 'Tersinkronisasi';
         if (refreshIcon) refreshIcon.classList.remove('spin');
@@ -8756,7 +9169,9 @@ setTimeout(function () {
                 '.rvk-ic{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;font-size:27px;background:#f1f5f9;color:#1e293b}' +
                 '.rvk-box h5{font-size:1.05rem;font-weight:800;margin:0 0 6px}.rvk-box p{color:#64748b;font-size:.85rem;margin:0 0 18px}' +
                 '.rvk-btns{display:flex;gap:10px}.rvk-btns button{flex:1;padding:10px;border-radius:9px;font-weight:700;font-size:.85rem;cursor:pointer;border:1.5px solid #e2e8f0;background:#fff;color:#334155}' +
-                '.rvk-btns button.ya{background:#334155;border-color:#334155;color:#fff}.rvk-btns button:hover{opacity:.9}';
+                '.rvk-btns button.ya{background:#334155;border-color:#334155;color:#fff}.rvk-btns button:hover{opacity:.9}' +
+                '.rvk-opt{display:flex;gap:10px;text-align:left;border:2px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer}.rvk-opt.sel{border-color:#334155;background:#f8fafc}.rvk-opt.off{opacity:.5;cursor:not-allowed}' +
+                '.rvk-opt input{margin-top:4px}.rvk-opt b{display:block;font-size:.88rem;color:#0f172a}.rvk-opt span{color:#64748b;font-size:.8rem}';
             document.head.appendChild(st);
             var d = document.createElement('div');
             d.className = 'rvk-dlg'; d.id = 'rvkDlg'; d.hidden = true;
@@ -8778,7 +9193,7 @@ setTimeout(function () {
             // Ketua Tim yang mengedit PO saat review: tombolnya "Simpan draft" dan "Kirim ke Mitra" (simpan, setujui, lalu langsung diteruskan ke Tim Mitra); tidak ada lagi "Simpan perubahan".
             // Revisi PPK BLU (PPK_KATIM) yang diperbaiki langsung di halaman biasa tetap memakai alurnya sendiri di bawah.
             if (bk && (dalamTahap8 || !PPK_KATIM)) {
-                document.getElementById('rvHit').textContent = 'Simpan draft: perubahan tersimpan dan form tetap terbuka, status review tidak berubah. Kirim ke Mitra: perubahan tersimpan lalu PO disetujui dan langsung diteruskan ke Tim Mitra. Ketua Pelaksana diberi tahu lewat tab Alur.';
+                document.getElementById('rvHit').textContent = 'Simpan draft: perubahan tersimpan dan form tetap terbuka, status review tidak berubah. Kirim ke Mitra: perubahan tersimpan lalu PO disetujui dan langsung diteruskan ke Tim Mitra. Kalau masih ada catatan, Anda bisa memilih minta revisi ke Ketua Pelaksana di dialog yang muncul. Ketua Pelaksana diberi tahu lewat tab Alur.';
                 if (PPK_KATIM) { document.getElementById('rvHit').textContent = 'Simpan draft: perubahan tersimpan dan form tetap terbuka, status revisi PPK BLU tidak berubah. Setujui dan kirim ke PPK BLU: perubahan tersimpan lalu hasil revisi disetujui dan dikirim ke PPK BLU. Batal: kembali ke detail order tanpa menyimpan.'; }
                 bk.innerHTML = '<i class="bi bi-save me-1"></i> Simpan draft';
                 bk.classList.remove('btn-primary'); bk.classList.add('btn-outline-secondary');
@@ -8787,6 +9202,7 @@ setTimeout(function () {
                 bs.className = 'btn btn-primary px-4 py-2 rounded-pill shadow-sm fw-bold d-inline-flex align-items-center gap-2';
                 bs.innerHTML = '<i class="bi bi-send-check"></i> <span>Kirim ke Mitra</span>';
                 bk.insertAdjacentElement('afterend', bs);
+                var bm = null;   // (tidak ada tombol ketiga di bar: pilihan simpan & minta revisi muncul di dialog Kirim ke Mitra bila ada catatan)
                 var bb = null;
                 if (PPK_KATIM) {   // review hasil revisi PPK BLU: tombol setujui mengirim ke PPK BLU (bukan ke Humas), dan ada tombol Batal
                     bs.querySelector('span').textContent = 'Setujui dan kirim ke PPK BLU';
@@ -8797,8 +9213,27 @@ setTimeout(function () {
                     bk.insertAdjacentElement('beforebegin', bb);
                 }
                 function ordKe() { var oi = document.querySelector('#formPo [name="order_id"]'); return BASE + '/order/' + (oi ? oi.value : ''); }
+                // Daftar PO (index) tempat Ketua Tim datang, lengkap dengan tab dan filternya (mis. ?tab=tindakan&divisi=selulosa&bulan=11): diingat per PO di sessionStorage
+                // supaya tetap ketemu walau halaman sempat dimuat ulang. Tanpa itu: Daftar Review PO seperti sebelumnya.
+                function urlDaftarAsal() {
+                    var kunci = 'poKembali' + PO_ID, u = '';
+                    try { u = sessionStorage.getItem(kunci) || ''; } catch (e) {}
+                    if (!u) {
+                        try {
+                            var r = new URL(document.referrer);
+                            if (r.origin === window.location.origin && r.pathname === BASE + '/po-kegiatan') { u = r.pathname + r.search; try { sessionStorage.setItem(kunci, u); } catch (e2) {} }
+                        } catch (e) {}
+                    }
+                    return u;
+                }
+                var asalDaftar = urlDaftarAsal();   // simpan referrer saat halaman pertama dibuka
+                if (asalDaftar) {   // tombol Kembali di kepala halaman ikut membawa tab dan filter daftar asal
+                    document.querySelectorAll('a[href]').forEach(function (el) {
+                        try { var h = new URL(el.getAttribute('href'), window.location.href); if (h.origin === window.location.origin && h.pathname === BASE + '/po-kegiatan' && /Kembali/i.test(el.textContent)) { el.setAttribute('href', asalDaftar); } } catch (e) {}
+                    });
+                }
                 function keDetail() {
-                    if (!dalamTahap8) { window.location.href = BASE + '/po-kegiatan/daftar'; return; }   // halaman edit biasa: kembali ke Daftar Review PO
+                    if (!dalamTahap8) { window.location.href = urlDaftarAsal() || (BASE + '/po-kegiatan/daftar'); return; }   // halaman edit biasa: kembali ke daftar asal (Daftar PO + filternya), atau Daftar Review PO
                     try { window.top.location.href = ordKe(); } catch (e) { window.location.href = ordKe(); }
                 }
                 // pemberitahuan singkat "Draft tersimpan" di dalam form (tanpa memuat ulang halaman)
@@ -8833,7 +9268,7 @@ setTimeout(function () {
                     t._tm = setTimeout(function () { t.style.opacity = '0'; t.style.transform = 'translateY(-140%)'; }, galat ? 6000 : 2500);
                 }
                 // tombol setujui ikut nonaktif selama kolom wajib belum lengkap (sama dengan Simpan draft)
-                setInterval(function () { bs.disabled = !!bk.disabled; bs.style.opacity = bk.disabled ? '.45' : ''; bs.title = bk.title || ''; }, 500);
+                setInterval(function () { bs.disabled = !!bk.disabled; bs.style.opacity = bk.disabled ? '.45' : ''; bs.title = bk.title || ''; if (bm) { bm.disabled = !!bk.disabled; bm.style.opacity = bk.disabled ? '.45' : ''; bm.title = bk.title || ''; } }, 500);
                 var sedangSimpan = false;
                 // Simpan (fetch) lalu, kalau setuju = true, setujui PO; sesudahnya jendela utama dimuat ulang ke detail order (tanpa form edit)
                 function simpanKatim(setuju) {
@@ -8841,19 +9276,21 @@ setTimeout(function () {
                     if (!form || sedangSimpan) { return; }
                     var ev = new Event('submit', { cancelable: true, bubbles: true });
                     if (!form.dispatchEvent(ev)) { return; }
-                    sedangSimpan = true; bk.disabled = true; bs.disabled = true;
+                    sedangSimpan = true; bk.disabled = true; bs.disabled = true; if (bm) { bm.disabled = true; }
                     // indikator memuat di tombol yang ditekan
-                    var tombolAktif = setuju ? bs : bk, htmlAsli = tombolAktif.innerHTML;
+                    var tombolAktif = (setuju === 'revisi' && bm) ? bm : (setuju ? bs : bk), htmlAsli = tombolAktif.innerHTML;
                     tombolAktif.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...';
-                    var pulih = function (m) { tombolAktif.innerHTML = htmlAsli; sedangSimpan = false; bk.disabled = false; bs.disabled = false; if (window.finishLoading) { window.finishLoading(); } var e2 = document.getElementById('rvErr'); if (e2) { e2.textContent = m; e2.hidden = !m; } if (bar && bar.scrollIntoView) { bar.scrollIntoView({ behavior: 'smooth', block: 'start' }); } };
+                    var pulih = function (m) { tombolAktif.innerHTML = htmlAsli; sedangSimpan = false; bk.disabled = false; bs.disabled = false; if (bm) { bm.disabled = false; } if (window.finishLoading) { window.finishLoading(); } var e2 = document.getElementById('rvErr'); if (e2) { e2.textContent = m; e2.hidden = !m; } if (bar && bar.scrollIntoView) { bar.scrollIntoView({ behavior: 'smooth', block: 'start' }); } };
                     var fd = new FormData(form); fd.set('kirim_setelah', '1'); fd.set('aksi', 'kirim');
                     fetch(form.getAttribute('action'), { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                         .then(bacaJson)
                         .then(function () {
                             if (!setuju) { return; }
-                            var b = new URLSearchParams(); b.append('csrf_token', CSRF);
-                            return fetch(BASE + (PPK_KATIM ? '/po-revisi-ppk/' + PO_ID + '/setujui-kirim' : '/po-kegiatan/' + PO_ID + '/setujui'), { method: 'POST', body: b, credentials: 'same-origin', headers: PPK_KATIM ? { 'X-Requested-With': 'XMLHttpRequest' } : {} }).then(bacaJson).catch(function (e) {
-                                throw new Error('Perubahan sudah tersimpan, tetapi persetujuan gagal: ' + e.message);
+                            var b = new URLSearchParams(); b.append('csrf_token', CSRF); if (!PPK_KATIM) { b.append('buang_draf', '1'); }   // catatan draf yang belum dikirim dibuang saat Katim menyetujui (sudah dikonfirmasi di dialog)
+                            var mintaRevisi = (setuju === 'revisi');
+                            if (mintaRevisi) { b.delete('buang_draf'); }
+                            return fetch(BASE + (PPK_KATIM ? '/po-revisi-ppk/' + PO_ID + '/setujui-kirim' : '/po-kegiatan/' + PO_ID + (mintaRevisi ? '/minta-revisi' : '/setujui')), { method: 'POST', body: b, credentials: 'same-origin', headers: PPK_KATIM ? { 'X-Requested-With': 'XMLHttpRequest' } : {} }).then(bacaJson).catch(function (e) {
+                                throw new Error('Perubahan sudah tersimpan, tetapi ' + (mintaRevisi ? 'permintaan revisi' : 'persetujuan') + ' gagal: ' + e.message);
                             });
                         })
                         .then(function () {
@@ -8876,8 +9313,16 @@ setTimeout(function () {
                 bs.addEventListener('click', function () {
                     if (bs.disabled || sedangSimpan) { return; }
                     if (typeof window.poValidasiSebelumKirim === 'function' && !window.poValidasiSebelumKirim()) { return; }
-                    (PPK_KATIM ? konfirmasiKirim('Setujui dan kirim ke PPK BLU?', 'Perubahan di form disimpan, lalu hasil revisi disetujui dan dikirim ke PPK BLU.', 'Ya, kirim', 'bi-send-check') : konfirmasiKirim('Kirim PO ke Tim Mitra?', 'Perubahan di form disimpan, lalu PO disetujui dan langsung diteruskan ke Tim Mitra untuk diverifikasi. Humas hanya dapat melihat.', 'Kirim ke Mitra', 'bi-send-check')).then(function (ya) {
-                        if (ya) { simpanKatim(true); }
+                    if (PPK_KATIM) {
+                        konfirmasiKirim('Setujui dan kirim ke PPK BLU?', 'Perubahan di form disimpan, lalu hasil revisi disetujui dan dikirim ke PPK BLU.', 'Ya, kirim', 'bi-send-check').then(function (ya) { if (ya) { simpanKatim(true); } });
+                        return;
+                    }
+                    // masih ada catatan: Katim memilih minta revisi (kirim catatan ke Ketua Pelaksana) atau setujui (draf dibuang); tanpa catatan: konfirmasi biasa
+                    infoCatatanKatim().then(function (info) {
+                        if (info.draf + info.terbuka > 0) {
+                            return pilihKirimDenganCatatan(info).then(function (h) { if (h === 'revisi') { simpanKatim('revisi'); } else if (h === 'setujui') { simpanKatim(true); } });
+                        }
+                        return konfirmasiKirim('Kirim PO ke Tim Mitra?', 'Perubahan di form disimpan, lalu PO disetujui dan langsung diteruskan ke Tim Mitra untuk diverifikasi. Humas hanya dapat melihat.', 'Kirim ke Mitra', 'bi-send-check').then(function (ya) { if (ya) { simpanKatim(true); } });
                     });
                 });
             }
@@ -8933,6 +9378,7 @@ setTimeout(function () {
         var LABEL = { dasar: 'Dasar', tujuan: 'Tujuan', lingkup: 'Ruang Lingkup', alat: 'Alat dan Bahan', metoda: 'Metoda', alamat: 'Alamat', tim: 'Tim Pelaksana', rab: 'RAB', jadwal: 'Jadwal' };
         var kartu = {};
         var KIRIM = null;   // {url, label} dari catatan-form: tujuan pengiriman sesudah semua catatan diperbaiki
+        var AJUAN = null;   // ajuan perbaikan PO setelah disetujui PPK BLU (alasan, lampiran), dari catatan-form; null kalau ini revisi biasa
         var DARI = '{{ @dari }}';
     
         function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -8959,15 +9405,54 @@ setTimeout(function () {
         function putaranKatim() { var m = 0; data.forEach(function (c) { if (c.asal === 'katim' && c.putaran > m) { m = c.putaran; } }); return m; }
         function berjalan(c, m) { return m > 0 ? (c.asal === 'katim' && c.putaran === m) : true; }
         function chipAsal(c) { return c.asal === 'katim' ? '<span class="rv-asal kt">Ketua Tim &middot; perbaikan ' + c.putaran + '</span>' : (KONTEKS === 'ppk' ? '<span class="rv-asal">PPK BLU</span>' : ''); }
+        // Banner ajuan perbaikan PO (PO sudah disetujui PPK BLU, lalu Ketua Tim / Ketua Pelaksana mengajukan perbaikan)
+        function renderAjuan(total) {
+            var a = document.getElementById('rvAjuan');
+            if (!AJUAN) { if (a && a.parentNode) { a.parentNode.removeChild(a); } return; }
+            if (!document.getElementById('rvAjuanCss')) {
+                var st = document.createElement('style'); st.id = 'rvAjuanCss';
+                st.textContent = '.rv-ajuan{margin:4px 0 0;font-size:.8rem;color:#334155}' +
+                    '.rv-ajuan .a{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}.rv-ajuan .t{flex:1;min-width:200px;white-space:pre-wrap;word-break:break-word}' +
+                    '.rv-ajuan .m{color:#64748b;font-size:.72rem;margin-top:2px}.rv-ajuan a.lamp{font-weight:600;color:#334155;text-decoration:underline;font-size:.76rem;white-space:nowrap}' +
+                    '.rv-ajuan button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:2px 10px;font-weight:600;font-size:.74rem;color:#475569;cursor:pointer;white-space:nowrap}.rv-ajuan button:hover{background:#f1f5f9}' +
+                    '.rv-bar.rv-kecil{padding:8px 12px;margin-bottom:12px}';
+                document.head.appendChild(st);
+            }
+            if (!a) { a = document.createElement('div'); a.id = 'rvAjuan'; a.className = 'rv-ajuan'; var pg = bar.querySelector('.rv-prog'); bar.insertBefore(a, pg || list); }
+            var w = AJUAN.sejak ? String(AJUAN.sejak).substr(0, 16).replace('T', ' ') : '';
+            var siapa = (AJUAN.oleh && AJUAN.oleh !== AJUAN.peran_teks) ? esc(AJUAN.oleh) + ' (' + esc(AJUAN.peran_teks) + ')' : esc(AJUAN.peran_teks || AJUAN.oleh || '');
+            a.innerHTML = '<div class="a"><span class="t"><b>Alasan:</b> ' + esc(AJUAN.alasan) + '</span>' +
+                ((AJUAN.lampiran_list && AJUAN.lampiran_list.length ? AJUAN.lampiran_list : (AJUAN.lampiran_url ? [{ nama: AJUAN.lampiran, url: AJUAN.lampiran_url }] : [])).map(function (x) { return '<a class="lamp" target="_blank" rel="noopener" href="' + esc(x.url) + '"><i class="bi bi-paperclip"></i> ' + esc(x.nama || 'Lampiran') + '</a>'; }).join(' ')) +
+                '<button type="button" id="rvTarikBtn"><i class="bi bi-arrow-counterclockwise"></i> Tarik ajuan</button></div>' +
+                '<div class="m">' + siapa + (w ? ' &middot; ' + esc(w) : '') + ' &middot; PO versi lama tetap berlaku sampai PPK BLU menyetujui.</div>';
+            bar.classList.toggle('rv-kecil', total === 0);
+            if (total === 0) {   // belum ada catatan PPK BLU: bar tidak perlu progres
+                var pr = bar.querySelector('.rv-prog'); if (pr) { pr.style.display = 'none'; }
+                var tg = document.getElementById('rvTog'); if (tg) { tg.style.display = 'none'; }
+                document.getElementById('rvJudul').textContent = 'Ajuan perbaikan PO ke PPK BLU';
+                document.getElementById('rvHit').textContent = '';
+            }
+        }
+        function tarikAjuan() {
+            if (!AJUAN) { return; }
+            konfirmasiKirim('Tarik ajuan perbaikan?', 'Isi PO dikembalikan seperti sebelum ajuan. Perubahan yang sudah Anda simpan untuk ajuan ini dibuang.', 'Tarik ajuan', 'bi-arrow-counterclockwise').then(function (ya) {
+                if (!ya) { return; }
+                var b = new URLSearchParams(); b.append('csrf_token', CSRF);
+                fetch(BASE + '/po-ajuan/' + PO_ID + '/tarik', { method: 'POST', body: b, credentials: 'same-origin' }).then(bacaJson)
+                    .then(function () { selesaiKirim(); })
+                    .catch(function (e) { galat(e.message); });
+            });
+        }
         function tampil() {
             var pm = putaranKatim(), kerja = data.filter(function (c) { return berjalan(c, pm); });
             var total = kerja.length, selesai = kerja.filter(function (c) { return c.state === 'selesai'; }).length;
-            bar.hidden = data.length === 0;
+            bar.hidden = data.length === 0 && !AJUAN;
             document.getElementById('rvJudul').textContent = KONTEKS === 'ppk' ? (pm > 0 ? 'Catatan perbaikan Ketua Tim ke-' + pm + ' (dan revisi PPK BLU)' : 'Catatan revisi PPK BLU') : 'Catatan revisi Ketua Tim';
             document.getElementById('rvHit').textContent = selesai + ' dari ' + total + ' catatan sudah diperbaiki';
             document.getElementById('rvProg').style.width = (total ? Math.round(selesai * 100 / total) : 0) + '%';
+            renderAjuan(total);
             {
-                var siapKirim = !!(KIRIM && total > 0 && selesai === total);
+                var siapKirim = !!(KIRIM && ((total > 0 && selesai === total) || (total === 0 && AJUAN)));
                 if (bk2) {
                     bk2.hidden = !KIRIM;                 // tampil terus (hanya untuk yang berhak mengirim), nonaktif kalau belum lengkap
                     bk2.disabled = !siapKirim;
@@ -8987,7 +9472,7 @@ setTimeout(function () {
                 var done = c.state === 'selesai', ada = !!kartu[c.bagian], lama = !berjalan(c, pm);
                 return '<li class="rv-item' + (done ? ' done' : '') + (lama ? ' lama' : '') + '"><input type="checkbox" id="rvc' + c.id + '" data-rv="' + c.id + '"' + (done ? ' checked' : '') + (lama ? ' disabled' : '') + '>' +
                     '<label for="rvc' + c.id + '">' + chipAsal(c) + '<span class="rv-bag">' + esc(LABEL[c.bagian] || c.bagian) + '</span><span class="t">' + esc(c.teks) + '</span></label>' +
-                    (ada ? '<a href="#" data-rvgo="' + esc(c.bagian) + '">Ke bagian</a>' : '') + '</li>';
+                    (ada ? '<a href="#" data-rvgo="' + esc(c.bagian) + '">Ke bagian</a>' : '') + balasanHtml(c, 'pn') + '</li>';
             }).join('');
     
             // kotak di bawah judul kartu
@@ -9001,7 +9486,7 @@ setTimeout(function () {
                 box.innerHTML = cs.map(function (c) {
                     var done = c.state === 'selesai', lama = !berjalan(c, pm);
                     return '<div class="rv-row' + (lama ? ' lama' : '') + '"><input type="checkbox" id="rvi' + c.id + '" data-rv="' + c.id + '"' + (done ? ' checked' : '') + (lama ? ' disabled' : '') + '><label for="rvi' + c.id + '">' +
-                        (KONTEKS === 'ppk' ? chipAsal(c) + ' ' : '<b>Ketua Tim:</b> ') + '<span class="' + (done ? 'done-t' : '') + '">' + esc(c.teks) + '</span></label></div>';
+                        (KONTEKS === 'ppk' ? chipAsal(c) + ' ' : '<b>Ketua Tim:</b> ') + '<span class="' + (done ? 'done-t' : '') + '">' + esc(c.teks) + '</span></label></div>' + balasanHtml(c, 'in');
                 }).join('');
                 var head = kartu[k].querySelector('.card-header, .po-card-header');
                 head.parentNode.insertBefore(box, head.nextSibling);
@@ -9024,6 +9509,27 @@ setTimeout(function () {
             }).catch(function (e) { c.state = lama; tampil(); galat(e.message); });
         }
     
+        // Balasan catatan (public/js/po-balasan.js): utas + tombol Balas di panel atas dan di kotak bawah judul kartu
+        function balasanHtml(c, ctx) {
+            if (!window.PoBalasan || KONTEKS !== 'ppk') { return ''; }
+            return window.PoBalasan.html(c, c.state === 'terbuka' && berjalan(c, putaranKatim()), ctx);
+        }
+        if (window.PoBalasan) {
+            window.PoBalasan.init({
+                kirim: function (nid, teks) {
+                    var bd = new URLSearchParams(); bd.append('csrf_token', CSRF); bd.append('teks', teks);
+                    return fetch(BASE + '/po-revisi-ppk/' + PO_ID + '/catatan/' + nid + '/balas', { method: 'POST', body: bd, credentials: 'same-origin' }).then(bacaJson).then(function (j) {
+                        // catatan yang sudah dibalas langsung dicentang (sudah ditanggapi); bisa dicabut lagi lewat kotak centangnya
+                        var cb = data.filter(function (x) { return x.id === nid; })[0];
+                        if (cb && cb.state === 'terbuka') { ubah(nid, true); }
+                        return j;
+                    });
+                },
+                terapkan: function (nid, bl) { data.forEach(function (c) { if (c.id === nid) { c.balasan = bl; } }); },
+                render: function () { tampil(); }
+            });
+        }
+
         document.addEventListener('change', function (e) {
             var el = e.target.closest ? e.target.closest('[data-rv]') : null;
             if (el) { ubah(parseInt(el.getAttribute('data-rv'), 10), el.checked); }
@@ -9048,8 +9554,65 @@ setTimeout(function () {
                 try { window.top.location.href = BASE + '/order/' + (oi ? oi.value : ''); return; } catch (e) {}
             }
             if (DARI === 'index') { window.location.href = BASE + '/po-kegiatan'; return; }
+            // Revisi/ajuan dikerjakan dari slide Daftar PO: setelah dikirim, pulang ke Daftar PO tempat PO dibuka tadi (tab dan filternya sama), bukan ke slide lagi
+            if (DARI === 'ppk') {
+                var asalPo = '';
+                try { asalPo = sessionStorage.getItem('poKembali' + PO_ID) || ''; } catch (e) {}
+                if (asalPo && asalPo.indexOf(BASE + '/po-kegiatan') === 0 && asalPo.indexOf(BASE + '/po-kegiatan/') !== 0) { try { sessionStorage.removeItem('poKembali' + PO_ID); } catch (e) {} window.location.href = asalPo; return; }
+            }
             var ke = (DARI === 'ppk' || (DARI !== 'daftar' && KONTEKS === 'ppk')) ? '/po-revisi-ppk?buka=' + PO_ID + '&dari=daftar' : '/po-kegiatan/daftar';
             window.location.href = BASE + ke;
+        }
+        // jumlah catatan draf Ketua Tim yang belum dikirim (0 bila gagal dibaca; server tetap menolak kalau konfirmasi buang draf tidak ada)
+        // catatan Ketua Tim untuk review PO ini: draf (belum dikirim) + dibuka kembali; plus nama Ketua Pelaksana
+        function infoCatatanKatim() {
+            return fetch(BASE + '/po-kegiatan/' + PO_ID + '/review', { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                    var c = ((j && j.catatan) || []).filter(function (n) { return !n.dari_pjt; });
+                    return { draf: c.filter(function (n) { return n.state === 'draf'; }).length, terbuka: c.filter(function (n) { return n.state === 'terbuka'; }).length, pembuat: (j && j.po && j.po.pembuat) || 'Ketua Pelaksana' };
+                })
+                .catch(function () { return { draf: 0, terbuka: 0, pembuat: 'Ketua Pelaksana' }; });
+        }
+        // Dialog dua kartu saat Katim menekan Kirim ke Mitra padahal masih ada catatan: minta revisi (simpan + kirim catatan) atau setujui (catatan draf dibuang).
+        // Hasil: 'revisi' | 'setujui' | false (batal)
+        function pilihKirimDenganCatatan(i) {
+            return new Promise(function (resolve) {
+                var n = i.draf + i.terbuka, bisaSetujui = i.terbuka < 1, pilih = 'revisi';
+                var d = document.getElementById('rvkPilih');
+                if (!d) { d = document.createElement('div'); d.className = 'rvk-dlg'; d.id = 'rvkPilih'; d.hidden = true; document.body.appendChild(d); }
+                function esc(t) { var e = document.createElement('div'); e.textContent = t; return e.innerHTML; }
+                function gambar() {
+                    d.innerHTML = '<div class="rvk-box" role="alertdialog" aria-modal="true" style="max-width:440px"><div class="rvk-ic"><i class="bi bi-exclamation-triangle"></i></div>' +
+                        '<h5>Ada ' + n + ' catatan yang belum dikirim</h5><p>Pilih yang mau dilakukan. Perubahan di form tetap disimpan.</p>' +
+                        '<label class="rvk-opt' + (pilih === 'revisi' ? ' sel' : '') + '" data-p="revisi"><input type="radio" name="rvkP"' + (pilih === 'revisi' ? ' checked' : '') + '><div><b>Minta revisi ke ' + esc(i.pembuat) + '</b><span>Simpan perubahan, lalu kirim ' + n + ' catatan. PO belum disetujui. Bagian yang Anda ubah tampil merah di dokumen Ketua Pelaksana.</span></div></label>' +
+                        '<label class="rvk-opt' + (pilih === 'setujui' ? ' sel' : '') + (bisaSetujui ? '' : ' off') + '" data-p="setujui"><input type="radio" name="rvkP"' + (pilih === 'setujui' ? ' checked' : '') + (bisaSetujui ? '' : ' disabled') + '><div><b>Setujui dan kirim ke Tim Mitra</b><span>' + (bisaSetujui ? 'PO langsung disetujui. ' + i.draf + ' catatan draf dibuang.' : 'Belum bisa: ada ' + i.terbuka + ' catatan yang dibuka kembali dan belum diperbaiki.') + '</span></div></label>' +
+                        '<div class="rvk-btns" style="margin-top:12px"><button type="button" id="rvkPNo">Batal</button><button type="button" class="ya" id="rvkPYa">Lanjutkan</button></div></div>';
+                    d.querySelectorAll('.rvk-opt').forEach(function (o) { o.onclick = function (e) { e.preventDefault(); if (o.classList.contains('off')) { return; } pilih = o.getAttribute('data-p'); gambar(); }; });
+                    document.getElementById('rvkPNo').onclick = function () { tutup(false); };
+                    document.getElementById('rvkPYa').onclick = function () { tutup(pilih); };
+                }
+                var fokusLama = document.activeElement;
+                function tutup(h) {
+                    document.removeEventListener('keydown', escP);
+                    d.classList.remove('show'); setTimeout(function () { d.hidden = true; }, 160);
+                    if (fokusLama && fokusLama.focus) { try { fokusLama.focus(); } catch (e) {} }
+                    resolve(h);
+                }
+                function escP(e) { if (e.key === 'Escape') { e.preventDefault(); tutup(false); } }
+                document.addEventListener('keydown', escP);
+                d.onclick = function (e) { if (e.target === d) { tutup(false); } };
+                gambar();
+                d.hidden = false;
+                requestAnimationFrame(function () { d.classList.add('show'); });
+                setTimeout(function () { var y = document.getElementById('rvkPYa'); if (y) { y.focus(); } }, 60);
+            });
+        }
+        function jumlahDrafKatim() {
+            return fetch(BASE + '/po-kegiatan/' + PO_ID + '/review', { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (j) { return ((j && j.catatan) || []).filter(function (n) { return n.state === 'draf' && !n.dari_pjt; }).length; })
+                .catch(function () { return 0; });
         }
         function konfirmasiKirim(judul, pesan, ya, ikon) {
             return new Promise(function (resolve) {
@@ -9078,6 +9641,7 @@ setTimeout(function () {
         // Isi pop up mengikuti tujuan pengiriman (sama dengan teks di panel review)
         function teksKonfirmasi() {
             var n = data.length, u = (KIRIM && KIRIM.url) || '';
+            if (u.indexOf('/po-ajuan/') !== -1) { return ['Kirim perbaikan ke PPK BLU?', 'PPK BLU akan menyetujui, meminta revisi, atau menolak ajuan ini. PO versi lama tetap berlaku sampai PPK BLU menyetujui. Perubahan di form ikut disimpan.', 'Kirim']; }
             if (u.indexOf('kirim-ppk') !== -1) { return ['Kirim revisi ke PPK BLU?', 'PPK BLU akan mengecek ulang PO ini. Perubahan di form ikut disimpan.', 'Kirim']; }
             if (u.indexOf('kirim-katim') !== -1) { return ['Kirim revisi ke Ketua Tim?', 'Ketua Tim akan mereview hasil revisi sebelum dikirim ke PPK BLU. Perubahan di form ikut disimpan.', 'Kirim']; }
             return ['Kirim revisi ke Ketua Tim?', n + ' catatan sudah ditandai diperbaiki. Ketua Tim akan mengecek ulang. Perubahan di form ikut disimpan.', 'Kirim revisi'];
@@ -9110,14 +9674,36 @@ setTimeout(function () {
         }
         document.addEventListener('click', function (e) {
             if (e.target.closest && e.target.closest('#rvKirimBtn2')) { e.preventDefault(); kirimSekarang(); }
+            if (e.target.closest && e.target.closest('#rvTarikBtn')) { e.preventDefault(); tarikAjuan(); }
         });
 
         fetch(BASE + '/po-kegiatan/' + PO_ID + '/catatan-form', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
             if (!j || !j.ok) { galat((j && j.pesan) || 'Catatan revisi gagal dimuat.'); bar.hidden = false; return; }
             KIRIM = (j.kirim && j.kirim.url) ? j.kirim : null;
-            data = (j.catatan || []).map(function (c) { return { id: c.id, bagian: c.bagian, teks: c.teks, state: c.state, asal: c.asal || 'ppk', putaran: c.putaran || 0 }; });
+            AJUAN = j.ajuan || null;
+            data = (j.catatan || []).map(function (c) { return { id: c.id, bagian: c.bagian, teks: c.teks, state: c.state, asal: c.asal || 'ppk', putaran: c.putaran || 0, balasan: c.balasan || [] }; });
             tampil();
         }).catch(function () { galat('Catatan revisi gagal dimuat. Muat ulang halaman.'); bar.hidden = false; });
+    })();
+    </script>
+    <script>
+    (function () {
+        /* Tombol Kembali pada edit PO dari panel revisi/ajuan: pulang ke halaman Daftar PO tempat Anda datang (lengkap dengan tab dan filternya),
+           bukan ke Daftar Review PO. Tanpa jejak asal, Kembali tetap ke Daftar PO biasa (/po-kegiatan). Kunci penyimpanan sama dengan yang dipakai blok Ketua Tim di atas. */
+        var BASE = '{{ @BASE }}', PO_ID = {{ @po ? @po.id : 0 }};
+        if (!PO_ID) { return; }
+        var kunci = 'poKembali' + PO_ID, u = '';
+        /* Referrer didahulukan: kalau form dibuka dari Daftar PO, tab dan filter yang aktif SAAT INI yang dicatat (menimpa catatan lama dari kunjungan sebelumnya).
+           Sesudah form dimuat ulang (Simpan dsb.) referrer-nya form itu sendiri, jadi dipakai catatan tadi. */
+        try {
+            var r = new URL(document.referrer);
+            if (r.origin === window.location.origin && r.pathname === BASE + '/po-kegiatan') { u = r.pathname + r.search; try { sessionStorage.setItem(kunci, u); } catch (e2) {} }
+        } catch (e) {}
+        if (!u) { try { u = sessionStorage.getItem(kunci) || ''; } catch (e) {} }
+        if (!u) { return; }
+        document.querySelectorAll('a.po-kembali[href]').forEach(function (el) {
+            try { var h = new URL(el.getAttribute('href'), window.location.href); if (h.origin === window.location.origin && h.pathname === BASE + '/po-kegiatan') { el.setAttribute('href', u); } } catch (e) {}
+        });
     })();
     </script>
     </check>
